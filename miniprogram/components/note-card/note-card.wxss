@@ -1,8 +1,33 @@
 .card {
+  position: relative;
   background: #fff;
   border-radius: 16rpx;
   overflow: hidden;
   margin-bottom: 16rpx;
+}
+.course-tag {
+  position: absolute;
+  left: 16rpx;
+  top: 16rpx;
+  background: #ff2442;
+  color: #fff;
+  font-size: 20rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+}
+.card-del {
+  position: absolute;
+  right: 12rpx;
+  top: 12rpx;
+  width: 44rpx;
+  height: 44rpx;
+  line-height: 40rpx;
+  text-align: center;
+  background: rgba(0, 0, 0, .5);
+  color: #fff;
+  font-size: 34rpx;
+  border-radius: 50%;
+  z-index: 2;
 }
 
 .cover-wrap {

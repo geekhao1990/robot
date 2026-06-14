@@ -11,6 +11,16 @@ Page({
     presetTags: ['日常', '好物推荐', '旅行', '美食', '穿搭', '健身', '家居', '数码'],
     categories: ['旅行', '美食', '穿搭', '健身', '家居', '数码'],
     catIndex: 0,
+    noteType: 'normal', // normal | course
+    courseUrl: '',
+  },
+
+  onTypeChange(e) {
+    this.setData({ noteType: e.currentTarget.dataset.type });
+  },
+
+  onCourseUrl(e) {
+    this.setData({ courseUrl: e.detail.value });
   },
 
   onShow() {
@@ -68,9 +78,10 @@ Page({
         },
       });
     }
-    const { images, title, content, tags, categories, catIndex } = this.data;
+    const { images, title, content, tags, categories, catIndex, noteType, courseUrl } = this.data;
     if (!images.length) return toast('请至少添加一张图片');
     if (!content.trim()) return toast('写点内容吧~');
+    if (noteType === 'course' && !courseUrl.trim()) return toast('请填写课程资料地址');
 
     const user = store.getUser();
     const cover = images[0];
@@ -81,6 +92,8 @@ Page({
         authorId: user.id,
         author: { id: user.id, name: user.name, avatar: user.avatar },
         category: categories[catIndex],
+        type: noteType,
+        courseUrl: noteType === 'course' ? courseUrl.trim() : '',
         title: title.trim() || content.trim().slice(0, 15),
         content: content.trim(),
         images,
@@ -99,7 +112,7 @@ Page({
       store.addMyNote(note);
       wx.showToast({ title: '发布成功', icon: 'success' });
       // 重置表单
-      this.setData({ images: [], title: '', content: '', tags: [], catIndex: 0 });
+      this.setData({ images: [], title: '', content: '', tags: [], catIndex: 0, noteType: 'normal', courseUrl: '' });
       setTimeout(() => {
         wx.redirectTo({ url: `/pages/detail/detail?id=${note.id}` });
       }, 800);

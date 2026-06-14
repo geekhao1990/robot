@@ -178,6 +178,36 @@
   color: #999;
   margin-left: 28rpx;
 }
+.c-del {
+  font-size: 24rpx;
+  color: #bbb;
+  margin-left: 28rpx;
+}
+
+/* 课程区块 */
+.course-block {
+  padding: 30rpx;
+}
+.course-tip {
+  background: #fff7ed;
+  color: #b4690e;
+  font-size: 28rpx;
+  line-height: 1.6;
+  padding: 24rpx 28rpx;
+  border-radius: 16rpx;
+}
+.course-btn {
+  flex: 1;
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  background: #ff2442;
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 600;
+  border-radius: 999rpx;
+  margin-right: 12rpx;
+}
 /* 评论点赞（竖排小爱心） */
 .c-like {
   display: flex;

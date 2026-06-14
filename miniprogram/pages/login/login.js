@@ -28,6 +28,7 @@ Page({
       fans: 0,
       follows: 0,
       likes: 0,
+      vip: false,
     });
   },
 
@@ -40,6 +41,7 @@ Page({
       fans: 128,
       follows: 56,
       likes: 1024,
+      vip: true, // 演示账号为 VIP：获取课程时跳过广告
     });
   },
 

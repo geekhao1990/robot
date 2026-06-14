@@ -15,6 +15,10 @@ Component({
         });
       },
     },
+    deletable: {
+      type: Boolean,
+      value: false,
+    },
   },
 
   data: {
@@ -25,6 +29,10 @@ Component({
   methods: {
     onTap() {
       this.triggerEvent('tap', { id: this.data.note.id });
+    },
+
+    onDelete() {
+      this.triggerEvent('delete', { id: this.data.note.id });
     },
 
     onLike() {

@@ -47,8 +47,13 @@
 
     <view class="divider"></view>
 
-    <!-- 评论 -->
-    <view class="comments">
+    <!-- 课程：获取入口 -->
+    <view wx:if="{{isCourse}}" class="course-block">
+      <view class="course-tip">🎓 本课程包含完整资料，点击下方按钮获取</view>
+    </view>
+
+    <!-- 评论（课程类型不展示） -->
+    <view wx:if="{{!isCourse}}" class="comments">
       <view class="comments-title">共 {{commentTotal}} 条评论</view>
       <view wx:for="{{note.commentList}}" wx:key="id" class="comment">
         <image class="c-avatar" src="{{item.user.avatar}}" mode="aspectFill" />
@@ -64,6 +69,7 @@
           <view class="c-meta">
             <text class="c-time">{{item.timeText}}</text>
             <text class="c-reply" data-cid="{{item.id}}" data-name="{{item.user.name}}" catchtap="onReply">回复</text>
+            <text wx:if="{{item.user.id === myId}}" class="c-del" data-cid="{{item.id}}" catchtap="onDeleteComment">删除</text>
           </view>
 
           <!-- 二级评论 -->
@@ -83,6 +89,7 @@
               <view class="c-meta">
                 <text class="c-time">{{rep.timeText}}</text>
                 <text class="c-reply" data-cid="{{item.id}}" data-name="{{rep.user.name}}" catchtap="onReply">回复</text>
+                <text wx:if="{{rep.user.id === myId}}" class="c-del" data-cid="{{item.id}}" data-rid="{{rep.id}}" catchtap="onDeleteComment">删除</text>
               </view>
             </view>
           </view>
@@ -93,7 +100,20 @@
   </scroll-view>
 
   <!-- 底部操作栏 -->
-  <view class="actionbar">
+  <!-- 课程类型：获取课程 + 点赞收藏，无评论/转发 -->
+  <view wx:if="{{isCourse}}" class="actionbar">
+    <view class="course-btn" bindtap="onGetCourse">获取课程</view>
+    <view class="action" bindtap="onLike">
+      <view class="ic heart {{note.liked ? 'active' : ''}}"></view>
+      <text class="num">{{likeText}}</text>
+    </view>
+    <view class="action" bindtap="onCollect">
+      <view class="ic star {{note.collected ? 'active' : ''}}"></view>
+      <text class="num">{{collectText}}</text>
+    </view>
+  </view>
+  <!-- 普通类型 -->
+  <view wx:else class="actionbar">
     <view class="comment-input" bindtap="onComment">说点什么...</view>
     <view class="action" bindtap="onLike">
       <view class="ic heart {{note.liked ? 'active' : ''}}"></view>

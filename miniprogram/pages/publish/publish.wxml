@@ -11,6 +11,20 @@
     </view>
   </view>
 
+  <!-- 笔记类型 -->
+  <view class="type-row">
+    <view
+      class="type-tab {{noteType === 'normal' ? 'active' : ''}}"
+      data-type="normal"
+      bindtap="onTypeChange"
+    >普通笔记</view>
+    <view
+      class="type-tab {{noteType === 'course' ? 'active' : ''}}"
+      data-type="course"
+      bindtap="onTypeChange"
+    >课程（获取资料）</view>
+  </view>
+
   <view class="form">
     <input
       class="title-input"
@@ -28,6 +42,19 @@
       bindinput="onContent"
       auto-height
     />
+
+    <!-- 课程资料链接（课程类型显示） -->
+    <view wx:if="{{noteType === 'course'}}" class="course-row">
+      <text class="course-label">📦 资料地址（百度网盘等）</text>
+      <textarea
+        class="course-input"
+        placeholder="粘贴百度网盘链接和提取码，用户观看激励广告后可见"
+        maxlength="300"
+        value="{{courseUrl}}"
+        bindinput="onCourseUrl"
+        auto-height
+      />
+    </view>
 
     <!-- 标签 -->
     <view class="tag-row">

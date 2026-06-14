@@ -106,6 +106,14 @@ const rawNotes = [
     content: '在家办公的快乐源泉就是一个舒服的桌面！\n\n🖥 显示器支架解放桌面\n⌨️ 机械键盘手感党\n🔌 桌面理线很关键',
     tags: ['桌搭', '数码', '居家办公'], likes: 45600, collects: 28900, comments: 567, time: 72, video: false,
   },
+  {
+    id: 'n13', authorId: 'u6', category: '数码', type: 'course',
+    courseUrl: 'https://pan.baidu.com/s/1AbCdEfGhIjKlMn 提取码: xhs8',
+    title: '【保姆级教程】从0到1搭建你的第一个网站', ratio: 1.15,
+    images: ['course1', 'course2'],
+    content: '零基础也能学会！本课程包含全部源码 + 视频讲解：\n\n1️⃣ 环境搭建\n2️⃣ 前端页面开发\n3️⃣ 后端接口与部署\n\n点击下方「获取课程」即可领取完整资料～',
+    tags: ['建站', '编程教程', '干货'], likes: 8900, collects: 5600, comments: 0, time: 4, video: false,
+  },
 ];
 
 // 评论模板

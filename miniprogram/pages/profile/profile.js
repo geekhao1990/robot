@@ -17,6 +17,7 @@ Page({
     left: [],
     right: [],
     emptyText: '还没有内容～',
+    canDelete: false,
   },
 
   onLoad() {
@@ -105,6 +106,9 @@ Page({
       emptyText = '还没有赞过的笔记';
     }
 
+    // 仅「笔记」tab 且登录时可删除自己的笔记
+    this.setData({ canDelete: index === 0 && !!user });
+
     promise.then((notes) => {
       const left = [], right = [];
       let lh = 0, rh = 0;
@@ -137,5 +141,25 @@ Page({
 
   goDetail(e) {
     wx.navigateTo({ url: `/pages/detail/detail?id=${e.detail.id}` });
+  },
+
+  // 删除自己发布的笔记（二次确认）
+  onDeleteNote(e) {
+    const id = e.detail.id;
+    wx.showModal({
+      title: '删除笔记',
+      content: '确定删除这篇笔记吗？删除后不可恢复。',
+      confirmText: '删除',
+      confirmColor: '#ff2442',
+      success: (res) => {
+        if (!res.confirm) return;
+        store.removeMyNote(id);
+        wx.showToast({ title: '已删除', icon: 'success' });
+        // 刷新列表与统计
+        const s = this.computeStats();
+        this.setData({ likeCollectCount: formatCount(s.likes + s.collects) });
+        this.loadTab(this.data.tabIndex);
+      },
+    });
   },
 });

@@ -112,6 +112,10 @@ function addMyNote(note) {
   state.myNotes.unshift(note);
   save(KEY.MY_NOTES, state.myNotes);
 }
+function removeMyNote(id) {
+  state.myNotes = state.myNotes.filter((n) => n.id !== id);
+  save(KEY.MY_NOTES, state.myNotes);
+}
 
 // ---------- 消息已读状态 ----------
 function markNotifyRead(type) {
@@ -155,6 +159,6 @@ module.exports = {
   isCollected, toggleCollect,
   isFollowed, toggleFollow,
   likedIds, collectedIds, followedIds,
-  getMyNotes, addMyNote,
+  getMyNotes, addMyNote, removeMyNote,
   markNotifyRead, isNotifyRead, markConvRead, isConvRead, messageUnread,
 };

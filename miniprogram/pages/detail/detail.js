@@ -25,6 +25,9 @@ Page({
     showShare: false,
     showFriends: false,
     friends: [],
+    // 课程
+    isCourse: false,
+    myId: '',
   },
 
   onLoad(options) {
@@ -52,6 +55,7 @@ Page({
         timeText: fromNow(c.time),
         replies: (c.replies || []).map((r) => ({ ...r, timeText: fromNow(r.time) })),
       }));
+      const me = store.getUser();
       this.setData({
         note: { ...note, commentList },
         swiperHeight,
@@ -61,6 +65,8 @@ Page({
         commentText: formatCount(note.comments),
         commentTotal: note.comments,
         timeText: fromNow(note.time),
+        isCourse: note.type === 'course',
+        myId: me ? me.id : '',
       });
     });
   },
@@ -210,6 +216,94 @@ Page({
     }
     commentList[idx] = c;
     this.setData({ 'note.commentList': commentList });
+  },
+
+  // 删除自己的评论 / 回复（二次确认）
+  onDeleteComment(e) {
+    const { cid, rid } = e.currentTarget.dataset;
+    wx.showModal({
+      title: '删除评论',
+      content: '确定要删除这条评论吗？',
+      confirmText: '删除',
+      confirmColor: '#ff2442',
+      success: (res) => {
+        if (!res.confirm) return;
+        let commentList = this.data.note.commentList.slice();
+        if (rid) {
+          const idx = commentList.findIndex((c) => c.id === cid);
+          if (idx > -1) {
+            const c = { ...commentList[idx] };
+            c.replies = (c.replies || []).filter((r) => r.id !== rid);
+            commentList[idx] = c;
+          }
+        } else {
+          commentList = commentList.filter((c) => c.id !== cid);
+        }
+        const total = Math.max(0, this.data.commentTotal - 1);
+        this.setData({
+          'note.commentList': commentList,
+          commentTotal: total,
+          commentText: formatCount(total),
+        });
+        toast('已删除');
+      },
+    });
+  },
+
+  // ---------- 获取课程（激励广告 / VIP 跳过） ----------
+  onGetCourse() {
+    const user = store.getUser();
+    if (!user) return this.requireLogin();
+    if (user.vip) return this.showCourse(); // VIP 跳过广告
+    this.playRewardAd();
+  },
+
+  showCourse() {
+    const url = this.data.note.courseUrl || '（发布者暂未填写资料地址）';
+    wx.showModal({
+      title: '课程资料',
+      content: url,
+      confirmText: '复制链接',
+      cancelText: '关闭',
+      success: (res) => {
+        if (res.confirm && this.data.note.courseUrl) {
+          wx.setClipboardData({ data: this.data.note.courseUrl });
+        }
+      },
+    });
+  },
+
+  playRewardAd() {
+    if (!wx.createRewardedVideoAd) return this.simulateAd();
+    if (!this.rewardAd) {
+      this.rewardAd = wx.createRewardedVideoAd({ adUnitId: 'adunit-course-demo' });
+      this.rewardAd.onClose((res) => {
+        if (res && res.isEnded) this.showCourse();
+        else toast('看完广告才能获取课程哦~');
+      });
+      this.rewardAd.onError(() => {
+        this._adFailed = true;
+      });
+    }
+    this.rewardAd
+      .show()
+      .catch(() =>
+        this.rewardAd
+          .load()
+          .then(() => this.rewardAd.show())
+          .catch(() => this.simulateAd())
+      );
+  },
+
+  // 开发环境/未配置广告位时的演示降级
+  simulateAd() {
+    wx.showModal({
+      title: '激励广告（演示）',
+      content: '真机需在微信后台开通流量主并配置广告位 adUnitId。此处模拟「广告观看完成」。',
+      confirmText: '已看完',
+      showCancel: false,
+      success: () => this.showCourse(),
+    });
   },
 
   // ---------- 转发 ----------
