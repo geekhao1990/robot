@@ -80,15 +80,31 @@ Page({
     this.setData({ messages });
     this.scrollToBottom();
 
-    // 模拟回复延时
-    setTimeout(() => {
-      const reply = genReply(text);
+    this.askBot(text).then((reply) => {
       const list = this.data.messages.map((m) =>
         m.id === typingId ? { ...m, content: reply, typing: false } : m
       );
       this.setData({ messages: list, loading: false });
       this.scrollToBottom();
-    }, 700);
+    });
+  },
+
+  // 优先调用云函数(知识库 RAG)，未开通云开发或失败时降级为本地回复
+  askBot(text) {
+    const history = this.data.messages
+      .filter((m) => !m.typing && m.content)
+      .slice(-6)
+      .map((m) => ({ role: m.role, content: m.content }));
+
+    const app = getApp();
+    if (app.globalData.cloudEnabled && wx.cloud) {
+      return wx.cloud
+        .callFunction({ name: 'kbchat', data: { question: text, history } })
+        .then((res) => (res && res.result && res.result.answer) || genReply(text))
+        .catch(() => genReply(text));
+    }
+    // 本地降级：模拟延时
+    return new Promise((resolve) => setTimeout(() => resolve(genReply(text)), 700));
   },
 
   scrollToBottom() {

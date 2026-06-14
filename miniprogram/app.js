@@ -6,9 +6,21 @@ App({
     userInfo: null,
     statusBarHeight: 20,
     navBarHeight: 44,
+    cloudEnabled: false,
   },
 
   onLaunch() {
+    // 初始化云开发（用于 AI 客服知识库云函数）。
+    // 需先在开发者工具开通「云开发」；未开通时静默跳过，AI 助手走本地降级回复。
+    if (wx.cloud) {
+      try {
+        wx.cloud.init({ env: wx.cloud.DYNAMIC_CURRENT_ENV, traceUser: true });
+        this.globalData.cloudEnabled = true;
+      } catch (e) {
+        this.globalData.cloudEnabled = false;
+      }
+    }
+
     // 读取系统信息，计算自定义导航栏高度
     try {
       const sys = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();

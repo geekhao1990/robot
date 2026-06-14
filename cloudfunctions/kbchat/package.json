@@ -1,0 +1,9 @@
+{
+  "name": "kbchat",
+  "version": "1.0.0",
+  "description": "私有知识库客服智能体云函数（RAG）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
