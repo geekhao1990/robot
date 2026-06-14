@@ -116,6 +116,16 @@ function removeMyNote(id) {
   state.myNotes = state.myNotes.filter((n) => n.id !== id);
   save(KEY.MY_NOTES, state.myNotes);
 }
+function updateMyNote(note) {
+  const i = state.myNotes.findIndex((n) => n.id === note.id);
+  if (i > -1) {
+    state.myNotes[i] = note;
+    save(KEY.MY_NOTES, state.myNotes);
+  }
+}
+function getMyNote(id) {
+  return state.myNotes.find((n) => n.id === id) || null;
+}
 
 // ---------- 消息已读状态 ----------
 function markNotifyRead(type) {
@@ -159,6 +169,6 @@ module.exports = {
   isCollected, toggleCollect,
   isFollowed, toggleFollow,
   likedIds, collectedIds, followedIds,
-  getMyNotes, addMyNote, removeMyNote,
+  getMyNotes, addMyNote, removeMyNote, updateMyNote, getMyNote,
   markNotifyRead, isNotifyRead, markConvRead, isConvRead, messageUnread,
 };

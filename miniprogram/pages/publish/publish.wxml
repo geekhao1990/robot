@@ -65,7 +65,7 @@
   </view>
 
   <view class="footer">
-    <view class="draft-btn" bindtap="onSaveDraft">存草稿</view>
-    <button class="publish-btn" bindtap="onPublish">发布笔记</button>
+    <view wx:if="{{!editing}}" class="draft-btn" bindtap="onSaveDraft">存草稿</view>
+    <button class="publish-btn" bindtap="onPublish">{{editing ? '保存修改' : '发布笔记'}}</button>
   </view>
 </view>

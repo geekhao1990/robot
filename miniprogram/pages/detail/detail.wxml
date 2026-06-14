@@ -7,7 +7,12 @@
         <image class="nav-avatar" src="{{note.author.avatar}}" mode="aspectFill" />
         <text class="nav-name">{{note.author.name}}</text>
       </view>
-      <view class="follow-btn {{followed ? 'followed' : ''}}" bindtap="onFollow">
+      <!-- 自己的笔记：编辑 / 删除；他人笔记：关注 -->
+      <view wx:if="{{isMine}}" class="owner-actions">
+        <text class="owner-btn" bindtap="onEditNote">编辑</text>
+        <text class="owner-btn del" bindtap="onDeleteOwnNote">删除</text>
+      </view>
+      <view wx:else class="follow-btn {{followed ? 'followed' : ''}}" bindtap="onFollow">
         {{followed ? '已关注' : '关注'}}
       </view>
     </view>

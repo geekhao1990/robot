@@ -51,13 +51,25 @@
 
   <!-- 内容 -->
   <view class="list">
+    <!-- 草稿箱（仅笔记 tab、有草稿时显示） -->
+    <view wx:if="{{tabIndex === 0 && hasDraft}}" class="draft-entry" bindtap="goDraft">
+      <view class="draft-left">
+        <text class="draft-ic">📝</text>
+        <view class="draft-info">
+          <text class="draft-title">草稿箱</text>
+          <text class="draft-sub">{{draftTitle}}</text>
+        </view>
+      </view>
+      <text class="draft-arrow">{{draftCount}} ›</text>
+    </view>
+
     <view wx:if="{{!currentNotes.length}}" class="placeholder">{{emptyText}}</view>
     <view wx:else class="waterfall">
       <view class="column">
-        <note-card wx:for="{{left}}" wx:key="id" note="{{item}}" deletable="{{canDelete}}" bindtap="goDetail" binddelete="onDeleteNote" />
+        <note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindtap="goDetail" />
       </view>
       <view class="column">
-        <note-card wx:for="{{right}}" wx:key="id" note="{{item}}" deletable="{{canDelete}}" bindtap="goDetail" binddelete="onDeleteNote" />
+        <note-card wx:for="{{right}}" wx:key="id" note="{{item}}" bindtap="goDetail" />
       </view>
     </view>
   </view>

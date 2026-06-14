@@ -100,6 +100,48 @@
 .list {
   padding: 12rpx;
 }
+.draft-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 26rpx 28rpx;
+  margin: 4rpx 4rpx 16rpx;
+}
+.draft-left {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.draft-ic {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+}
+.draft-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.draft-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+}
+.draft-sub {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 6rpx;
+  max-width: 460rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.draft-arrow {
+  font-size: 26rpx;
+  color: #999;
+  flex-shrink: 0;
+}
 .waterfall {
   display: flex;
   gap: 16rpx;

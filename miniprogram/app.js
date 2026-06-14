@@ -7,6 +7,8 @@ App({
     statusBarHeight: 20,
     navBarHeight: 44,
     cloudEnabled: false,
+    editNoteId: null, // 从详情页「编辑」进入发布页时携带
+    openDraft: false, // 从「我-草稿箱」进入发布页时为 true
   },
 
   onLaunch() {

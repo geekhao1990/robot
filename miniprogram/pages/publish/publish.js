@@ -13,21 +13,20 @@ Page({
     catIndex: 0,
     noteType: 'normal', // normal | course(收费笔记)
     courseUrl: '',
+    editing: false,
+    editingId: null,
   },
 
-  onLoad() {
-    // 恢复草稿
-    const draft = wx.getStorageSync(DRAFT_KEY);
-    if (draft && (draft.title || draft.content || (draft.images || []).length)) {
-      this.setData({
-        images: draft.images || [],
-        title: draft.title || '',
-        content: draft.content || '',
-        catIndex: draft.catIndex || 0,
-        noteType: draft.noteType || 'normal',
-        courseUrl: draft.courseUrl || '',
-      });
-    }
+  fillForm(src) {
+    const idx = this.data.categories.indexOf(src.category);
+    this.setData({
+      images: src.images || [],
+      title: src.title || '',
+      content: src.content || '',
+      catIndex: idx > -1 ? idx : (src.catIndex || 0),
+      noteType: src.type || src.noteType || 'normal',
+      courseUrl: src.courseUrl || '',
+    });
   },
 
   onTypeChange(e) {
@@ -40,6 +39,28 @@ Page({
 
   onShow() {
     refreshTabBar(this, 2);
+    const app = getApp();
+    // 从详情页「编辑」进入：载入该笔记，进入编辑模式
+    if (app.globalData.editNoteId) {
+      const note = store.getMyNote(app.globalData.editNoteId);
+      app.globalData.editNoteId = null;
+      if (note) {
+        this.fillForm(note);
+        this.setData({ editing: true, editingId: note.id });
+        wx.setNavigationBarTitle({ title: '编辑笔记' });
+      }
+      return;
+    }
+    // 从「我-草稿箱」进入：载入草稿
+    if (app.globalData.openDraft) {
+      app.globalData.openDraft = false;
+      const draft = wx.getStorageSync(DRAFT_KEY);
+      if (draft) {
+        this.fillForm(draft);
+        this.setData({ editing: false, editingId: null });
+        wx.setNavigationBarTitle({ title: '编辑草稿' });
+      }
+    }
   },
 
   // 存草稿
@@ -101,10 +122,14 @@ Page({
 
     const user = store.getUser();
     const cover = images[0];
+    const editing = this.data.editing;
+    const old = editing ? store.getMyNote(this.data.editingId) : null;
 
     const buildNote = (ratio) => {
+      const base = old || {};
       const note = {
-        id: 'my_' + Date.now(),
+        ...base,
+        id: editing ? this.data.editingId : 'my_' + Date.now(),
         authorId: user.id,
         author: { id: user.id, name: user.name, avatar: user.avatar },
         category: categories[catIndex],
@@ -116,20 +141,30 @@ Page({
         cover,
         coverRatio: ratio,
         tags,
-        likes: 0,
-        collects: 0,
-        comments: 0,
-        liked: false,
-        collected: false,
+        // 编辑时保留互动数据；新建时清零
+        likes: editing ? base.likes || 0 : 0,
+        collects: editing ? base.collects || 0 : 0,
+        comments: editing ? base.comments || 0 : 0,
+        liked: editing ? !!base.liked : false,
+        collected: editing ? !!base.collected : false,
         video: false,
-        time: Date.now(),
-        commentList: [],
+        time: editing ? base.time || Date.now() : Date.now(),
+        commentList: editing ? base.commentList || [] : [],
       };
-      store.addMyNote(note);
-      wx.removeStorageSync(DRAFT_KEY); // 发布成功清除草稿
-      wx.showToast({ title: '发布成功', icon: 'success' });
-      // 重置表单
-      this.setData({ images: [], title: '', content: '', tags: [], catIndex: 0, noteType: 'normal', courseUrl: '' });
+
+      if (editing) {
+        store.updateMyNote(note);
+      } else {
+        store.addMyNote(note);
+        wx.removeStorageSync(DRAFT_KEY); // 发布成功清除草稿
+      }
+      wx.showToast({ title: editing ? '已保存' : '发布成功', icon: 'success' });
+      // 重置表单与编辑态
+      this.setData({
+        images: [], title: '', content: '', tags: [], catIndex: 0,
+        noteType: 'normal', courseUrl: '', editing: false, editingId: null,
+      });
+      wx.setNavigationBarTitle({ title: '发布笔记' });
       setTimeout(() => {
         wx.redirectTo({ url: `/pages/detail/detail?id=${note.id}` });
       }, 800);

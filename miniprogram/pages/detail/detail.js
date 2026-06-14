@@ -28,6 +28,7 @@ Page({
     // 课程
     isCourse: false,
     myId: '',
+    isMine: false,
   },
 
   onLoad(options) {
@@ -67,6 +68,7 @@ Page({
         timeText: fromNow(note.time),
         isCourse: note.type === 'course',
         myId: me ? me.id : '',
+        isMine: !!(me && note.authorId === me.id),
       });
     });
   },
@@ -367,6 +369,30 @@ Page({
       path: `/pages/detail/detail?id=${n.id}`,
       imageUrl: n.cover,
     };
+  },
+
+  // 编辑自己的笔记 -> 跳发布页载入
+  onEditNote() {
+    getApp().globalData.editNoteId = this.data.note.id;
+    wx.switchTab({ url: '/pages/publish/publish' });
+  },
+
+  // 删除自己的笔记（二次确认）
+  onDeleteOwnNote() {
+    wx.showModal({
+      title: '删除笔记',
+      content: '确定删除这篇笔记吗？删除后不可恢复。',
+      confirmText: '删除',
+      confirmColor: '#ff2442',
+      success: (res) => {
+        if (!res.confirm) return;
+        store.removeMyNote(this.data.note.id);
+        wx.showToast({ title: '已删除', icon: 'success' });
+        setTimeout(() => {
+          wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) });
+        }, 600);
+      },
+    });
   },
 
   goUser() {

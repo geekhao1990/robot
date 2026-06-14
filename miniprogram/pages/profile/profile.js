@@ -17,7 +17,9 @@ Page({
     left: [],
     right: [],
     emptyText: '还没有内容～',
-    canDelete: false,
+    hasDraft: false,
+    draftCount: 0,
+    draftTitle: '',
   },
 
   onLoad() {
@@ -42,7 +44,23 @@ Page({
     } else {
       this.setData({ user, likeCollectCount: '0', followCount: 0, fansCount: 0 });
     }
+    this.refreshDraft();
     this.loadTab(this.data.tabIndex);
+  },
+
+  refreshDraft() {
+    const draft = wx.getStorageSync('xhs_publish_draft');
+    const has = !!(draft && (draft.title || draft.content || (draft.images || []).length));
+    this.setData({
+      hasDraft: has,
+      draftCount: has ? 1 : 0,
+      draftTitle: has ? (draft.title || draft.content || '未命名草稿').slice(0, 12) : '',
+    });
+  },
+
+  goDraft() {
+    getApp().globalData.openDraft = true;
+    wx.switchTab({ url: '/pages/publish/publish' });
   },
 
   // 统计我的发布笔记数 / 获得点赞数 / 获得收藏数
@@ -106,9 +124,6 @@ Page({
       emptyText = '还没有赞过的笔记';
     }
 
-    // 仅「笔记」tab 且登录时可删除自己的笔记
-    this.setData({ canDelete: index === 0 && !!user });
-
     promise.then((notes) => {
       const left = [], right = [];
       let lh = 0, rh = 0;
@@ -141,25 +156,5 @@ Page({
 
   goDetail(e) {
     wx.navigateTo({ url: `/pages/detail/detail?id=${e.detail.id}` });
-  },
-
-  // 删除自己发布的笔记（二次确认）
-  onDeleteNote(e) {
-    const id = e.detail.id;
-    wx.showModal({
-      title: '删除笔记',
-      content: '确定删除这篇笔记吗？删除后不可恢复。',
-      confirmText: '删除',
-      confirmColor: '#ff2442',
-      success: (res) => {
-        if (!res.confirm) return;
-        store.removeMyNote(id);
-        wx.showToast({ title: '已删除', icon: 'success' });
-        // 刷新列表与统计
-        const s = this.computeStats();
-        this.setData({ likeCollectCount: formatCount(s.likes + s.collects) });
-        this.loadTab(this.data.tabIndex);
-      },
-    });
   },
 });
