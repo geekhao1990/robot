@@ -15,6 +15,14 @@ Page({
     collectText: '0',
     commentText: '0',
     timeText: '',
+    commentTotal: 0,
+    // 评论输入
+    showInput: false,
+    commentDraft: '',
+    inputPlaceholder: '说点什么...',
+    replyTarget: null, // { cid, name } 回复目标
+    // 转发
+    showShare: false,
   },
 
   onLoad(options) {
@@ -40,6 +48,7 @@ Page({
       const commentList = (note.commentList || []).map((c) => ({
         ...c,
         timeText: fromNow(c.time),
+        replies: (c.replies || []).map((r) => ({ ...r, timeText: fromNow(r.time) })),
       }));
       this.setData({
         note: { ...note, commentList },
@@ -48,6 +57,7 @@ Page({
         likeText: formatCount(note.likes),
         collectText: formatCount(note.collects),
         commentText: formatCount(note.comments),
+        commentTotal: note.comments,
         timeText: fromNow(note.time),
       });
     });
@@ -95,11 +105,158 @@ Page({
     this.setData({ followed });
   },
 
+  // ---------- 评论 ----------
   onComment() {
-    if (!store.isLogin()) {
-      return this.requireLogin();
+    if (!store.isLogin()) return this.requireLogin();
+    this.setData({
+      showInput: true,
+      replyTarget: null,
+      commentDraft: '',
+      inputPlaceholder: '说点什么...',
+    });
+  },
+
+  onReply(e) {
+    if (!store.isLogin()) return this.requireLogin();
+    const { cid, name } = e.currentTarget.dataset;
+    this.setData({
+      showInput: true,
+      replyTarget: { cid, name },
+      commentDraft: '',
+      inputPlaceholder: `回复 @${name}`,
+    });
+  },
+
+  onDraft(e) {
+    this.setData({ commentDraft: e.detail.value });
+  },
+
+  closeInput() {
+    this.setData({ showInput: false, commentDraft: '' });
+  },
+
+  sendComment() {
+    const text = this.data.commentDraft.trim();
+    if (!text) return;
+    const user = store.getUser();
+    const me = { id: user.id, name: user.name, avatar: user.avatar };
+    const now = Date.now();
+    const commentList = this.data.note.commentList.slice();
+    const target = this.data.replyTarget;
+
+    if (target) {
+      // 二级评论：追加到对应一级评论的 replies
+      const idx = commentList.findIndex((c) => c.id === target.cid);
+      if (idx > -1) {
+        const c = commentList[idx];
+        const replies = (c.replies || []).concat({
+          id: `r${now}`,
+          user: me,
+          to: target.name,
+          text,
+          likes: 0,
+          liked: false,
+          time: now,
+          timeText: '刚刚',
+        });
+        commentList[idx] = { ...c, replies };
+      }
+    } else {
+      // 一级评论
+      commentList.unshift({
+        id: `c${now}`,
+        user: me,
+        text,
+        likes: 0,
+        liked: false,
+        time: now,
+        timeText: '刚刚',
+        replies: [],
+      });
     }
-    toast('评论功能演示中～');
+
+    const total = this.data.commentTotal + 1;
+    this.setData({
+      'note.commentList': commentList,
+      commentTotal: total,
+      commentText: formatCount(total),
+      showInput: false,
+      commentDraft: '',
+      replyTarget: null,
+    });
+    toast('评论成功');
+  },
+
+  onCommentLike(e) {
+    const { cid, rid } = e.currentTarget.dataset;
+    const commentList = this.data.note.commentList.slice();
+    const idx = commentList.findIndex((c) => c.id === cid);
+    if (idx < 0) return;
+    const c = { ...commentList[idx] };
+
+    if (rid) {
+      const replies = (c.replies || []).map((r) => {
+        if (r.id !== rid) return r;
+        const liked = !r.liked;
+        return { ...r, liked, likes: r.likes + (liked ? 1 : -1) };
+      });
+      c.replies = replies;
+    } else {
+      const liked = !c.liked;
+      c.liked = liked;
+      c.likes = c.likes + (liked ? 1 : -1);
+    }
+    commentList[idx] = c;
+    this.setData({ 'note.commentList': commentList });
+  },
+
+  // ---------- 转发 ----------
+  openShare() {
+    this.setData({ showShare: true });
+  },
+  closeShare() {
+    this.setData({ showShare: false });
+  },
+  noop() {},
+
+  shareToOfficial() {
+    const n = this.data.note;
+    wx.setClipboardData({
+      data: `${n.title} —— 来自小红书：/pages/detail/detail?id=${n.id}`,
+      success: () => {
+        // setClipboardData 自带「已复制」提示
+        wx.showModal({
+          title: '分享到公众号',
+          content: '内容链接已复制，可粘贴到微信公众号编辑器中发布。',
+          showCancel: false,
+          confirmText: '知道了',
+        });
+      },
+    });
+    this.setData({ showShare: false });
+  },
+
+  shareTimelineTip() {
+    this.setData({ showShare: false });
+    wx.showToast({ title: '点击右上角···分享到朋友圈', icon: 'none' });
+  },
+
+  onShareAppMessage() {
+    const n = this.data.note;
+    return {
+      title: n.title,
+      path: `/pages/detail/detail?id=${n.id}`,
+      imageUrl: n.cover,
+    };
+  },
+
+  onShareTimeline() {
+    const n = this.data.note;
+    return {
+      title: n.title,
+      query: `id=${n.id}`,
+      imageUrl: n.cover,
+    };
   },
 
   goUser() {

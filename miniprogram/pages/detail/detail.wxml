@@ -49,17 +49,43 @@
 
     <!-- 评论 -->
     <view class="comments">
-      <view class="comments-title">共 {{note.comments}} 条评论</view>
+      <view class="comments-title">共 {{commentTotal}} 条评论</view>
       <view wx:for="{{note.commentList}}" wx:key="id" class="comment">
         <image class="c-avatar" src="{{item.user.avatar}}" mode="aspectFill" />
-        <view class="c-body">
-          <view class="c-name">{{item.user.name}}</view>
+        <view class="c-main">
+          <view class="c-head">
+            <view class="c-name">{{item.user.name}}</view>
+            <view class="c-like" data-cid="{{item.id}}" catchtap="onCommentLike">
+              <view class="c-heart {{item.liked ? 'active' : ''}}"></view>
+              <text class="c-like-num">{{item.likes}}</text>
+            </view>
+          </view>
           <view class="c-text">{{item.text}}</view>
-          <view class="c-time">{{item.timeText}}</view>
-        </view>
-        <view class="c-like flex">
-          <text>🤍</text>
-          <text class="c-like-num">{{item.likes}}</text>
+          <view class="c-meta">
+            <text class="c-time">{{item.timeText}}</text>
+            <text class="c-reply" data-cid="{{item.id}}" data-name="{{item.user.name}}" catchtap="onReply">回复</text>
+          </view>
+
+          <!-- 二级评论 -->
+          <view wx:for="{{item.replies}}" wx:for-item="rep" wx:key="id" class="reply">
+            <image class="r-avatar" src="{{rep.user.avatar}}" mode="aspectFill" />
+            <view class="r-main">
+              <view class="c-head">
+                <view class="r-name">
+                  {{rep.user.name}}<text wx:if="{{rep.to}}" class="r-to"> 回复 {{rep.to}}</text>
+                </view>
+                <view class="c-like" data-cid="{{item.id}}" data-rid="{{rep.id}}" catchtap="onCommentLike">
+                  <view class="c-heart {{rep.liked ? 'active' : ''}}"></view>
+                  <text class="c-like-num">{{rep.likes}}</text>
+                </view>
+              </view>
+              <view class="c-text">{{rep.text}}</view>
+              <view class="c-meta">
+                <text class="c-time">{{rep.timeText}}</text>
+                <text class="c-reply" data-cid="{{item.id}}" data-name="{{rep.user.name}}" catchtap="onReply">回复</text>
+              </view>
+            </view>
+          </view>
         </view>
       </view>
       <view class="comments-end">- 到底啦 -</view>
@@ -80,6 +106,49 @@
     <view class="action" bindtap="onComment">
       <view class="ic chat"></view>
       <text class="num">{{commentText}}</text>
+    </view>
+    <view class="action" bindtap="openShare">
+      <view class="ic share"></view>
+      <text class="num">转发</text>
+    </view>
+  </view>
+
+  <!-- 评论输入框 -->
+  <view wx:if="{{showInput}}" class="input-mask" bindtap="closeInput"></view>
+  <view wx:if="{{showInput}}" class="comment-box">
+    <input
+      class="cb-input"
+      value="{{commentDraft}}"
+      placeholder="{{inputPlaceholder}}"
+      focus="{{showInput}}"
+      confirm-type="send"
+      adjust-position="{{true}}"
+      cursor-spacing="20"
+      bindinput="onDraft"
+      bindconfirm="sendComment"
+    />
+    <view class="cb-send {{commentDraft ? 'active' : ''}}" bindtap="sendComment">发送</view>
+  </view>
+
+  <!-- 转发面板 -->
+  <view wx:if="{{showShare}}" class="share-mask" bindtap="closeShare">
+    <view class="share-panel" catchtap="noop">
+      <view class="share-title">分享给</view>
+      <view class="share-opts">
+        <button class="share-opt" open-type="share" bindtap="closeShare">
+          <view class="share-ic wx-friend"><text class="g">微</text></view>
+          <text class="share-label">微信好友</text>
+        </button>
+        <view class="share-opt" bindtap="shareToOfficial">
+          <view class="share-ic wx-official"><text class="g">公</text></view>
+          <text class="share-label">微信公众号</text>
+        </view>
+        <view class="share-opt" bindtap="shareTimelineTip">
+          <view class="share-ic wx-timeline"><text class="g">圈</text></view>
+          <text class="share-label">朋友圈</text>
+        </view>
+      </view>
+      <view class="share-cancel" bindtap="closeShare">取消</view>
     </view>
   </view>
 </view>

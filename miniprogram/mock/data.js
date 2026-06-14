@@ -135,7 +135,22 @@ function buildNote(raw) {
       user: userMap[c.user],
       text: c.text,
       likes: Math.floor(Math.random() * 200),
+      liked: false,
       time: Date.now() - (i + 1) * 3600 * 1000,
+      replies:
+        i === 0
+          ? [
+              {
+                id: `${raw.id}-c${i}-r0`,
+                user: userMap[raw.authorId],
+                to: userMap[c.user].name,
+                text: '谢谢支持！有问题随时问我～',
+                likes: Math.floor(Math.random() * 30),
+                liked: false,
+                time: Date.now() - i * 1800 * 1000 - 600 * 1000,
+              },
+            ]
+          : [],
     })),
   };
 }
