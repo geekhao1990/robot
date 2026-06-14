@@ -1,7 +1,7 @@
 const api = require('../../utils/api');
 const store = require('../../utils/store');
 const mock = require('../../mock/data');
-const { formatCount, updateMessageBadge } = require('../../utils/util');
+const { formatCount, refreshTabBar } = require('../../utils/util');
 
 Page({
   data: {
@@ -28,7 +28,7 @@ Page({
   },
 
   onShow() {
-    updateMessageBadge();
+    refreshTabBar(this, 3);
     const user = store.getUser();
     if (user) {
       const s = this.computeStats();

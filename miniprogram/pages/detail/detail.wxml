@@ -26,8 +26,12 @@
           <image class="swiper-img" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-url="{{item}}" />
         </swiper-item>
       </swiper>
-      <view wx:if="{{note.images.length > 1}}" class="indicator">
-        {{current + 1}}/{{note.images.length}}
+      <view wx:if="{{note.images.length > 1}}" class="dots">
+        <view
+          wx:for="{{note.images}}"
+          wx:key="*this"
+          class="dot {{current === index ? 'active' : ''}}"
+        ></view>
       </view>
     </view>
 

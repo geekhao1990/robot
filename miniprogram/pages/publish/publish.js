@@ -1,6 +1,6 @@
 const store = require('../../utils/store');
 const data = require('../../mock/data');
-const { toast } = require('../../utils/util');
+const { toast, refreshTabBar } = require('../../utils/util');
 
 Page({
   data: {
@@ -11,6 +11,10 @@ Page({
     presetTags: ['日常', '好物推荐', '旅行', '美食', '穿搭', '健身', '家居', '数码'],
     categories: ['旅行', '美食', '穿搭', '健身', '家居', '数码'],
     catIndex: 0,
+  },
+
+  onShow() {
+    refreshTabBar(this, 1);
   },
 
   chooseImage() {

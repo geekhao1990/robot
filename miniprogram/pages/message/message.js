@@ -1,6 +1,6 @@
 const api = require('../../utils/api');
 const store = require('../../utils/store');
-const { fromNow, updateMessageBadge } = require('../../utils/util');
+const { fromNow, refreshTabBar } = require('../../utils/util');
 
 Page({
   data: {
@@ -12,7 +12,7 @@ Page({
   },
 
   onShow() {
-    updateMessageBadge();
+    refreshTabBar(this, 2);
     const user = store.getUser();
     this.setData({ user });
     if (!user) return;
@@ -20,7 +20,7 @@ Page({
   },
 
   onPullDownRefresh() {
-    updateMessageBadge();
+    refreshTabBar(this, 2);
     if (store.getUser()) this.loadData();
     wx.stopPullDownRefresh();
   },

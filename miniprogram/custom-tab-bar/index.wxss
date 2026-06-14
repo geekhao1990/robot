@@ -1,0 +1,47 @@
+.tab-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  height: 100rpx;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: #ffffff;
+  box-shadow: 0 -1rpx 0 #eee;
+}
+.tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tab-text {
+  position: relative;
+  font-size: 30rpx;
+  color: #999999;
+  transition: font-size .12s ease, color .12s ease;
+}
+.tab-text.active {
+  color: #ff2442;
+  font-size: 36rpx;
+  font-weight: 700;
+}
+/* 角标：绝对定位，不占布局 */
+.badge {
+  position: absolute;
+  top: -10rpx;
+  left: 100%;
+  margin-left: 2rpx;
+  min-width: 30rpx;
+  height: 30rpx;
+  padding: 0 6rpx;
+  box-sizing: border-box;
+  background: #ff2442;
+  color: #fff;
+  font-size: 18rpx;
+  font-weight: 400;
+  line-height: 30rpx;
+  text-align: center;
+  border-radius: 999rpx;
+}

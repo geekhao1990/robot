@@ -1,0 +1,14 @@
+<view class="tab-bar">
+  <view
+    wx:for="{{list}}"
+    wx:key="text"
+    class="tab-item"
+    data-index="{{index}}"
+    bindtap="switchTab"
+  >
+    <view class="tab-text {{selected === index ? 'active' : ''}}">
+      {{item.text}}
+      <view wx:if="{{index === 2 && badge > 0}}" class="badge">{{badge > 99 ? '99+' : badge}}</view>
+    </view>
+  </view>
+</view>

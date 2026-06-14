@@ -26,16 +26,13 @@ function toast(title, icon = 'none') {
   wx.showToast({ title, icon });
 }
 
-/** 更新底部「消息」tab 的未读数字角标（index = 2） */
-function updateMessageBadge() {
-  const store = require('./store');
-  const noop = () => {};
-  const count = store.messageUnread().total;
-  if (count > 0) {
-    wx.setTabBarBadge({ index: 2, text: count > 99 ? '99+' : String(count), fail: noop });
-  } else {
-    wx.removeTabBarBadge({ index: 2, fail: noop });
+/** 自定义 tabBar：设置选中项并刷新消息角标。在 tab 页 onShow 调用 */
+function refreshTabBar(page, index) {
+  const tb = page.getTabBar && page.getTabBar();
+  if (tb) {
+    tb.setData({ selected: index });
+    tb.refreshBadge();
   }
 }
 
-module.exports = { formatCount, fromNow, toast, updateMessageBadge };
+module.exports = { formatCount, fromNow, toast, refreshTabBar };
