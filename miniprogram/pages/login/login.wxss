@@ -1,0 +1,92 @@
+.page {
+  min-height: 100vh;
+  background: #fff;
+  padding: 0 60rpx;
+}
+.logo-wrap {
+  text-align: center;
+  padding: 120rpx 0 60rpx;
+}
+.logo {
+  font-size: 72rpx;
+  font-weight: 800;
+  color: #ff2442;
+}
+.slogan {
+  font-size: 28rpx;
+  color: #999;
+  margin-top: 16rpx;
+}
+
+.form {
+  margin-top: 40rpx;
+}
+.avatar-pick {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 50rpx;
+}
+.avatar-btn {
+  background: transparent;
+  padding: 0;
+  line-height: normal;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.avatar-btn::after {
+  border: none;
+}
+.avatar {
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 50%;
+  background: #f3f3f3;
+}
+.avatar-tip {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 16rpx;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  border-bottom: 1rpx solid #eee;
+  padding: 28rpx 0;
+}
+.field-label {
+  width: 120rpx;
+  font-size: 30rpx;
+  color: #333;
+}
+.field-input {
+  flex: 1;
+  font-size: 30rpx;
+}
+
+.submit {
+  margin-top: 80rpx;
+  background: #ff2442;
+  color: #fff;
+  border-radius: 999rpx;
+  font-size: 32rpx;
+}
+.submit::after { border: none; }
+
+.quick {
+  text-align: center;
+  color: #ff2442;
+  font-size: 28rpx;
+  margin-top: 40rpx;
+}
+
+.agreement {
+  position: fixed;
+  bottom: 60rpx;
+  left: 60rpx;
+  right: 60rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #bbb;
+}

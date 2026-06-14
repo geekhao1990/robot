@@ -1,0 +1,71 @@
+<view class="page">
+  <!-- 搜索头 -->
+  <view class="header" style="padding-top: {{statusBarHeight}}px;">
+    <view class="bar" style="height: {{navBarHeight}}px;">
+      <view class="input-wrap">
+        <text class="s-icon">🔍</text>
+        <input
+          class="input"
+          value="{{keyword}}"
+          placeholder="搜索笔记"
+          confirm-type="search"
+          focus="{{autoFocus}}"
+          bindinput="onInput"
+          bindconfirm="onSearch"
+        />
+        <text wx:if="{{keyword}}" class="clear" bindtap="clearInput">✕</text>
+      </view>
+      <text class="cancel" bindtap="goBack">取消</text>
+    </view>
+  </view>
+
+  <view class="content" style="padding-top: {{headerHeight}}px;">
+    <!-- 未搜索：历史 + 热门 -->
+    <block wx:if="{{!searched}}">
+      <view wx:if="{{history.length}}" class="block">
+        <view class="block-head flex-between">
+          <text class="block-title">搜索历史</text>
+          <text class="block-clear" bindtap="clearHistory">🗑</text>
+        </view>
+        <view class="tags">
+          <view
+            wx:for="{{history}}"
+            wx:key="*this"
+            class="word"
+            data-kw="{{item}}"
+            bindtap="onTapWord"
+          >{{item}}</view>
+        </view>
+      </view>
+
+      <view class="block">
+        <view class="block-head">
+          <text class="block-title">🔥 热门搜索</text>
+        </view>
+        <view class="tags">
+          <view
+            wx:for="{{hot}}"
+            wx:key="*this"
+            class="word hot"
+            data-kw="{{item}}"
+            bindtap="onTapWord"
+          >{{item}}</view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 搜索结果 -->
+    <block wx:else>
+      <view wx:if="{{loading}}" class="placeholder">搜索中...</view>
+      <view wx:elif="{{!results.length}}" class="placeholder">没有找到「{{keyword}}」相关内容</view>
+      <view wx:else class="waterfall">
+        <view class="column">
+          <note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindtap="goDetail" />
+        </view>
+        <view class="column">
+          <note-card wx:for="{{right}}" wx:key="id" note="{{item}}" bindtap="goDetail" />
+        </view>
+      </view>
+    </block>
+  </view>
+</view>

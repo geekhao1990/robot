@@ -1,0 +1,83 @@
+<view class="page" wx:if="{{note}}">
+  <!-- 顶部导航 -->
+  <view class="nav" style="padding-top: {{statusBarHeight}}px; height: {{navBarHeight}}px;">
+    <view class="nav-inner" style="height: {{navBarHeight}}px;">
+      <view class="back" bindtap="goBack">‹</view>
+      <view class="nav-author flex" bindtap="goUser">
+        <image class="nav-avatar" src="{{note.author.avatar}}" mode="aspectFill" />
+        <text class="nav-name">{{note.author.name}}</text>
+      </view>
+      <view class="follow-btn {{followed ? 'followed' : ''}}" bindtap="onFollow">
+        {{followed ? '已关注' : '关注'}}
+      </view>
+    </view>
+  </view>
+
+  <scroll-view class="body" scroll-y style="padding-top: {{headerHeight}}px;">
+    <!-- 图片轮播 -->
+    <view class="swiper-wrap">
+      <swiper
+        class="swiper"
+        style="height: {{swiperHeight}}rpx;"
+        bindchange="onSwiperChange"
+        circular="{{false}}"
+      >
+        <swiper-item wx:for="{{note.images}}" wx:key="*this">
+          <image class="swiper-img" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-url="{{item}}" />
+        </swiper-item>
+      </swiper>
+      <view wx:if="{{note.images.length > 1}}" class="indicator">
+        {{current + 1}}/{{note.images.length}}
+      </view>
+    </view>
+
+    <!-- 正文 -->
+    <view class="article">
+      <view class="title">{{note.title}}</view>
+      <view class="text">{{note.content}}</view>
+      <view class="tags">
+        <text wx:for="{{note.tags}}" wx:key="*this" class="tag">#{{item}}</text>
+      </view>
+      <view class="meta">{{timeText}}</view>
+    </view>
+
+    <view class="divider"></view>
+
+    <!-- 评论 -->
+    <view class="comments">
+      <view class="comments-title">共 {{note.comments}} 条评论</view>
+      <view wx:for="{{note.commentList}}" wx:key="id" class="comment">
+        <image class="c-avatar" src="{{item.user.avatar}}" mode="aspectFill" />
+        <view class="c-body">
+          <view class="c-name">{{item.user.name}}</view>
+          <view class="c-text">{{item.text}}</view>
+          <view class="c-time">{{item.timeText}}</view>
+        </view>
+        <view class="c-like flex">
+          <text>🤍</text>
+          <text class="c-like-num">{{item.likes}}</text>
+        </view>
+      </view>
+      <view class="comments-end">- 到底啦 -</view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部操作栏 -->
+  <view class="actionbar">
+    <view class="comment-input" bindtap="onComment">说点什么...</view>
+    <view class="action" bindtap="onLike">
+      <text class="ic {{note.liked ? 'active' : ''}}">{{note.liked ? '❤️' : '🤍'}}</text>
+      <text class="num">{{likeText}}</text>
+    </view>
+    <view class="action" bindtap="onCollect">
+      <text class="ic">{{note.collected ? '⭐' : '☆'}}</text>
+      <text class="num">{{collectText}}</text>
+    </view>
+    <view class="action" bindtap="onComment">
+      <text class="ic">💬</text>
+      <text class="num">{{commentText}}</text>
+    </view>
+  </view>
+</view>
+
+<view wx:else class="placeholder" style="padding-top: 200rpx;">加载中...</view>

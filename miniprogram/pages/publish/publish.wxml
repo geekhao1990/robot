@@ -1,0 +1,57 @@
+<view class="page">
+  <!-- 图片选择 -->
+  <view class="images">
+    <view wx:for="{{images}}" wx:key="*this" class="img-item">
+      <image class="img" src="{{item}}" mode="aspectFill" bindtap="preview" data-url="{{item}}" />
+      <view class="img-del" catchtap="removeImage" data-index="{{index}}">✕</view>
+    </view>
+    <view wx:if="{{images.length < 9}}" class="img-add" bindtap="chooseImage">
+      <text class="plus">+</text>
+      <text class="add-text">添加图片</text>
+    </view>
+  </view>
+
+  <view class="form">
+    <input
+      class="title-input"
+      placeholder="填写标题会有更多赞哦~"
+      maxlength="30"
+      value="{{title}}"
+      bindinput="onTitle"
+    />
+    <view class="divider"></view>
+    <textarea
+      class="content-input"
+      placeholder="分享你的生活/好物/心得..."
+      maxlength="1000"
+      value="{{content}}"
+      bindinput="onContent"
+      auto-height
+    />
+
+    <!-- 标签 -->
+    <view class="tag-row">
+      <text class="tag-label"># 添加话题</text>
+      <view class="tag-list">
+        <view
+          wx:for="{{presetTags}}"
+          wx:key="*this"
+          class="tag-chip {{tags.indexOf(item) > -1 ? 'active' : ''}}"
+          data-tag="{{item}}"
+          bindtap="toggleTag"
+        >#{{item}}</view>
+      </view>
+    </view>
+
+    <view class="cat-row">
+      <text class="cat-label">分类</text>
+      <picker mode="selector" range="{{categories}}" value="{{catIndex}}" bindchange="onCat">
+        <view class="cat-picker">{{categories[catIndex]}} ›</view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="footer">
+    <button class="publish-btn" bindtap="onPublish">发布笔记</button>
+  </view>
+</view>

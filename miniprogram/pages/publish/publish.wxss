@@ -1,0 +1,136 @@
+.page {
+  min-height: 100vh;
+  background: #fff;
+  padding: 30rpx 30rpx 160rpx;
+}
+
+.images {
+  display: flex;
+  flex-wrap: wrap;
+}
+.img-item, .img-add {
+  width: 210rpx;
+  height: 210rpx;
+  margin: 0 16rpx 16rpx 0;
+  border-radius: 12rpx;
+  position: relative;
+}
+.img-item:nth-child(3n), .img-add:nth-child(3n) {
+  margin-right: 0;
+}
+.img {
+  width: 100%;
+  height: 100%;
+  border-radius: 12rpx;
+}
+.img-del {
+  position: absolute;
+  top: -10rpx;
+  right: -10rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background: rgba(0,0,0,.6);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.img-add {
+  background: #f5f5f5;
+  border: 2rpx dashed #ddd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+}
+.plus {
+  font-size: 60rpx;
+  line-height: 1;
+  font-weight: 200;
+}
+.add-text {
+  font-size: 24rpx;
+  margin-top: 10rpx;
+}
+
+.form {
+  margin-top: 20rpx;
+}
+.title-input {
+  font-size: 34rpx;
+  font-weight: 600;
+  padding: 20rpx 0;
+}
+.divider {
+  height: 1rpx;
+  background: #f0f0f0;
+}
+.content-input {
+  width: 100%;
+  font-size: 30rpx;
+  line-height: 1.6;
+  padding: 24rpx 0;
+  min-height: 200rpx;
+}
+
+.tag-row {
+  padding: 24rpx 0;
+  border-top: 1rpx solid #f0f0f0;
+}
+.tag-label {
+  color: #13386c;
+  font-size: 28rpx;
+}
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 18rpx;
+}
+.tag-chip {
+  background: #f5f5f5;
+  color: #666;
+  font-size: 26rpx;
+  padding: 10rpx 24rpx;
+  border-radius: 999rpx;
+  margin: 0 16rpx 16rpx 0;
+}
+.tag-chip.active {
+  background: #fff0f2;
+  color: #ff2442;
+}
+
+.cat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28rpx 0;
+  border-top: 1rpx solid #f0f0f0;
+}
+.cat-label {
+  font-size: 30rpx;
+}
+.cat-picker {
+  color: #666;
+  font-size: 28rpx;
+}
+
+.footer {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  padding: 16rpx 30rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  border-top: 1rpx solid #f0f0f0;
+}
+.publish-btn {
+  background: #ff2442;
+  color: #fff;
+  border-radius: 999rpx;
+  font-size: 32rpx;
+}
+.publish-btn::after {
+  border: none;
+}

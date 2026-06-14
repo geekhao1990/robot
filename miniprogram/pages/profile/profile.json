@@ -1,0 +1,6 @@
+{
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "note-card": "/components/note-card/note-card"
+  }
+}
