@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const store = require('../../utils/store');
 
 Page({
   data: {
@@ -39,7 +40,21 @@ Page({
     if (this.data.tab === 'follow') {
       this.setData({ page: 1, hasMore: true });
       this.loadFeed(true);
+    } else {
+      // 其它 tab：从详情页返回时同步点赞状态
+      this.syncLikes();
     }
+  },
+
+  // 以 store 为准，刷新当前卡片的点赞状态与数量
+  syncLikes() {
+    const fix = (arr) =>
+      arr.map((n) => {
+        const liked = store.isLiked(n.id);
+        const base = (n.likes || 0) - (n.liked ? 1 : 0);
+        return { ...n, liked, likes: base + (liked ? 1 : 0) };
+      });
+    this.setData({ left: fix(this.data.left), right: fix(this.data.right) });
   },
 
   // 瀑布流分列：累计高度短的一列优先放入
@@ -97,8 +112,12 @@ Page({
     wx.navigateTo({ url: `/pages/detail/detail?id=${e.detail.id}` });
   },
 
-  onCardLike() {
-    // 点赞状态已由组件 + store 处理，这里无需额外操作
+  onCardLike(e) {
+    // 同步父级数组，避免后续加载/重渲染时卡片状态回退
+    const { id, liked, likes } = e.detail;
+    const update = (arr) =>
+      arr.map((n) => (n.id === id ? { ...n, liked, likes } : n));
+    this.setData({ left: update(this.data.left), right: update(this.data.right) });
   },
 
   onPullDownRefresh() {

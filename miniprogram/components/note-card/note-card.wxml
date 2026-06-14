@@ -5,13 +5,11 @@
   </view>
   <view class="info">
     <view class="title ellipsis-2">{{note.title}}</view>
-    <view class="bottom flex-between">
-      <view class="author flex">
-        <image class="avatar" src="{{note.author.avatar}}" mode="aspectFill" />
-        <text class="name ellipsis">{{note.author.name}}</text>
-      </view>
-      <view class="like flex" catchtap="onLike">
-        <text class="heart {{note.liked ? 'active' : ''}}">{{note.liked ? '❤️' : '🤍'}}</text>
+    <view class="bottom">
+      <image class="avatar" src="{{note.author.avatar}}" mode="aspectFill" />
+      <text class="name ellipsis">{{note.author.name}}</text>
+      <view class="like" catchtap="onLike">
+        <view class="heart {{note.liked ? 'active' : ''}}"></view>
         <text class="count">{{likeText}}</text>
       </view>
     </view>
