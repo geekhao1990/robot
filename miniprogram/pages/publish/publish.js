@@ -1,6 +1,7 @@
 const store = require('../../utils/store');
-const data = require('../../mock/data');
 const { toast, refreshTabBar } = require('../../utils/util');
+
+const DRAFT_KEY = 'xhs_publish_draft';
 
 Page({
   data: {
@@ -8,11 +9,25 @@ Page({
     title: '',
     content: '',
     tags: [],
-    presetTags: ['日常', '好物推荐', '旅行', '美食', '穿搭', '健身', '家居', '数码'],
-    categories: ['旅行', '美食', '穿搭', '健身', '家居', '数码'],
+    categories: ['指标', '视频', '金手指'],
     catIndex: 0,
-    noteType: 'normal', // normal | course
+    noteType: 'normal', // normal | course(收费笔记)
     courseUrl: '',
+  },
+
+  onLoad() {
+    // 恢复草稿
+    const draft = wx.getStorageSync(DRAFT_KEY);
+    if (draft && (draft.title || draft.content || (draft.images || []).length)) {
+      this.setData({
+        images: draft.images || [],
+        title: draft.title || '',
+        content: draft.content || '',
+        catIndex: draft.catIndex || 0,
+        noteType: draft.noteType || 'normal',
+        courseUrl: draft.courseUrl || '',
+      });
+    }
   },
 
   onTypeChange(e) {
@@ -25,6 +40,16 @@ Page({
 
   onShow() {
     refreshTabBar(this, 2);
+  },
+
+  // 存草稿
+  onSaveDraft() {
+    const { images, title, content, catIndex, noteType, courseUrl } = this.data;
+    if (!images.length && !title.trim() && !content.trim()) {
+      return toast('草稿是空的~');
+    }
+    wx.setStorageSync(DRAFT_KEY, { images, title, content, catIndex, noteType, courseUrl });
+    toast('已存草稿');
   },
 
   chooseImage() {
@@ -53,15 +78,6 @@ Page({
 
   onTitle(e) { this.setData({ title: e.detail.value }); },
   onContent(e) { this.setData({ content: e.detail.value }); },
-
-  toggleTag(e) {
-    const tag = e.currentTarget.dataset.tag;
-    const tags = this.data.tags.slice();
-    const i = tags.indexOf(tag);
-    if (i > -1) tags.splice(i, 1);
-    else tags.push(tag);
-    this.setData({ tags });
-  },
 
   onCat(e) {
     this.setData({ catIndex: Number(e.detail.value) });
@@ -110,6 +126,7 @@ Page({
         commentList: [],
       };
       store.addMyNote(note);
+      wx.removeStorageSync(DRAFT_KEY); // 发布成功清除草稿
       wx.showToast({ title: '发布成功', icon: 'success' });
       // 重置表单
       this.setData({ images: [], title: '', content: '', tags: [], catIndex: 0, noteType: 'normal', courseUrl: '' });

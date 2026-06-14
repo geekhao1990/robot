@@ -4,30 +4,16 @@
     <view class="slogan">标记我的生活</view>
   </view>
 
-  <view class="form">
-    <view class="avatar-pick">
-      <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
-        <image class="avatar" src="{{avatar}}" mode="aspectFill" />
-        <view class="avatar-tip">点击选择头像</view>
-      </button>
-    </view>
-
-    <view class="field">
-      <text class="field-label">昵称</text>
-      <input
-        class="field-input"
-        type="nickname"
-        placeholder="请输入昵称"
-        value="{{name}}"
-        bindinput="onName"
-        bindblur="onName"
-      />
-    </view>
+  <view class="wx-box">
+    <image class="wx-icon" src="https://i.pravatar.cc/150?img=68" mode="aspectFill" />
+    <view class="wx-tip">使用微信账号授权登录</view>
   </view>
 
-  <button class="submit" bindtap="onLogin">登录 / 注册</button>
+  <button class="wx-login-btn" bindtap="onWechatLogin">
+    <text class="wx-logo">💬</text> 微信授权登录
+  </button>
 
-  <view class="quick" bindtap="onQuickLogin">使用演示账号一键登录</view>
+  <view class="quick" bindtap="onQuickLogin">使用演示账号一键登录（VIP）</view>
 
   <view class="agreement">
     登录即代表同意《用户协议》和《隐私政策》（演示用途）

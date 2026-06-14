@@ -9,26 +9,30 @@ Page({
     name: '',
   },
 
-  onChooseAvatar(e) {
-    this.setData({ avatar: e.detail.avatarUrl });
-  },
+  // 微信授权登录：获取微信资料 + 登录态
+  onWechatLogin() {
+    // 先拿登录 code（接真实后端时用它换 openid；这里仅演示）
+    wx.login({ complete: () => {} });
 
-  onName(e) {
-    this.setData({ name: e.detail.value });
-  },
-
-  onLogin() {
-    const name = this.data.name.trim();
-    if (!name) return toast('请输入昵称');
-    this.doLogin({
-      id: 'me_' + Date.now().toString().slice(-6),
-      name,
-      avatar: this.data.avatar,
-      desc: '这个人很懒，什么都没留下',
-      fans: 0,
-      follows: 0,
-      likes: 0,
-      vip: false,
+    if (!wx.getUserProfile) {
+      return toast('当前微信版本不支持授权登录');
+    }
+    wx.getUserProfile({
+      desc: '用于完善会员资料',
+      success: (res) => {
+        const info = res.userInfo || {};
+        this.doLogin({
+          id: 'wx_' + Date.now().toString().slice(-6),
+          name: info.nickName || '微信用户',
+          avatar: info.avatarUrl || DEFAULT_AVATAR,
+          desc: '这个人很懒，什么都没留下',
+          fans: 0,
+          follows: 0,
+          likes: 0,
+          vip: false,
+        });
+      },
+      fail: () => toast('已取消授权'),
     });
   },
 

@@ -22,7 +22,7 @@
       class="type-tab {{noteType === 'course' ? 'active' : ''}}"
       data-type="course"
       bindtap="onTypeChange"
-    >课程（获取资料）</view>
+    >收费笔记</view>
   </view>
 
   <view class="form">
@@ -43,7 +43,7 @@
       auto-height
     />
 
-    <!-- 课程资料链接（课程类型显示） -->
+    <!-- 课程资料链接（收费笔记显示） -->
     <view wx:if="{{noteType === 'course'}}" class="course-row">
       <text class="course-label">📦 资料地址（百度网盘等）</text>
       <textarea
@@ -56,20 +56,6 @@
       />
     </view>
 
-    <!-- 标签 -->
-    <view class="tag-row">
-      <text class="tag-label"># 添加话题</text>
-      <view class="tag-list">
-        <view
-          wx:for="{{presetTags}}"
-          wx:key="*this"
-          class="tag-chip {{tags.indexOf(item) > -1 ? 'active' : ''}}"
-          data-tag="{{item}}"
-          bindtap="toggleTag"
-        >#{{item}}</view>
-      </view>
-    </view>
-
     <view class="cat-row">
       <text class="cat-label">分类</text>
       <picker mode="selector" range="{{categories}}" value="{{catIndex}}" bindchange="onCat">
@@ -79,6 +65,7 @@
   </view>
 
   <view class="footer">
+    <view class="draft-btn" bindtap="onSaveDraft">存草稿</view>
     <button class="publish-btn" bindtap="onPublish">发布笔记</button>
   </view>
 </view>

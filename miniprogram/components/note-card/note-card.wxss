@@ -5,11 +5,11 @@
   overflow: hidden;
   margin-bottom: 16rpx;
 }
-.course-tag {
+.cat-tag {
   position: absolute;
   left: 16rpx;
   top: 16rpx;
-  background: #ff2442;
+  background: rgba(0, 0, 0, .45);
   color: #fff;
   font-size: 20rpx;
   padding: 4rpx 14rpx;
