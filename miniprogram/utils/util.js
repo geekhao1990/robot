@@ -26,4 +26,22 @@ function toast(title, icon = 'none') {
   wx.showToast({ title, icon });
 }
 
-module.exports = { formatCount, fromNow, toast };
+/** 更新底部「消息」tab 的未读数字角标（index = 2） */
+function updateMessageBadge() {
+  const data = require('../mock/data');
+  const store = require('./store');
+  const noop = () => {};
+  if (!store.isLogin()) {
+    wx.removeTabBarBadge({ index: 2, fail: noop });
+    return;
+  }
+  let count = data.notifications.length;
+  data.conversations.forEach((c) => (count += c.unread || 0));
+  if (count > 0) {
+    wx.setTabBarBadge({ index: 2, text: count > 99 ? '99+' : String(count), fail: noop });
+  } else {
+    wx.removeTabBarBadge({ index: 2, fail: noop });
+  }
+}
+
+module.exports = { formatCount, fromNow, toast, updateMessageBadge };

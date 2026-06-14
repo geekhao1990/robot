@@ -1,6 +1,7 @@
 const api = require('../../utils/api');
 const store = require('../../utils/store');
-const { formatCount } = require('../../utils/util');
+const mock = require('../../mock/data');
+const { formatCount, updateMessageBadge } = require('../../utils/util');
 
 Page({
   data: {
@@ -8,6 +9,8 @@ Page({
     navBarHeight: 44,
     user: null,
     likeCollectCount: '0',
+    followCount: 0,
+    fansCount: 0,
     tabs: ['笔记', '收藏', '赞过'],
     tabIndex: 0,
     currentNotes: [],
@@ -25,13 +28,51 @@ Page({
   },
 
   onShow() {
+    updateMessageBadge();
     const user = store.getUser();
-    let likeCollectCount = '0';
     if (user) {
-      likeCollectCount = formatCount((user.likes || 0));
+      const s = this.computeStats();
+      this.setData({
+        user,
+        likeCollectCount: formatCount(s.likes + s.collects),
+        followCount: store.followedIds().length,
+        fansCount: mock.users.length,
+      });
+    } else {
+      this.setData({ user, likeCollectCount: '0', followCount: 0, fansCount: 0 });
     }
-    this.setData({ user, likeCollectCount });
     this.loadTab(this.data.tabIndex);
+  },
+
+  // 统计我的发布笔记数 / 获得点赞数 / 获得收藏数
+  computeStats() {
+    const notes = store.getMyNotes();
+    let likes = 0, collects = 0;
+    notes.forEach((n) => {
+      likes += n.likes || 0;
+      collects += n.collects || 0;
+    });
+    return { noteCount: notes.length, likes, collects };
+  },
+
+  goRelations(e) {
+    const type = e.currentTarget.dataset.type;
+    wx.navigateTo({ url: `/pages/relations/relations?type=${type}` });
+  },
+
+  showStats() {
+    const s = this.computeStats();
+    wx.showModal({
+      title: '我的数据',
+      content: `发布笔记：${s.noteCount}\n获得点赞：${s.likes}\n获得收藏：${s.collects}`,
+      showCancel: false,
+      confirmText: '知道了',
+    });
+  },
+
+  onPullDownRefresh() {
+    this.onShow();
+    wx.stopPullDownRefresh();
   },
 
   onTab(e) {

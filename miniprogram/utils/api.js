@@ -123,6 +123,17 @@ function getConversation(id) {
   return delay({ ...c, user: data.userMap[c.userId] });
 }
 
+// ---------------- 关注 / 粉丝 ----------------
+function getFollowing() {
+  const list = store.followedIds().map((id) => data.userMap[id]).filter(Boolean);
+  return delay(list);
+}
+
+function getFans() {
+  // 演示数据：以 mock 用户作为粉丝
+  return delay(data.users.slice());
+}
+
 module.exports = {
   getFeed,
   getNoteById,
@@ -135,4 +146,6 @@ module.exports = {
   getNotifications,
   getConversations,
   getConversation,
+  getFollowing,
+  getFans,
 };

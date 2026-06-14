@@ -1,5 +1,6 @@
 const api = require('../../utils/api');
 const store = require('../../utils/store');
+const { updateMessageBadge } = require('../../utils/util');
 
 Page({
   data: {
@@ -36,6 +37,7 @@ Page({
   },
 
   onShow() {
+    updateMessageBadge();
     // 「关注」tab 依赖关注状态，返回首页时刷新
     if (this.data.tab === 'follow') {
       this.setData({ page: 1, hasMore: true });

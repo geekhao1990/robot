@@ -1,0 +1,21 @@
+<view class="page">
+  <view wx:if="{{!list.length}}" class="placeholder">{{emptyText}}</view>
+  <view
+    wx:for="{{list}}"
+    wx:key="id"
+    class="item"
+    data-id="{{item.id}}"
+    bindtap="goUser"
+  >
+    <image class="avatar" src="{{item.avatar}}" mode="aspectFill" />
+    <view class="info">
+      <text class="name">{{item.name}}</text>
+      <text class="desc ellipsis">{{item.desc}}</text>
+    </view>
+    <view
+      class="btn {{item.followed ? 'followed' : ''}}"
+      data-id="{{item.id}}"
+      catchtap="toggleFollow"
+    >{{item.followed ? '已关注' : '+ 关注'}}</view>
+  </view>
+</view>

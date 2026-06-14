@@ -95,6 +95,9 @@ function likedIds() {
 function collectedIds() {
   return Object.keys(state.collects).sort((a, b) => state.collects[b] - state.collects[a]);
 }
+function followedIds() {
+  return Object.keys(state.follows).sort((a, b) => state.follows[b] - state.follows[a]);
+}
 
 // ---------- 我发布的笔记 ----------
 function getMyNotes() {
@@ -111,6 +114,6 @@ module.exports = {
   isLiked, toggleLike,
   isCollected, toggleCollect,
   isFollowed, toggleFollow,
-  likedIds, collectedIds,
+  likedIds, collectedIds, followedIds,
   getMyNotes, addMyNote,
 };

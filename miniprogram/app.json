@@ -7,6 +7,7 @@
     "pages/message/message",
     "pages/notify/notify",
     "pages/chat/chat",
+    "pages/relations/relations",
     "pages/profile/profile",
     "pages/login/login",
     "pages/user/user"

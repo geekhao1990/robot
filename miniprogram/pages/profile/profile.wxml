@@ -13,9 +13,15 @@
         </view>
         <view class="desc">{{user.desc || '点击编辑，填写简介'}}</view>
         <view class="stats">
-          <view class="stat"><text class="num">{{user.follows || 0}}</text><text class="label">关注</text></view>
-          <view class="stat"><text class="num">{{user.fans || 0}}</text><text class="label">粉丝</text></view>
-          <view class="stat"><text class="num">{{likeCollectCount}}</text><text class="label">获赞与收藏</text></view>
+          <view class="stat" data-type="follow" bindtap="goRelations">
+            <text class="num">{{followCount}}</text><text class="label">关注</text>
+          </view>
+          <view class="stat" data-type="fans" bindtap="goRelations">
+            <text class="num">{{fansCount}}</text><text class="label">粉丝</text>
+          </view>
+          <view class="stat" bindtap="showStats">
+            <text class="num">{{likeCollectCount}}</text><text class="label">获赞与收藏</text>
+          </view>
         </view>
         <view class="logout" bindtap="onLogout">退出登录</view>
       </block>
