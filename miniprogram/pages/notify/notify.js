@@ -1,5 +1,6 @@
 const api = require('../../utils/api');
-const { fromNow, toast } = require('../../utils/util');
+const store = require('../../utils/store');
+const { fromNow } = require('../../utils/util');
 
 const ACTION = {
   like: '赞了你的笔记',
@@ -33,6 +34,7 @@ Page({
   },
 
   load(type) {
+    store.markNotifyRead(type); // 查看后标记该类已读
     // 「赞和收藏」合并 like 与 collect
     api.getNotifications('all').then((all) => {
       let list = all;

@@ -26,17 +26,16 @@ Page({
   },
 
   loadData() {
-    api.getNotifications('all').then((list) => {
-      this.setData({
-        likeCount: list.filter((n) => n.type === 'like' || n.type === 'collect').length,
-        followCount: list.filter((n) => n.type === 'follow').length,
-        commentCount: list.filter((n) => n.type === 'comment').length,
-      });
-    });
+    const u = store.messageUnread();
+    this.setData({ likeCount: u.like, followCount: u.follow, commentCount: u.comment });
 
     api.getConversations().then((list) => {
       this.setData({
-        conversations: list.map((c) => ({ ...c, timeText: fromNow(Date.now() - c.time * 3600 * 1000) })),
+        conversations: list.map((c) => ({
+          ...c,
+          unread: store.isConvRead(c.id) ? 0 : c.unread,
+          timeText: fromNow(Date.now() - c.time * 3600 * 1000),
+        })),
       });
     });
   },

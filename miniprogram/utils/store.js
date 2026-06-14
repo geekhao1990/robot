@@ -1,12 +1,15 @@
 // utils/store.js
 // 本地状态管理：用户登录态、点赞/收藏/关注、已发布笔记，持久化到 Storage。
 
+const data = require('../mock/data');
+
 const KEY = {
   USER: 'xhs_user',
   LIKES: 'xhs_likes',
   COLLECTS: 'xhs_collects',
   FOLLOWS: 'xhs_follows',
   MY_NOTES: 'xhs_my_notes',
+  READ: 'xhs_read',
 };
 
 let state = {
@@ -15,6 +18,7 @@ let state = {
   collects: {},
   follows: {},
   myNotes: [],
+  read: { notify: {}, conv: {} },
 };
 
 function load(key, fallback) {
@@ -38,6 +42,7 @@ function init() {
   state.collects = load(KEY.COLLECTS, {});
   state.follows = load(KEY.FOLLOWS, {});
   state.myNotes = load(KEY.MY_NOTES, []);
+  state.read = load(KEY.READ, { notify: {}, conv: {} });
 }
 
 // ---------- 用户 ----------
@@ -108,6 +113,41 @@ function addMyNote(note) {
   save(KEY.MY_NOTES, state.myNotes);
 }
 
+// ---------- 消息已读状态 ----------
+function markNotifyRead(type) {
+  state.read.notify[type] = true;
+  save(KEY.READ, state.read);
+}
+function isNotifyRead(type) {
+  return !!state.read.notify[type];
+}
+function markConvRead(id) {
+  state.read.conv[id] = true;
+  save(KEY.READ, state.read);
+}
+function isConvRead(id) {
+  return !!state.read.conv[id];
+}
+
+// 计算各类未读数（已读则归零）
+function messageUnread() {
+  if (!state.user) return { like: 0, comment: 0, follow: 0, conv: 0, total: 0 };
+  let like = 0, comment = 0, follow = 0;
+  data.notifications.forEach((n) => {
+    if (n.type === 'like' || n.type === 'collect') like++;
+    else if (n.type === 'comment') comment++;
+    else if (n.type === 'follow') follow++;
+  });
+  if (state.read.notify.like) like = 0;
+  if (state.read.notify.comment) comment = 0;
+  if (state.read.notify.follow) follow = 0;
+  let conv = 0;
+  data.conversations.forEach((c) => {
+    if (!state.read.conv[c.id]) conv += c.unread || 0;
+  });
+  return { like, comment, follow, conv, total: like + comment + follow + conv };
+}
+
 module.exports = {
   init,
   getUser, setUser, logout, isLogin,
@@ -116,4 +156,5 @@ module.exports = {
   isFollowed, toggleFollow,
   likedIds, collectedIds, followedIds,
   getMyNotes, addMyNote,
+  markNotifyRead, isNotifyRead, markConvRead, isConvRead, messageUnread,
 };

@@ -18,6 +18,7 @@ Page({
   },
 
   onLoad(options) {
+    store.markConvRead(options.id); // 查看后清除该会话未读
     const user = store.getUser();
     if (user && user.avatar) this.setData({ myAvatar: user.avatar });
 
