@@ -1,0 +1,27 @@
+<view class="page">
+  <scroll-view class="msgs" scroll-y scroll-into-view="{{scrollTo}}" scroll-with-animation>
+    <view
+      wx:for="{{messages}}"
+      wx:key="_k"
+      class="msg {{item.fromMe ? 'mine' : 'theirs'}}"
+    >
+      <image wx:if="{{!item.fromMe}}" class="m-avatar" src="{{peer.avatar}}" mode="aspectFill" />
+      <view class="bubble">{{item.text}}</view>
+      <image wx:if="{{item.fromMe}}" class="m-avatar" src="{{myAvatar}}" mode="aspectFill" />
+    </view>
+    <view id="bottom" style="height:1px;"></view>
+  </scroll-view>
+
+  <view class="inputbar">
+    <input
+      class="input"
+      value="{{draft}}"
+      placeholder="发送消息..."
+      confirm-type="send"
+      bindinput="onInput"
+      bindconfirm="onSend"
+      adjust-position="{{true}}"
+    />
+    <view class="send-btn {{draft ? 'active' : ''}}" bindtap="onSend">发送</view>
+  </view>
+</view>

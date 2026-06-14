@@ -4,9 +4,13 @@ Page({
   data: {
     statusBarHeight: 20,
     navBarHeight: 44,
-    headerHeight: 120,
-    categories: ['推荐'],
-    category: '推荐',
+    headerHeight: 64,
+    navTabs: [
+      { key: 'home', label: '首页' },
+      { key: 'discover', label: '发现' },
+      { key: 'follow', label: '关注' },
+    ],
+    tab: 'discover',
     left: [],
     right: [],
     leftH: 0,
@@ -14,21 +18,28 @@ Page({
     page: 1,
     hasMore: true,
     loading: false,
+    emptyText: '这里还没有内容～',
   },
 
   onLoad() {
     const app = getApp();
     const statusBarHeight = app.globalData.statusBarHeight;
     const navBarHeight = app.globalData.navBarHeight;
-    // 头部高度 ≈ 状态栏 + 导航栏 + 分类标签(约 50px)
     this.setData({
       statusBarHeight,
       navBarHeight,
-      headerHeight: statusBarHeight + navBarHeight + 50,
+      headerHeight: statusBarHeight + navBarHeight,
     });
 
-    api.getCategories().then((cats) => this.setData({ categories: cats }));
     this.loadFeed(true);
+  },
+
+  onShow() {
+    // 「关注」tab 依赖关注状态，返回首页时刷新
+    if (this.data.tab === 'follow') {
+      this.setData({ page: 1, hasMore: true });
+      this.loadFeed(true);
+    }
   },
 
   // 瀑布流分列：累计高度短的一列优先放入
@@ -57,21 +68,24 @@ Page({
       this.setData({ left: [], right: [], leftH: 0, rightH: 0 });
     }
 
-    api.getFeed({ category: this.data.category, page, size: 8 }).then((res) => {
+    api.getFeed({ tab: this.data.tab, page, size: 8 }).then((res) => {
       this.distribute(res.list);
       this.setData({
         page: page + 1,
         hasMore: res.hasMore,
         loading: false,
+        emptyText: this.data.tab === 'follow'
+          ? '还没有关注的人发布内容，去发现页逛逛吧~'
+          : '这里还没有内容～',
       });
       wx.stopPullDownRefresh();
     });
   },
 
   onTabChange(e) {
-    const cat = e.currentTarget.dataset.cat;
-    if (cat === this.data.category) return;
-    this.setData({ category: cat, page: 1, hasMore: true });
+    const tab = e.currentTarget.dataset.tab;
+    if (tab === this.data.tab) return;
+    this.setData({ tab, page: 1, hasMore: true });
     this.loadFeed(true);
   },
 

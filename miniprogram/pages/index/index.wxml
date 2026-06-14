@@ -2,28 +2,24 @@
   <!-- 自定义头部 -->
   <view class="header" style="padding-top: {{statusBarHeight}}px;">
     <view class="nav" style="height: {{navBarHeight}}px;">
-      <view class="search-bar" bindtap="goSearch">
-        <text class="search-icon">🔍</text>
-        <text class="search-ph">搜索你感兴趣的内容</text>
+      <view class="nav-tabs">
+        <view
+          wx:for="{{navTabs}}"
+          wx:key="key"
+          class="nav-tab {{item.key === tab ? 'active' : ''}}"
+          data-tab="{{item.key}}"
+          bindtap="onTabChange"
+        >{{item.label}}</view>
       </view>
+      <view class="search-btn" bindtap="goSearch">🔍</view>
     </view>
-    <!-- 分类标签 -->
-    <scroll-view class="tabs" scroll-x enhanced show-scrollbar="{{false}}">
-      <view
-        wx:for="{{categories}}"
-        wx:key="*this"
-        class="tab {{item === category ? 'active' : ''}}"
-        data-cat="{{item}}"
-        bindtap="onTabChange"
-      >{{item}}</view>
-    </scroll-view>
   </view>
 
   <!-- 内容区 -->
   <view class="content" style="padding-top: {{headerHeight}}px;">
     <view wx:if="{{loading && !left.length && !right.length}}" class="placeholder">加载中...</view>
 
-    <view wx:elif="{{!left.length && !right.length}}" class="placeholder">这里还没有内容～</view>
+    <view wx:elif="{{!left.length && !right.length}}" class="placeholder">{{emptyText}}</view>
 
     <view wx:else class="waterfall">
       <view class="column">

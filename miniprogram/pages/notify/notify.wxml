@@ -1,0 +1,27 @@
+<view class="page">
+  <view class="tabs">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="tab {{item.key === type ? 'active' : ''}}"
+      data-type="{{item.key}}"
+      bindtap="onTab"
+    >{{item.label}}</view>
+  </view>
+
+  <view class="list">
+    <view wx:if="{{!list.length}}" class="placeholder">暂无通知</view>
+    <view wx:for="{{list}}" wx:key="id" class="item" data-note="{{item.noteId}}" bindtap="goDetail">
+      <image class="avatar" src="{{item.user.avatar}}" mode="aspectFill" data-uid="{{item.userId}}" catchtap="goUser" />
+      <view class="body">
+        <view class="top">
+          <text class="name">{{item.user.name}}</text>
+          <text class="action">{{item.actionText}}</text>
+        </view>
+        <text class="time">{{item.timeText}}</text>
+      </view>
+      <image wx:if="{{item.note}}" class="thumb" src="{{item.note.cover}}" mode="aspectFill" />
+      <view wx:elif="{{item.type === 'follow'}}" class="follow-back">回关</view>
+    </view>
+  </view>
+</view>

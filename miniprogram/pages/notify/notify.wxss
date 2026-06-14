@@ -1,0 +1,82 @@
+.page {
+  min-height: 100vh;
+  background: #fff;
+}
+.tabs {
+  display: flex;
+  border-bottom: 1rpx solid #f0f0f0;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 26rpx 0;
+  font-size: 28rpx;
+  color: #666;
+}
+.tab.active {
+  color: #333;
+  font-weight: 700;
+}
+.tab.active::after {
+  content: '';
+  display: block;
+  width: 40rpx;
+  height: 6rpx;
+  background: #ff2442;
+  border-radius: 999rpx;
+  margin: 10rpx auto 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 30rpx;
+}
+.avatar {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 50%;
+  margin-right: 22rpx;
+  flex-shrink: 0;
+}
+.body {
+  flex: 1;
+  min-width: 0;
+}
+.top {
+  font-size: 28rpx;
+}
+.name {
+  font-weight: 600;
+  color: #333;
+}
+.action {
+  color: #666;
+  margin-left: 8rpx;
+}
+.time {
+  display: block;
+  font-size: 22rpx;
+  color: #bbb;
+  margin-top: 10rpx;
+}
+.thumb {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 8rpx;
+  margin-left: 16rpx;
+  flex-shrink: 0;
+}
+.follow-back {
+  font-size: 24rpx;
+  color: #ff2442;
+  border: 1rpx solid #ff2442;
+  border-radius: 999rpx;
+  padding: 8rpx 24rpx;
+  margin-left: 16rpx;
+  flex-shrink: 0;
+}

@@ -147,6 +147,47 @@ notes.forEach((n) => (noteMap[n.id] = n));
 const categories = ['推荐', '旅行', '美食', '穿搭', '健身', '家居', '数码'];
 const hotSearch = ['多巴胺穿搭', 'citywalk', '露营', '美拉德', '特种兵旅行', '抄作业', '平价好物', '减脂餐'];
 
+// ---------------- 消息：通知（赞/收藏/关注/评论） ----------------
+const notifications = [
+  { id: 'm1', type: 'like', userId: 'u3', noteId: 'n1', text: '赞了你的笔记', time: 0.2 },
+  { id: 'm2', type: 'collect', userId: 'u4', noteId: 'n1', text: '收藏了你的笔记', time: 0.5 },
+  { id: 'm3', type: 'comment', userId: 'u2', noteId: 'n5', text: '评论了你的笔记：太实用了，已收藏！', time: 1 },
+  { id: 'm4', type: 'follow', userId: 'u5', text: '关注了你', time: 2 },
+  { id: 'm5', type: 'like', userId: 'u6', noteId: 'n5', text: '赞了你的笔记', time: 3 },
+  { id: 'm6', type: 'like', userId: 'u2', noteId: 'n1', text: '赞了你的笔记', time: 5 },
+  { id: 'm7', type: 'collect', userId: 'u1', noteId: 'n5', text: '收藏了你的笔记', time: 8 },
+  { id: 'm8', type: 'follow', userId: 'u6', text: '关注了你', time: 26 },
+  { id: 'm9', type: 'comment', userId: 'u4', noteId: 'n1', text: '评论了你的笔记：请问机位在哪呀～', time: 30 },
+];
+
+// ---------------- 消息：私信会话 ----------------
+const conversations = [
+  {
+    id: 'c1', userId: 'u2', unread: 2, time: 0.1,
+    messages: [
+      { fromMe: false, text: '在吗？看到你那篇早餐笔记啦', time: 1 },
+      { fromMe: true, text: '在的～有什么问题嘛', time: 0.8 },
+      { fromMe: false, text: '请问那个燕麦奶是哪个牌子的呀', time: 0.3 },
+      { fromMe: false, text: '想自己也试试 😋', time: 0.1 },
+    ],
+  },
+  {
+    id: 'c2', userId: 'u3', unread: 0, time: 2,
+    messages: [
+      { fromMe: false, text: '你的穿搭真好看！求链接～', time: 5 },
+      { fromMe: true, text: '已经私你啦，记得查收', time: 2 },
+    ],
+  },
+  {
+    id: 'c3', userId: 'u5', unread: 1, time: 24,
+    messages: [
+      { fromMe: false, text: '改造那期的落地灯能分享下吗', time: 26 },
+      { fromMe: true, text: '可以呀，我整理下发你', time: 25 },
+      { fromMe: false, text: '太感谢啦 🥰', time: 24 },
+    ],
+  },
+];
+
 module.exports = {
   users,
   userMap,
@@ -154,4 +195,6 @@ module.exports = {
   noteMap,
   categories,
   hotSearch,
+  notifications,
+  conversations,
 };

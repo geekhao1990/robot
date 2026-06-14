@@ -27,11 +27,14 @@ function allNotes() {
   return [...store.getMyNotes(), ...data.notes];
 }
 
-// 首页 feed（按分类筛选 + 简单分页）
-function getFeed({ category = '推荐', page = 1, size = 10 } = {}) {
+// 首页 feed（按顶部 tab 筛选 + 简单分页）
+// tab: 'discover' 发现(推荐) | 'home' 首页(最新) | 'follow' 关注
+function getFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
   let list = allNotes();
-  if (category && category !== '推荐') {
-    list = list.filter((n) => n.category === category);
+  if (tab === 'home') {
+    list = list.slice().sort((a, b) => b.time - a.time);
+  } else if (tab === 'follow') {
+    list = list.filter((n) => store.isFollowed(n.authorId));
   }
   const start = (page - 1) * size;
   const slice = list.slice(start, start + size).map(decorate);
@@ -85,6 +88,41 @@ function getNotesByIds(ids) {
   return delay(ids.map((id) => map[id]).filter(Boolean).map(decorate));
 }
 
+// ---------------- 消息 ----------------
+function getNotifications(type) {
+  let list = data.notifications;
+  if (type && type !== 'all') {
+    list = list.filter((n) => n.type === type);
+  }
+  list = list.map((n) => ({
+    ...n,
+    user: data.userMap[n.userId],
+    note: n.noteId ? noteMapOf()[n.noteId] : null,
+  }));
+  return delay(list);
+}
+
+function noteMapOf() {
+  const map = {};
+  allNotes().forEach((n) => (map[n.id] = n));
+  return map;
+}
+
+function getConversations() {
+  const list = data.conversations.map((c) => ({
+    ...c,
+    user: data.userMap[c.userId],
+    lastMsg: c.messages[c.messages.length - 1],
+  }));
+  return delay(list);
+}
+
+function getConversation(id) {
+  const c = data.conversations.find((x) => x.id === id);
+  if (!c) return delay(null);
+  return delay({ ...c, user: data.userMap[c.userId] });
+}
+
 module.exports = {
   getFeed,
   getNoteById,
@@ -94,4 +132,7 @@ module.exports = {
   getUserById,
   getNotesByAuthor,
   getNotesByIds,
+  getNotifications,
+  getConversations,
+  getConversation,
 };

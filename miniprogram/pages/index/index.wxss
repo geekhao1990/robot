@@ -13,43 +13,44 @@
   background: #fff;
 }
 .nav {
-  display: flex;
-  align-items: center;
-  padding: 0 24rpx;
-}
-.search-bar {
-  flex: 1;
-  height: 64rpx;
-  background: #f3f3f3;
-  border-radius: 999rpx;
-  display: flex;
-  align-items: center;
-  padding: 0 24rpx;
-}
-.search-icon {
-  font-size: 26rpx;
-  margin-right: 12rpx;
-}
-.search-ph {
-  color: #999;
-  font-size: 26rpx;
-}
-
-.tabs {
-  white-space: nowrap;
-  padding: 8rpx 16rpx 12rpx;
-}
-.tab {
-  display: inline-block;
-  padding: 8rpx 24rpx;
-  font-size: 28rpx;
-  color: #666;
   position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 24rpx;
 }
-.tab.active {
+.nav-tabs {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nav-tab {
+  position: relative;
+  padding: 0 28rpx;
+  font-size: 30rpx;
+  color: #999;
+  line-height: 1;
+}
+.nav-tab.active {
   color: #333;
-  font-weight: 600;
-  font-size: 32rpx;
+  font-weight: 700;
+  font-size: 34rpx;
+}
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -14rpx;
+  transform: translateX(-50%);
+  width: 36rpx;
+  height: 6rpx;
+  background: #ff2442;
+  border-radius: 999rpx;
+}
+.search-btn {
+  position: absolute;
+  right: 24rpx;
+  font-size: 36rpx;
 }
 
 /* 内容 */
