@@ -1,14 +1,25 @@
 <view class="tab-bar">
-  <view
-    wx:for="{{list}}"
-    wx:key="text"
-    class="tab-item"
-    data-index="{{index}}"
-    bindtap="switchTab"
-  >
-    <view class="tab-text {{selected === index ? 'active' : ''}}">
-      {{item.text}}
-      <view wx:if="{{index === 2 && badge > 0}}" class="badge">{{badge > 99 ? '99+' : badge}}</view>
+  <block wx:for="{{list}}" wx:key="text">
+    <!-- 中间「+」发布按钮 -->
+    <view
+      wx:if="{{item.plus}}"
+      class="tab-item plus-item"
+      data-index="{{index}}"
+      bindtap="switchTab"
+    >
+      <view class="plus-btn">＋</view>
     </view>
-  </view>
+    <!-- 普通文字 tab -->
+    <view
+      wx:else
+      class="tab-item"
+      data-index="{{index}}"
+      bindtap="switchTab"
+    >
+      <view class="tab-text {{selected === index ? 'active' : ''}}">
+        {{item.text}}
+        <view wx:if="{{index === 3 && badge > 0}}" class="badge">{{badge > 99 ? '99+' : badge}}</view>
+      </view>
+    </view>
+  </block>
 </view>

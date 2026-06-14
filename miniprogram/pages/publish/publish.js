@@ -14,7 +14,7 @@ Page({
   },
 
   onShow() {
-    refreshTabBar(this, 1);
+    refreshTabBar(this, 2);
   },
 
   chooseImage() {

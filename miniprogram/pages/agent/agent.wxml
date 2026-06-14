@@ -1,0 +1,56 @@
+<view class="page">
+  <scroll-view
+    class="msgs"
+    scroll-y
+    scroll-into-view="{{scrollTo}}"
+    scroll-with-animation
+  >
+    <!-- 欢迎语 + 推荐问题 -->
+    <view wx:if="{{messages.length === 0}}" class="welcome">
+      <view class="logo">🤖</view>
+      <view class="hi">我是小红书 AI 助手</view>
+      <view class="sub">有什么可以帮你的吗？试试这些 👇</view>
+      <view class="suggests">
+        <view
+          wx:for="{{suggests}}"
+          wx:key="*this"
+          class="suggest"
+          data-q="{{item}}"
+          bindtap="onSuggest"
+        >{{item}}</view>
+      </view>
+    </view>
+
+    <view
+      wx:for="{{messages}}"
+      wx:key="id"
+      id="m{{item.id}}"
+      class="row {{item.role}}"
+    >
+      <view wx:if="{{item.role === 'assistant'}}" class="avatar bot">AI</view>
+      <view class="bubble {{item.role}}">
+        <text wx:if="{{item.typing}}" class="typing">正在思考</text>
+        <text wx:else>{{item.content}}</text>
+      </view>
+      <view wx:if="{{item.role === 'user'}}" class="avatar me">{{meInitial}}</view>
+    </view>
+
+    <view id="bottom" style="height: 2rpx;"></view>
+  </scroll-view>
+
+  <!-- 输入栏（文字，无图片上传） -->
+  <view class="inputbar">
+    <input
+      class="input"
+      value="{{draft}}"
+      placeholder="发消息给 AI 助手..."
+      confirm-type="send"
+      adjust-position="{{true}}"
+      cursor-spacing="16"
+      bindinput="onInput"
+      bindconfirm="onSend"
+      disabled="{{loading}}"
+    />
+    <view class="send {{draft && !loading ? 'active' : ''}}" bindtap="onSend">发送</view>
+  </view>
+</view>

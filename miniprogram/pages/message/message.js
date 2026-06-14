@@ -12,7 +12,7 @@ Page({
   },
 
   onShow() {
-    refreshTabBar(this, 2);
+    refreshTabBar(this, 3);
     const user = store.getUser();
     this.setData({ user });
     if (!user) return;
@@ -20,7 +20,7 @@ Page({
   },
 
   onPullDownRefresh() {
-    refreshTabBar(this, 2);
+    refreshTabBar(this, 3);
     if (store.getUser()) this.loadData();
     wx.stopPullDownRefresh();
   },

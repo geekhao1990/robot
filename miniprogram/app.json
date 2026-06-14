@@ -3,6 +3,7 @@
     "pages/index/index",
     "pages/detail/detail",
     "pages/search/search",
+    "pages/agent/agent",
     "pages/publish/publish",
     "pages/message/message",
     "pages/notify/notify",
@@ -29,6 +30,10 @@
       {
         "pagePath": "pages/index/index",
         "text": "首页"
+      },
+      {
+        "pagePath": "pages/agent/agent",
+        "text": "AI助手"
       },
       {
         "pagePath": "pages/publish/publish",

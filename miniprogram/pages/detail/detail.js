@@ -23,6 +23,8 @@ Page({
     replyTarget: null, // { cid, name } 回复目标
     // 转发
     showShare: false,
+    showFriends: false,
+    friends: [],
   },
 
   onLoad(options) {
@@ -219,12 +221,39 @@ Page({
   },
   noop() {},
 
+  // 微信好友：拉起好友列表（mock 数据模拟）
+  openFriends() {
+    api.getFriends().then((friends) => {
+      this.setData({ showShare: false, showFriends: true, friends });
+    });
+  },
+  closeFriends() {
+    this.setData({ showFriends: false });
+  },
+  backToShare() {
+    this.setData({ showFriends: false, showShare: true });
+  },
+  shareToFriend(e) {
+    const name = e.currentTarget.dataset.name;
+    const n = this.data.note;
+    wx.showModal({
+      title: '分享给好友',
+      content: `将《${n.title}》分享给「${name}」？`,
+      confirmText: '发送',
+      success: (res) => {
+        if (res.confirm) {
+          this.setData({ showFriends: false });
+          wx.showToast({ title: `已分享给${name}`, icon: 'success' });
+        }
+      },
+    });
+  },
+
   shareToOfficial() {
     const n = this.data.note;
     wx.setClipboardData({
       data: `${n.title} —— 来自小红书：/pages/detail/detail?id=${n.id}`,
       success: () => {
-        // setClipboardData 自带「已复制」提示
         wx.showModal({
           title: '分享到公众号',
           content: '内容链接已复制，可粘贴到微信公众号编辑器中发布。',
@@ -236,25 +265,12 @@ Page({
     this.setData({ showShare: false });
   },
 
-  shareTimelineTip() {
-    this.setData({ showShare: false });
-    wx.showToast({ title: '点击右上角···分享到朋友圈', icon: 'none' });
-  },
-
+  // 保留：从系统右上角菜单转发给好友/群
   onShareAppMessage() {
     const n = this.data.note;
     return {
       title: n.title,
       path: `/pages/detail/detail?id=${n.id}`,
-      imageUrl: n.cover,
-    };
-  },
-
-  onShareTimeline() {
-    const n = this.data.note;
-    return {
-      title: n.title,
-      query: `id=${n.id}`,
       imageUrl: n.cover,
     };
   },

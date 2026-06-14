@@ -28,7 +28,7 @@ Page({
   },
 
   onShow() {
-    refreshTabBar(this, 3);
+    refreshTabBar(this, 4);
     const user = store.getUser();
     if (user) {
       const s = this.computeStats();

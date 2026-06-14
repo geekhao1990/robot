@@ -5,13 +5,15 @@
   bottom: 0;
   z-index: 1000;
   display: flex;
-  height: 100rpx;
+  align-items: center;
+  height: 120rpx;
   padding-bottom: env(safe-area-inset-bottom);
   background: #ffffff;
   box-shadow: 0 -1rpx 0 #eee;
 }
 .tab-item {
   flex: 1;
+  height: 120rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -20,6 +22,7 @@
   position: relative;
   font-size: 30rpx;
   color: #999999;
+  line-height: 1;
   transition: font-size .12s ease, color .12s ease;
 }
 .tab-text.active {
@@ -27,10 +30,28 @@
   font-size: 36rpx;
   font-weight: 700;
 }
+
+/* 中间「+」按钮 */
+.plus-item {
+  flex: 1;
+}
+.plus-btn {
+  width: 96rpx;
+  height: 64rpx;
+  background: #ff2442;
+  color: #fff;
+  border-radius: 20rpx;
+  font-size: 56rpx;
+  font-weight: 300;
+  line-height: 60rpx;
+  text-align: center;
+  box-shadow: 0 6rpx 16rpx rgba(255, 36, 66, .35);
+}
+
 /* 角标：绝对定位，不占布局 */
 .badge {
   position: absolute;
-  top: -10rpx;
+  top: -12rpx;
   left: 100%;
   margin-left: 2rpx;
   min-width: 30rpx;

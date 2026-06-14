@@ -341,6 +341,68 @@
   background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNTU1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PHBhdGggZD0iTTQgMTJ2N2ExIDEgMCAwIDAgMSAxaDE0YTEgMSAwIDAgMCAxLTF2LTciLz48cGF0aCBkPSJNMTIgM3YxMiIvPjxwYXRoIGQ9Ik03LjUgNy41TDEyIDNsNC41IDQuNSIvPjwvc3ZnPg==");
 }
 
+/* 选择好友面板 */
+.friend-panel {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  max-height: 70vh;
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.friend-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+.friend-back {
+  font-size: 44rpx;
+  line-height: 1;
+  color: #333;
+  width: 60rpx;
+}
+.friend-title {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+.friend-cancel {
+  font-size: 28rpx;
+  color: #999;
+  width: 60rpx;
+  text-align: right;
+}
+.friend-list {
+  max-height: 56vh;
+}
+.friend-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx;
+}
+.friend-avatar {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 50%;
+  margin-right: 22rpx;
+  flex-shrink: 0;
+}
+.friend-name {
+  flex: 1;
+  font-size: 30rpx;
+  color: #333;
+}
+.friend-send {
+  font-size: 26rpx;
+  color: #fff;
+  background: #ff2442;
+  padding: 10rpx 28rpx;
+  border-radius: 999rpx;
+}
+
 /* 底部操作栏 */
 .actionbar {
   position: fixed;

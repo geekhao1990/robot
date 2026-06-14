@@ -134,6 +134,11 @@ function getFans() {
   return delay(data.users.slice());
 }
 
+function getFriends() {
+  // 演示数据：以 mock 用户作为可分享的好友
+  return delay(data.users.slice());
+}
+
 module.exports = {
   getFeed,
   getNoteById,
@@ -148,4 +153,5 @@ module.exports = {
   getConversation,
   getFollowing,
   getFans,
+  getFriends,
 };

@@ -135,20 +135,40 @@
     <view class="share-panel" catchtap="noop">
       <view class="share-title">分享给</view>
       <view class="share-opts">
-        <button class="share-opt" open-type="share" bindtap="closeShare">
+        <view class="share-opt" bindtap="openFriends">
           <view class="share-ic wx-friend"><text class="g">微</text></view>
           <text class="share-label">微信好友</text>
-        </button>
+        </view>
         <view class="share-opt" bindtap="shareToOfficial">
           <view class="share-ic wx-official"><text class="g">公</text></view>
           <text class="share-label">微信公众号</text>
         </view>
-        <view class="share-opt" bindtap="shareTimelineTip">
-          <view class="share-ic wx-timeline"><text class="g">圈</text></view>
-          <text class="share-label">朋友圈</text>
-        </view>
       </view>
       <view class="share-cancel" bindtap="closeShare">取消</view>
+    </view>
+  </view>
+
+  <!-- 选择好友 -->
+  <view wx:if="{{showFriends}}" class="share-mask" bindtap="closeFriends">
+    <view class="friend-panel" catchtap="noop">
+      <view class="friend-head">
+        <text class="friend-back" bindtap="backToShare">‹</text>
+        <text class="friend-title">选择好友</text>
+        <text class="friend-cancel" bindtap="closeFriends">取消</text>
+      </view>
+      <scroll-view class="friend-list" scroll-y>
+        <view
+          wx:for="{{friends}}"
+          wx:key="id"
+          class="friend-item"
+          data-name="{{item.name}}"
+          bindtap="shareToFriend"
+        >
+          <image class="friend-avatar" src="{{item.avatar}}" mode="aspectFill" />
+          <text class="friend-name">{{item.name}}</text>
+          <view class="friend-send">发送</view>
+        </view>
+      </scroll-view>
     </view>
   </view>
 </view>
