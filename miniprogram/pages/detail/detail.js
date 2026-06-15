@@ -256,7 +256,8 @@ Page({
   onGetCourse() {
     const user = store.getUser();
     if (!user) return this.requireLogin();
-    if (user.vip) return this.showCourse(); // VIP 跳过广告
+    const vipValid = user.vip && (!user.vipExpire || user.vipExpire > Date.now());
+    if (vipValid) return this.showCourse(); // VIP 跳过广告
     this.playRewardAd();
   },
 

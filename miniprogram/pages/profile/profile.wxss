@@ -69,6 +69,50 @@
   border-radius: 999rpx;
 }
 
+/* VIP 开通入口 */
+.vip-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 28rpx;
+  padding: 22rpx 26rpx;
+  background: linear-gradient(90deg, #3a2c18, #5c4523);
+  border-radius: 18rpx;
+}
+.vip-left {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.vip-crown {
+  font-size: 44rpx;
+  margin-right: 18rpx;
+}
+.vip-texts {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.vip-title {
+  color: #f7dca0;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+.vip-sub {
+  color: #d2bd95;
+  font-size: 22rpx;
+  margin-top: 6rpx;
+}
+.vip-go {
+  flex-shrink: 0;
+  background: linear-gradient(90deg, #f7dca0, #e9b765);
+  color: #5a3d0a;
+  font-size: 26rpx;
+  font-weight: 700;
+  padding: 12rpx 28rpx;
+  border-radius: 999rpx;
+}
+
 .tabs {
   display: flex;
   background: #fff;

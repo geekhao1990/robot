@@ -21,6 +21,7 @@ Page({
     draftCount: 0,
     draftTitle: '',
     draftCover: '',
+    vipExpireText: '',
   },
 
   onLoad() {
@@ -41,6 +42,7 @@ Page({
         likeCollectCount: formatCount(s.likes + s.collects),
         followCount: store.followedIds().length,
         fansCount: mock.users.length,
+        vipExpireText: user.vipExpire ? this.fmtDate(user.vipExpire) : '',
       });
     } else {
       this.setData({ user, likeCollectCount: '0', followCount: 0, fansCount: 0 });
@@ -63,6 +65,15 @@ Page({
   goDraft() {
     getApp().globalData.openDraft = true;
     wx.switchTab({ url: '/pages/publish/publish' });
+  },
+
+  goVip() {
+    wx.navigateTo({ url: '/pages/vip/vip' });
+  },
+
+  fmtDate(ts) {
+    const d = new Date(ts);
+    return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
   },
 
   // 统计我的发布笔记数 / 获得点赞数 / 获得收藏数

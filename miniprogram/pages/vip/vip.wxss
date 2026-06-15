@@ -1,0 +1,149 @@
+.page {
+  min-height: 100vh;
+  background: #2b2b35;
+  padding: 0 30rpx 200rpx;
+}
+
+.header {
+  text-align: center;
+  padding: 50rpx 0 40rpx;
+}
+.avatar {
+  width: 130rpx;
+  height: 130rpx;
+  border-radius: 50%;
+  border: 4rpx solid #f5d18b;
+}
+.h-name {
+  color: #f5d9a8;
+  font-size: 34rpx;
+  font-weight: 700;
+  margin-top: 18rpx;
+}
+.h-status {
+  color: #b9a98a;
+  font-size: 24rpx;
+  margin-top: 10rpx;
+}
+
+/* 套餐 */
+.plans {
+  display: flex;
+  gap: 24rpx;
+}
+.plan {
+  flex: 1;
+  position: relative;
+  background: #3a3a45;
+  border: 2rpx solid #4a4a55;
+  border-radius: 20rpx;
+  padding: 36rpx 20rpx 30rpx;
+  text-align: center;
+}
+.plan.active {
+  background: linear-gradient(160deg, #4a3f2e, #3a3a45);
+  border-color: #f5d18b;
+}
+.plan-badge {
+  position: absolute;
+  top: -16rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #f5d18b;
+  color: #5a3d0a;
+  font-size: 20rpx;
+  font-weight: 700;
+  padding: 4rpx 18rpx;
+  border-radius: 999rpx;
+  white-space: nowrap;
+}
+.plan-name {
+  color: #f5d9a8;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+.plan-price {
+  color: #f5d18b;
+  font-size: 56rpx;
+  font-weight: 800;
+  margin-top: 14rpx;
+}
+.plan-price .cur {
+  font-size: 28rpx;
+}
+.plan-price .unit {
+  font-size: 24rpx;
+  color: #b9a98a;
+  font-weight: 400;
+}
+
+/* 权益 */
+.rights {
+  background: #34343f;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-top: 40rpx;
+}
+.rights-title {
+  color: #f5d9a8;
+  font-size: 28rpx;
+  font-weight: 700;
+  margin-bottom: 24rpx;
+}
+.right-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 22rpx;
+}
+.dot {
+  color: #f5d18b;
+  font-size: 26rpx;
+  margin-right: 16rpx;
+  line-height: 1.5;
+}
+.right-text {
+  flex: 1;
+  color: #ddd;
+  font-size: 28rpx;
+  line-height: 1.5;
+}
+
+/* 底部支付 */
+.footer {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: #23232b;
+}
+.pay-info {
+  flex: 1;
+}
+.pay-label {
+  color: #999;
+  font-size: 24rpx;
+}
+.pay-price {
+  color: #f5d18b;
+  font-size: 40rpx;
+  font-weight: 800;
+  margin-left: 10rpx;
+}
+.pay-btn {
+  background: linear-gradient(90deg, #f7dca0, #e9b765);
+  color: #5a3d0a;
+  font-size: 32rpx;
+  font-weight: 700;
+  padding: 20rpx 70rpx;
+  border-radius: 999rpx;
+}
+.tip {
+  position: fixed;
+  bottom: calc(120rpx + env(safe-area-inset-bottom));
+  left: 30rpx; right: 30rpx;
+  text-align: center;
+  color: #777;
+  font-size: 22rpx;
+}

@@ -1,0 +1,43 @@
+<view class="page">
+  <!-- 头部 -->
+  <view class="header">
+    <image class="avatar" src="{{user.avatar}}" mode="aspectFill" wx:if="{{user}}" />
+    <view class="h-name">{{user ? user.name : '未登录'}}</view>
+    <view class="h-status">{{user && user.vip ? ('会员有效期至 ' + vipExpireText) : '开通会员，畅享专属权益'}}</view>
+  </view>
+
+  <!-- 套餐 -->
+  <view class="plans">
+    <view
+      wx:for="{{plans}}"
+      wx:key="id"
+      class="plan {{selected === index ? 'active' : ''}}"
+      data-index="{{index}}"
+      bindtap="onSelect"
+    >
+      <view wx:if="{{item.badge}}" class="plan-badge">{{item.badge}}</view>
+      <view class="plan-name">{{item.name}}</view>
+      <view class="plan-price"><text class="cur">¥</text>{{item.price}}<text class="unit">/{{item.unit}}</text></view>
+    </view>
+  </view>
+
+  <!-- 权益 -->
+  <view class="rights">
+    <view class="rights-title">{{plans[selected].name}}· 包含权益</view>
+    <view wx:for="{{plans[selected].features}}" wx:key="*this" class="right-item">
+      <text class="dot">✓</text>
+      <text class="right-text">{{item}}</text>
+    </view>
+  </view>
+
+  <!-- 底部支付 -->
+  <view class="footer">
+    <view class="pay-info">
+      <text class="pay-label">合计</text>
+      <text class="pay-price">¥{{plans[selected].price}}</text>
+    </view>
+    <view class="pay-btn" bindtap="onPay">{{user && user.vip ? '续费会员' : '立即开通'}}</view>
+  </view>
+
+  <view class="tip">开通即视为同意《会员服务协议》（演示，未接入真实支付）</view>
+</view>

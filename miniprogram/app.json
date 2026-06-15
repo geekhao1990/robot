@@ -10,6 +10,7 @@
     "pages/chat/chat",
     "pages/relations/relations",
     "pages/profile/profile",
+    "pages/vip/vip",
     "pages/login/login",
     "pages/user/user"
   ],
