@@ -3,9 +3,30 @@
 
 const data = require('../mock/data');
 const store = require('./store');
+const config = require('./config');
 
 function delay(result, ms = 300) {
   return new Promise((resolve) => setTimeout(() => resolve(result), ms));
+}
+
+function remote() {
+  return !!config.useRemote;
+}
+
+// 简单 GET 请求封装
+function http(path, query) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      url: config.baseUrl + path,
+      data: query || {},
+      method: 'GET',
+      success: (r) => {
+        if (r.statusCode >= 200 && r.statusCode < 300) resolve(r.data);
+        else reject(r);
+      },
+      fail: reject,
+    });
+  });
 }
 
 // 合并用户交互状态到笔记：若用户已点赞/收藏，则在基础数上 +1 并标记状态
@@ -30,6 +51,15 @@ function allNotes() {
 // 首页 feed（按顶部 tab 筛选 + 简单分页）
 // tab: 'discover' 发现(推荐) | 'home' 首页(最新) | 'follow' 关注
 function getFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
+  if (remote()) {
+    return http('/api/feed', { tab, page, size })
+      .then((r) => ({ list: (r.list || []).map(decorate), hasMore: r.hasMore, total: r.total }))
+      .catch(() => mockFeed({ tab, page, size }));
+  }
+  return mockFeed({ tab, page, size });
+}
+
+function mockFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
   let list = allNotes();
   if (tab === 'home') {
     list = list.slice().sort((a, b) => b.time - a.time);
@@ -46,21 +76,37 @@ function getFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
 }
 
 function getNoteById(id) {
+  if (remote()) {
+    return http('/api/notes/' + id)
+      .then((n) => decorate(n))
+      .catch(() => delay(decorate(allNotes().find((n) => n.id === id))));
+  }
   const note = allNotes().find((n) => n.id === id);
   return delay(decorate(note));
 }
 
 function getCategories() {
+  if (remote()) return http('/api/categories').catch(() => delay(data.categories, 0));
   return delay(data.categories, 0);
 }
 
 function getHotSearch() {
+  if (remote()) return http('/api/hotSearch').catch(() => delay(data.hotSearch, 0));
   return delay(data.hotSearch, 0);
 }
 
 function search(keyword) {
   const kw = (keyword || '').trim();
   if (!kw) return delay([]);
+  if (remote()) {
+    return http('/api/search', { kw })
+      .then((list) => (list || []).map(decorate))
+      .catch(() => mockSearch(kw));
+  }
+  return mockSearch(kw);
+}
+
+function mockSearch(kw) {
   const list = allNotes()
     .filter(
       (n) =>
@@ -74,10 +120,16 @@ function search(keyword) {
 }
 
 function getUserById(id) {
+  if (remote()) return http('/api/users/' + id).catch(() => delay(data.userMap[id] || null));
   return delay(data.userMap[id] || null);
 }
 
 function getNotesByAuthor(authorId) {
+  if (remote()) {
+    return http('/api/users/' + authorId + '/notes')
+      .then((list) => (list || []).map(decorate))
+      .catch(() => delay(allNotes().filter((n) => n.authorId === authorId).map(decorate)));
+  }
   return delay(allNotes().filter((n) => n.authorId === authorId).map(decorate));
 }
 

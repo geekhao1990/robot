@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>小红书管理后台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; color: #333; background: #f5f6f8; }
+  :root { --primary: #ff2442; }
+  button { cursor: pointer; font-size: 14px; }
+  /* 登录 */
+  #login { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg,#ff9a9e,#ff2442); }
+  .login-card { background: #fff; padding: 40px; border-radius: 16px; width: 340px; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+  .login-card h1 { color: var(--primary); font-size: 24px; text-align: center; margin-bottom: 6px; }
+  .login-card p { text-align: center; color: #999; font-size: 13px; margin-bottom: 24px; }
+  .login-card input { width: 100%; padding: 12px 14px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 14px; font-size: 14px; }
+  .login-card button { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-size: 16px; }
+  .err { color: var(--primary); font-size: 13px; min-height: 18px; margin-bottom: 8px; }
+  /* 布局 */
+  #app { display: none; min-height: 100vh; }
+  .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 200px; background: #1f1f28; color: #ccc; padding: 20px 0; }
+  .sidebar .logo { color: #fff; font-size: 20px; font-weight: 700; padding: 0 24px 24px; }
+  .sidebar .logo span { color: var(--primary); }
+  .nav-item { padding: 14px 24px; cursor: pointer; font-size: 15px; }
+  .nav-item:hover { background: #2a2a36; }
+  .nav-item.active { background: var(--primary); color: #fff; }
+  .main { margin-left: 200px; padding: 0; }
+  .topbar { height: 60px; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; box-shadow: 0 1px 3px rgba(0,0,0,.06); position: sticky; top: 0; z-index: 5; }
+  .topbar h2 { font-size: 18px; }
+  .topbar .user { color: #666; font-size: 14px; }
+  .topbar .user button { margin-left: 14px; background: #f3f3f3; border: none; padding: 8px 16px; border-radius: 6px; }
+  .content { padding: 28px; }
+  /* 概览卡片 */
+  .cards { display: flex; gap: 20px; flex-wrap: wrap; }
+  .card { background: #fff; border-radius: 12px; padding: 24px; min-width: 180px; flex: 1; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+  .card .n { font-size: 34px; font-weight: 800; color: var(--primary); }
+  .card .l { color: #888; margin-top: 8px; font-size: 14px; }
+  /* 工具条 */
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .btn-primary { background: var(--primary); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; }
+  .btn-sm { padding: 5px 12px; border-radius: 6px; border: 1px solid #ddd; background: #fff; margin-right: 6px; }
+  .btn-sm.del { color: var(--primary); border-color: #ffccd2; }
+  /* 表格 */
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+  th, td { padding: 12px 14px; text-align: left; font-size: 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+  th { background: #fafafa; color: #666; font-weight: 600; }
+  td img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; background: #f3f3f3; color: #666; }
+  .tag.course { background: #fff0f2; color: var(--primary); }
+  .tag.vip { background: #fbf0d9; color: #b4690e; }
+  /* 弹窗 */
+  .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 20; }
+  .modal { background: #fff; border-radius: 12px; width: 520px; max-height: 86vh; overflow: auto; padding: 24px; }
+  .modal h3 { margin-bottom: 18px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
+  .field input, .field textarea, .field select { width: 100%; padding: 10px; border: 1px solid #eee; border-radius: 8px; font-size: 14px; }
+  .field textarea { min-height: 70px; resize: vertical; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+  .btn-cancel { background: #f3f3f3; border: none; padding: 10px 18px; border-radius: 8px; }
+  .hint { color:#999; font-size:12px; margin-top:4px; }
+</style>
+</head>
+<body>
+  <!-- 登录 -->
+  <div id="login">
+    <div class="login-card">
+      <h1>小红书<span>·</span>管理后台</h1>
+      <p>内容运营管理系统（演示）</p>
+      <div class="err" id="loginErr"></div>
+      <input id="username" placeholder="账号 (admin)" value="admin" />
+      <input id="password" type="password" placeholder="密码 (admin123)" value="admin123" />
+      <button onclick="doLogin()">登 录</button>
+    </div>
+  </div>
+
+  <!-- 主体 -->
+  <div id="app">
+    <div class="sidebar">
+      <div class="logo">小红书<span>·</span>后台</div>
+      <div class="nav-item active" data-view="overview" onclick="switchView('overview')">📊 数据概览</div>
+      <div class="nav-item" data-view="notes" onclick="switchView('notes')">📝 笔记管理</div>
+      <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
+      <div class="nav-item" data-view="categories" onclick="switchView('categories')">🏷️ 分类管理</div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <h2 id="viewTitle">数据概览</h2>
+        <div class="user"><span id="who"></span><button onclick="logout()">退出</button></div>
+      </div>
+      <div class="content" id="content"></div>
+    </div>
+  </div>
+
+  <div id="modalRoot"></div>
+
+<script>
+const API = '';
+let token = localStorage.getItem('admin_token') || '';
+let me = localStorage.getItem('admin_user') || '';
+
+function api(path, opts = {}) {
+  opts.headers = Object.assign({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, opts.headers || {});
+  return fetch(API + path, opts).then(async (r) => {
+    if (r.status === 401) { logout(); throw new Error('未登录'); }
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || '请求失败');
+    return data;
+  });
+}
+
+function doLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value.trim();
+  fetch(API + '/api/admin/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  }).then(async (r) => {
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || '登录失败');
+    token = d.token; me = d.username;
+    localStorage.setItem('admin_token', token);
+    localStorage.setItem('admin_user', me);
+    enterApp();
+  }).catch((e) => document.getElementById('loginErr').textContent = e.message);
+}
+
+function logout() {
+  token = ''; me = '';
+  localStorage.removeItem('admin_token'); localStorage.removeItem('admin_user');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login').style.display = 'flex';
+}
+
+function enterApp() {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('who').textContent = '👋 ' + me;
+  switchView('overview');
+}
+
+const TITLES = { overview: '数据概览', notes: '笔记管理', users: '用户管理', categories: '分类管理' };
+function switchView(v) {
+  document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === v));
+  document.getElementById('viewTitle').textContent = TITLES[v];
+  if (v === 'overview') renderOverview();
+  if (v === 'notes') renderNotes();
+  if (v === 'users') renderUsers();
+  if (v === 'categories') renderCategories();
+}
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+// 概览
+function renderOverview() {
+  api('/api/admin/stats').then((s) => {
+    document.getElementById('content').innerHTML = `
+      <div class="cards">
+        <div class="card"><div class="n">${s.notes}</div><div class="l">笔记总数</div></div>
+        <div class="card"><div class="n">${s.courses}</div><div class="l">收费笔记</div></div>
+        <div class="card"><div class="n">${s.users}</div><div class="l">用户总数</div></div>
+        <div class="card"><div class="n">${s.vipUsers}</div><div class="l">VIP 用户</div></div>
+        <div class="card"><div class="n">${s.categories}</div><div class="l">分类数</div></div>
+      </div>`;
+  });
+}
+
+// 笔记
+let _notes = [], _users = [], _cats = [];
+function renderNotes() {
+  Promise.all([api('/api/admin/notes'), api('/api/admin/users'), api('/api/admin/categories')])
+    .then(([notes, users, cats]) => {
+      _notes = notes; _users = users; _cats = cats;
+      const rows = notes.map((n) => `
+        <tr>
+          <td><img src="${esc(n.cover)}" /></td>
+          <td>${esc(n.title)}</td>
+          <td>${esc(n.author && n.author.name)}</td>
+          <td><span class="tag">${esc(n.category)}</span></td>
+          <td>${n.type === 'course' ? '<span class="tag course">收费</span>' : '普通'}</td>
+          <td>${n.likes} / ${n.collects}</td>
+          <td>
+            <button class="btn-sm" onclick='editNote("${n.id}")'>编辑</button>
+            <button class="btn-sm del" onclick='delNote("${n.id}")'>删除</button>
+          </td>
+        </tr>`).join('');
+      document.getElementById('content').innerHTML = `
+        <div class="toolbar"><div>共 ${notes.length} 篇</div><button class="btn-primary" onclick="editNote()">+ 新增笔记</button></div>
+        <table><thead><tr><th>封面</th><th>标题</th><th>作者</th><th>分类</th><th>类型</th><th>赞/藏</th><th>操作</th></tr></thead>
+        <tbody>${rows}</tbody></table>`;
+    });
+}
+
+function editNote(id) {
+  const n = id ? _notes.find((x) => x.id === id) : {};
+  const catOpts = _cats.map((c) => `<option ${n.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('');
+  const userOpts = _users.map((u) => `<option value="${u.id}" ${n.authorId === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
+  openModal(`${id ? '编辑' : '新增'}笔记`, `
+    <div class="field"><label>标题</label><input id="f_title" value="${esc(n.title)}" /></div>
+    <div class="field"><label>正文</label><textarea id="f_content">${esc(n.content)}</textarea></div>
+    <div class="field"><label>作者</label><select id="f_author">${userOpts}</select></div>
+    <div class="field"><label>分类</label><select id="f_category">${catOpts}</select></div>
+    <div class="field"><label>类型</label><select id="f_type">
+      <option value="normal" ${n.type !== 'course' ? 'selected' : ''}>普通笔记</option>
+      <option value="course" ${n.type === 'course' ? 'selected' : ''}>收费笔记</option>
+    </select></div>
+    <div class="field"><label>收费资料地址(网盘)</label><input id="f_course" value="${esc(n.courseUrl)}" /></div>
+    <div class="field"><label>图片地址(多张用逗号分隔)</label><textarea id="f_images">${esc((n.images || []).join(','))}</textarea>
+      <div class="hint">可用 https://picsum.photos/seed/abc/800/1000</div></div>
+    <div class="field"><label>点赞 / 收藏 / 评论</label>
+      <div style="display:flex;gap:8px">
+        <input id="f_likes" type="number" value="${n.likes || 0}" />
+        <input id="f_collects" type="number" value="${n.collects || 0}" />
+        <input id="f_comments" type="number" value="${n.comments || 0}" />
+      </div></div>
+  `, () => {
+    const images = document.getElementById('f_images').value.split(',').map((s) => s.trim()).filter(Boolean);
+    const body = {
+      title: document.getElementById('f_title').value,
+      content: document.getElementById('f_content').value,
+      authorId: document.getElementById('f_author').value,
+      category: document.getElementById('f_category').value,
+      type: document.getElementById('f_type').value,
+      courseUrl: document.getElementById('f_course').value,
+      images,
+      likes: +document.getElementById('f_likes').value,
+      collects: +document.getElementById('f_collects').value,
+      comments: +document.getElementById('f_comments').value,
+    };
+    const req = id ? api('/api/admin/notes/' + id, { method: 'PUT', body: JSON.stringify(body) })
+                   : api('/api/admin/notes', { method: 'POST', body: JSON.stringify(body) });
+    req.then(() => { closeModal(); renderNotes(); });
+  });
+}
+
+function delNote(id) {
+  if (!confirm('确定删除这篇笔记吗？')) return;
+  api('/api/admin/notes/' + id, { method: 'DELETE' }).then(renderNotes);
+}
+
+// 用户
+function renderUsers() {
+  api('/api/admin/users').then((users) => {
+    _users = users;
+    const rows = users.map((u) => `
+      <tr>
+        <td><img src="${esc(u.avatar)}" /></td>
+        <td>${esc(u.name)} ${u.vip ? '<span class="tag vip">VIP</span>' : ''}</td>
+        <td>${esc(u.desc)}</td>
+        <td>${u.fans}</td>
+        <td>
+          <button class="btn-sm" onclick='toggleVip("${u.id}")'>${u.vip ? '取消VIP' : '设为VIP'}</button>
+          <button class="btn-sm" onclick='editUser("${u.id}")'>编辑</button>
+          <button class="btn-sm del" onclick='delUser("${u.id}")'>删除</button>
+        </td>
+      </tr>`).join('');
+    document.getElementById('content').innerHTML = `
+      <div class="toolbar"><div>共 ${users.length} 人</div><button class="btn-primary" onclick="editUser()">+ 新增用户</button></div>
+      <table><thead><tr><th>头像</th><th>昵称</th><th>简介</th><th>粉丝</th><th>操作</th></tr></thead>
+      <tbody>${rows}</tbody></table>`;
+  });
+}
+
+function toggleVip(id) {
+  const u = _users.find((x) => x.id === id);
+  api('/api/admin/users/' + id, { method: 'PUT', body: JSON.stringify({ vip: !u.vip }) }).then(renderUsers);
+}
+function editUser(id) {
+  const u = id ? _users.find((x) => x.id === id) : {};
+  openModal(`${id ? '编辑' : '新增'}用户`, `
+    <div class="field"><label>昵称</label><input id="u_name" value="${esc(u.name)}" /></div>
+    <div class="field"><label>头像地址</label><input id="u_avatar" value="${esc(u.avatar)}" /></div>
+    <div class="field"><label>简介</label><input id="u_desc" value="${esc(u.desc)}" /></div>
+    <div class="field"><label>粉丝数</label><input id="u_fans" type="number" value="${u.fans || 0}" /></div>
+    <div class="field"><label><input id="u_vip" type="checkbox" ${u.vip ? 'checked' : ''}/> VIP 会员</label></div>
+  `, () => {
+    const body = {
+      name: document.getElementById('u_name').value,
+      avatar: document.getElementById('u_avatar').value,
+      desc: document.getElementById('u_desc').value,
+      fans: +document.getElementById('u_fans').value,
+      vip: document.getElementById('u_vip').checked,
+    };
+    const req = id ? api('/api/admin/users/' + id, { method: 'PUT', body: JSON.stringify(body) })
+                   : api('/api/admin/users', { method: 'POST', body: JSON.stringify(body) });
+    req.then(() => { closeModal(); renderUsers(); });
+  });
+}
+function delUser(id) {
+  if (!confirm('确定删除该用户吗？')) return;
+  api('/api/admin/users/' + id, { method: 'DELETE' }).then(renderUsers);
+}
+
+// 分类
+function renderCategories() {
+  api('/api/admin/categories').then((cats) => {
+    document.getElementById('content').innerHTML = `
+      <div class="card" style="max-width:560px">
+        <div class="field"><label>分类（每行一个）</label>
+          <textarea id="catText" style="min-height:160px">${esc(cats.join('\\n'))}</textarea></div>
+        <button class="btn-primary" onclick="saveCats()">保存</button>
+      </div>`;
+  });
+}
+function saveCats() {
+  const categories = document.getElementById('catText').value.split('\n').map((s) => s.trim()).filter(Boolean);
+  api('/api/admin/categories', { method: 'PUT', body: JSON.stringify({ categories }) }).then(() => alert('已保存'));
+}
+
+// 弹窗
+function openModal(title, html, onOk) {
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="modal-mask" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h3>${esc(title)}</h3>
+        ${html}
+        <div class="modal-actions">
+          <button class="btn-cancel" onclick="closeModal()">取消</button>
+          <button class="btn-primary" id="modalOk">保存</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('modalOk').onclick = onOk;
+}
+function closeModal() { document.getElementById('modalRoot').innerHTML = ''; }
+
+// 自动登录
+if (token) enterApp();
+</script>
+</body>
+</html>

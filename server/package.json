@@ -1,0 +1,9 @@
+{
+  "name": "xhs-admin-server",
+  "version": "1.0.0",
+  "description": "仿小红书后端 API + 管理后台（零依赖，仅用 Node 内置模块）",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  }
+}
