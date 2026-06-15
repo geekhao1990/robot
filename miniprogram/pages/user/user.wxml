@@ -1,0 +1,35 @@
+<view class="page" wx:if="{{user}}">
+  <view class="hero">
+    <view class="profile">
+      <view class="row">
+        <image class="avatar" src="{{user.avatar}}" mode="aspectFill" />
+        <view class="stats">
+          <view class="stat"><text class="num">{{user.follows}}</text><text class="label">关注</text></view>
+          <view class="stat"><text class="num">{{fansText}}</text><text class="label">粉丝</text></view>
+          <view class="stat"><text class="num">{{likesText}}</text><text class="label">获赞</text></view>
+        </view>
+      </view>
+      <view class="name">{{user.name}}</view>
+      <view class="desc">{{user.desc}}</view>
+      <view class="follow-btn {{followed ? 'followed' : ''}}" bindtap="onFollow">
+        {{followed ? '已关注' : '+ 关注'}}
+      </view>
+    </view>
+  </view>
+
+  <view class="tabbar">
+    <view class="tab active">笔记 {{notes.length}}</view>
+  </view>
+
+  <view class="list">
+    <view wx:if="{{!notes.length}}" class="placeholder">还没有发布笔记</view>
+    <view wx:else class="waterfall">
+      <view class="column">
+        <note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindtap="goDetail" />
+      </view>
+      <view class="column">
+        <note-card wx:for="{{right}}" wx:key="id" note="{{item}}" bindtap="goDetail" />
+      </view>
+    </view>
+  </view>
+</view>

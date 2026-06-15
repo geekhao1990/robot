@@ -1,0 +1,60 @@
+<view class="page">
+  <!-- 未登录 -->
+  <view wx:if="{{!user}}" class="login-tip">
+    <view class="login-tip-text">登录后查看赞、收藏与私信</view>
+    <view class="login-tip-btn" bindtap="goLogin">去登录</view>
+  </view>
+
+  <block wx:else>
+    <!-- 通知快捷入口 -->
+    <view class="entries">
+      <view class="entry" data-type="like" bindtap="goNotify">
+        <view class="entry-icon" style="background:#ffeef0;">
+          <text>❤️</text>
+          <view wx:if="{{likeCount}}" class="badge">{{likeCount}}</view>
+        </view>
+        <text class="entry-label">赞和收藏</text>
+      </view>
+      <view class="entry" data-type="follow" bindtap="goNotify">
+        <view class="entry-icon" style="background:#eef4ff;">
+          <text>👤</text>
+          <view wx:if="{{followCount}}" class="badge">{{followCount}}</view>
+        </view>
+        <text class="entry-label">新增关注</text>
+      </view>
+      <view class="entry" data-type="comment" bindtap="goNotify">
+        <view class="entry-icon" style="background:#fff6e6;">
+          <text>💬</text>
+          <view wx:if="{{commentCount}}" class="badge">{{commentCount}}</view>
+        </view>
+        <text class="entry-label">评论和@</text>
+      </view>
+    </view>
+
+    <view class="section-title">私信</view>
+
+    <!-- 私信会话列表 -->
+    <view class="chat-list">
+      <view wx:if="{{!conversations.length}}" class="placeholder">还没有私信</view>
+      <view
+        wx:for="{{conversations}}"
+        wx:key="id"
+        class="chat-item"
+        data-id="{{item.id}}"
+        bindtap="goChat"
+      >
+        <view class="chat-avatar-wrap">
+          <image class="chat-avatar" src="{{item.user.avatar}}" mode="aspectFill" />
+          <view wx:if="{{item.unread}}" class="unread">{{item.unread}}</view>
+        </view>
+        <view class="chat-body">
+          <view class="chat-top flex-between">
+            <text class="chat-name">{{item.user.name}}</text>
+            <text class="chat-time">{{item.timeText}}</text>
+          </view>
+          <text class="chat-last ellipsis">{{item.lastMsg.fromMe ? '我：' : ''}}{{item.lastMsg.text}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

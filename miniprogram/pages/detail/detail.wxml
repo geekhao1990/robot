@@ -1,0 +1,201 @@
+<view class="page" wx:if="{{note}}">
+  <!-- 顶部导航 -->
+  <view class="nav" style="padding-top: {{statusBarHeight}}px; height: {{navBarHeight}}px;">
+    <view class="nav-inner" style="height: {{navBarHeight}}px;">
+      <view class="back" bindtap="goBack">‹</view>
+      <view class="nav-author flex" bindtap="goUser">
+        <image class="nav-avatar" src="{{note.author.avatar}}" mode="aspectFill" />
+        <text class="nav-name">{{note.author.name}}</text>
+      </view>
+      <!-- 自己的笔记：编辑 / 删除；他人笔记：关注 -->
+      <view wx:if="{{isMine}}" class="owner-actions">
+        <text class="owner-btn" bindtap="onEditNote">编辑</text>
+        <text class="owner-btn del" bindtap="onDeleteOwnNote">删除</text>
+      </view>
+      <view wx:else class="follow-btn {{followed ? 'followed' : ''}}" bindtap="onFollow">
+        {{followed ? '已关注' : '关注'}}
+      </view>
+    </view>
+  </view>
+
+  <scroll-view class="body" scroll-y style="padding-top: {{headerHeight}}px;">
+    <!-- 图片轮播 -->
+    <view class="swiper-wrap">
+      <swiper
+        class="swiper"
+        style="height: {{swiperHeight}}rpx;"
+        bindchange="onSwiperChange"
+        circular="{{false}}"
+      >
+        <swiper-item wx:for="{{note.images}}" wx:key="*this">
+          <image class="swiper-img" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-url="{{item}}" />
+        </swiper-item>
+      </swiper>
+      <view wx:if="{{note.images.length > 1}}" class="dots">
+        <view
+          wx:for="{{note.images}}"
+          wx:key="*this"
+          class="dot {{current === index ? 'active' : ''}}"
+        ></view>
+      </view>
+    </view>
+
+    <!-- 正文 -->
+    <view class="article">
+      <view class="title">{{note.title}}</view>
+      <view class="text">{{note.content}}</view>
+      <view class="tags">
+        <text wx:for="{{note.tags}}" wx:key="*this" class="tag">#{{item}}</text>
+      </view>
+      <view class="meta">{{timeText}}</view>
+    </view>
+
+    <view class="divider"></view>
+
+    <!-- 课程：获取入口 -->
+    <view wx:if="{{isCourse}}" class="course-block">
+      <view class="course-tip">🎓 本课程包含完整资料，点击下方按钮获取</view>
+    </view>
+
+    <!-- 评论（课程类型不展示） -->
+    <view wx:if="{{!isCourse}}" class="comments">
+      <view class="comments-title">共 {{commentTotal}} 条评论</view>
+      <view wx:for="{{note.commentList}}" wx:key="id" class="comment">
+        <image class="c-avatar" src="{{item.user.avatar}}" mode="aspectFill" />
+        <view class="c-main">
+          <view class="c-head">
+            <view class="c-name">{{item.user.name}}</view>
+            <view class="c-like" data-cid="{{item.id}}" catchtap="onCommentLike">
+              <view class="c-heart {{item.liked ? 'active' : ''}}"></view>
+              <text class="c-like-num">{{item.likes}}</text>
+            </view>
+          </view>
+          <view class="c-text">{{item.text}}</view>
+          <view class="c-meta">
+            <text class="c-time">{{item.timeText}}</text>
+            <text class="c-reply" data-cid="{{item.id}}" data-name="{{item.user.name}}" catchtap="onReply">回复</text>
+            <text wx:if="{{item.user.id === myId}}" class="c-del" data-cid="{{item.id}}" catchtap="onDeleteComment">删除</text>
+          </view>
+
+          <!-- 二级评论 -->
+          <view wx:for="{{item.replies}}" wx:for-item="rep" wx:key="id" class="reply">
+            <image class="r-avatar" src="{{rep.user.avatar}}" mode="aspectFill" />
+            <view class="r-main">
+              <view class="c-head">
+                <view class="r-name">
+                  {{rep.user.name}}<text wx:if="{{rep.to}}" class="r-to"> 回复 {{rep.to}}</text>
+                </view>
+                <view class="c-like" data-cid="{{item.id}}" data-rid="{{rep.id}}" catchtap="onCommentLike">
+                  <view class="c-heart {{rep.liked ? 'active' : ''}}"></view>
+                  <text class="c-like-num">{{rep.likes}}</text>
+                </view>
+              </view>
+              <view class="c-text">{{rep.text}}</view>
+              <view class="c-meta">
+                <text class="c-time">{{rep.timeText}}</text>
+                <text class="c-reply" data-cid="{{item.id}}" data-name="{{rep.user.name}}" catchtap="onReply">回复</text>
+                <text wx:if="{{rep.user.id === myId}}" class="c-del" data-cid="{{item.id}}" data-rid="{{rep.id}}" catchtap="onDeleteComment">删除</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="comments-end">- 到底啦 -</view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部操作栏 -->
+  <!-- 课程类型：获取课程 + 点赞收藏，无评论/转发 -->
+  <view wx:if="{{isCourse}}" class="actionbar">
+    <view class="course-btn" bindtap="onGetCourse">获取课程</view>
+    <view class="action" bindtap="onLike">
+      <view class="ic heart {{note.liked ? 'active' : ''}}"></view>
+      <text class="num">{{likeText}}</text>
+    </view>
+    <view class="action" bindtap="onCollect">
+      <view class="ic star {{note.collected ? 'active' : ''}}"></view>
+      <text class="num">{{collectText}}</text>
+    </view>
+  </view>
+  <!-- 普通类型 -->
+  <view wx:else class="actionbar">
+    <view class="comment-input" bindtap="onComment">说点什么...</view>
+    <view class="action" bindtap="onLike">
+      <view class="ic heart {{note.liked ? 'active' : ''}}"></view>
+      <text class="num">{{likeText}}</text>
+    </view>
+    <view class="action" bindtap="onCollect">
+      <view class="ic star {{note.collected ? 'active' : ''}}"></view>
+      <text class="num">{{collectText}}</text>
+    </view>
+    <view class="action" bindtap="onComment">
+      <view class="ic chat"></view>
+      <text class="num">{{commentText}}</text>
+    </view>
+    <view class="action" bindtap="openShare">
+      <view class="ic share"></view>
+      <text class="num">转发</text>
+    </view>
+  </view>
+
+  <!-- 评论输入框 -->
+  <view wx:if="{{showInput}}" class="input-mask" bindtap="closeInput"></view>
+  <view wx:if="{{showInput}}" class="comment-box">
+    <input
+      class="cb-input"
+      value="{{commentDraft}}"
+      placeholder="{{inputPlaceholder}}"
+      focus="{{showInput}}"
+      confirm-type="send"
+      adjust-position="{{true}}"
+      cursor-spacing="20"
+      bindinput="onDraft"
+      bindconfirm="sendComment"
+    />
+    <view class="cb-send {{commentDraft ? 'active' : ''}}" bindtap="sendComment">发送</view>
+  </view>
+
+  <!-- 转发面板 -->
+  <view wx:if="{{showShare}}" class="share-mask" bindtap="closeShare">
+    <view class="share-panel" catchtap="noop">
+      <view class="share-title">分享给</view>
+      <view class="share-opts">
+        <view class="share-opt" bindtap="openFriends">
+          <view class="share-ic wx-friend"><text class="g">微</text></view>
+          <text class="share-label">微信好友</text>
+        </view>
+        <view class="share-opt" bindtap="shareToOfficial">
+          <view class="share-ic wx-official"><text class="g">公</text></view>
+          <text class="share-label">微信公众号</text>
+        </view>
+      </view>
+      <view class="share-cancel" bindtap="closeShare">取消</view>
+    </view>
+  </view>
+
+  <!-- 选择好友 -->
+  <view wx:if="{{showFriends}}" class="share-mask" bindtap="closeFriends">
+    <view class="friend-panel" catchtap="noop">
+      <view class="friend-head">
+        <text class="friend-back" bindtap="backToShare">‹</text>
+        <text class="friend-title">选择好友</text>
+        <text class="friend-cancel" bindtap="closeFriends">取消</text>
+      </view>
+      <scroll-view class="friend-list" scroll-y>
+        <view
+          wx:for="{{friends}}"
+          wx:key="id"
+          class="friend-item"
+          data-name="{{item.name}}"
+          bindtap="shareToFriend"
+        >
+          <image class="friend-avatar" src="{{item.avatar}}" mode="aspectFill" />
+          <text class="friend-name">{{item.name}}</text>
+          <view class="friend-send">发送</view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</view>
+
+<view wx:else class="placeholder" style="padding-top: 200rpx;">加载中...</view>

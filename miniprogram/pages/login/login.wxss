@@ -1,0 +1,70 @@
+.page {
+  min-height: 100vh;
+  background: #fff;
+  padding: 0 60rpx;
+}
+.logo-wrap {
+  text-align: center;
+  padding: 120rpx 0 60rpx;
+}
+.logo {
+  font-size: 72rpx;
+  font-weight: 800;
+  color: #ff2442;
+}
+.slogan {
+  font-size: 28rpx;
+  color: #999;
+  margin-top: 16rpx;
+}
+
+.wx-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 40rpx;
+  margin-bottom: 70rpx;
+}
+.wx-icon {
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 50%;
+  background: #f3f3f3;
+}
+.wx-tip {
+  font-size: 26rpx;
+  color: #999;
+  margin-top: 20rpx;
+}
+
+.wx-login-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #07c160;
+  color: #fff;
+  border-radius: 999rpx;
+  font-size: 32rpx;
+}
+.wx-login-btn::after { border: none; }
+.wx-logo {
+  margin-right: 12rpx;
+  font-size: 36rpx;
+}
+
+.quick {
+  text-align: center;
+  color: #ff2442;
+  font-size: 28rpx;
+  margin-top: 40rpx;
+}
+
+.agreement {
+  position: fixed;
+  bottom: 60rpx;
+  left: 60rpx;
+  right: 60rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #bbb;
+}

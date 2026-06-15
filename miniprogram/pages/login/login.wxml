@@ -1,0 +1,21 @@
+<view class="page">
+  <view class="logo-wrap">
+    <view class="logo">小红书</view>
+    <view class="slogan">标记我的生活</view>
+  </view>
+
+  <view class="wx-box">
+    <image class="wx-icon" src="https://i.pravatar.cc/150?img=68" mode="aspectFill" />
+    <view class="wx-tip">使用微信账号授权登录</view>
+  </view>
+
+  <button class="wx-login-btn" bindtap="onWechatLogin">
+    <text class="wx-logo">💬</text> 微信授权登录
+  </button>
+
+  <view class="quick" bindtap="onQuickLogin">使用演示账号一键登录（VIP）</view>
+
+  <view class="agreement">
+    登录即代表同意《用户协议》和《隐私政策》（演示用途）
+  </view>
+</view>

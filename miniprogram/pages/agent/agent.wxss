@@ -1,0 +1,130 @@
+.page {
+  height: 100vh;
+  background: #f5f6f8;
+}
+
+.msgs {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* 输入栏(约108rpx) + tabBar(120rpx) + 安全区 */
+  bottom: calc(228rpx + env(safe-area-inset-bottom));
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+/* 欢迎区 */
+.welcome {
+  text-align: center;
+  padding: 40rpx 20rpx 30rpx;
+}
+.logo {
+  font-size: 90rpx;
+}
+.hi {
+  font-size: 36rpx;
+  font-weight: 700;
+  margin-top: 16rpx;
+  color: #222;
+}
+.sub {
+  font-size: 26rpx;
+  color: #999;
+  margin-top: 12rpx;
+}
+.suggests {
+  margin-top: 30rpx;
+}
+.suggest {
+  display: inline-block;
+  background: #fff;
+  color: #333;
+  font-size: 27rpx;
+  padding: 18rpx 28rpx;
+  border-radius: 16rpx;
+  margin: 10rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,.04);
+}
+
+/* 消息行 */
+.row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 30rpx;
+}
+.row.user {
+  flex-direction: row-reverse;
+}
+.avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 16rpx;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #fff;
+}
+.avatar.bot {
+  background: linear-gradient(135deg, #4d6bfe, #6a8bff);
+}
+.avatar.me {
+  background: #ff2442;
+}
+.bubble {
+  max-width: 520rpx;
+  padding: 20rpx 26rpx;
+  border-radius: 18rpx;
+  font-size: 30rpx;
+  line-height: 1.55;
+  margin: 0 18rpx;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.bubble.assistant {
+  background: #fff;
+  color: #222;
+  border-top-left-radius: 4rpx;
+}
+.bubble.user {
+  background: #ff2442;
+  color: #fff;
+  border-top-right-radius: 4rpx;
+}
+.typing {
+  color: #999;
+}
+
+/* 输入栏 */
+.inputbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(120rpx + env(safe-area-inset-bottom)); /* 位于自定义 tabBar 之上 */
+  display: flex;
+  align-items: center;
+  padding: 16rpx 24rpx;
+  background: #fff;
+  border-top: 1rpx solid #eee;
+}
+.input {
+  flex: 1;
+  height: 76rpx;
+  background: #f3f4f6;
+  border-radius: 999rpx;
+  padding: 0 28rpx;
+  font-size: 30rpx;
+}
+.send {
+  margin-left: 20rpx;
+  font-size: 30rpx;
+  color: #ccc;
+  padding: 0 14rpx;
+}
+.send.active {
+  color: #ff2442;
+  font-weight: 600;
+}

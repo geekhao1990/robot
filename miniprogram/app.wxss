@@ -1,0 +1,63 @@
+/* app.wxss 全局样式 */
+page {
+  --primary: #ff2442;
+  --bg: #f5f5f5;
+  --text: #333333;
+  --text-light: #999999;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, sans-serif;
+  font-size: 28rpx;
+}
+
+view, text, image, scroll-view {
+  box-sizing: border-box;
+}
+
+.flex {
+  display: flex;
+  align-items: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ellipsis-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 999rpx;
+}
+
+.divider {
+  height: 1rpx;
+  background: #eee;
+}
+
+/* 通用骨架 / 占位 */
+.placeholder {
+  color: var(--text-light);
+  text-align: center;
+  padding: 60rpx 0;
+}

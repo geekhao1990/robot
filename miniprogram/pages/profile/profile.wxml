@@ -1,0 +1,76 @@
+<view class="page">
+  <!-- 顶部背景 + 资料 -->
+  <view class="hero" style="padding-top: {{statusBarHeight}}px;">
+    <view class="hero-mask"></view>
+    <view class="profile" style="margin-top: {{navBarHeight}}px;">
+      <block wx:if="{{user}}">
+        <view class="row">
+          <image class="avatar" src="{{user.avatar}}" mode="aspectFill" />
+          <view class="meta">
+            <view class="name">{{user.name}}</view>
+            <view class="uid">小红书号：{{user.id}}</view>
+          </view>
+        </view>
+        <view class="desc">{{user.desc || '点击编辑，填写简介'}}</view>
+        <view class="stats">
+          <view class="stat" data-type="follow" bindtap="goRelations">
+            <text class="num">{{followCount}}</text><text class="label">关注</text>
+          </view>
+          <view class="stat" data-type="fans" bindtap="goRelations">
+            <text class="num">{{fansCount}}</text><text class="label">粉丝</text>
+          </view>
+          <view class="stat" bindtap="showStats">
+            <text class="num">{{likeCollectCount}}</text><text class="label">获赞与收藏</text>
+          </view>
+        </view>
+        <view class="logout" bindtap="onLogout">退出登录</view>
+      </block>
+
+      <block wx:else>
+        <view class="login-prompt" bindtap="goLogin">
+          <image class="avatar" src="https://i.pravatar.cc/150?img=68" mode="aspectFill" />
+          <view class="meta">
+            <view class="name">点击登录</view>
+            <view class="uid">登录后体验完整功能</view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <!-- 标签栏 -->
+  <view class="tabs">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="*this"
+      class="tab {{tabIndex === index ? 'active' : ''}}"
+      data-index="{{index}}"
+      bindtap="onTab"
+    >{{item}}</view>
+  </view>
+
+  <!-- 内容 -->
+  <view class="list">
+    <!-- 草稿箱（仅笔记 tab、有草稿时显示） -->
+    <view wx:if="{{tabIndex === 0 && hasDraft}}" class="draft-entry" bindtap="goDraft">
+      <view class="draft-left">
+        <text class="draft-ic">📝</text>
+        <view class="draft-info">
+          <text class="draft-title">草稿箱</text>
+          <text class="draft-sub">{{draftTitle}}</text>
+        </view>
+      </view>
+      <text class="draft-arrow">{{draftCount}} ›</text>
+    </view>
+
+    <view wx:if="{{!currentNotes.length}}" class="placeholder">{{emptyText}}</view>
+    <view wx:else class="waterfall">
+      <view class="column">
+        <note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindtap="goDetail" />
+      </view>
+      <view class="column">
+        <note-card wx:for="{{right}}" wx:key="id" note="{{item}}" bindtap="goDetail" />
+      </view>
+    </view>
+  </view>
+</view>

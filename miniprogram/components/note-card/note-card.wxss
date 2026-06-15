@@ -1,0 +1,110 @@
+.card {
+  position: relative;
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  margin-bottom: 16rpx;
+}
+.cat-tag {
+  position: absolute;
+  left: 16rpx;
+  top: 16rpx;
+  background: rgba(0, 0, 0, .45);
+  color: #fff;
+  font-size: 20rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+}
+.card-del {
+  position: absolute;
+  right: 12rpx;
+  top: 12rpx;
+  width: 44rpx;
+  height: 44rpx;
+  line-height: 40rpx;
+  text-align: center;
+  background: rgba(0, 0, 0, .5);
+  color: #fff;
+  font-size: 34rpx;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.cover-wrap {
+  position: relative;
+  width: 100%;
+  height: 0;
+  background: #f0f0f0;
+}
+.cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.video-tag {
+  position: absolute;
+  left: 16rpx;
+  bottom: 16rpx;
+  color: #fff;
+  font-size: 22rpx;
+  text-shadow: 0 1rpx 4rpx rgba(0,0,0,.5);
+}
+
+.info {
+  padding: 16rpx;
+}
+.title {
+  font-size: 27rpx;
+  line-height: 1.4;
+  color: #333;
+  margin-bottom: 14rpx;
+}
+.bottom {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.avatar {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  margin-right: 10rpx;
+  flex-shrink: 0;
+}
+.name {
+  flex: 1;
+  min-width: 0;
+  font-size: 23rpx;
+  color: #999;
+}
+.like {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  padding: 4rpx 0;
+}
+.heart {
+  width: 30rpx;
+  height: 30rpx;
+  margin-right: 6rpx;
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGE4YThhIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PHBhdGggZD0iTTEyIDIwLjdDOSAxOC4zIDIuNSAxMy42IDIuNSA4LjYgMi41IDUuOCA0LjYgNCA3LjEgNGMxLjggMCAzLjQgMSA0LjkgMyAxLjUtMiAzLjEtMyA0LjktMyAyLjUgMCA0LjYgMS44IDQuNiA0LjYgMCA1LTYuNSA5LjctOS41IDEyLjF6Ii8+PC9zdmc+");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+.heart.active {
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2ZmMjQ0MiI+PHBhdGggZD0iTTEyIDIwLjdDOSAxOC4zIDIuNSAxMy42IDIuNSA4LjYgMi41IDUuOCA0LjYgNCA3LjEgNGMxLjggMCAzLjQgMSA0LjkgMyAxLjUtMiAzLjEtMyA0LjktMyAyLjUgMCA0LjYgMS44IDQuNiA0LjYgMCA1LTYuNSA5LjctOS41IDEyLjF6Ii8+PC9zdmc+");
+  animation: pop .3s ease;
+}
+.count {
+  font-size: 23rpx;
+  color: #999;
+  line-height: 1;
+}
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
