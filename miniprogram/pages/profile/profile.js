@@ -20,6 +20,7 @@ Page({
     hasDraft: false,
     draftCount: 0,
     draftTitle: '',
+    draftCover: '',
   },
 
   onLoad() {
@@ -54,7 +55,8 @@ Page({
     this.setData({
       hasDraft: has,
       draftCount: has ? 1 : 0,
-      draftTitle: has ? (draft.title || draft.content || '未命名草稿').slice(0, 12) : '',
+      draftTitle: has ? (draft.title || draft.content || '未命名草稿').slice(0, 30) : '',
+      draftCover: has && draft.images && draft.images.length ? draft.images[0] : '',
     });
   },
 
