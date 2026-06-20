@@ -1,5 +1,6 @@
 const api = require('../../utils/api');
 const store = require('../../utils/store');
+const config = require('../../utils/config');
 
 const REPLIES = ['好的呀～', '收到！', '哈哈哈哈', '谢谢你！', '我看看哈', '可以的👌'];
 
@@ -22,10 +23,12 @@ Page({
     const user = store.getUser();
     if (user && user.avatar) this.setData({ myAvatar: user.avatar });
 
+    this.convId = options.id;
     api.getConversation(options.id).then((c) => {
       if (!c) return;
-      // mock 中按时间倒序存储，这里反转为正序展示
-      const messages = c.messages.slice().reverse().map((m) => ({ ...m, _k: this.nextKey() }));
+      // 远程：后端已是时间正序；mock：倒序存储需反转
+      const ordered = config.useRemote ? (c.messages || []) : (c.messages || []).slice().reverse();
+      const messages = ordered.map((m) => ({ ...m, _k: this.nextKey() }));
       this.setData({ peer: c.user, messages });
       wx.setNavigationBarTitle({ title: c.user.name });
       this.scrollToBottom();
@@ -39,11 +42,23 @@ Page({
   onSend() {
     const text = this.data.draft.trim();
     if (!text) return;
-    const messages = this.data.messages.concat({ fromMe: true, text, time: 0, _k: this.nextKey() });
-    this.setData({ messages, draft: '' });
+    // 先本地回显我的消息
+    this.setData({ messages: this.data.messages.concat({ fromMe: true, text, time: 0, _k: this.nextKey() }), draft: '' });
     this.scrollToBottom();
 
-    // 模拟对方自动回复
+    if (config.useRemote) {
+      // 回传后端，后端返回对方自动回复
+      api.sendMessage(this.convId, text).then((res) => {
+        const reply = (res && res.added || []).find((m) => !m.fromMe);
+        if (reply) {
+          this.setData({ messages: this.data.messages.concat({ ...reply, _k: this.nextKey() }) });
+          this.scrollToBottom();
+        }
+      }).catch(() => {});
+      return;
+    }
+
+    // 本地模拟对方自动回复
     setTimeout(() => {
       const reply = REPLIES[Math.floor(Math.random() * REPLIES.length)];
       this.setData({ messages: this.data.messages.concat({ fromMe: false, text: reply, time: 0, _k: this.nextKey() }) });

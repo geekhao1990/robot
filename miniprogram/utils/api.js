@@ -229,10 +229,17 @@ function getMyLikes() {
 
 // ---------------- 消息 ----------------
 function getNotifications(type) {
-  let list = data.notifications;
-  if (type && type !== 'all') {
-    list = list.filter((n) => n.type === type);
+  if (remote()) {
+    return request('GET', '/api/notifications', { auth: true })
+      .then((list) => (type && type !== 'all' ? (list || []).filter((n) => n.type === type) : list || []))
+      .catch(() => mockNotifications(type));
   }
+  return mockNotifications(type);
+}
+
+function mockNotifications(type) {
+  let list = data.notifications;
+  if (type && type !== 'all') list = list.filter((n) => n.type === type);
   list = list.map((n) => ({
     ...n,
     user: data.userMap[n.userId],
@@ -248,6 +255,13 @@ function noteMapOf() {
 }
 
 function getConversations() {
+  if (remote()) {
+    return request('GET', '/api/conversations', { auth: true }).catch(() => mockConversations());
+  }
+  return mockConversations();
+}
+
+function mockConversations() {
   const list = data.conversations.map((c) => ({
     ...c,
     user: data.userMap[c.userId],
@@ -257,9 +271,32 @@ function getConversations() {
 }
 
 function getConversation(id) {
+  if (remote()) {
+    return request('GET', '/api/conversations/' + id, { auth: true }).catch(() => mockConversation(id));
+  }
+  return mockConversation(id);
+}
+
+function mockConversation(id) {
   const c = data.conversations.find((x) => x.id === id);
   if (!c) return delay(null);
   return delay({ ...c, user: data.userMap[c.userId] });
+}
+
+// 消息未读汇总
+function getMessageSummary() {
+  return request('GET', '/api/messages/summary', { auth: true });
+}
+// 发送私信，返回 { added:[mine, reply] }
+function sendMessage(id, text) {
+  return request('POST', '/api/conversations/' + id + '/messages', { auth: true, data: { text } });
+}
+// 标记已读
+function readNotify(type) {
+  return request('POST', '/api/notifications/read', { auth: true, data: { type } });
+}
+function readConv(id) {
+  return request('POST', '/api/conversations/' + id + '/read', { auth: true });
 }
 
 // ---------------- 关注 / 粉丝 ----------------
@@ -294,6 +331,10 @@ module.exports = {
   getNotifications,
   getConversations,
   getConversation,
+  getMessageSummary,
+  sendMessage,
+  readNotify,
+  readConv,
   getFollowing,
   getFans,
   getFriends,

@@ -26,12 +26,16 @@ Page({
   },
 
   loadData() {
-    const u = store.messageUnread();
-    this.setData({ likeCount: u.like, followCount: u.follow, commentCount: u.comment });
+    const applyCounts = () => {
+      const u = store.messageUnread();
+      this.setData({ likeCount: u.like, followCount: u.follow, commentCount: u.comment });
+    };
+    applyCounts();
+    store.refreshMessageSummary().then(applyCounts);
 
     api.getConversations().then((list) => {
       this.setData({
-        conversations: list.map((c) => ({
+        conversations: (list || []).map((c) => ({
           ...c,
           unread: store.isConvRead(c.id) ? 0 : c.unread,
           timeText: fromNow(Date.now() - c.time * 3600 * 1000),

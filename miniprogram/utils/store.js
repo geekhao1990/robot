@@ -215,24 +215,27 @@ function getMyNote(id) {
   return state.myNotes.find((n) => n.id === id) || null;
 }
 
-// ---------- 消息已读状态（消息模块仍为 mock） ----------
-function markNotifyRead(type) {
-  state.read.notify[type] = true;
-  save(KEY.READ, state.read);
-}
-function isNotifyRead(type) {
-  return !!state.read.notify[type];
-}
-function markConvRead(id) {
-  state.read.conv[id] = true;
-  save(KEY.READ, state.read);
-}
-function isConvRead(id) {
-  return !!state.read.conv[id];
+// ---------- 消息未读 / 已读 ----------
+const EMPTY_SUMMARY = { like: 0, comment: 0, follow: 0, conv: 0, total: 0 };
+let msgSummary = { ...EMPTY_SUMMARY };
+
+// 同步返回缓存的未读汇总（角标用）
+function messageUnread() {
+  if (!state.user) return { ...EMPTY_SUMMARY };
+  if (config.useRemote) return msgSummary;
+  return mockSummary();
 }
 
-function messageUnread() {
-  if (!state.user) return { like: 0, comment: 0, follow: 0, conv: 0, total: 0 };
+// 异步从后端刷新未读汇总
+function refreshMessageSummary() {
+  if (!state.user) { msgSummary = { ...EMPTY_SUMMARY }; return Promise.resolve(msgSummary); }
+  if (config.useRemote && state.token) {
+    return getApi().getMessageSummary().then((s) => { if (s) msgSummary = s; return msgSummary; }).catch(() => msgSummary);
+  }
+  return Promise.resolve(mockSummary());
+}
+
+function mockSummary() {
   let like = 0, comment = 0, follow = 0;
   data.notifications.forEach((n) => {
     if (n.type === 'like' || n.type === 'collect') like++;
@@ -243,10 +246,32 @@ function messageUnread() {
   if (state.read.notify.comment) comment = 0;
   if (state.read.notify.follow) follow = 0;
   let conv = 0;
-  data.conversations.forEach((c) => {
-    if (!state.read.conv[c.id]) conv += c.unread || 0;
-  });
+  data.conversations.forEach((c) => { if (!state.read.conv[c.id]) conv += c.unread || 0; });
   return { like, comment, follow, conv, total: like + comment + follow + conv };
+}
+
+function markNotifyRead(type) {
+  if (config.useRemote && state.token) {
+    getApi().readNotify(type).then((s) => { if (s) msgSummary = s; }).catch(() => {});
+  } else {
+    state.read.notify[type] = true;
+    save(KEY.READ, state.read);
+  }
+}
+function isNotifyRead(type) {
+  return !!state.read.notify[type];
+}
+function markConvRead(id) {
+  if (config.useRemote && state.token) {
+    getApi().readConv(id).then((s) => { if (s) msgSummary = s; }).catch(() => {});
+  } else {
+    state.read.conv[id] = true;
+    save(KEY.READ, state.read);
+  }
+}
+function isConvRead(id) {
+  if (config.useRemote) return false; // 远程：以后端返回的 unread 为准
+  return !!state.read.conv[id];
 }
 
 module.exports = {
@@ -258,5 +283,5 @@ module.exports = {
   isFollowed, toggleFollow,
   likedIds, collectedIds, followedIds,
   getMyNotes, addMyNote, removeMyNote, updateMyNote, getMyNote,
-  markNotifyRead, isNotifyRead, markConvRead, isConvRead, messageUnread,
+  markNotifyRead, isNotifyRead, markConvRead, isConvRead, messageUnread, refreshMessageSummary,
 };

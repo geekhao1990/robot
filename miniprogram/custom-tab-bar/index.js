@@ -24,6 +24,9 @@ Component({
     // 由各 tab 页 onShow 调用，刷新消息未读角标
     refreshBadge() {
       this.setData({ badge: store.messageUnread().total });
+      store.refreshMessageSummary().then(() => {
+        this.setData({ badge: store.messageUnread().total });
+      });
     },
   },
 });

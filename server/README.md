@@ -54,6 +54,13 @@ GET    /api/me/collects           我收藏的
 GET    /api/me/likes              我赞过的
 GET    /api/me/following          我关注的人
 POST   /api/upload                图片上传(multipart, 字段 file)，返回 { url }
+GET    /api/messages/summary      未读汇总 { like, comment, follow, conv, total }
+GET    /api/notifications         通知列表(已填充 actor/笔记)
+POST   /api/notifications/read    标记某类通知已读 { type }
+GET    /api/conversations         会话列表
+GET    /api/conversations/:id     单个会话(消息正序)
+POST   /api/conversations/:id/read       标记会话已读
+POST   /api/conversations/:id/messages   发送私信 { text }，返回 { added:[我,自动回复] }
 ```
 
 > 发布笔记时，小程序会先用 `wx.uploadFile` 把本地图片传到 `/api/upload`，
@@ -85,6 +92,8 @@ module.exports = { useRemote: true, baseUrl: 'http://localhost:3000', vipContact
 - 后端不可用时：读接口自动回退本地 mock，登录走离线降级；写操作会提示失败。
 - 草稿箱仍只存本地。
 - 发布图片会自动上传到后端 `public/uploads/`（生产建议改用对象存储 OSS/COS）。
+- 消息（通知 + 私信）已后端化：每个用户首次访问时按模板懒初始化示例消息，
+  已读状态、未读角标、发送私信均持久化到后端。
 
 ## 升级数据库（生产）
 
