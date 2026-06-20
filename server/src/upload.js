@@ -38,8 +38,9 @@ function parseFirstFile(buffer, contentType) {
 }
 
 function handleUpload(req, res, sendJson) {
-  const uid = auth.userIdFor(req.headers.authorization);
-  if (!uid) return sendJson(res, 401, { error: '未登录' });
+  // 小程序用户或管理后台均可上传
+  const ok = auth.userIdFor(req.headers.authorization) || auth.isAdmin(req.headers.authorization);
+  if (!ok) return sendJson(res, 401, { error: '未登录' });
   const chunks = [];
   let size = 0;
   let aborted = false;

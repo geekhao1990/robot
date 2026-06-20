@@ -1,14 +1,10 @@
 // server/src/routes/admin.js —— 管理后台接口（登录 + 笔记/用户/分类 CRUD）
 const db = require('../db');
-
-const tokens = new Set();
-const genToken = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+const auth = require('../auth');
 
 module.exports = function register(router, HttpError) {
   const requireAuth = (ctx) => {
-    const h = ctx.headers.authorization || '';
-    const token = h.replace(/^Bearer\s+/i, '');
-    if (!tokens.has(token)) throw new HttpError(401, '未登录或登录失效');
+    if (!auth.isAdmin(ctx.headers.authorization)) throw new HttpError(401, '未登录或登录失效');
   };
 
   // 登录
@@ -16,9 +12,7 @@ module.exports = function register(router, HttpError) {
     const { username, password } = body || {};
     const admin = db.get().admins.find((a) => a.username === username && a.password === password);
     if (!admin) throw new HttpError(401, '账号或密码错误');
-    const token = genToken();
-    tokens.add(token);
-    return { token, username };
+    return { token: auth.issueAdmin(), username };
   });
 
   // 概览

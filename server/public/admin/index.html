@@ -60,6 +60,14 @@
   .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
   .btn-cancel { background: #f3f3f3; border: none; padding: 10px 18px; border-radius: 8px; }
   .hint { color:#999; font-size:12px; margin-top:4px; }
+  .search { padding: 9px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; width: 260px; }
+  /* 图片上传组件 */
+  .img-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .img-cell { position: relative; width: 90px; height: 90px; border-radius: 8px; overflow: hidden; border: 1px solid #eee; }
+  .img-cell img { width: 100%; height: 100%; object-fit: cover; }
+  .img-del { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; line-height: 18px; text-align: center; background: rgba(0,0,0,.55); color: #fff; border-radius: 50%; font-size: 16px; cursor: pointer; }
+  .img-add { display: flex; align-items: center; justify-content: center; width: 90px; height: 90px; border: 1px dashed #ccc; border-radius: 8px; color: #bbb; font-size: 30px; cursor: pointer; }
+  .img-add:hover { border-color: var(--primary); color: var(--primary); }
 </style>
 </head>
 <body>
@@ -172,14 +180,15 @@ function renderNotes() {
   Promise.all([api('/api/admin/notes'), api('/api/admin/users'), api('/api/admin/categories')])
     .then(([notes, users, cats]) => {
       _notes = notes; _users = users; _cats = cats;
-      const rows = notes.map((n) => `
+      const rows = notes.map((n, i) => `
         <tr>
+          <td>${i + 1}</td>
           <td><img src="${esc(n.cover)}" /></td>
           <td>${esc(n.title)}</td>
           <td>${esc(n.author && n.author.name)}</td>
           <td><span class="tag">${esc(n.category)}</span></td>
           <td>${n.type === 'course' ? '<span class="tag course">收费</span>' : '普通'}</td>
-          <td>${n.likes} / ${n.collects}</td>
+          <td>赞 ${n.likes} · 藏 ${n.collects} · 评 ${n.comments}</td>
           <td>
             <button class="btn-sm" onclick='editNote("${n.id}")'>编辑</button>
             <button class="btn-sm del" onclick='delNote("${n.id}")'>删除</button>
@@ -187,15 +196,17 @@ function renderNotes() {
         </tr>`).join('');
       document.getElementById('content').innerHTML = `
         <div class="toolbar"><div>共 ${notes.length} 篇</div><button class="btn-primary" onclick="editNote()">+ 新增笔记</button></div>
-        <table><thead><tr><th>封面</th><th>标题</th><th>作者</th><th>分类</th><th>类型</th><th>赞/藏</th><th>操作</th></tr></thead>
+        <table><thead><tr><th>序号</th><th>封面</th><th>标题</th><th>作者</th><th>分类</th><th>类型</th><th>互动数据</th><th>操作</th></tr></thead>
         <tbody>${rows}</tbody></table>`;
     });
 }
 
+let _modalImages = [];
 function editNote(id) {
   const n = id ? _notes.find((x) => x.id === id) : {};
   const catOpts = _cats.map((c) => `<option ${n.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('');
   const userOpts = _users.map((u) => `<option value="${u.id}" ${n.authorId === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
+  _modalImages = (n.images || []).slice();
   openModal(`${id ? '编辑' : '新增'}笔记`, `
     <div class="field"><label>标题</label><input id="f_title" value="${esc(n.title)}" /></div>
     <div class="field"><label>正文</label><textarea id="f_content">${esc(n.content)}</textarea></div>
@@ -206,16 +217,12 @@ function editNote(id) {
       <option value="course" ${n.type === 'course' ? 'selected' : ''}>收费笔记</option>
     </select></div>
     <div class="field"><label>收费资料地址(网盘)</label><input id="f_course" value="${esc(n.courseUrl)}" /></div>
-    <div class="field"><label>图片地址(多张用逗号分隔)</label><textarea id="f_images">${esc((n.images || []).join(','))}</textarea>
-      <div class="hint">可用 https://picsum.photos/seed/abc/800/1000</div></div>
-    <div class="field"><label>点赞 / 收藏 / 评论</label>
-      <div style="display:flex;gap:8px">
-        <input id="f_likes" type="number" value="${n.likes || 0}" />
-        <input id="f_collects" type="number" value="${n.collects || 0}" />
-        <input id="f_comments" type="number" value="${n.comments || 0}" />
-      </div></div>
+    <div class="field"><label>图片（第一张为封面，可增删）</label>
+      <div id="imgGrid" class="img-grid"></div>
+      <div class="hint">支持选择多张图片上传</div>
+    </div>
+    ${id ? `<div class="hint">互动数据：赞 ${n.likes || 0} · 藏 ${n.collects || 0} · 评 ${n.comments || 0}（不可修改）</div>` : ''}
   `, () => {
-    const images = document.getElementById('f_images').value.split(',').map((s) => s.trim()).filter(Boolean);
     const body = {
       title: document.getElementById('f_title').value,
       content: document.getElementById('f_content').value,
@@ -223,15 +230,42 @@ function editNote(id) {
       category: document.getElementById('f_category').value,
       type: document.getElementById('f_type').value,
       courseUrl: document.getElementById('f_course').value,
-      images,
-      likes: +document.getElementById('f_likes').value,
-      collects: +document.getElementById('f_collects').value,
-      comments: +document.getElementById('f_comments').value,
+      images: _modalImages,
     };
     const req = id ? api('/api/admin/notes/' + id, { method: 'PUT', body: JSON.stringify(body) })
                    : api('/api/admin/notes', { method: 'POST', body: JSON.stringify(body) });
     req.then(() => { closeModal(); renderNotes(); });
   });
+  renderImgGrid();
+}
+
+function renderImgGrid() {
+  const grid = document.getElementById('imgGrid');
+  if (!grid) return;
+  grid.innerHTML =
+    _modalImages.map((url, i) => `
+      <div class="img-cell">
+        <img src="${esc(url)}" />
+        <span class="img-del" onclick="removeModalImage(${i})">×</span>
+      </div>`).join('') +
+    `<label class="img-add">＋<input type="file" accept="image/*" multiple style="display:none" onchange="onPickImages(event)" /></label>`;
+}
+function removeModalImage(i) { _modalImages.splice(i, 1); renderImgGrid(); }
+function onPickImages(e) {
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+  const grid = document.getElementById('imgGrid');
+  if (grid) grid.style.opacity = '.5';
+  Promise.all(files.map(uploadAdminImage))
+    .then((urls) => { _modalImages = _modalImages.concat(urls.filter(Boolean)); renderImgGrid(); })
+    .catch(() => alert('图片上传失败'))
+    .then(() => { if (grid) grid.style.opacity = '1'; });
+}
+function uploadAdminImage(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  return fetch('/api/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd })
+    .then((r) => r.json()).then((d) => d.url);
 }
 
 function delNote(id) {
@@ -243,33 +277,47 @@ function delNote(id) {
 function fmtDate(ts) { if (!ts) return ''; const d = new Date(ts); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
 function vipActive(u) { return u.vip && u.vipExpire && u.vipExpire > Date.now(); }
 
+let _userKeyword = '';
 function renderUsers() {
   api('/api/admin/users').then((users) => {
     _users = users;
-    const rows = users.map((u) => {
-      const status = vipActive(u)
-        ? `<span class="tag vip">${u.vipPlan === 'year' ? '年卡' : '月卡'} · 至 ${fmtDate(u.vipExpire)}</span>`
-        : (u.vipExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
-      return `
+    drawUsers();
+  });
+}
+
+function onUserSearch(e) { _userKeyword = (e.target.value || '').trim(); drawUsers(); }
+
+function drawUsers() {
+  const kw = _userKeyword.toLowerCase();
+  const list = kw ? _users.filter((u) => (u.name || '').toLowerCase().includes(kw)) : _users;
+  const rows = list.map((u, i) => {
+    const status = vipActive(u)
+      ? `<span class="tag vip">${u.vipPlan === 'year' ? '年卡' : '月卡'} · 至 ${fmtDate(u.vipExpire)}</span>`
+      : (u.vipExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
+    return `
       <tr>
+        <td>${i + 1}</td>
         <td><img src="${esc(u.avatar)}" /></td>
         <td>${esc(u.name)}</td>
         <td>${status}</td>
-        <td>${u.fans}</td>
         <td>
           <button class="btn-sm" onclick='setVip("${u.id}","month")'>开通月卡</button>
           <button class="btn-sm" onclick='setVip("${u.id}","year")'>开通年卡</button>
           <button class="btn-sm del" onclick='setVip("${u.id}","none")'>取消VIP</button>
           <button class="btn-sm" onclick='editUser("${u.id}")'>编辑</button>
-          <button class="btn-sm del" onclick='delUser("${u.id}")'>删除</button>
         </td>
       </tr>`;
-    }).join('');
-    document.getElementById('content').innerHTML = `
-      <div class="toolbar"><div>共 ${users.length} 人</div><button class="btn-primary" onclick="editUser()">+ 新增用户</button></div>
-      <table><thead><tr><th>头像</th><th>昵称</th><th>VIP 状态</th><th>粉丝</th><th>操作</th></tr></thead>
-      <tbody>${rows}</tbody></table>`;
-  });
+  }).join('');
+  document.getElementById('content').innerHTML = `
+    <div class="toolbar">
+      <input class="search" placeholder="按昵称搜索用户" value="${esc(_userKeyword)}" oninput="onUserSearch(event)" />
+      <button class="btn-primary" onclick="editUser()">+ 新增用户</button>
+    </div>
+    <table><thead><tr><th>序号</th><th>头像</th><th>昵称</th><th>VIP 状态</th><th>操作</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <div class="hint" style="margin-top:10px">共 ${_users.length} 人${kw ? `，匹配 ${list.length} 人` : ''}</div>`;
+  const inp = document.querySelector('.search');
+  if (inp && _userKeyword) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
 }
 
 function setVip(id, plan) {
@@ -283,23 +331,17 @@ function editUser(id) {
     <div class="field"><label>昵称</label><input id="u_name" value="${esc(u.name)}" /></div>
     <div class="field"><label>头像地址</label><input id="u_avatar" value="${esc(u.avatar)}" /></div>
     <div class="field"><label>简介</label><input id="u_desc" value="${esc(u.desc)}" /></div>
-    <div class="field"><label>粉丝数</label><input id="u_fans" type="number" value="${u.fans || 0}" /></div>
     <div class="hint">VIP 开通/取消请用列表中的「开通月卡 / 年卡 / 取消VIP」按钮</div>
   `, () => {
     const body = {
       name: document.getElementById('u_name').value,
       avatar: document.getElementById('u_avatar').value,
       desc: document.getElementById('u_desc').value,
-      fans: +document.getElementById('u_fans').value,
     };
     const req = id ? api('/api/admin/users/' + id, { method: 'PUT', body: JSON.stringify(body) })
                    : api('/api/admin/users', { method: 'POST', body: JSON.stringify(body) });
     req.then(() => { closeModal(); renderUsers(); });
   });
-}
-function delUser(id) {
-  if (!confirm('确定删除该用户吗？')) return;
-  api('/api/admin/users/' + id, { method: 'DELETE' }).then(renderUsers);
 }
 
 // 分类
