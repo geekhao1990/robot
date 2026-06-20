@@ -143,20 +143,19 @@ Page({
       }, 800);
     };
 
-    const submit = (ratio) => {
+    const submit = (ratio, finalImages) => {
       const payload = {
         category: categories[catIndex],
         type: noteType,
         courseUrl: noteType === 'course' ? courseUrl.trim() : '',
         title: title.trim() || content.trim().slice(0, 15),
         content: content.trim(),
-        images,
+        images: finalImages,
         coverRatio: ratio,
         tags,
       };
 
       if (config.useRemote) {
-        // 回传后端（注意：本地选取的图片为临时路径，生产需先上传图片再提交 URL）
         const p = editing ? api.updateNote(editingId, payload) : api.publishNote(payload);
         p.then(finish).catch(() => toast('发布失败，请检查网络后重试'));
         return;
@@ -170,7 +169,7 @@ Page({
         id: editing ? editingId : 'my_' + Date.now(),
         authorId: user.id,
         author: { id: user.id, name: user.name, avatar: user.avatar },
-        cover,
+        cover: finalImages[0],
         likes: editing ? old.likes || 0 : 0,
         collects: editing ? old.collects || 0 : 0,
         comments: editing ? old.comments || 0 : 0,
@@ -185,11 +184,25 @@ Page({
       finish(note);
     };
 
-    // 用首图比例做封面比例
-    wx.getImageInfo({
-      src: cover,
-      success: (info) => submit(+(info.height / info.width).toFixed(2) || 1),
-      fail: () => submit(1),
-    });
+    // 先按首图比例确定封面比例，再（远程时）上传图片，最后提交
+    const run = (finalImages) => {
+      wx.getImageInfo({
+        src: cover,
+        success: (info) => submit(+(info.height / info.width).toFixed(2) || 1, finalImages),
+        fail: () => submit(1, finalImages),
+      });
+    };
+
+    if (config.useRemote) {
+      // 已是远程 URL 的跳过上传（编辑场景）；本地临时路径先上传换 URL
+      wx.showLoading({ title: '上传中', mask: true });
+      Promise.all(
+        images.map((p) => (/^https?:\/\//.test(p) ? Promise.resolve(p) : api.uploadImage(p)))
+      )
+        .then((urls) => { wx.hideLoading(); run(urls); })
+        .catch(() => { wx.hideLoading(); toast('图片上传失败，请重试'); });
+    } else {
+      run(images);
+    }
   },
 });

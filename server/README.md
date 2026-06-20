@@ -53,7 +53,11 @@ GET    /api/me/notes              我发布的
 GET    /api/me/collects           我收藏的
 GET    /api/me/likes              我赞过的
 GET    /api/me/following          我关注的人
+POST   /api/upload                图片上传(multipart, 字段 file)，返回 { url }
 ```
+
+> 发布笔记时，小程序会先用 `wx.uploadFile` 把本地图片传到 `/api/upload`，
+> 服务端存到 `public/uploads/` 并返回可访问 URL，再用 URL 提交笔记。
 
 管理（需先 POST /api/admin/login 拿 token）：
 ```
@@ -79,9 +83,8 @@ module.exports = { useRemote: true, baseUrl: 'http://localhost:3000', vipContact
 - 开发者工具：勾选「详情 → 本地设置 → 不校验合法域名」。
 - 真机：需把后端部署到 HTTPS 域名，并在小程序后台「开发设置 → request 合法域名」中配置。
 - 后端不可用时：读接口自动回退本地 mock，登录走离线降级；写操作会提示失败。
-- 草稿箱仍只存本地；消息/私信模块目前仍是本地 mock（后端暂未建消息模型）。
-
-> 注意：发布笔记时本地相册选取的是临时图片路径，仅当次会话可见。生产需先做图片上传（如对象存储），再用返回的 URL 提交。
+- 草稿箱仍只存本地。
+- 发布图片会自动上传到后端 `public/uploads/`（生产建议改用对象存储 OSS/COS）。
 
 ## 升级数据库（生产）
 

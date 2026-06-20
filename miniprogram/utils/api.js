@@ -161,6 +161,26 @@ function getMe() {
   return request('GET', '/api/me', { auth: true });
 }
 
+// 上传图片，返回可访问 URL（用 wx.uploadFile）
+function uploadImage(filePath) {
+  return new Promise((resolve, reject) => {
+    const header = {};
+    if (store.getToken && store.getToken()) header.Authorization = 'Bearer ' + store.getToken();
+    wx.uploadFile({
+      url: config.baseUrl + '/api/upload',
+      filePath,
+      name: 'file',
+      header,
+      success: (r) => {
+        if (r.statusCode >= 200 && r.statusCode < 300) {
+          try { resolve(JSON.parse(r.data).url); } catch (e) { reject(e); }
+        } else reject(r);
+      },
+      fail: reject,
+    });
+  });
+}
+
 // ---------------- 写操作（回传后端） ----------------
 function likeNote(id) {
   return request('POST', '/api/like/' + id, { auth: true });
@@ -281,6 +301,7 @@ module.exports = {
   login,
   getMe,
   // 写操作
+  uploadImage,
   likeNote,
   collectNote,
   followUser,

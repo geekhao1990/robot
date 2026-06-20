@@ -5,6 +5,7 @@ const path = require('path');
 const url = require('url');
 const db = require('./db');
 const { createRouter, HttpError } = require('./router');
+const { handleUpload } = require('./upload');
 
 db.load();
 
@@ -14,18 +15,19 @@ require('./routes/app')(router, HttpError);
 require('./routes/admin')(router, HttpError);
 
 const STATIC_DIR = path.join(__dirname, '../public');
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' };
 
 function sendJson(res, status, data) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(data));
 }
 
-function serveStatic(res, pathname) {
-  let rel = pathname.replace(/^\/admin/, '') || '/';
+// 安全地从 STATIC_DIR/<sub> 下读取文件
+function serveFile(res, sub, rel) {
   if (rel === '/' || rel === '') rel = '/index.html';
-  const file = path.join(STATIC_DIR, 'admin', rel);
-  if (!file.startsWith(path.join(STATIC_DIR, 'admin'))) { res.writeHead(403); return res.end(); }
+  const baseDir = path.join(STATIC_DIR, sub);
+  const file = path.join(baseDir, rel);
+  if (!file.startsWith(baseDir)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (err, buf) => {
     if (err) { res.writeHead(404); return res.end('Not Found'); }
     res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream' });
@@ -46,7 +48,11 @@ const server = http.createServer((req, res) => {
   // 首页跳转到后台
   if (pathname === '/') { res.writeHead(302, { Location: '/admin' }); return res.end(); }
   // 静态后台
-  if (pathname === '/admin' || pathname.startsWith('/admin/')) return serveStatic(res, pathname);
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) return serveFile(res, 'admin', pathname.replace(/^\/admin/, ''));
+  // 上传的图片
+  if (pathname.startsWith('/uploads/')) return serveFile(res, 'uploads', pathname.replace(/^\/uploads/, ''));
+  // 图片上传（multipart，需单独读取原始字节）
+  if (pathname === '/api/upload' && req.method === 'POST') return handleUpload(req, res, sendJson);
 
   // API 路由
   const m = router.match(req.method, pathname);

@@ -2,9 +2,7 @@
 // 交互状态（赞/藏/关注）、发布笔记均回传后端，后端为数据源。
 const db = require('../db');
 const { pubUser } = require('../util');
-
-const appTokens = new Map(); // token -> userId
-const genToken = () => 'app_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+const auth = require('../auth');
 
 function getState(userId) {
   const d = db.get();
@@ -19,8 +17,7 @@ function getState(userId) {
 
 module.exports = function register(router, HttpError) {
   const currentUser = (ctx) => {
-    const token = (ctx.headers.authorization || '').replace(/^Bearer\s+/i, '');
-    const uid = appTokens.get(token);
+    const uid = auth.userIdFor(ctx.headers.authorization);
     if (!uid) throw new HttpError(401, '未登录');
     const u = db.get().users.find((x) => x.id === uid);
     if (!u) throw new HttpError(401, '用户不存在');
@@ -53,8 +50,7 @@ module.exports = function register(router, HttpError) {
       if (b.avatar) user.avatar = b.avatar;
       db.save();
     }
-    const token = genToken();
-    appTokens.set(token, user.id);
+    const token = auth.issue(user.id);
     return { token, user: pubUser(user) };
   });
 
