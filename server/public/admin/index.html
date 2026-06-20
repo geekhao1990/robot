@@ -41,6 +41,7 @@
   .btn-primary { background: var(--primary); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; }
   .btn-sm { padding: 5px 12px; border-radius: 6px; border: 1px solid #ddd; background: #fff; margin-right: 6px; }
   .btn-sm.del { color: var(--primary); border-color: #ffccd2; }
+  .btn-sm:disabled { color: #bbb; border-color: #eee; background: #f5f5f5; cursor: not-allowed; }
   /* 表格 */
   table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
   th, td { padding: 12px 14px; text-align: left; font-size: 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
@@ -291,7 +292,8 @@ function drawUsers() {
   const kw = _userKeyword.toLowerCase();
   const list = kw ? _users.filter((u) => (u.name || '').toLowerCase().includes(kw)) : _users;
   const rows = list.map((u, i) => {
-    const status = vipActive(u)
+    const active = vipActive(u);
+    const status = active
       ? `<span class="tag vip">${u.vipPlan === 'year' ? '年卡' : '月卡'} · 至 ${fmtDate(u.vipExpire)}</span>`
       : (u.vipExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
     return `
@@ -303,7 +305,7 @@ function drawUsers() {
         <td>
           <button class="btn-sm" onclick='setVip("${u.id}","month")'>开通月卡</button>
           <button class="btn-sm" onclick='setVip("${u.id}","year")'>开通年卡</button>
-          <button class="btn-sm del" onclick='setVip("${u.id}","none")'>取消VIP</button>
+          <button class="btn-sm del" ${active ? '' : 'disabled'} onclick='setVip("${u.id}","none")'>取消VIP</button>
           <button class="btn-sm" onclick='editUser("${u.id}")'>编辑</button>
         </td>
       </tr>`;

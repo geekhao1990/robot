@@ -25,6 +25,7 @@ module.exports = function register(router) {
       (n) =>
         n.title.includes(kw) ||
         (n.content || '').includes(kw) ||
+        (n.category || '').includes(kw) ||
         (n.tags || []).some((t) => t.includes(kw)) ||
         n.author.name.includes(kw)
     );

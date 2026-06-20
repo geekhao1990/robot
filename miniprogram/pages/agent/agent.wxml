@@ -8,8 +8,8 @@
     <!-- 欢迎语 + 推荐问题 -->
     <view wx:if="{{messages.length === 0}}" class="welcome">
       <view class="logo">🤖</view>
-      <view class="hi">我是小红书 AI 助手</view>
-      <view class="sub">有什么可以帮你的吗？试试这些 👇</view>
+      <view class="hi">笔记搜索助手</view>
+      <view class="sub">输入话题 / 分类 / 内容，帮你找相关笔记 👇</view>
       <view class="suggests">
         <view
           wx:for="{{suggests}}"
@@ -29,8 +29,34 @@
     >
       <view wx:if="{{item.role === 'assistant'}}" class="avatar bot">AI</view>
       <view class="bubble {{item.role}}">
-        <text wx:if="{{item.typing}}" class="typing">正在思考</text>
-        <text wx:else>{{item.content}}</text>
+        <text wx:if="{{item.typing}}" class="typing">正在搜索</text>
+        <block wx:else>
+          <text wx:if="{{item.content}}" class="b-text">{{item.content}}</text>
+
+          <!-- 相关笔记列表 -->
+          <view wx:if="{{item.notes.length}}" class="note-list">
+            <view
+              wx:for="{{item.notes}}"
+              wx:for-item="n"
+              wx:key="id"
+              class="note-item"
+              data-id="{{n.id}}"
+              bindtap="goNote"
+            >
+              <image class="note-cover" src="{{n.cover}}" mode="aspectFill" />
+              <view class="note-info">
+                <view class="note-title">{{n.title}}</view>
+                <view class="note-meta">{{n.author.name}} · 赞 {{n.likes}} · {{n.category}}</view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 企业微信推广 + 二维码 -->
+          <view wx:if="{{item.promo}}" class="promo">
+            <image class="qr" src="{{item.qr}}" mode="aspectFit" data-url="{{item.qr}}" bindtap="previewQr" />
+            <view class="qr-tip">长按或点击二维码联系企业微信</view>
+          </view>
+        </block>
       </view>
       <view wx:if="{{item.role === 'user'}}" class="avatar me">{{meInitial}}</view>
     </view>
