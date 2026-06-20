@@ -10,6 +10,7 @@ db.load();
 
 const router = createRouter();
 require('./routes/public')(router);
+require('./routes/app')(router, HttpError);
 require('./routes/admin')(router, HttpError);
 
 const STATIC_DIR = path.join(__dirname, '../public');

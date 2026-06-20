@@ -1,4 +1,6 @@
 const store = require('../../utils/store');
+const api = require('../../utils/api');
+const config = require('../../utils/config');
 const { toast, refreshTabBar } = require('../../utils/util');
 
 const DRAFT_KEY = 'xhs_publish_draft';
@@ -9,7 +11,7 @@ Page({
     title: '',
     content: '',
     tags: [],
-    categories: ['指标', '视频', '金手指'],
+    categories: ['指标', '视频', '其他'],
     catIndex: 0,
     noteType: 'normal', // normal | course(收费笔记)
     courseUrl: '',
@@ -42,13 +44,16 @@ Page({
     const app = getApp();
     // 从详情页「编辑」进入：载入该笔记，进入编辑模式
     if (app.globalData.editNoteId) {
-      const note = store.getMyNote(app.globalData.editNoteId);
+      const id = app.globalData.editNoteId;
       app.globalData.editNoteId = null;
-      if (note) {
+      const apply = (note) => {
+        if (!note) return;
         this.fillForm(note);
         this.setData({ editing: true, editingId: note.id });
         wx.setNavigationBarTitle({ title: '编辑笔记' });
-      }
+      };
+      if (config.useRemote) api.getNoteById(id).then(apply);
+      else apply(store.getMyNote(id));
       return;
     }
     // 从「我-草稿箱」进入：载入草稿
@@ -123,43 +128,11 @@ Page({
     const user = store.getUser();
     const cover = images[0];
     const editing = this.data.editing;
-    const old = editing ? store.getMyNote(this.data.editingId) : null;
+    const editingId = this.data.editingId;
 
-    const buildNote = (ratio) => {
-      const base = old || {};
-      const note = {
-        ...base,
-        id: editing ? this.data.editingId : 'my_' + Date.now(),
-        authorId: user.id,
-        author: { id: user.id, name: user.name, avatar: user.avatar },
-        category: categories[catIndex],
-        type: noteType,
-        courseUrl: noteType === 'course' ? courseUrl.trim() : '',
-        title: title.trim() || content.trim().slice(0, 15),
-        content: content.trim(),
-        images,
-        cover,
-        coverRatio: ratio,
-        tags,
-        // 编辑时保留互动数据；新建时清零
-        likes: editing ? base.likes || 0 : 0,
-        collects: editing ? base.collects || 0 : 0,
-        comments: editing ? base.comments || 0 : 0,
-        liked: editing ? !!base.liked : false,
-        collected: editing ? !!base.collected : false,
-        video: false,
-        time: editing ? base.time || Date.now() : Date.now(),
-        commentList: editing ? base.commentList || [] : [],
-      };
-
-      if (editing) {
-        store.updateMyNote(note);
-      } else {
-        store.addMyNote(note);
-        wx.removeStorageSync(DRAFT_KEY); // 发布成功清除草稿
-      }
+    const finish = (note) => {
+      if (!editing) wx.removeStorageSync(DRAFT_KEY); // 发布成功清除草稿
       wx.showToast({ title: editing ? '已保存' : '发布成功', icon: 'success' });
-      // 重置表单与编辑态
       this.setData({
         images: [], title: '', content: '', tags: [], catIndex: 0,
         noteType: 'normal', courseUrl: '', editing: false, editingId: null,
@@ -170,11 +143,53 @@ Page({
       }, 800);
     };
 
+    const submit = (ratio) => {
+      const payload = {
+        category: categories[catIndex],
+        type: noteType,
+        courseUrl: noteType === 'course' ? courseUrl.trim() : '',
+        title: title.trim() || content.trim().slice(0, 15),
+        content: content.trim(),
+        images,
+        coverRatio: ratio,
+        tags,
+      };
+
+      if (config.useRemote) {
+        // 回传后端（注意：本地选取的图片为临时路径，生产需先上传图片再提交 URL）
+        const p = editing ? api.updateNote(editingId, payload) : api.publishNote(payload);
+        p.then(finish).catch(() => toast('发布失败，请检查网络后重试'));
+        return;
+      }
+
+      // 本地模式
+      const old = editing ? store.getMyNote(editingId) || {} : {};
+      const note = {
+        ...old,
+        ...payload,
+        id: editing ? editingId : 'my_' + Date.now(),
+        authorId: user.id,
+        author: { id: user.id, name: user.name, avatar: user.avatar },
+        cover,
+        likes: editing ? old.likes || 0 : 0,
+        collects: editing ? old.collects || 0 : 0,
+        comments: editing ? old.comments || 0 : 0,
+        liked: editing ? !!old.liked : false,
+        collected: editing ? !!old.collected : false,
+        video: false,
+        time: editing ? old.time || Date.now() : Date.now(),
+        commentList: editing ? old.commentList || [] : [],
+      };
+      if (editing) store.updateMyNote(note);
+      else store.addMyNote(note);
+      finish(note);
+    };
+
     // 用首图比例做封面比例
     wx.getImageInfo({
       src: cover,
-      success: (info) => buildNote(+(info.height / info.width).toFixed(2) || 1),
-      fail: () => buildNote(1),
+      success: (info) => submit(+(info.height / info.width).toFixed(2) || 1),
+      fail: () => submit(1),
     });
   },
 });

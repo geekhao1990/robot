@@ -2,7 +2,6 @@
   <view class="cover-wrap" style="padding-bottom: {{ratio * 100}}%;">
     <image class="cover" src="{{note.cover}}" mode="aspectFill" lazy-load="true" />
     <view wx:if="{{note.video}}" class="video-tag">▶</view>
-    <view wx:if="{{note.category}}" class="cat-tag">{{note.category}}</view>
     <view wx:if="{{deletable}}" class="card-del" catchtap="onDelete">×</view>
   </view>
   <view class="info">

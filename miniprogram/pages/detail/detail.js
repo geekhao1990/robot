@@ -1,5 +1,6 @@
 const api = require('../../utils/api');
 const store = require('../../utils/store');
+const config = require('../../utils/config');
 const { formatCount, fromNow, toast } = require('../../utils/util');
 
 Page({
@@ -387,11 +388,18 @@ Page({
       confirmColor: '#ff2442',
       success: (res) => {
         if (!res.confirm) return;
-        store.removeMyNote(this.data.note.id);
-        wx.showToast({ title: '已删除', icon: 'success' });
-        setTimeout(() => {
-          wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) });
-        }, 600);
+        const done = () => {
+          wx.showToast({ title: '已删除', icon: 'success' });
+          setTimeout(() => {
+            wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) });
+          }, 600);
+        };
+        if (config.useRemote) {
+          api.deleteNote(this.data.note.id).then(done).catch(() => toast('删除失败，请重试'));
+        } else {
+          store.removeMyNote(this.data.note.id);
+          done();
+        }
       },
     });
   },

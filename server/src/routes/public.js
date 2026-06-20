@@ -1,5 +1,6 @@
 // server/src/routes/public.js —— 小程序只读接口
 const db = require('../db');
+const { pubUser } = require('../util');
 
 module.exports = function register(router) {
   // 首页 feed
@@ -38,7 +39,7 @@ module.exports = function register(router) {
   router.get('/api/users/:id', ({ params }) => {
     const u = db.get().users.find((x) => x.id === params.id);
     if (!u) { const e = new Error('not found'); e.status = 404; throw e; }
-    return u;
+    return pubUser(u);
   });
 
   router.get('/api/users/:id/notes', ({ params }) =>

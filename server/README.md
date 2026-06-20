@@ -28,7 +28,7 @@ npm start      # 或 node src/index.js
 
 ## 接口一览
 
-公开（小程序用）：
+公开读接口（小程序用）：
 ```
 GET /api/feed?tab=&page=&size=
 GET /api/notes/:id
@@ -39,25 +39,49 @@ GET /api/categories
 GET /api/hotSearch
 ```
 
-管理（需先 POST /api/admin/login 拿 token，请求头带 Authorization: Bearer <token>）：
+小程序登录与写操作（需先 POST /api/login 拿 token，请求头带 Authorization: Bearer <token>）：
+```
+POST   /api/login                 登录/注册，返回 { token, user }
+GET    /api/me                    当前用户 + 赞/藏/关注 状态
+POST   /api/like/:noteId          点赞切换
+POST   /api/collect/:noteId       收藏切换
+POST   /api/follow/:userId        关注切换
+POST   /api/notes                 发布笔记
+PUT    /api/notes/:id             编辑自己的笔记
+DELETE /api/notes/:id             删除自己的笔记
+GET    /api/me/notes              我发布的
+GET    /api/me/collects           我收藏的
+GET    /api/me/likes              我赞过的
+GET    /api/me/following          我关注的人
+```
+
+管理（需先 POST /api/admin/login 拿 token）：
 ```
 GET/POST/PUT/DELETE   /api/admin/notes[/:id]
 GET/POST/PUT/DELETE   /api/admin/users[/:id]
+PUT                   /api/admin/users/:id/vip   开通会员 { plan: month|year|none }
 GET/PUT               /api/admin/categories
 GET                   /api/admin/stats
 ```
 
+> 会员（VIP）只能由管理后台开通：在「用户管理」点击「开通月卡 / 年卡 / 取消VIP」。
+> 小程序内 VIP 页仅做月卡/年卡对比展示，开通引导用户联系企业微信。
+
 ## 让小程序连接真实后端
 
-编辑小程序 `miniprogram/utils/config.js`：
+小程序 `miniprogram/utils/config.js` 已默认 `useRemote: true`：
 
 ```js
-module.exports = { useRemote: true, baseUrl: 'http://localhost:3000' };
+module.exports = { useRemote: true, baseUrl: 'http://localhost:3000', vipContact: 'finance-vip-001' };
 ```
 
+- **必须先启动本服务**，小程序的登录、点赞、收藏、关注、发布、会员状态都依赖它。
 - 开发者工具：勾选「详情 → 本地设置 → 不校验合法域名」。
 - 真机：需把后端部署到 HTTPS 域名，并在小程序后台「开发设置 → request 合法域名」中配置。
-- `useRemote=false`（默认）时小程序仍用本地 mock；远程请求失败也会自动回退 mock，保证可跑。
+- 后端不可用时：读接口自动回退本地 mock，登录走离线降级；写操作会提示失败。
+- 草稿箱仍只存本地；消息/私信模块目前仍是本地 mock（后端暂未建消息模型）。
+
+> 注意：发布笔记时本地相册选取的是临时图片路径，仅当次会话可见。生产需先做图片上传（如对象存储），再用返回的 URL 提交。
 
 ## 升级数据库（生产）
 

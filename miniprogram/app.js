@@ -37,8 +37,13 @@ App({
       console.warn('getSystemInfo failed', e);
     }
 
-    // 初始化本地数据（用户交互状态等）
+    // 初始化本地缓存，并从后端同步当前用户与交互状态
     store.init();
     this.globalData.userInfo = store.getUser();
+    if (store.isLogin()) {
+      store.syncMe().then((user) => {
+        this.globalData.userInfo = user;
+      });
+    }
   },
 });

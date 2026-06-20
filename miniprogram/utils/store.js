@@ -1,9 +1,17 @@
 // utils/store.js
-// 本地状态管理：用户登录态、点赞/收藏/关注、已发布笔记，持久化到 Storage。
+// 状态层：后端为数据源，本地仅作运行时缓存 + 离线镜像。
+// 登录后从 /api/me 拉取交互状态；点赞/收藏/关注/发布等写操作回传后端。
+// 草稿仍只存本地（见 publish 页）。
 
 const data = require('../mock/data');
+const config = require('./config');
+// 懒加载 api，避免与 api.js 形成循环依赖
+function getApi() {
+  return require('./api');
+}
 
 const KEY = {
+  TOKEN: 'xhs_token',
   USER: 'xhs_user',
   LIKES: 'xhs_likes',
   COLLECTS: 'xhs_collects',
@@ -13,6 +21,7 @@ const KEY = {
 };
 
 let state = {
+  token: null,
   user: null,
   likes: {},
   collects: {},
@@ -37,6 +46,7 @@ function save(key, value) {
 }
 
 function init() {
+  state.token = load(KEY.TOKEN, null);
   state.user = load(KEY.USER, null);
   state.likes = load(KEY.LIKES, {});
   state.collects = load(KEY.COLLECTS, {});
@@ -45,7 +55,21 @@ function init() {
   state.read = load(KEY.READ, { notify: {}, conv: {} });
 }
 
-// ---------- 用户 ----------
+// 数组 -> 时间戳 map（保持顺序）
+function toMap(arr) {
+  const m = {};
+  (arr || []).forEach((id, i) => (m[id] = Date.now() - i));
+  return m;
+}
+
+// ---------- 登录态 ----------
+function getToken() {
+  return state.token;
+}
+function setToken(token) {
+  state.token = token || null;
+  save(KEY.TOKEN, state.token);
+}
 function getUser() {
   return state.user;
 }
@@ -55,45 +79,109 @@ function setUser(user) {
   const app = getApp();
   if (app) app.globalData.userInfo = user;
 }
-function logout() {
-  setUser(null);
-}
 function isLogin() {
   return !!state.user;
 }
 
-// ---------- 点赞 / 收藏 / 关注 ----------
+// 登录：远程换取 token + 用户并同步交互状态；离线则降级为本地
+function login(profile) {
+  if (config.useRemote) {
+    return getApi()
+      .login(profile)
+      .then((res) => {
+        setToken(res.token);
+        setUser(res.user);
+        return syncMe().then(() => state.user);
+      })
+      .catch(() => {
+        // 后端不可用时的离线降级，保证可用
+        setUser(profile);
+        return state.user;
+      });
+  }
+  setUser(profile);
+  return Promise.resolve(state.user);
+}
+
+// 从后端刷新当前用户 + 交互状态
+function syncMe() {
+  if (!config.useRemote || !state.token) return Promise.resolve(state.user);
+  return getApi()
+    .getMe()
+    .then((d) => {
+      if (d && d.user) setUser(d.user);
+      state.likes = toMap(d.likes);
+      state.collects = toMap(d.collects);
+      state.follows = toMap(d.follows);
+      save(KEY.LIKES, state.likes);
+      save(KEY.COLLECTS, state.collects);
+      save(KEY.FOLLOWS, state.follows);
+      return state.user;
+    })
+    .catch(() => state.user);
+}
+
+function logout() {
+  setToken(null);
+  setUser(null);
+  state.likes = {};
+  state.collects = {};
+  state.follows = {};
+  save(KEY.LIKES, {});
+  save(KEY.COLLECTS, {});
+  save(KEY.FOLLOWS, {});
+}
+
+// ---------- 点赞 / 收藏 / 关注（乐观更新 + 回传后端） ----------
 function isLiked(id) {
   return !!state.likes[id];
 }
 function toggleLike(id) {
-  if (state.likes[id]) delete state.likes[id];
-  else state.likes[id] = Date.now();
+  const liked = !state.likes[id];
+  if (liked) state.likes[id] = Date.now();
+  else delete state.likes[id];
   save(KEY.LIKES, state.likes);
-  return !!state.likes[id];
+  if (config.useRemote && state.token) {
+    getApi().likeNote(id).catch(() => revert(state.likes, KEY.LIKES, id, liked));
+  }
+  return liked;
 }
 
 function isCollected(id) {
   return !!state.collects[id];
 }
 function toggleCollect(id) {
-  if (state.collects[id]) delete state.collects[id];
-  else state.collects[id] = Date.now();
+  const collected = !state.collects[id];
+  if (collected) state.collects[id] = Date.now();
+  else delete state.collects[id];
   save(KEY.COLLECTS, state.collects);
-  return !!state.collects[id];
+  if (config.useRemote && state.token) {
+    getApi().collectNote(id).catch(() => revert(state.collects, KEY.COLLECTS, id, collected));
+  }
+  return collected;
 }
 
 function isFollowed(uid) {
   return !!state.follows[uid];
 }
 function toggleFollow(uid) {
-  if (state.follows[uid]) delete state.follows[uid];
-  else state.follows[uid] = Date.now();
+  const followed = !state.follows[uid];
+  if (followed) state.follows[uid] = Date.now();
+  else delete state.follows[uid];
   save(KEY.FOLLOWS, state.follows);
-  return !!state.follows[uid];
+  if (config.useRemote && state.token) {
+    getApi().followUser(uid).catch(() => revert(state.follows, KEY.FOLLOWS, uid, followed));
+  }
+  return followed;
 }
 
-// 返回按时间排序的 id 列表
+// 回传失败时回滚本地缓存
+function revert(map, key, id, applied) {
+  if (applied) delete map[id];
+  else map[id] = Date.now();
+  save(key, map);
+}
+
 function likedIds() {
   return Object.keys(state.likes).sort((a, b) => state.likes[b] - state.likes[a]);
 }
@@ -104,7 +192,7 @@ function followedIds() {
   return Object.keys(state.follows).sort((a, b) => state.follows[b] - state.follows[a]);
 }
 
-// ---------- 我发布的笔记 ----------
+// ---------- 我发布的笔记（仅本地/离线回退用；远程以 api.getMyNotes 为准） ----------
 function getMyNotes() {
   return state.myNotes;
 }
@@ -127,7 +215,7 @@ function getMyNote(id) {
   return state.myNotes.find((n) => n.id === id) || null;
 }
 
-// ---------- 消息已读状态 ----------
+// ---------- 消息已读状态（消息模块仍为 mock） ----------
 function markNotifyRead(type) {
   state.read.notify[type] = true;
   save(KEY.READ, state.read);
@@ -143,7 +231,6 @@ function isConvRead(id) {
   return !!state.read.conv[id];
 }
 
-// 计算各类未读数（已读则归零）
 function messageUnread() {
   if (!state.user) return { like: 0, comment: 0, follow: 0, conv: 0, total: 0 };
   let like = 0, comment = 0, follow = 0;
@@ -164,7 +251,8 @@ function messageUnread() {
 
 module.exports = {
   init,
-  getUser, setUser, logout, isLogin,
+  getToken, setToken,
+  getUser, setUser, login, syncMe, logout, isLogin,
   isLiked, toggleLike,
   isCollected, toggleCollect,
   isFollowed, toggleFollow,

@@ -70,6 +70,17 @@
 }
 
 /* VIP 开通入口 */
+.vip-badge {
+  display: inline-block;
+  margin-left: 12rpx;
+  padding: 2rpx 12rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #5a3d0a;
+  background: linear-gradient(90deg, #f7dca0, #e9b765);
+  border-radius: 999rpx;
+  vertical-align: middle;
+}
 .vip-banner {
   display: flex;
   align-items: center;

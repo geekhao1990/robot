@@ -29,7 +29,6 @@ Page({
           fans: 0,
           follows: 0,
           likes: 0,
-          vip: false,
         });
       },
       fail: () => toast('已取消授权'),
@@ -45,17 +44,20 @@ Page({
       fans: 128,
       follows: 56,
       likes: 1024,
-      vip: true, // 演示账号为 VIP：获取课程时跳过广告
     });
   },
 
+  // 登录走后端：换取 token 并同步会员/交互状态（会员是否开通以后端为准）
   doLogin(user) {
-    store.setUser(user);
-    wx.showToast({ title: '登录成功', icon: 'success' });
-    setTimeout(() => {
-      const pages = getCurrentPages();
-      if (pages.length > 1) wx.navigateBack();
-      else wx.switchTab({ url: '/pages/profile/profile' });
-    }, 700);
+    wx.showLoading({ title: '登录中' });
+    store.login(user).then(() => {
+      wx.hideLoading();
+      wx.showToast({ title: '登录成功', icon: 'success' });
+      setTimeout(() => {
+        const pages = getCurrentPages();
+        if (pages.length > 1) wx.navigateBack();
+        else wx.switchTab({ url: '/pages/profile/profile' });
+      }, 700);
+    });
   },
 });

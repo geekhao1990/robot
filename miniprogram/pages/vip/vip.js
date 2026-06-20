@@ -1,4 +1,5 @@
 const store = require('../../utils/store');
+const config = require('../../utils/config');
 
 const PLANS = [
   {
@@ -6,7 +7,6 @@ const PLANS = [
     name: '月卡',
     price: 100,
     unit: '月',
-    days: 30,
     features: ['朱杨张等老师服务包', '免广告观看课程权限'],
   },
   {
@@ -14,7 +14,6 @@ const PLANS = [
     name: '年卡',
     price: 1000,
     unit: '年',
-    days: 365,
     badge: '最超值',
     features: [
       '朱杨张等老师服务包',
@@ -24,20 +23,38 @@ const PLANS = [
   },
 ];
 
+// 用于对比展示的权益矩阵
+const COMPARE = [
+  { label: '朱杨张等老师服务包', month: true, year: true },
+  { label: '免广告观看课程权限', month: true, year: true },
+  { label: '金融大师软件一年使用权', month: false, year: true },
+];
+
 Page({
   data: {
     user: null,
     plans: PLANS,
-    selected: 1, // 默认选中年卡
-    vipExpireText: '',
+    compare: COMPARE,
+    vipActive: false,
+    vipStatusText: '',
+    vipContact: config.vipContact,
   },
 
   onShow() {
-    const user = store.getUser();
-    this.setData({
-      user,
-      vipExpireText: user && user.vipExpire ? this.fmt(user.vipExpire) : '',
-    });
+    const proceed = () => this.render(store.getUser());
+    if (store.isLogin() && config.useRemote) store.syncMe().then(proceed);
+    else proceed();
+  },
+
+  render(user) {
+    const now = Date.now();
+    const vipActive = !!(user && (user.vipActive || (user.vip && user.vipExpire && user.vipExpire > now)));
+    let vipStatusText;
+    if (!user) vipStatusText = '登录后查看会员状态';
+    else if (vipActive) vipStatusText = '会员有效期至 ' + this.fmt(user.vipExpire);
+    else if (user.vipExpire) vipStatusText = 'VIP 已过期，续费请联系企业微信';
+    else vipStatusText = '开通会员，畅享专属权益';
+    this.setData({ user, vipActive, vipStatusText });
   },
 
   fmt(ts) {
@@ -45,34 +62,25 @@ Page({
     return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
   },
 
-  onSelect(e) {
-    this.setData({ selected: Number(e.currentTarget.dataset.index) });
-  },
-
-  onPay() {
-    const user = store.getUser();
-    if (!user) {
-      return wx.showModal({
-        title: '提示',
-        content: '请先登录后再开通会员',
-        confirmText: '去登录',
-        success: (r) => { if (r.confirm) wx.navigateTo({ url: '/pages/login/login' }); },
-      });
-    }
-    const plan = this.data.plans[this.data.selected];
-    wx.showModal({
-      title: '确认开通',
-      content: `确认支付 ¥${plan.price} 开通「${plan.name}」？（演示，不会真实扣款）`,
-      confirmText: '确认支付',
-      success: (r) => {
-        if (!r.confirm) return;
-        // 以现有有效期为基础叠加（续费）
-        const now = Date.now();
-        const base = user.vip && user.vipExpire && user.vipExpire > now ? user.vipExpire : now;
-        const vipExpire = base + plan.days * 24 * 3600 * 1000;
-        store.setUser({ ...user, vip: true, vipPlan: plan.id, vipExpire });
-        wx.showToast({ title: '开通成功', icon: 'success' });
-        setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/profile/profile' }) }), 800);
+  // 联系企业微信开通
+  onContact() {
+    wx.setClipboardData({
+      data: this.data.vipContact,
+      success: () => {
+        wx.showModal({
+          title: '联系企业微信开通',
+          content: `企业微信号「${this.data.vipContact}」已复制。\n请添加企业微信，由客服为你开通月卡 / 年卡会员。`,
+          showCancel: false,
+          confirmText: '我知道了',
+        });
+      },
+      fail: () => {
+        wx.showModal({
+          title: '联系企业微信开通',
+          content: `请添加企业微信「${this.data.vipContact}」，由客服为你开通会员。`,
+          showCancel: false,
+          confirmText: '我知道了',
+        });
       },
     });
   },

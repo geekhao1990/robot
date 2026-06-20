@@ -240,31 +240,42 @@ function delNote(id) {
 }
 
 // 用户
+function fmtDate(ts) { if (!ts) return ''; const d = new Date(ts); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
+function vipActive(u) { return u.vip && u.vipExpire && u.vipExpire > Date.now(); }
+
 function renderUsers() {
   api('/api/admin/users').then((users) => {
     _users = users;
-    const rows = users.map((u) => `
+    const rows = users.map((u) => {
+      const status = vipActive(u)
+        ? `<span class="tag vip">${u.vipPlan === 'year' ? '年卡' : '月卡'} · 至 ${fmtDate(u.vipExpire)}</span>`
+        : (u.vipExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
+      return `
       <tr>
         <td><img src="${esc(u.avatar)}" /></td>
-        <td>${esc(u.name)} ${u.vip ? '<span class="tag vip">VIP</span>' : ''}</td>
-        <td>${esc(u.desc)}</td>
+        <td>${esc(u.name)}</td>
+        <td>${status}</td>
         <td>${u.fans}</td>
         <td>
-          <button class="btn-sm" onclick='toggleVip("${u.id}")'>${u.vip ? '取消VIP' : '设为VIP'}</button>
+          <button class="btn-sm" onclick='setVip("${u.id}","month")'>开通月卡</button>
+          <button class="btn-sm" onclick='setVip("${u.id}","year")'>开通年卡</button>
+          <button class="btn-sm del" onclick='setVip("${u.id}","none")'>取消VIP</button>
           <button class="btn-sm" onclick='editUser("${u.id}")'>编辑</button>
           <button class="btn-sm del" onclick='delUser("${u.id}")'>删除</button>
         </td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
     document.getElementById('content').innerHTML = `
       <div class="toolbar"><div>共 ${users.length} 人</div><button class="btn-primary" onclick="editUser()">+ 新增用户</button></div>
-      <table><thead><tr><th>头像</th><th>昵称</th><th>简介</th><th>粉丝</th><th>操作</th></tr></thead>
+      <table><thead><tr><th>头像</th><th>昵称</th><th>VIP 状态</th><th>粉丝</th><th>操作</th></tr></thead>
       <tbody>${rows}</tbody></table>`;
   });
 }
 
-function toggleVip(id) {
-  const u = _users.find((x) => x.id === id);
-  api('/api/admin/users/' + id, { method: 'PUT', body: JSON.stringify({ vip: !u.vip }) }).then(renderUsers);
+function setVip(id, plan) {
+  const label = { month: '开通月卡', year: '开通年卡', none: '取消VIP' }[plan];
+  if (!confirm(`确定为该用户「${label}」吗？`)) return;
+  api('/api/admin/users/' + id + '/vip', { method: 'PUT', body: JSON.stringify({ plan }) }).then(renderUsers);
 }
 function editUser(id) {
   const u = id ? _users.find((x) => x.id === id) : {};
@@ -273,14 +284,13 @@ function editUser(id) {
     <div class="field"><label>头像地址</label><input id="u_avatar" value="${esc(u.avatar)}" /></div>
     <div class="field"><label>简介</label><input id="u_desc" value="${esc(u.desc)}" /></div>
     <div class="field"><label>粉丝数</label><input id="u_fans" type="number" value="${u.fans || 0}" /></div>
-    <div class="field"><label><input id="u_vip" type="checkbox" ${u.vip ? 'checked' : ''}/> VIP 会员</label></div>
+    <div class="hint">VIP 开通/取消请用列表中的「开通月卡 / 年卡 / 取消VIP」按钮</div>
   `, () => {
     const body = {
       name: document.getElementById('u_name').value,
       avatar: document.getElementById('u_avatar').value,
       desc: document.getElementById('u_desc').value,
       fans: +document.getElementById('u_fans').value,
-      vip: document.getElementById('u_vip').checked,
     };
     const req = id ? api('/api/admin/users/' + id, { method: 'PUT', body: JSON.stringify(body) })
                    : api('/api/admin/users', { method: 'POST', body: JSON.stringify(body) });

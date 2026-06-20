@@ -1,6 +1,6 @@
 const api = require('../../utils/api');
 const store = require('../../utils/store');
-const mock = require('../../mock/data');
+const config = require('../../utils/config');
 const { formatCount, refreshTabBar } = require('../../utils/util');
 
 Page({
@@ -21,7 +21,8 @@ Page({
     draftCount: 0,
     draftTitle: '',
     draftCover: '',
-    vipExpireText: '',
+    vipActive: false,
+    vipStatusText: '',
   },
 
   onLoad() {
@@ -34,21 +35,44 @@ Page({
 
   onShow() {
     refreshTabBar(this, 4);
-    const user = store.getUser();
-    if (user) {
-      const s = this.computeStats();
-      this.setData({
-        user,
-        likeCollectCount: formatCount(s.likes + s.collects),
-        followCount: store.followedIds().length,
-        fansCount: mock.users.length,
-        vipExpireText: user.vipExpire ? this.fmtDate(user.vipExpire) : '',
-      });
-    } else {
-      this.setData({ user, likeCollectCount: '0', followCount: 0, fansCount: 0 });
+    const proceed = () => {
+      this.applyUser(store.getUser());
+      this.refreshDraft();
+      this.loadTab(this.data.tabIndex);
+    };
+    // 登录态下从后端刷新会员/交互状态（后台开通会员后这里能即时反映）
+    if (store.isLogin() && config.useRemote) store.syncMe().then(proceed);
+    else proceed();
+  },
+
+  // 渲染用户信息 + VIP 状态文案
+  applyUser(user) {
+    if (!user) {
+      return this.setData({ user: null, likeCollectCount: '0', followCount: 0, fansCount: 0, vipActive: false, vipStatusText: '' });
     }
-    this.refreshDraft();
-    this.loadTab(this.data.tabIndex);
+    const now = Date.now();
+    const vipActive = !!(user.vipActive || (user.vip && user.vipExpire && user.vipExpire > now));
+    let vipStatusText;
+    if (vipActive) vipStatusText = '有效期至 ' + this.fmtDate(user.vipExpire);
+    else if (user.vipExpire) vipStatusText = 'VIP 已过期，续费请联系企业微信';
+    else vipStatusText = '免广告看课程 · 朱杨张等老师服务包';
+    this.setData({
+      user,
+      followCount: store.followedIds().length,
+      fansCount: user.fans || 0,
+      vipActive,
+      vipStatusText,
+    });
+    this.refreshStats();
+  },
+
+  // 我的发布统计（获赞与收藏）
+  refreshStats() {
+    api.getMyNotes().then((notes) => {
+      let likes = 0, collects = 0;
+      notes.forEach((n) => { likes += n.likes || 0; collects += n.collects || 0; });
+      this.setData({ likeCollectCount: formatCount(likes + collects) });
+    });
   },
 
   refreshDraft() {
@@ -76,29 +100,21 @@ Page({
     return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
   },
 
-  // 统计我的发布笔记数 / 获得点赞数 / 获得收藏数
-  computeStats() {
-    const notes = store.getMyNotes();
-    let likes = 0, collects = 0;
-    notes.forEach((n) => {
-      likes += n.likes || 0;
-      collects += n.collects || 0;
-    });
-    return { noteCount: notes.length, likes, collects };
-  },
-
   goRelations(e) {
     const type = e.currentTarget.dataset.type;
     wx.navigateTo({ url: `/pages/relations/relations?type=${type}` });
   },
 
   showStats() {
-    const s = this.computeStats();
-    wx.showModal({
-      title: '我的数据',
-      content: `发布笔记：${s.noteCount}\n获得点赞：${s.likes}\n获得收藏：${s.collects}`,
-      showCancel: false,
-      confirmText: '知道了',
+    api.getMyNotes().then((notes) => {
+      let likes = 0, collects = 0;
+      notes.forEach((n) => { likes += n.likes || 0; collects += n.collects || 0; });
+      wx.showModal({
+        title: '我的数据',
+        content: `发布笔记：${notes.length}\n获得点赞：${likes}\n获得收藏：${collects}`,
+        showCancel: false,
+        confirmText: '知道了',
+      });
     });
   },
 
@@ -118,23 +134,14 @@ Page({
     let promise;
     let emptyText;
     if (index === 0) {
-      // 我的笔记：已发布 + 该用户作为作者的 mock 笔记
-      const mine = store.getMyNotes();
-      if (user) {
-        promise = api.getNotesByAuthor(user.id).then((authored) => {
-          const ids = new Set(mine.map((n) => n.id));
-          return mine.concat(authored.filter((n) => !ids.has(n.id)));
-        });
-      } else {
-        promise = Promise.resolve(mine);
-      }
+      promise = user ? api.getMyNotes() : Promise.resolve([]);
       emptyText = user ? '还没有发布笔记，去发布第一篇吧~' : '登录后查看你的笔记';
     } else if (index === 1) {
-      promise = api.getNotesByIds(store.collectedIds());
-      emptyText = '还没有收藏的笔记';
+      promise = user ? api.getMyCollects() : Promise.resolve([]);
+      emptyText = user ? '还没有收藏的笔记' : '登录后查看收藏';
     } else {
-      promise = api.getNotesByIds(store.likedIds());
-      emptyText = '还没有赞过的笔记';
+      promise = user ? api.getMyLikes() : Promise.resolve([]);
+      emptyText = user ? '还没有赞过的笔记' : '登录后查看赞过';
     }
 
     promise.then((notes) => {
@@ -160,7 +167,7 @@ Page({
       success: (res) => {
         if (res.confirm) {
           store.logout();
-          this.setData({ user: null });
+          this.applyUser(null);
           this.loadTab(this.data.tabIndex);
         }
       },

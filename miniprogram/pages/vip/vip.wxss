@@ -1,7 +1,7 @@
 .page {
   min-height: 100vh;
   background: #2b2b35;
-  padding: 0 30rpx 200rpx;
+  padding: 0 30rpx 60rpx;
 }
 
 .header {
@@ -20,16 +20,28 @@
   font-weight: 700;
   margin-top: 18rpx;
 }
+.h-badge {
+  display: inline-block;
+  margin-left: 12rpx;
+  padding: 2rpx 12rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #5a3d0a;
+  background: linear-gradient(90deg, #f7dca0, #e9b765);
+  border-radius: 999rpx;
+  vertical-align: middle;
+}
 .h-status {
   color: #b9a98a;
   font-size: 24rpx;
   margin-top: 10rpx;
 }
 
-/* 套餐 */
+/* 套餐对比 */
 .plans {
   display: flex;
   gap: 24rpx;
+  margin-top: 20rpx;
 }
 .plan {
   flex: 1;
@@ -37,10 +49,9 @@
   background: #3a3a45;
   border: 2rpx solid #4a4a55;
   border-radius: 20rpx;
-  padding: 36rpx 20rpx 30rpx;
-  text-align: center;
+  padding: 36rpx 22rpx 26rpx;
 }
-.plan.active {
+.plan-year {
   background: linear-gradient(160deg, #4a3f2e, #3a3a45);
   border-color: #f5d18b;
 }
@@ -61,89 +72,78 @@
   color: #f5d9a8;
   font-size: 30rpx;
   font-weight: 600;
+  text-align: center;
 }
 .plan-price {
   color: #f5d18b;
-  font-size: 56rpx;
+  font-size: 52rpx;
   font-weight: 800;
-  margin-top: 14rpx;
+  margin-top: 12rpx;
+  text-align: center;
 }
-.plan-price .cur {
-  font-size: 28rpx;
+.plan-price .cur { font-size: 28rpx; }
+.plan-price .unit { font-size: 24rpx; color: #b9a98a; font-weight: 400; }
+.plan-features {
+  margin-top: 22rpx;
 }
-.plan-price .unit {
-  font-size: 24rpx;
-  color: #b9a98a;
-  font-weight: 400;
-}
-
-/* 权益 */
-.rights {
-  background: #34343f;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin-top: 40rpx;
-}
-.rights-title {
-  color: #f5d9a8;
-  font-size: 28rpx;
-  font-weight: 700;
-  margin-bottom: 24rpx;
-}
-.right-item {
+.pf-item {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 22rpx;
-}
-.dot {
-  color: #f5d18b;
-  font-size: 26rpx;
-  margin-right: 16rpx;
-  line-height: 1.5;
-}
-.right-text {
-  flex: 1;
   color: #ddd;
-  font-size: 28rpx;
+  font-size: 23rpx;
   line-height: 1.5;
+  margin-bottom: 14rpx;
+}
+.pf-item .dot {
+  color: #f5d18b;
+  margin-right: 10rpx;
 }
 
-/* 底部支付 */
-.footer {
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
+/* 权益对比表 */
+.compare {
+  background: #34343f;
+  border-radius: 20rpx;
+  padding: 10rpx 26rpx;
+  margin-top: 40rpx;
+}
+.cmp-head, .cmp-row {
   display: flex;
   align-items: center;
-  padding: 20rpx 30rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  background: #23232b;
+  padding: 22rpx 0;
 }
-.pay-info {
-  flex: 1;
+.cmp-row { border-top: 2rpx solid #40404b; }
+.cmp-head {
+  color: #f5d9a8;
+  font-weight: 700;
+  font-size: 26rpx;
 }
-.pay-label {
-  color: #999;
-  font-size: 24rpx;
+.cmp-c1 { flex: 1; color: #ddd; font-size: 26rpx; }
+.cmp-head .cmp-c1 { color: #f5d9a8; }
+.cmp-c {
+  width: 110rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #b9a98a;
 }
-.pay-price {
-  color: #f5d18b;
-  font-size: 40rpx;
-  font-weight: 800;
-  margin-left: 10rpx;
+.cmp-c.yes { color: #f5d18b; font-weight: 700; }
+.cmp-c.no { color: #6c6c78; }
+
+/* 联系开通 */
+.footer {
+  margin-top: 50rpx;
+  text-align: center;
 }
-.pay-btn {
+.contact-btn {
   background: linear-gradient(90deg, #f7dca0, #e9b765);
   color: #5a3d0a;
   font-size: 32rpx;
   font-weight: 700;
-  padding: 20rpx 70rpx;
+  padding: 26rpx 0;
   border-radius: 999rpx;
 }
 .tip {
-  position: fixed;
-  bottom: calc(120rpx + env(safe-area-inset-bottom));
-  left: 30rpx; right: 30rpx;
-  text-align: center;
   color: #777;
   font-size: 22rpx;
+  margin-top: 24rpx;
+  line-height: 1.6;
 }

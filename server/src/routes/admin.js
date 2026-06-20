@@ -132,6 +132,29 @@ module.exports = function register(router, HttpError) {
     return { ok: true };
   });
 
+  // 开通/取消 VIP（plan: month | year | none）。在原有有效期上叠加续费。
+  router.put('/api/admin/users/:id/vip', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const user = d.users.find((u) => u.id === ctx.params.id);
+    if (!user) throw new HttpError(404, 'not found');
+    const plan = (ctx.body || {}).plan;
+    const DAY = 24 * 3600 * 1000;
+    if (plan === 'none') {
+      user.vip = false; user.vipPlan = ''; user.vipExpire = 0;
+    } else if (plan === 'month' || plan === 'year') {
+      const now = Date.now();
+      const base = user.vip && user.vipExpire > now ? user.vipExpire : now;
+      user.vip = true;
+      user.vipPlan = plan;
+      user.vipExpire = base + (plan === 'year' ? 365 : 30) * DAY;
+    } else {
+      throw new HttpError(400, 'plan 须为 month/year/none');
+    }
+    db.save();
+    return user;
+  });
+
   // ---------- 分类 ----------
   router.get('/api/admin/categories', (ctx) => { requireAuth(ctx); return db.get().categories; });
 
