@@ -62,6 +62,9 @@
   .btn-cancel { background: #f3f3f3; border: none; padding: 10px 18px; border-radius: 8px; }
   .hint { color:#999; font-size:12px; margin-top:4px; }
   .search { padding: 9px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; width: 260px; }
+  .search-box { display: flex; gap: 8px; align-items: center; }
+  .pager { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 14px; }
+  .pager-total { color: #888; font-size: 13px; margin-right: 6px; }
   /* 图片上传组件 */
   .img-grid { display: flex; flex-wrap: wrap; gap: 10px; }
   .img-cell { position: relative; width: 90px; height: 90px; border-radius: 8px; overflow: hidden; border: 1px solid #eee; }
@@ -176,30 +179,76 @@ function renderOverview() {
 }
 
 // 笔记
+const PAGE_SIZE = 10;
 let _notes = [], _users = [], _cats = [];
+let _noteKeyword = '';
+let _notePage = 1;
+
+// 分页控件（右下角）
+function pagerHtml(page, pages, total, fnName) {
+  return `<div class="pager">
+    <span class="pager-total">共 ${total} 条 · 第 ${page}/${pages} 页</span>
+    <button class="btn-sm" ${page <= 1 ? 'disabled' : ''} onclick="${fnName}(${page - 1})">上一页</button>
+    <button class="btn-sm" ${page >= pages ? 'disabled' : ''} onclick="${fnName}(${page + 1})">下一页</button>
+  </div>`;
+}
+
 function renderNotes() {
   Promise.all([api('/api/admin/notes'), api('/api/admin/users'), api('/api/admin/categories')])
     .then(([notes, users, cats]) => {
       _notes = notes; _users = users; _cats = cats;
-      const rows = notes.map((n, i) => `
-        <tr>
-          <td>${i + 1}</td>
-          <td><img src="${esc(n.cover)}" /></td>
-          <td>${esc(n.title)}</td>
-          <td>${esc(n.author && n.author.name)}</td>
-          <td><span class="tag">${esc(n.category)}</span></td>
-          <td>${n.type === 'course' ? '<span class="tag course">收费</span>' : '普通'}</td>
-          <td>赞 ${n.likes} · 藏 ${n.collects} · 评 ${n.comments}</td>
-          <td>
-            <button class="btn-sm" onclick='editNote("${n.id}")'>编辑</button>
-            <button class="btn-sm del" onclick='delNote("${n.id}")'>删除</button>
-          </td>
-        </tr>`).join('');
-      document.getElementById('content').innerHTML = `
-        <div class="toolbar"><div>共 ${notes.length} 篇</div><button class="btn-primary" onclick="editNote()">+ 新增笔记</button></div>
-        <table><thead><tr><th>序号</th><th>封面</th><th>标题</th><th>作者</th><th>分类</th><th>类型</th><th>互动数据</th><th>操作</th></tr></thead>
-        <tbody>${rows}</tbody></table>`;
+      _notePage = 1;
+      drawNotes();
     });
+}
+
+function doNoteSearch() {
+  const inp = document.getElementById('noteSearch');
+  _noteKeyword = (inp ? inp.value : '').trim();
+  _notePage = 1;
+  drawNotes();
+}
+function gotoNotePage(p) { _notePage = p; drawNotes(); }
+
+function drawNotes() {
+  const kw = _noteKeyword.toLowerCase();
+  const all = kw ? _notes.filter((n) =>
+    (n.title || '').toLowerCase().includes(kw) ||
+    (n.content || '').toLowerCase().includes(kw) ||
+    (n.category || '').toLowerCase().includes(kw) ||
+    (n.author && (n.author.name || '').toLowerCase().includes(kw))
+  ) : _notes;
+  const total = all.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (_notePage > pages) _notePage = pages;
+  const start = (_notePage - 1) * PAGE_SIZE;
+  const pageItems = all.slice(start, start + PAGE_SIZE);
+  const rows = pageItems.map((n, i) => `
+    <tr>
+      <td>${start + i + 1}</td>
+      <td><img src="${esc(n.cover)}" /></td>
+      <td>${esc(n.title)}</td>
+      <td>${esc(n.author && n.author.name)}</td>
+      <td><span class="tag">${esc(n.category)}</span></td>
+      <td>${n.type === 'course' ? '<span class="tag course">收费</span>' : '普通'}</td>
+      <td>赞 ${n.likes} · 藏 ${n.collects} · 评 ${n.comments}</td>
+      <td>
+        <button class="btn-sm" onclick='editNote("${n.id}")'>编辑</button>
+        <button class="btn-sm del" onclick='delNote("${n.id}")'>删除</button>
+      </td>
+    </tr>`).join('');
+  document.getElementById('content').innerHTML = `
+    <div class="toolbar">
+      <div class="search-box">
+        <input id="noteSearch" class="search" placeholder="按标题/内容/分类/作者搜索" value="${esc(_noteKeyword)}"
+               onkeydown="if(event.key==='Enter')doNoteSearch()" />
+        <button class="btn-primary" onclick="doNoteSearch()">搜索</button>
+      </div>
+      <button class="btn-primary" onclick="editNote()">+ 新增笔记</button>
+    </div>
+    <table><thead><tr><th>序号</th><th>封面</th><th>标题</th><th>作者</th><th>分类</th><th>类型</th><th>互动数据</th><th>操作</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    ${pagerHtml(_notePage, pages, total, 'gotoNotePage')}`;
 }
 
 let _modalImages = [];
@@ -279,26 +328,40 @@ function fmtDate(ts) { if (!ts) return ''; const d = new Date(ts); return `${d.g
 function vipActive(u) { return u.vip && u.vipExpire && u.vipExpire > Date.now(); }
 
 let _userKeyword = '';
+let _userPage = 1;
 function renderUsers() {
   api('/api/admin/users').then((users) => {
     _users = users;
+    _userPage = 1;
     drawUsers();
   });
 }
 
-function onUserSearch(e) { _userKeyword = (e.target.value || '').trim(); drawUsers(); }
+// 点击「搜索」按钮才触发（避免中文输入法在输入过程中被打断）
+function doUserSearch() {
+  const inp = document.getElementById('userSearch');
+  _userKeyword = (inp ? inp.value : '').trim();
+  _userPage = 1;
+  drawUsers();
+}
+function gotoUserPage(p) { _userPage = p; drawUsers(); }
 
 function drawUsers() {
   const kw = _userKeyword.toLowerCase();
-  const list = kw ? _users.filter((u) => (u.name || '').toLowerCase().includes(kw)) : _users;
-  const rows = list.map((u, i) => {
+  const all = kw ? _users.filter((u) => (u.name || '').toLowerCase().includes(kw)) : _users;
+  const total = all.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (_userPage > pages) _userPage = pages;
+  const start = (_userPage - 1) * PAGE_SIZE;
+  const pageItems = all.slice(start, start + PAGE_SIZE);
+  const rows = pageItems.map((u, i) => {
     const active = vipActive(u);
     const status = active
       ? `<span class="tag vip">${u.vipPlan === 'year' ? '年卡' : '月卡'} · 至 ${fmtDate(u.vipExpire)}</span>`
       : (u.vipExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
     return `
       <tr>
-        <td>${i + 1}</td>
+        <td>${start + i + 1}</td>
         <td><img src="${esc(u.avatar)}" /></td>
         <td>${esc(u.name)}</td>
         <td>${status}</td>
@@ -312,14 +375,16 @@ function drawUsers() {
   }).join('');
   document.getElementById('content').innerHTML = `
     <div class="toolbar">
-      <input class="search" placeholder="按昵称搜索用户" value="${esc(_userKeyword)}" oninput="onUserSearch(event)" />
+      <div class="search-box">
+        <input id="userSearch" class="search" placeholder="按昵称搜索用户" value="${esc(_userKeyword)}"
+               onkeydown="if(event.key==='Enter')doUserSearch()" />
+        <button class="btn-primary" onclick="doUserSearch()">搜索</button>
+      </div>
       <button class="btn-primary" onclick="editUser()">+ 新增用户</button>
     </div>
     <table><thead><tr><th>序号</th><th>头像</th><th>昵称</th><th>VIP 状态</th><th>操作</th></tr></thead>
     <tbody>${rows}</tbody></table>
-    <div class="hint" style="margin-top:10px">共 ${_users.length} 人${kw ? `，匹配 ${list.length} 人` : ''}</div>`;
-  const inp = document.querySelector('.search');
-  if (inp && _userKeyword) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+    ${pagerHtml(_userPage, pages, total, 'gotoUserPage')}`;
 }
 
 function setVip(id, plan) {
