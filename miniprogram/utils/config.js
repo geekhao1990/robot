@@ -9,6 +9,6 @@ module.exports = {
   baseUrl: 'http://localhost:3000',
   // 开通会员的企业微信联系方式（展示用）
   vipContact,
-  // 企业微信二维码图片：默认用在线生成（编码企业微信号），可替换为自有 QR 图片地址
-  vipQr: 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(vipContact),
+  // 企业微信二维码图片（本地资源，真机/开发者工具均可显示）
+  vipQr: '/images/vip-qr.jpg',
 };

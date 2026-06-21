@@ -146,8 +146,8 @@
   text-align: center;
 }
 .qr {
-  width: 280rpx;
-  height: 280rpx;
+  width: 460rpx;
+  height: 746rpx;
   background: #fff;
   border: 1rpx solid #eee;
   border-radius: 12rpx;

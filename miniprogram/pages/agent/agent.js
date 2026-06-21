@@ -3,7 +3,7 @@ const store = require('../../utils/store');
 const config = require('../../utils/config');
 const { refreshTabBar } = require('../../utils/util');
 
-const PROMO_TEXT = 'AI 回答不满意？需要《金手指阴阳谱》仅需 9.9，请联系企业微信 👇';
+const PROMO_TEXT = 'AI 回答不满意？需要金手指、阴阳谱、暗盘，9.9 元即可体验，请联系企业微信 👇';
 
 Page({
   data: {
