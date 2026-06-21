@@ -12,7 +12,7 @@ Page({
       { key: 'discover', label: '发现' },
       { key: 'follow', label: '关注' },
     ],
-    tab: 'discover',
+    tab: 'home',
     left: [],
     right: [],
     leftH: 0,
