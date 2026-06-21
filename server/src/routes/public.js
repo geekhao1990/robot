@@ -10,12 +10,16 @@ module.exports = function register(router) {
     const d = db.get();
     let list = d.notes.slice();
     if (tab === 'home') {
+      // 首页：全部笔记，按时间倒序
       list.sort((a, b) => b.time - a.time);
+    } else if (tab === 'discover') {
+      // 发现：收费笔记，按时间倒序
+      list = list.filter((n) => n.type === 'course').sort((a, b) => b.time - a.time);
     } else if (tab === 'follow') {
       // 关注流：仅返回当前登录用户已关注作者的笔记；未登录返回空
       const uid = auth.userIdFor(ctx.headers.authorization);
       const follows = (uid && d.userState && d.userState[uid] && d.userState[uid].follows) || {};
-      list = list.filter((n) => follows[n.authorId]);
+      list = list.filter((n) => follows[n.authorId]).sort((a, b) => b.time - a.time);
     }
     const p = Number(page) || 1;
     const s = Number(size) || 10;

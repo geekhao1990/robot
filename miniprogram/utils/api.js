@@ -61,7 +61,7 @@ function allNotes() {
 }
 
 // 首页 feed（按顶部 tab 筛选 + 简单分页）
-// tab: 'discover' 发现(推荐) | 'home' 首页(最新) | 'follow' 关注
+// tab: 'home' 首页(全部·时间倒序) | 'discover' 发现(收费笔记·时间倒序) | 'follow' 关注
 function getFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
   if (remote()) {
     // 带上登录态，「关注」流需按当前用户的关注关系过滤
@@ -76,8 +76,10 @@ function mockFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
   let list = allNotes();
   if (tab === 'home') {
     list = list.slice().sort((a, b) => b.time - a.time);
+  } else if (tab === 'discover') {
+    list = list.filter((n) => n.type === 'course').sort((a, b) => b.time - a.time);
   } else if (tab === 'follow') {
-    list = list.filter((n) => store.isFollowed(n.authorId));
+    list = list.filter((n) => store.isFollowed(n.authorId)).sort((a, b) => b.time - a.time);
   }
   const start = (page - 1) * size;
   const slice = list.slice(start, start + size).map(decorate);
