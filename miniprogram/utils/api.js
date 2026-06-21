@@ -64,7 +64,8 @@ function allNotes() {
 // tab: 'discover' 发现(推荐) | 'home' 首页(最新) | 'follow' 关注
 function getFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
   if (remote()) {
-    return http('/api/feed', { tab, page, size })
+    // 带上登录态，「关注」流需按当前用户的关注关系过滤
+    return request('GET', '/api/feed', { data: { tab, page, size }, auth: true })
       .then((r) => ({ list: (r.list || []).map(decorate), hasMore: r.hasMore, total: r.total }))
       .catch(() => mockFeed({ tab, page, size }));
   }

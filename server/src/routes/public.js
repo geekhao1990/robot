@@ -1,14 +1,22 @@
 // server/src/routes/public.js —— 小程序只读接口
 const db = require('../db');
 const { pubUser } = require('../util');
+const auth = require('../auth');
 
 module.exports = function register(router) {
   // 首页 feed
-  router.get('/api/feed', ({ query }) => {
-    const { tab = 'discover', page = 1, size = 10 } = query;
-    const data = db.get();
-    let list = data.notes.slice();
-    if (tab === 'home') list.sort((a, b) => b.time - a.time);
+  router.get('/api/feed', (ctx) => {
+    const { tab = 'discover', page = 1, size = 10 } = ctx.query;
+    const d = db.get();
+    let list = d.notes.slice();
+    if (tab === 'home') {
+      list.sort((a, b) => b.time - a.time);
+    } else if (tab === 'follow') {
+      // 关注流：仅返回当前登录用户已关注作者的笔记；未登录返回空
+      const uid = auth.userIdFor(ctx.headers.authorization);
+      const follows = (uid && d.userState && d.userState[uid] && d.userState[uid].follows) || {};
+      list = list.filter((n) => follows[n.authorId]);
+    }
     const p = Number(page) || 1;
     const s = Number(size) || 10;
     const start = (p - 1) * s;
