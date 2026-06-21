@@ -9,6 +9,19 @@
   display: flex;
   flex-wrap: wrap;
 }
+.img-tip {
+  color: #999;
+  font-size: 24rpx;
+  margin: 4rpx 0 10rpx;
+}
+/* 离屏画布：不可见但需可被 canvasToTempFilePath 读取 */
+.cover-canvas {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: 375px;
+  height: 500px;
+}
 .img-item, .img-add {
   width: 210rpx;
   height: 210rpx;

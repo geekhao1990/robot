@@ -5,6 +5,53 @@ const { toast, refreshTabBar } = require('../../utils/util');
 
 const DRAFT_KEY = 'xhs_publish_draft';
 
+// ---- 文字封面生成所需的小工具 ----
+const THEMES = [
+  { bg: '#FFE9EC', fg: '#E63462' },
+  { bg: '#E8F3FF', fg: '#2B6CB0' },
+  { bg: '#FFF4E0', fg: '#B4690E' },
+  { bg: '#EAF7EE', fg: '#1E7B45' },
+  { bg: '#F1ECFF', fg: '#6B46C1' },
+  { bg: '#FFF0F6', fg: '#C2185B' },
+  { bg: '#E7F6F8', fg: '#0E7490' },
+];
+const CAT_EMOJI = { '指标': '📈', '视频': '🎬', '其他': '📌' };
+const EMOJI_POOL = ['✨', '💡', '🌟', '🔥', '💰', '🎯', '📊', '🍀', '📒', '🚀'];
+
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < (s || '').length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+function pickTheme(t) { return THEMES[hashStr(t || 'x') % THEMES.length]; }
+function pickEmoji(cat, t) { return CAT_EMOJI[cat] || EMOJI_POOL[hashStr(t || 'y') % EMOJI_POOL.length]; }
+
+// 按宽度把文字折行，最多 maxLines 行，超出末行加省略号
+function wrapText(ctx, text, maxWidth, maxLines) {
+  const chars = Array.from(text || '');
+  const lines = [];
+  let line = '';
+  for (let i = 0; i < chars.length; i++) {
+    const test = line + chars[i];
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = chars[i];
+      if (lines.length === maxLines) { line = ''; break; }
+    } else {
+      line = test;
+    }
+  }
+  if (line && lines.length < maxLines) lines.push(line);
+  // 还有剩余字符未放下 -> 末行省略号
+  const used = lines.join('').length;
+  if (used < chars.length && lines.length) {
+    let last = lines[lines.length - 1];
+    while (last && ctx.measureText(last + '…').width > maxWidth) last = last.slice(0, -1);
+    lines[lines.length - 1] = last + '…';
+  }
+  return lines;
+}
+
 Page({
   data: {
     images: [],
@@ -121,12 +168,10 @@ Page({
       });
     }
     const { images, title, content, tags, categories, catIndex, noteType, courseUrl } = this.data;
-    if (!images.length) return toast('请至少添加一张图片');
     if (!content.trim()) return toast('写点内容吧~');
     if (noteType === 'course' && !courseUrl.trim()) return toast('请填写课程资料地址');
 
     const user = store.getUser();
-    const cover = images[0];
     const editing = this.data.editing;
     const editingId = this.data.editingId;
 
@@ -184,25 +229,92 @@ Page({
       finish(note);
     };
 
-    // 先按首图比例确定封面比例，再（远程时）上传图片，最后提交
-    const run = (finalImages) => {
-      wx.getImageInfo({
-        src: cover,
-        success: (info) => submit(+(info.height / info.width).toFixed(2) || 1, finalImages),
-        fail: () => submit(1, finalImages),
-      });
+    // 没有图片时，按标题/内容生成一张纯色文字封面（小红书同款效果）
+    const ensureImages = () => {
+      if (images.length) return Promise.resolve(images);
+      const coverText = title.trim() || content.trim().slice(0, 24) || '新笔记';
+      wx.showLoading({ title: '生成封面', mask: true });
+      return this.generateCover(coverText, categories[catIndex])
+        .then((tmp) => { wx.hideLoading(); return [tmp]; })
+        .catch(() => { wx.hideLoading(); return []; });
     };
 
-    if (config.useRemote) {
-      // 已是远程 URL 的跳过上传（编辑场景）；本地临时路径先上传换 URL
-      wx.showLoading({ title: '上传中', mask: true });
-      Promise.all(
-        images.map((p) => (/^https?:\/\//.test(p) ? Promise.resolve(p) : api.uploadImage(p)))
-      )
-        .then((urls) => { wx.hideLoading(); run(urls); })
-        .catch(() => { wx.hideLoading(); toast('图片上传失败，请重试'); });
-    } else {
-      run(images);
-    }
+    ensureImages().then((workingImages) => {
+      if (!workingImages.length) return toast('封面生成失败，请手动添加一张图片');
+      const cover = workingImages[0];
+      // 先按首图比例确定封面比例，再（远程时）上传图片，最后提交
+      const run = (finalImages) => {
+        wx.getImageInfo({
+          src: cover,
+          success: (info) => submit(+(info.height / info.width).toFixed(2) || 1, finalImages),
+          fail: () => submit(1, finalImages),
+        });
+      };
+
+      if (config.useRemote) {
+        // 已是远程 URL 的跳过上传（编辑场景）；本地临时路径先上传换 URL
+        wx.showLoading({ title: '上传中', mask: true });
+        Promise.all(
+          workingImages.map((p) => (/^https?:\/\//.test(p) ? Promise.resolve(p) : api.uploadImage(p)))
+        )
+          .then((urls) => { wx.hideLoading(); run(urls); })
+          .catch(() => { wx.hideLoading(); toast('图片上传失败，请重试'); });
+      } else {
+        run(workingImages);
+      }
+    });
+  },
+
+  // 用 canvas 生成纯色底 + 标题文字 + emoji 的封面，返回临时文件路径
+  generateCover(text, category) {
+    return new Promise((resolve, reject) => {
+      wx.createSelectorQuery()
+        .in(this)
+        .select('#coverCanvas')
+        .fields({ node: true, size: true })
+        .exec((res) => {
+          const node = res && res[0] && res[0].node;
+          if (!node) return reject(new Error('no canvas'));
+          const W = 375, H = 500;
+          const dpr = (wx.getWindowInfo ? wx.getWindowInfo().pixelRatio : 2) || 2;
+          node.width = W * dpr;
+          node.height = H * dpr;
+          const ctx = node.getContext('2d');
+          ctx.scale(dpr, dpr);
+
+          const theme = pickTheme(text);
+          ctx.fillStyle = theme.bg;
+          ctx.fillRect(0, 0, W, H);
+
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+
+          // emoji
+          ctx.font = '92px sans-serif';
+          ctx.fillText(pickEmoji(category, text), W / 2, 150);
+
+          // 标题（自动换行，最多 5 行）
+          ctx.fillStyle = theme.fg;
+          ctx.font = 'bold 30px sans-serif';
+          const lines = wrapText(ctx, text, W - 70, 5);
+          const lineH = 44;
+          let y = 300 - ((lines.length - 1) * lineH) / 2;
+          lines.forEach((ln) => { ctx.fillText(ln, W / 2, y); y += lineH; });
+
+          // 角标
+          ctx.globalAlpha = 0.55;
+          ctx.font = '18px sans-serif';
+          ctx.fillText('· 笔记 ·', W / 2, H - 42);
+          ctx.globalAlpha = 1;
+
+          setTimeout(() => {
+            wx.canvasToTempFilePath({
+              canvas: node,
+              success: (r) => resolve(r.tempFilePath),
+              fail: reject,
+            });
+          }, 50);
+        });
+    });
   },
 });

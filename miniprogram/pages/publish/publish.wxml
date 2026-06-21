@@ -10,6 +10,10 @@
       <text class="add-text">添加图片</text>
     </view>
   </view>
+  <view wx:if="{{!images.length}}" class="img-tip">不传图片也行～将根据标题自动生成文字封面</view>
+
+  <!-- 离屏 canvas：生成文字封面 -->
+  <canvas type="2d" id="coverCanvas" class="cover-canvas"></canvas>
 
   <!-- 笔记类型 -->
   <view class="type-row">
