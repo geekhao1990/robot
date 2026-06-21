@@ -7,7 +7,7 @@ const PLANS = [
     name: '月卡',
     price: 100,
     unit: '月',
-    features: ['朱杨张等老师服务包', '免广告观看课程权限'],
+    features: ['金手指（永久使用权）', '阴阳谱（永久使用权）'],
   },
   {
     id: 'year',
@@ -15,19 +15,14 @@ const PLANS = [
     price: 1000,
     unit: '年',
     badge: '最超值',
-    features: [
-      '朱杨张等老师服务包',
-      '免广告观看课程权限',
-      '金融大师软件一台主机一年使用权',
-    ],
+    features: ['金手指（永久使用权）', '阴阳谱（永久使用权）'],
   },
 ];
 
 // 用于对比展示的权益矩阵
 const COMPARE = [
-  { label: '朱杨张等老师服务包', month: true, year: true },
-  { label: '免广告观看课程权限', month: true, year: true },
-  { label: '金融大师软件一年使用权', month: false, year: true },
+  { label: '金手指（永久使用权）', month: true, year: true },
+  { label: '阴阳谱（永久使用权）', month: true, year: true },
 ];
 
 Page({
