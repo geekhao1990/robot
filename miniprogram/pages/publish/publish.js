@@ -15,8 +15,6 @@ const THEMES = [
   { bg: '#FFF0F6', fg: '#C2185B' },
   { bg: '#E7F6F8', fg: '#0E7490' },
 ];
-const CAT_EMOJI = { '指标': '📈', '视频': '🎬', '其他': '📌' };
-const EMOJI_POOL = ['✨', '💡', '🌟', '🔥', '💰', '🎯', '📊', '🍀', '📒', '🚀'];
 
 function hashStr(s) {
   let h = 0;
@@ -24,7 +22,6 @@ function hashStr(s) {
   return h;
 }
 function pickTheme(t) { return THEMES[hashStr(t || 'x') % THEMES.length]; }
-function pickEmoji(cat, t) { return CAT_EMOJI[cat] || EMOJI_POOL[hashStr(t || 'y') % EMOJI_POOL.length]; }
 
 // 按宽度把文字折行，最多 maxLines 行，超出末行加省略号
 function wrapText(ctx, text, maxWidth, maxLines) {
@@ -289,9 +286,10 @@ Page({
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
 
-          // emoji
-          ctx.font = '92px sans-serif';
-          ctx.fillText(pickEmoji(category, text), W / 2, 150);
+          // 顶部「老师」标识
+          ctx.fillStyle = theme.fg;
+          ctx.font = 'bold 60px sans-serif';
+          ctx.fillText('老师', W / 2, 150);
 
           // 标题（自动换行，最多 5 行）
           ctx.fillStyle = theme.fg;
@@ -300,12 +298,6 @@ Page({
           const lineH = 44;
           let y = 300 - ((lines.length - 1) * lineH) / 2;
           lines.forEach((ln) => { ctx.fillText(ln, W / 2, y); y += lineH; });
-
-          // 角标
-          ctx.globalAlpha = 0.55;
-          ctx.font = '18px sans-serif';
-          ctx.fillText('· 笔记 ·', W / 2, H - 42);
-          ctx.globalAlpha = 1;
 
           setTimeout(() => {
             wx.canvasToTempFilePath({

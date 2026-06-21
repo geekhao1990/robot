@@ -113,6 +113,15 @@ module.exports = function register(router, HttpError) {
     return Object.keys(s.follows).map((id) => pubUser(d.users.find((x) => x.id === id))).filter(Boolean);
   });
 
+  // 我的粉丝（关注了我的人）
+  router.get('/api/me/fans', (ctx) => {
+    const u = currentUser(ctx);
+    const d = db.get();
+    const states = d.userState || {};
+    const fanIds = Object.keys(states).filter((uid) => states[uid] && states[uid].follows && states[uid].follows[u.id]);
+    return fanIds.map((id) => pubUser(d.users.find((x) => x.id === id))).filter(Boolean);
+  });
+
   // 我赞过 / 收藏的笔记
   router.get('/api/me/likes', (ctx) => {
     const u = currentUser(ctx);

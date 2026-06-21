@@ -303,16 +303,19 @@ function readConv(id) {
 // ---------------- 关注 / 粉丝 ----------------
 function getFollowing() {
   if (remote()) {
-    return request('GET', '/api/me/following', { auth: true })
-      .catch(() => delay(store.followedIds().map((id) => data.userMap[id]).filter(Boolean)));
+    // 以后端为准；失败返回空，避免显示陈旧的本地缓存
+    return request('GET', '/api/me/following', { auth: true }).catch(() => []);
   }
   const list = store.followedIds().map((id) => data.userMap[id]).filter(Boolean);
   return delay(list);
 }
 
 function getFans() {
-  // 演示数据：以 mock 用户作为粉丝
-  return delay(data.users.slice());
+  if (remote()) {
+    return request('GET', '/api/me/fans', { auth: true }).catch(() => []);
+  }
+  // 本地模式无真实粉丝数据
+  return delay([]);
 }
 
 function getFriends() {
