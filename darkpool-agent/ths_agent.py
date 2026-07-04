@@ -19,14 +19,15 @@ def _to_px(v, size):
 
 def capture_darkpool(code: str) -> bytes:
     """
-    输入股票代码（如 01810），返回该股暗盘行情页的 PNG 截图字节。
+    输入A股代码（如 600519），返回该股「资金」栏目主力暗盘板块的 PNG 截图字节。
     失败抛 AgentError，message 为可展示给用户的原因。
     """
     code = code.strip()
     goal = (
-        f"在同花顺App中找到股票代码为 {code} 的港股，"
-        f"进入它的「暗盘」行情页面。通常路径：点击顶部搜索图标 -> 输入代码 {code} "
-        f"-> 点击搜索结果中的该股票 -> 在个股行情页寻找「暗盘」Tab或入口。"
+        f"在同花顺App中打开股票代码为 {code} 的A股个股行情页，切换到「资金」栏目，"
+        f"让「主力流向」板块（包含主力净流入、主力明盘、主力暗盘柱状图）完整显示在屏幕中。"
+        f"通常路径：点击顶部搜索图标 -> 输入代码 {code} -> 点击搜索结果中的该股票 "
+        f"-> 在个股页中部的Tab栏点「资金」-> 如「主力流向」未完整可见则轻微上下滚动。"
     )
 
     w, h = device.screen_size()
@@ -74,16 +75,16 @@ def capture_darkpool(code: str) -> bytes:
     raise AgentError(f"操作步数超过 {config.MAX_STEPS} 步仍未找到 {code} 的暗盘页面")
 
 
-def discover_darkpool_codes() -> list[str]:
+def discover_watchlist_codes() -> list[str]:
     """
-    自动发现当天有暗盘的新股：让智能体导航到同花顺的「暗盘」行情列表页，
-    再让视觉模型读出屏幕上的全部股票代码（翻一页以覆盖更多）。
-    找不到列表页时抛 AgentError（当天可能没有新股暗盘）。
+    读取同花顺「自选股」列表中的全部股票代码，作为每日跑批的对象。
+    把需要给客户提供暗盘截图的股票加进 App 自选股即可，无需改代码。
+    找不到自选列表时抛 AgentError。
     """
     goal = (
-        "在同花顺App中打开「暗盘」行情列表页（展示今日所有暗盘交易新股的列表）。"
-        "通常路径：底部「行情」-> 顶部或分类中的「港股」-> 「新股中心」或「暗盘」入口。"
-        "看到多只股票的暗盘列表时输出 finish；确认今天没有暗盘/找不到入口时输出 fail。"
+        "在同花顺App中打开「自选股」列表页（展示我关注的股票列表，含名称和代码）。"
+        "通常路径：底部导航栏点「自选」。看到自选股列表时输出 finish；"
+        "找不到自选入口或列表为空时输出 fail。"
     )
     w, h = device.screen_size()
     device.launch_ths()
@@ -110,18 +111,18 @@ def discover_darkpool_codes() -> list[str]:
         history.append(f"{kind}: {act.get('reason', '')}")
         time.sleep(config.STEP_WAIT)
     else:
-        raise AgentError("未能在限定步数内打开暗盘列表页")
+        raise AgentError("未能在限定步数内打开自选股列表页")
 
     # 读当前屏 + 上滑一屏，合并识别到的代码
     question = (
-        '请读出截图中暗盘列表里所有股票的代码（港股数字代码），'
-        '输出 JSON：{"codes": ["02525", "01810"]}，没有则输出 {"codes": []}。'
+        '请读出截图中自选股列表里所有股票的代码（6位数字的A股代码），'
+        '输出 JSON：{"codes": ["600519", "300750"]}，没有则输出 {"codes": []}。'
     )
     codes: list[str] = []
     for i in range(2):
         data = zhipu_vision.ask_json(device.screenshot_b64(), question)
         for c in data.get("codes", []):
-            c = str(c).strip().zfill(5)
+            c = str(c).strip().zfill(6)
             if c.isdigit() and c not in codes:
                 codes.append(c)
         if i == 0:
@@ -138,7 +139,8 @@ def _verify(png_bytes: bytes, code: str) -> bool:
     try:
         act = zhipu_vision.decide(
             shot,
-            f"校验：当前屏幕是否已经是股票 {code} 的「暗盘」行情页？"
+            f"校验：当前屏幕是否是股票 {code} 的「资金」栏目，"
+            f"且「主力流向」板块（主力明盘/主力暗盘柱状图）完整可见？"
             f"是则输出 finish，不是则输出 fail 并说明当前是什么页面。",
             [],
         )

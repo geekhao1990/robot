@@ -1,9 +1,9 @@
 # darkpool-agent/main.py
 # HTTP 服务（收盘后暗盘模式）：
-#   POST /api/darkpool/screenshot {"code": "01810"}
+#   POST /api/darkpool/screenshot {"code": "600519"}
 #       -> 先查当天本地缓存，命中直接返回；未命中才操作真机截图并写入缓存。
-#   POST /api/darkpool/prefetch  {"codes": ["02525"]}   codes 省略则自动发现当天暗盘列表
-#       -> 后台批量预抓取当天所有暗盘新股（建议每天 18:35 由 cron 触发）。
+#   POST /api/darkpool/prefetch  {"codes": ["600519"]}   codes 省略则自动读取App自选股列表
+#       -> 后台批量预抓取（默认每天 15:30 收盘后由内置定时器自动触发）。
 #   GET  /api/darkpool/prefetch/status  -> 查看跑批进度
 #
 # 启动：
@@ -54,7 +54,7 @@ def _norm_code(raw: str) -> str:
     code = raw.strip().upper().replace("HK", "").strip(".")
     if not CODE_RE.match(code):
         raise HTTPException(status_code=400, detail="股票代码格式不正确")
-    return code.zfill(5)  # 港股代码统一补齐 5 位
+    return code.zfill(6)  # A股代码统一补齐 6 位
 
 
 def _capture_with_cache(code: str) -> tuple[bytes, bool]:
@@ -120,7 +120,7 @@ def _run_prefetch(codes: list[str] | None):
     try:
         if not codes:
             with _device_lock:
-                codes = ths_agent.discover_darkpool_codes()
+                codes = ths_agent.discover_watchlist_codes()
         _prefetch.update(date=cache.today(), total=len(codes), done=0, results=[])
         for code in codes:
             item = {"code": code, "ok": True, "cached": False, "message": ""}

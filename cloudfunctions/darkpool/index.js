@@ -96,11 +96,11 @@ function callAgent(baseUrl, token, code) {
 }
 
 exports.main = async (event = {}) => {
-  const raw = String(event.code || '').trim().toUpperCase().replace(/^HK\.?/, '');
+  const raw = String(event.code || '').trim().replace(/^(SH|SZ)\.?/i, '');
   if (!CODE_RE.test(raw)) {
-    return { ok: false, message: '请输入正确的股票代码，如：01810 或 700' };
+    return { ok: false, message: '请输入正确的A股代码，如：600519 或 300750' };
   }
-  const code = raw.padStart(5, '0'); // 港股代码补齐 5 位
+  const code = raw.padStart(6, '0'); // A股代码补齐 6 位
 
   const now = bj();
   const today = bjDate(now);

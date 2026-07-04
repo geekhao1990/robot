@@ -16,16 +16,16 @@ function genReply(text) {
   for (const r of RULES) {
     if (r.k.some((k) => t.includes(k.toLowerCase()))) return r.a;
   }
-  return `我理解你说的「${text}」。这是一个演示版 AI 助手，可以帮你：\n· 写/优化笔记文案\n· 取标题、起话题\n· 给选题和拍摄灵感\n· 输入港股代码查暗盘截图（如「暗盘 01810」）\n你可以把需求说得更具体一点，我来帮你～`;
+  return `我理解你说的「${text}」。这是一个演示版 AI 助手，可以帮你：\n· 写/优化笔记文案\n· 取标题、起话题\n· 给选题和拍摄灵感\n· 输入A股代码查主力暗盘资金截图（如「暗盘 600519」）\n你可以把需求说得更具体一点，我来帮你～`;
 }
 
 // 识别「暗盘」指令，返回股票代码或 null。
-// 支持：「暗盘 01810」「01810 暗盘」「查700的暗盘」，或直接输入纯数字代码「01810」
+// 支持：「暗盘 600519」「600519 暗盘」「查600519的暗盘」，或直接输入6位A股代码
 function parseDarkpoolCode(text) {
   const t = (text || '').trim();
-  if (/^\d{1,6}$/.test(t)) return t; // 纯代码
+  if (/^\d{6}$/.test(t)) return t; // 纯6位代码
   if (t.indexOf('暗盘') === -1) return null;
-  const m = t.match(/\d{1,6}/);
+  const m = t.match(/\d{6}/);
   return m ? m[0] : null;
 }
 
@@ -36,7 +36,7 @@ Page({
     loading: false,
     scrollTo: 'bottom',
     meInitial: '我',
-    suggests: ['帮我写一条旅行笔记文案', '推荐几个热门选题', '暗盘 01810'],
+    suggests: ['帮我写一条旅行笔记文案', '推荐几个热门选题', '暗盘 600519'],
   },
 
   _id: 0,
@@ -115,7 +115,7 @@ Page({
     // 把「正在思考」占位换成更贴切的提示
     this.setData({
       messages: this.data.messages.map((m) =>
-        m.id === typingId ? { ...m, content: `正在获取 ${code} 的暗盘行情截图，当日已生成会秒回，首次约需 30 秒` } : m
+        m.id === typingId ? { ...m, content: `正在获取 ${code} 的主力暗盘资金截图，当日已生成会秒回，首次约需 30 秒` } : m
       ),
     });
 
@@ -124,7 +124,7 @@ Page({
       .then((res) => {
         const r = (res && res.result) || {};
         if (r.ok && r.fileID) {
-          return { type: 'image', src: r.fileID, content: `${r.code} 暗盘行情截图` };
+          return { type: 'image', src: r.fileID, content: `${r.code} 主力暗盘资金截图` };
         }
         return r.message || '未能获取到该股票的暗盘截图，请稍后再试';
       })

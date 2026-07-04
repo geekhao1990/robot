@@ -28,8 +28,8 @@ STEP_WAIT = float(os.environ.get("STEP_WAIT", "1.8"))
 # 每天自动批量预抓取暗盘截图的时间（本机时间 HH:MM，服务器请设为北京时间）。
 # 收盘为 15:00，默认 15:30 跑批；留空 "" 则关闭自动跑批（改用手动/外部 cron 触发）。
 PREFETCH_AT = os.environ.get("PREFETCH_AT", "15:30")
-# 跑批股票代码列表（逗号分隔，如 "01810,02525"）；
-# 留空则由智能体自动打开同花顺暗盘列表页识别当天全部代码。
+# 跑批股票代码列表（逗号分隔，如 "600519,300750"）；
+# 留空则由智能体自动读取同花顺 App 自选股列表里的全部代码。
 PREFETCH_CODES = [
     c.strip() for c in os.environ.get("PREFETCH_CODES", "").replace("，", ",").split(",")
     if c.strip()
