@@ -28,8 +28,18 @@
       class="row {{item.role}}"
     >
       <view wx:if="{{item.role === 'assistant'}}" class="avatar bot">AI</view>
-      <view class="bubble {{item.role}}">
-        <text wx:if="{{item.typing}}" class="typing">正在思考</text>
+      <view class="bubble {{item.role}} {{item.type === 'image' ? 'has-image' : ''}}">
+        <text wx:if="{{item.typing}}" class="typing">{{item.content || '正在思考'}}</text>
+        <block wx:elif="{{item.type === 'image'}}">
+          <image
+            class="shot"
+            src="{{item.src}}"
+            mode="widthFix"
+            data-src="{{item.src}}"
+            bindtap="onPreviewImage"
+          />
+          <view class="shot-caption">{{item.content}}</view>
+        </block>
         <text wx:else>{{item.content}}</text>
       </view>
       <view wx:if="{{item.role === 'user'}}" class="avatar me">{{meInitial}}</view>
