@@ -75,10 +75,15 @@ robot/
 显示图片消息  ◀──────  截图存云存储,返回fileID ◀──────  ADB操作同花顺App + 智谱GLM-4V视觉导航 + 截屏
 ```
 
+- **收盘后模式**：每天北京时间 **15:30**（收盘后）设备端自动跑批——GLM-4V 识别
+  同花顺暗盘列表页上当天**所有**新股代码并逐只截图缓存；客户请求同一天同一股票
+  直接命中缓存秒回（云数据库 fileID 缓存 + 设备端本地按天缓存两层），15:30 之前
+  请求会提示"收盘后统一生成"。
 - **设备端**：一台安卓手机/模拟器 + 已开通暗盘权限的同花顺付费账号 + 智谱 API Key，
   部署方法见 [`darkpool-agent/README.md`](darkpool-agent/README.md)。
 - **云函数**：上传部署 `cloudfunctions/darkpool`，环境变量配置
-  `DARKPOOL_AGENT_URL`、`DARKPOOL_AGENT_TOKEN`，**超时时间调到 60 秒**。
+  `DARKPOOL_AGENT_URL`、`DARKPOOL_AGENT_TOKEN`（可选 `DARKPOOL_READY_AT`，默认 15:30），
+  **超时时间调到 60 秒**，并开通云数据库（自动建 `darkpool_cache` 集合）。
 - 未部署设备端服务时，聊天框会返回文字提示，不影响其他功能。
 - ⚠️ 暗盘为同花顺付费数据，请使用自有付费账号，并自行确认向客户转发行情截图
   是否符合同花顺用户协议及数据授权要求。

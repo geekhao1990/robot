@@ -19,6 +19,27 @@ FastAPI 接口 (main.py)
 即：**智谱视觉模型当"眼睛和大脑"，ADB 当"手"**。模型每一步看一张屏幕截图，
 输出 JSON 动作（0~1000 相对坐标），直到确认进入目标股票的暗盘页，再截最终图返回。
 
+## 收盘后模式（当前默认）
+
+只做收盘后暗盘、不做盘中实时行情：
+
+- **自动跑批**：每天到 `PREFETCH_AT`（默认北京时间 **15:30**，收盘 15:00 后）服务
+  内置定时器自动跑批——先让智能体打开同花顺暗盘列表页、用 GLM-4V 识别出当天
+  **所有**暗盘新股代码，再逐只进入暗盘页截图，存入本地按天缓存 `cache/YYYYMMDD/`。
+  也可用 `PREFETCH_CODES=01810,02525` 固定代码列表跳过自动识别。
+- **当天缓存**：`/api/darkpool/screenshot` 先查当天缓存，命中直接返回（毫秒级），
+  未命中才操作真机；同一代码的并发请求会合并成一次真机操作。
+- **手动触发/查进度**：
+  ```bash
+  # 手动跑批（codes 省略则自动识别当天暗盘列表）
+  curl -X POST http://127.0.0.1:8787/api/darkpool/prefetch \
+    -H "Authorization: Bearer $AGENT_TOKEN" -H "Content-Type: application/json" -d '{}'
+  # 查看跑批进度
+  curl http://127.0.0.1:8787/api/darkpool/prefetch/status -H "Authorization: Bearer $AGENT_TOKEN"
+  ```
+- 云函数侧还有一层云数据库缓存（日期+代码 → 云存储 fileID），客户重复请求
+  同一天同一股票时根本不会到达本服务。缓存目录超过 7 天自动清理。
+
 ## 部署前提
 
 1. 一台常驻的安卓手机或模拟器（如雷电/MuMu），安装**同花顺**App；
@@ -34,7 +55,10 @@ pip install -r requirements.txt
 
 export ZHIPU_API_KEY="你的智谱APIKey"
 export AGENT_TOKEN="自定义访问令牌"        # 云函数调用时需带上，防止接口裸奔
-# 可选：export ZHIPU_VISION_MODEL=glm-4v-plus  ADB_SERIAL=emulator-5554
+# 可选：
+#   export ZHIPU_VISION_MODEL=glm-4v-plus   ADB_SERIAL=emulator-5554
+#   export PREFETCH_AT=15:30                # 每日自动跑批时间，空串关闭
+#   export PREFETCH_CODES=01810,02525       # 固定跑批代码；不设则自动识别当天暗盘列表
 
 uvicorn main:app --host 0.0.0.0 --port 8787
 ```

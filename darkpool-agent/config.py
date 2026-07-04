@@ -24,6 +24,17 @@ MAX_STEPS = int(os.environ.get("MAX_STEPS", "14"))
 # 每步操作后等待界面渲染的秒数
 STEP_WAIT = float(os.environ.get("STEP_WAIT", "1.8"))
 
+# ---- 收盘后跑批 ----
+# 每天自动批量预抓取暗盘截图的时间（本机时间 HH:MM，服务器请设为北京时间）。
+# 收盘为 15:00，默认 15:30 跑批；留空 "" 则关闭自动跑批（改用手动/外部 cron 触发）。
+PREFETCH_AT = os.environ.get("PREFETCH_AT", "15:30")
+# 跑批股票代码列表（逗号分隔，如 "01810,02525"）；
+# 留空则由智能体自动打开同花顺暗盘列表页识别当天全部代码。
+PREFETCH_CODES = [
+    c.strip() for c in os.environ.get("PREFETCH_CODES", "").replace("，", ",").split(",")
+    if c.strip()
+]
+
 # ---- HTTP 服务 ----
 HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", "8787"))

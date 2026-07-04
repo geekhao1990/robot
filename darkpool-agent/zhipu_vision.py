@@ -47,19 +47,14 @@ def _extract_json(text: str):
     return None
 
 
-def decide(image_b64: str, goal: str, history: list) -> dict:
-    """请求视觉模型决策下一步动作。history 为之前每步的动作摘要（字符串列表）。"""
+def _chat(system: str, image_b64: str, text: str) -> str:
     if not config.ZHIPU_API_KEY:
         raise RuntimeError("未配置 ZHIPU_API_KEY 环境变量")
-
-    steps = "\n".join(f"{i + 1}. {h}" for i, h in enumerate(history)) or "（无）"
-    user_text = f"任务目标：{goal}\n\n已执行过的步骤：\n{steps}\n\n这是当前屏幕截图，请给出下一步动作 JSON。"
-
     payload = {
         "model": config.ZHIPU_VISION_MODEL,
         "temperature": 0.1,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system},
             {
                 "role": "user",
                 "content": [
@@ -67,7 +62,7 @@ def decide(image_b64: str, goal: str, history: list) -> dict:
                         "type": "image_url",
                         "image_url": {"url": f"data:image/png;base64,{image_b64}"},
                     },
-                    {"type": "text", "text": user_text},
+                    {"type": "text", "text": text},
                 ],
             },
         ],
@@ -82,8 +77,28 @@ def decide(image_b64: str, goal: str, history: list) -> dict:
         timeout=60,
     )
     resp.raise_for_status()
-    content = resp.json()["choices"][0]["message"]["content"]
+    return resp.json()["choices"][0]["message"]["content"]
+
+
+def decide(image_b64: str, goal: str, history: list) -> dict:
+    """请求视觉模型决策下一步动作。history 为之前每步的动作摘要（字符串列表）。"""
+    steps = "\n".join(f"{i + 1}. {h}" for i, h in enumerate(history)) or "（无）"
+    user_text = f"任务目标：{goal}\n\n已执行过的步骤：\n{steps}\n\n这是当前屏幕截图，请给出下一步动作 JSON。"
+    content = _chat(SYSTEM_PROMPT, image_b64, user_text)
     action = _extract_json(content)
     if not action or "action" not in action:
         raise RuntimeError(f"视觉模型返回无法解析：{content[:200]}")
     return action
+
+
+def ask_json(image_b64: str, question: str) -> dict:
+    """看图回答问题，要求模型只输出一个 JSON 对象（用于读取暗盘股票列表等）。"""
+    content = _chat(
+        "你是一个屏幕内容识别助手。请根据用户要求识别截图中的信息，只输出一个 JSON 对象，不要输出其他文字。",
+        image_b64,
+        question,
+    )
+    data = _extract_json(content)
+    if data is None:
+        raise RuntimeError(f"视觉模型返回无法解析：{content[:200]}")
+    return data

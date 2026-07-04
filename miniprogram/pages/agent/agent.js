@@ -115,7 +115,7 @@ Page({
     // 把「正在思考」占位换成更贴切的提示
     this.setData({
       messages: this.data.messages.map((m) =>
-        m.id === typingId ? { ...m, content: `正在打开同花顺获取 ${code} 的暗盘行情截图，约需 30 秒` } : m
+        m.id === typingId ? { ...m, content: `正在获取 ${code} 的暗盘行情截图，当日已生成会秒回，首次约需 30 秒` } : m
       ),
     });
 
