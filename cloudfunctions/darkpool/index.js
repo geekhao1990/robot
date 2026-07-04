@@ -19,7 +19,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 const COLLECTION = 'darkpool_cache';
 
-const CODE_RE = /^\d{1,6}$/;
+const CODE_RE = /^\d{6}$/;
 const READY_AT = process.env.DARKPOOL_READY_AT === undefined ? '15:30' : process.env.DARKPOOL_READY_AT;
 
 // 北京时间（云函数运行在 UTC，手动 +8 小时后取 UTC 字段）
@@ -98,9 +98,9 @@ function callAgent(baseUrl, token, code) {
 exports.main = async (event = {}) => {
   const raw = String(event.code || '').trim().replace(/^(SH|SZ)\.?/i, '');
   if (!CODE_RE.test(raw)) {
-    return { ok: false, message: '请输入正确的A股代码，如：600519 或 300750' };
+    return { ok: false, message: '请输入 6 位A股代码，如：600519 或 300750' };
   }
-  const code = raw.padStart(6, '0'); // A股代码补齐 6 位
+  const code = raw;
 
   const now = bj();
   const today = bjDate(now);

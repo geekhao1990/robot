@@ -32,7 +32,7 @@ _inflight_lock = threading.Lock()
 # 跑批进度
 _prefetch = {"running": False, "date": "", "total": 0, "done": 0, "results": []}
 
-CODE_RE = re.compile(r"^\d{1,6}$")
+CODE_RE = re.compile(r"^\d{6}$")
 
 
 class ShotReq(BaseModel):
@@ -51,10 +51,10 @@ def _check_token(authorization: str | None):
 
 
 def _norm_code(raw: str) -> str:
-    code = raw.strip().upper().replace("HK", "").strip(".")
+    code = raw.strip().upper().removeprefix("SH").removeprefix("SZ").strip(".")
     if not CODE_RE.match(code):
-        raise HTTPException(status_code=400, detail="股票代码格式不正确")
-    return code.zfill(6)  # A股代码统一补齐 6 位
+        raise HTTPException(status_code=400, detail="请输入 6 位A股代码，如 600519")
+    return code
 
 
 def _capture_with_cache(code: str) -> tuple[bytes, bool]:
