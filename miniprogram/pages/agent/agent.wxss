@@ -98,6 +98,23 @@
   color: #999;
 }
 
+/* 图片消息（暗盘截图） */
+.bubble.has-image {
+  padding: 12rpx;
+}
+.shot {
+  width: 460rpx;
+  border-radius: 12rpx;
+  display: block;
+  background: #f0f1f3;
+}
+.shot-caption {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
+  padding: 0 6rpx 4rpx;
+}
+
 /* 输入栏 */
 .inputbar {
   position: fixed;

@@ -1,0 +1,9 @@
+{
+  "name": "darkpool",
+  "version": "1.0.0",
+  "description": "同花顺暗盘截图智能体：转发请求给设备端服务并把截图存入云存储",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

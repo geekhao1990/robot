@@ -16,7 +16,17 @@ function genReply(text) {
   for (const r of RULES) {
     if (r.k.some((k) => t.includes(k.toLowerCase()))) return r.a;
   }
-  return `我理解你说的「${text}」。这是一个演示版 AI 助手，可以帮你：\n· 写/优化笔记文案\n· 取标题、起话题\n· 给选题和拍摄灵感\n你可以把需求说得更具体一点，我来帮你～`;
+  return `我理解你说的「${text}」。这是一个演示版 AI 助手，可以帮你：\n· 写/优化笔记文案\n· 取标题、起话题\n· 给选题和拍摄灵感\n· 输入A股代码查主力暗盘资金截图（如「暗盘 600519」）\n你可以把需求说得更具体一点，我来帮你～`;
+}
+
+// 识别「暗盘」指令，返回股票代码或 null。
+// 支持：「暗盘 600519」「600519 暗盘」「查600519的暗盘」，或直接输入6位A股代码
+function parseDarkpoolCode(text) {
+  const t = (text || '').trim();
+  if (/^\d{6}$/.test(t)) return t; // 纯6位代码
+  if (t.indexOf('暗盘') === -1) return null;
+  const m = t.match(/\d{6}/);
+  return m ? m[0] : null;
 }
 
 Page({
@@ -26,7 +36,7 @@ Page({
     loading: false,
     scrollTo: 'bottom',
     meInitial: '我',
-    suggests: ['帮我写一条旅行笔记文案', '推荐几个热门选题', '取一个吸睛标题'],
+    suggests: ['帮我写一条旅行笔记文案', '推荐几个热门选题', '暗盘 600519'],
   },
 
   _id: 0,
@@ -80,13 +90,50 @@ Page({
     this.setData({ messages });
     this.scrollToBottom();
 
-    this.askBot(text).then((reply) => {
+    const darkpoolCode = parseDarkpoolCode(text);
+    const pending = darkpoolCode ? this.askDarkpool(darkpoolCode, typingId) : this.askBot(text);
+
+    pending.then((reply) => {
+      // reply 为字符串(文本消息) 或 {type:'image', src, content}(图片消息)
+      const patch = typeof reply === 'string' ? { content: reply } : reply;
       const list = this.data.messages.map((m) =>
-        m.id === typingId ? { ...m, content: reply, typing: false } : m
+        m.id === typingId ? { ...m, ...patch, typing: false } : m
       );
       this.setData({ messages: list, loading: false });
       this.scrollToBottom();
     });
+  },
+
+  // 暗盘截图智能体：云函数 darkpool -> 设备端服务(操作同花顺App截图) -> 返回云存储图片
+  askDarkpool(code, typingId) {
+    const app = getApp();
+    if (!(app.globalData.cloudEnabled && wx.cloud)) {
+      return Promise.resolve(
+        '暗盘截图功能需要开通云开发并部署 darkpool 云函数与设备端服务（见 darkpool-agent/README.md）。'
+      );
+    }
+    // 把「正在思考」占位换成更贴切的提示
+    this.setData({
+      messages: this.data.messages.map((m) =>
+        m.id === typingId ? { ...m, content: `正在获取 ${code} 的主力暗盘资金截图，当日已生成会秒回，首次约需 30 秒` } : m
+      ),
+    });
+
+    return wx.cloud
+      .callFunction({ name: 'darkpool', data: { code } })
+      .then((res) => {
+        const r = (res && res.result) || {};
+        if (r.ok && r.fileID) {
+          return { type: 'image', src: r.fileID, content: `${r.code} 主力暗盘资金截图` };
+        }
+        return r.message || '未能获取到该股票的暗盘截图，请稍后再试';
+      })
+      .catch(() => '暗盘截图服务暂时不可用，请稍后再试');
+  },
+
+  onPreviewImage(e) {
+    const src = e.currentTarget.dataset.src;
+    if (src) wx.previewImage({ urls: [src] });
   },
 
   // 优先调用云函数(知识库 RAG)，未开通云开发或失败时降级为本地回复
