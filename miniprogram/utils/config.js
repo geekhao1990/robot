@@ -11,4 +11,6 @@ module.exports = {
   vipContact,
   // 企业微信二维码图片（本地资源，真机/开发者工具均可显示）
   vipQr: '/images/vip-qr.jpg',
+  // 微信公众平台创建的激励视频广告位 ID，上线前必须替换
+  rewardedVideoAdUnitId: 'adunit-xxxxxxxxxxxxxxxx',
 };

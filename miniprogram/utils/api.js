@@ -35,7 +35,7 @@ function request(method, path, { data, auth } = {}) {
 }
 
 function http(path, query) {
-  return request('GET', path, { data: query });
+  return request('GET', path, { data: query, auth: true });
 }
 
 // 合并用户交互状态到笔记。
@@ -60,26 +60,24 @@ function allNotes() {
   return [...store.getMyNotes(), ...data.notes];
 }
 
-// 首页 feed（按顶部 tab 筛选 + 简单分页）
-// tab: 'home' 首页(全部·时间倒序) | 'discover' 发现(收费笔记·时间倒序) | 'follow' 关注
-function getFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
+// 首页 feed：home 全部 | material 资料 | course 课程
+function getFeed({ tab = 'home', page = 1, size = 10 } = {}) {
   if (remote()) {
     // 带上登录态，「关注」流需按当前用户的关注关系过滤
     return request('GET', '/api/feed', { data: { tab, page, size }, auth: true })
-      .then((r) => ({ list: (r.list || []).map(decorate), hasMore: r.hasMore, total: r.total }))
-      .catch(() => mockFeed({ tab, page, size }));
+      .then((r) => ({ list: (r.list || []).map(decorate), hasMore: r.hasMore, total: r.total }));
   }
   return mockFeed({ tab, page, size });
 }
 
-function mockFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
+function mockFeed({ tab = 'home', page = 1, size = 10 } = {}) {
   let list = allNotes();
   if (tab === 'home') {
     list = list.slice().sort((a, b) => b.time - a.time);
-  } else if (tab === 'discover') {
+  } else if (tab === 'course') {
     list = list.filter((n) => n.type === 'course').sort((a, b) => b.time - a.time);
-  } else if (tab === 'follow') {
-    list = list.filter((n) => store.isFollowed(n.authorId)).sort((a, b) => b.time - a.time);
+  } else if (tab === 'material') {
+    list = list.filter((n) => n.type !== 'course').sort((a, b) => b.time - a.time);
   }
   const start = (page - 1) * size;
   const slice = list.slice(start, start + size).map(decorate);
@@ -92,12 +90,14 @@ function mockFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
 
 function getNoteById(id) {
   if (remote()) {
-    return http('/api/notes/' + id)
-      .then((n) => decorate(n))
-      .catch(() => delay(decorate(allNotes().find((n) => n.id === id))));
+    return http('/api/notes/' + id).then((n) => decorate(n));
   }
   const note = allNotes().find((n) => n.id === id);
   return delay(decorate(note));
+}
+
+function getResource(id) {
+  return request('GET', '/api/notes/' + id + '/resource', { auth: true });
 }
 
 function getCategories() {
@@ -329,6 +329,7 @@ function getFriends() {
 module.exports = {
   getFeed,
   getNoteById,
+  getResource,
   getCategories,
   getHotSearch,
   search,

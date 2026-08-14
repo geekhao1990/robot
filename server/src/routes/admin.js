@@ -41,7 +41,7 @@ module.exports = function register(router, HttpError) {
       authorId: author.id,
       author: { id: author.id, name: author.name, avatar: author.avatar },
       category: b.category || d.categories[0],
-      type: b.type || 'normal',
+      type: b.type === 'course' ? 'course' : 'material',
       courseUrl: b.courseUrl || '',
       title: b.title || '未命名',
       content: b.content || '',
@@ -68,6 +68,7 @@ module.exports = function register(router, HttpError) {
     if (i < 0) throw new HttpError(404, 'not found');
     const b = ctx.body || {};
     const note = { ...d.notes[i], ...b };
+    note.type = b.type === 'course' ? 'course' : 'material';
     if (b.authorId) {
       const a = d.users.find((u) => u.id === b.authorId);
       if (a) note.author = { id: a.id, name: a.name, avatar: a.avatar };
@@ -102,6 +103,7 @@ module.exports = function register(router, HttpError) {
       follows: b.follows || 0,
       likes: b.likes || 0,
       vip: !!b.vip,
+      accessEnabled: !!b.accessEnabled,
     };
     d.users.push(user);
     db.save();
@@ -145,6 +147,16 @@ module.exports = function register(router, HttpError) {
     } else {
       throw new HttpError(400, 'plan 须为 month/year/none');
     }
+    db.save();
+    return user;
+  });
+
+  // 审核用户是否可以查看笔记
+  router.put('/api/admin/users/:id/access', (ctx) => {
+    requireAuth(ctx);
+    const user = db.get().users.find((u) => u.id === ctx.params.id);
+    if (!user) throw new HttpError(404, 'not found');
+    user.accessEnabled = !!(ctx.body || {}).enabled;
     db.save();
     return user;
   });

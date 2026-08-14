@@ -50,14 +50,18 @@ Page({
   // 登录走后端：换取 token 并同步会员/交互状态（会员是否开通以后端为准）
   doLogin(user) {
     wx.showLoading({ title: '登录中' });
-    store.login(user).then(() => {
+    store.login(user).then((loggedInUser) => {
       wx.hideLoading();
-      wx.showToast({ title: '登录成功', icon: 'success' });
+      const approved = loggedInUser && loggedInUser.accessEnabled;
+      wx.showToast({ title: approved ? '登录成功' : '已提交审核', icon: 'success' });
       setTimeout(() => {
         const pages = getCurrentPages();
         if (pages.length > 1) wx.navigateBack();
         else wx.switchTab({ url: '/pages/profile/profile' });
       }, 700);
+    }).catch(() => {
+      wx.hideLoading();
+      wx.showModal({ title: '登录失败', content: '无法连接服务器，请检查后端地址和网络。', showCancel: false });
     });
   },
 });

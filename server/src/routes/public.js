@@ -1,37 +1,44 @@
 // server/src/routes/public.js —— 小程序只读接口
 const db = require('../db');
-const { pubUser } = require('../util');
+const { pubUser, pubNote } = require('../util');
 const auth = require('../auth');
 
-module.exports = function register(router) {
+module.exports = function register(router, HttpError) {
+  const requireReader = (ctx) => {
+    const uid = auth.userIdFor(ctx.headers.authorization);
+    if (!uid) throw new HttpError(401, '请先登录');
+    const user = db.get().users.find((u) => u.id === uid);
+    if (!user) throw new HttpError(401, '用户不存在');
+    if (!user.accessEnabled) throw new HttpError(403, '账号尚未通过管理员审核');
+    return user;
+  };
+
   // 首页 feed
   router.get('/api/feed', (ctx) => {
-    const { tab = 'discover', page = 1, size = 10 } = ctx.query;
+    requireReader(ctx);
+    const { tab = 'home', page = 1, size = 10 } = ctx.query;
     const d = db.get();
     let list = d.notes.slice();
     if (tab === 'home') {
       // 首页：全部笔记，按时间倒序
       list.sort((a, b) => b.time - a.time);
-    } else if (tab === 'discover') {
-      // 发现：收费笔记，按时间倒序
+    } else if (tab === 'material') {
+      list = list.filter((n) => n.type !== 'course').sort((a, b) => b.time - a.time);
+    } else if (tab === 'course') {
       list = list.filter((n) => n.type === 'course').sort((a, b) => b.time - a.time);
-    } else if (tab === 'follow') {
-      // 关注流：仅返回当前登录用户已关注作者的笔记；未登录返回空
-      const uid = auth.userIdFor(ctx.headers.authorization);
-      const follows = (uid && d.userState && d.userState[uid] && d.userState[uid].follows) || {};
-      list = list.filter((n) => follows[n.authorId]).sort((a, b) => b.time - a.time);
     }
     const p = Number(page) || 1;
     const s = Number(size) || 10;
     const start = (p - 1) * s;
-    return { list: list.slice(start, start + s), hasMore: start + s < list.length, total: list.length };
+    return { list: list.slice(start, start + s).map(pubNote), hasMore: start + s < list.length, total: list.length };
   });
 
-  router.get('/api/categories', () => db.get().categories);
-  router.get('/api/hotSearch', () => db.get().hotSearch);
+  router.get('/api/categories', (ctx) => { requireReader(ctx); return db.get().categories; });
+  router.get('/api/hotSearch', (ctx) => { requireReader(ctx); return db.get().hotSearch; });
 
-  router.get('/api/search', ({ query }) => {
-    const kw = (query.kw || '').trim();
+  router.get('/api/search', (ctx) => {
+    requireReader(ctx);
+    const kw = (ctx.query.kw || '').trim();
     if (!kw) return [];
     return db.get().notes.filter(
       (n) =>
@@ -40,22 +47,34 @@ module.exports = function register(router) {
         (n.category || '').includes(kw) ||
         (n.tags || []).some((t) => t.includes(kw)) ||
         n.author.name.includes(kw)
-    );
+    ).map(pubNote);
   });
 
-  router.get('/api/notes/:id', ({ params }) => {
-    const n = db.get().notes.find((x) => x.id === params.id);
+  router.get('/api/notes/:id', (ctx) => {
+    requireReader(ctx);
+    const n = db.get().notes.find((x) => x.id === ctx.params.id);
     if (!n) { const e = new Error('not found'); e.status = 404; throw e; }
-    return n;
+    return pubNote(n);
   });
 
-  router.get('/api/users/:id', ({ params }) => {
-    const u = db.get().users.find((x) => x.id === params.id);
+  // 激励广告完成后由小程序单独请求。
+  router.get('/api/notes/:id/resource', (ctx) => {
+    requireReader(ctx);
+    const note = db.get().notes.find((n) => n.id === ctx.params.id);
+    if (!note) throw new HttpError(404, 'not found');
+    if (!note.courseUrl) throw new HttpError(404, '暂未配置获取地址');
+    return { url: note.courseUrl };
+  });
+
+  router.get('/api/users/:id', (ctx) => {
+    requireReader(ctx);
+    const u = db.get().users.find((x) => x.id === ctx.params.id);
     if (!u) { const e = new Error('not found'); e.status = 404; throw e; }
     return pubUser(u);
   });
 
-  router.get('/api/users/:id/notes', ({ params }) =>
-    db.get().notes.filter((n) => n.authorId === params.id)
-  );
+  router.get('/api/users/:id/notes', (ctx) => {
+    requireReader(ctx);
+    return db.get().notes.filter((n) => n.authorId === ctx.params.id).map(pubNote);
+  });
 };

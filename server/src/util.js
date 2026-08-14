@@ -11,4 +11,11 @@ function pubUser(user) {
   return { ...user, vipActive: vipActive(user) };
 }
 
-module.exports = { vipActive, pubUser };
+// 小程序内容接口不直接暴露网盘地址
+function pubNote(note) {
+  if (!note) return note;
+  const { courseUrl, ...safe } = note;
+  return { ...safe, hasResource: !!courseUrl };
+}
+
+module.exports = { vipActive, pubUser, pubNote };

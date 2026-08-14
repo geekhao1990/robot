@@ -9,8 +9,8 @@ Page({
     headerHeight: 64,
     navTabs: [
       { key: 'home', label: '首页' },
-      { key: 'discover', label: '发现' },
-      { key: 'follow', label: '关注' },
+      { key: 'material', label: '资料' },
+      { key: 'course', label: '课程' },
     ],
     tab: 'home',
     left: [],
@@ -33,19 +33,32 @@ Page({
       headerHeight: statusBarHeight + navBarHeight,
     });
 
+    if (!this.ensureAccess()) return;
     this.loadFeed(true);
   },
 
   onShow() {
     refreshTabBar(this, 0);
-    // 「关注」tab 依赖关注状态，返回首页时刷新
-    if (this.data.tab === 'follow') {
-      this.setData({ page: 1, hasMore: true });
-      this.loadFeed(true);
-    } else {
-      // 其它 tab：从详情页返回时同步点赞状态
-      this.syncLikes();
+    if (!this.ensureAccess()) return;
+    this.syncLikes();
+  },
+
+  ensureAccess() {
+    const user = store.getUser();
+    if (!user) {
+      wx.navigateTo({ url: '/pages/login/login' });
+      return false;
     }
+    if (user.accessEnabled === false) {
+      wx.showModal({
+        title: '等待权限审核',
+        content: '账号已登录，但管理员尚未开通笔记查看权限。',
+        showCancel: false,
+        confirmText: '知道了',
+      });
+      return false;
+    }
+    return true;
   },
 
   // 以 store 为准，刷新当前卡片的点赞状态与数量
@@ -91,10 +104,11 @@ Page({
         page: page + 1,
         hasMore: res.hasMore,
         loading: false,
-        emptyText: this.data.tab === 'follow'
-          ? '还没有关注的人发布内容，去发现页逛逛吧~'
-          : '这里还没有内容～',
+        emptyText: '这里还没有内容～',
       });
+      wx.stopPullDownRefresh();
+    }).catch((err) => {
+      this.setData({ loading: false, emptyText: err && err.statusCode === 403 ? '账号尚未通过审核' : '加载失败，请稍后重试' });
       wx.stopPullDownRefresh();
     });
   },

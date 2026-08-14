@@ -1,7 +1,7 @@
 // server/src/routes/app.js —— 小程序端鉴权 + 写操作接口
 // 交互状态（赞/藏/关注）、发布笔记均回传后端，后端为数据源。
 const db = require('../db');
-const { pubUser } = require('../util');
+const { pubUser, pubNote } = require('../util');
 const auth = require('../auth');
 
 function getState(userId) {
@@ -23,6 +23,11 @@ module.exports = function register(router, HttpError) {
     if (!u) throw new HttpError(401, '用户不存在');
     return u;
   };
+  const approvedUser = (ctx) => {
+    const user = currentUser(ctx);
+    if (!user.accessEnabled) throw new HttpError(403, '账号尚未通过管理员审核');
+    return user;
+  };
 
   // 登录：upsert 用户并发放 token
   router.post('/api/login', ({ body }) => {
@@ -41,6 +46,7 @@ module.exports = function register(router, HttpError) {
         vip: false,
         vipPlan: '',
         vipExpire: 0,
+        accessEnabled: false,
       };
       d.users.push(user);
       db.save();
@@ -68,7 +74,7 @@ module.exports = function register(router, HttpError) {
 
   // 点赞
   router.post('/api/like/:id', (ctx) => {
-    const u = currentUser(ctx);
+    const u = approvedUser(ctx);
     const s = getState(u.id);
     const note = db.get().notes.find((n) => n.id === ctx.params.id);
     if (!note) throw new HttpError(404, 'not found');
@@ -81,7 +87,7 @@ module.exports = function register(router, HttpError) {
 
   // 收藏
   router.post('/api/collect/:id', (ctx) => {
-    const u = currentUser(ctx);
+    const u = approvedUser(ctx);
     const s = getState(u.id);
     const note = db.get().notes.find((n) => n.id === ctx.params.id);
     if (!note) throw new HttpError(404, 'not found');
@@ -92,18 +98,6 @@ module.exports = function register(router, HttpError) {
     return { collected, collects: note.collects };
   });
 
-  // 关注
-  router.post('/api/follow/:uid', (ctx) => {
-    const u = currentUser(ctx);
-    if (u.id === ctx.params.uid) throw new HttpError(400, '不能关注自己');
-    const s = getState(u.id);
-    const target = db.get().users.find((x) => x.id === ctx.params.uid);
-    const followed = !s.follows[ctx.params.uid];
-    if (followed) { s.follows[ctx.params.uid] = Date.now(); if (target) target.fans += 1; }
-    else { delete s.follows[ctx.params.uid]; if (target) target.fans = Math.max(0, target.fans - 1); }
-    db.save();
-    return { followed };
-  });
 
   // 我关注的人
   router.get('/api/me/following', (ctx) => {
@@ -124,81 +118,24 @@ module.exports = function register(router, HttpError) {
 
   // 我赞过 / 收藏的笔记
   router.get('/api/me/likes', (ctx) => {
-    const u = currentUser(ctx);
+    const u = approvedUser(ctx);
     const s = getState(u.id);
     const map = {};
     db.get().notes.forEach((n) => (map[n.id] = n));
-    return Object.keys(s.likes).sort((a, b) => s.likes[b] - s.likes[a]).map((id) => map[id]).filter(Boolean);
+    return Object.keys(s.likes).sort((a, b) => s.likes[b] - s.likes[a]).map((id) => map[id]).filter(Boolean).map(pubNote);
   });
   router.get('/api/me/collects', (ctx) => {
-    const u = currentUser(ctx);
+    const u = approvedUser(ctx);
     const s = getState(u.id);
     const map = {};
     db.get().notes.forEach((n) => (map[n.id] = n));
-    return Object.keys(s.collects).sort((a, b) => s.collects[b] - s.collects[a]).map((id) => map[id]).filter(Boolean);
+    return Object.keys(s.collects).sort((a, b) => s.collects[b] - s.collects[a]).map((id) => map[id]).filter(Boolean).map(pubNote);
   });
 
   // 我发布的笔记
   router.get('/api/me/notes', (ctx) => {
-    const u = currentUser(ctx);
-    return db.get().notes.filter((n) => n.authorId === u.id);
+    const u = approvedUser(ctx);
+    return db.get().notes.filter((n) => n.authorId === u.id).map(pubNote);
   });
 
-  // 发布笔记
-  router.post('/api/notes', (ctx) => {
-    const u = currentUser(ctx);
-    const d = db.get();
-    const b = ctx.body || {};
-    const note = {
-      id: 'my_' + Date.now(),
-      authorId: u.id,
-      author: { id: u.id, name: u.name, avatar: u.avatar },
-      category: b.category || d.categories[0],
-      type: b.type || 'normal',
-      courseUrl: b.type === 'course' ? (b.courseUrl || '') : '',
-      title: b.title || (b.content || '').slice(0, 15) || '未命名',
-      content: b.content || '',
-      images: b.images || [],
-      cover: (b.images && b.images[0]) || '',
-      coverRatio: b.coverRatio || 1.25,
-      tags: b.tags || [],
-      likes: 0,
-      collects: 0,
-      comments: 0,
-      video: false,
-      time: Date.now(),
-      commentList: [],
-    };
-    d.notes.unshift(note);
-    db.save();
-    return note;
-  });
-
-  // 编辑自己的笔记
-  router.put('/api/notes/:id', (ctx) => {
-    const u = currentUser(ctx);
-    const d = db.get();
-    const i = d.notes.findIndex((n) => n.id === ctx.params.id);
-    if (i < 0) throw new HttpError(404, 'not found');
-    if (d.notes[i].authorId !== u.id) throw new HttpError(403, '只能编辑自己的笔记');
-    const b = ctx.body || {};
-    const note = { ...d.notes[i], ...b, id: d.notes[i].id, authorId: u.id };
-    if (b.type !== 'course') note.courseUrl = '';
-    if (b.images && b.images.length) note.cover = b.images[0];
-    d.notes[i] = note;
-    db.save();
-    return note;
-  });
-
-  // 删除自己的笔记
-  router.delete('/api/notes/:id', (ctx) => {
-    const u = currentUser(ctx);
-    const d = db.get();
-    const note = d.notes.find((n) => n.id === ctx.params.id);
-    if (!note) throw new HttpError(404, 'not found');
-    if (note.authorId !== u.id) throw new HttpError(403, '只能删除自己的笔记');
-    d.notes = d.notes.filter((n) => n.id !== ctx.params.id);
-    db.save();
-    return { ok: true };
-  });
 };

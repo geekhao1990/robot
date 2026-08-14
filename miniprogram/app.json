@@ -4,11 +4,6 @@
     "pages/detail/detail",
     "pages/search/search",
     "pages/agent/agent",
-    "pages/publish/publish",
-    "pages/message/message",
-    "pages/notify/notify",
-    "pages/chat/chat",
-    "pages/relations/relations",
     "pages/profile/profile",
     "pages/vip/vip",
     "pages/login/login",
@@ -35,14 +30,6 @@
       {
         "pagePath": "pages/agent/agent",
         "text": "AI助手"
-      },
-      {
-        "pagePath": "pages/publish/publish",
-        "text": "发布"
-      },
-      {
-        "pagePath": "pages/message/message",
-        "text": "消息"
       },
       {
         "pagePath": "pages/profile/profile",

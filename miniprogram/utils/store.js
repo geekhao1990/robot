@@ -93,11 +93,7 @@ function login(profile) {
         setUser(res.user);
         return syncMe().then(() => state.user);
       })
-      .catch(() => {
-        // 后端不可用时的离线降级，保证可用
-        setUser(profile);
-        return state.user;
-      });
+      .catch((err) => Promise.reject(err));
   }
   setUser(profile);
   return Promise.resolve(state.user);

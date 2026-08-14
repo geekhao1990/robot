@@ -10,7 +10,7 @@ const { handleUpload } = require('./upload');
 db.load();
 
 const router = createRouter();
-require('./routes/public')(router);
+require('./routes/public')(router, HttpError);
 require('./routes/app')(router, HttpError);
 require('./routes/message')(router, HttpError);
 require('./routes/admin')(router, HttpError);

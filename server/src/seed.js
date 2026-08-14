@@ -5,7 +5,7 @@ const img = (seed, w = 800, h = 1000) => `https://picsum.photos/seed/${seed}/${w
 const avatar = (n) => `https://i.pravatar.cc/150?img=${n}`;
 
 const YEAR = 365 * 24 * 3600 * 1000;
-const u = (o) => ({ vip: false, vipPlan: '', vipExpire: 0, ...o });
+const u = (o) => ({ vip: false, vipPlan: '', vipExpire: 0, accessEnabled: true, ...o });
 const users = [
   u({ id: 'u1', name: '旅行的猫', avatar: avatar(11), desc: '世界那么大，我想去看看 🌍', fans: 12800, follows: 231, likes: 98000 }),
   u({ id: 'u2', name: '美食研究所', avatar: avatar(12), desc: '一个爱做饭的程序员', fans: 45600, follows: 88, likes: 320000, vip: true, vipPlan: 'year', vipExpire: Date.now() + YEAR }),
@@ -23,7 +23,7 @@ function note(o) {
     authorId: o.authorId,
     author: { id: author.id, name: author.name, avatar: author.avatar },
     category: o.category,
-    type: o.type || 'normal',
+    type: o.type === 'course' ? 'course' : 'material',
     courseUrl: o.courseUrl || '',
     title: o.title,
     content: o.content,

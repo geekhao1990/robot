@@ -1,85 +1,28 @@
 <view class="page">
-  <!-- 顶部背景 + 资料 -->
   <view class="hero" style="padding-top: {{statusBarHeight}}px;">
     <view class="hero-mask"></view>
     <view class="profile" style="margin-top: {{navBarHeight}}px;">
-      <block wx:if="{{user}}">
-        <view class="row">
-          <image class="avatar" src="{{user.avatar}}" mode="aspectFill" />
-          <view class="meta">
-            <view class="name">{{user.name}}<text wx:if="{{vipActive}}" class="vip-badge">VIP</text></view>
-            <view class="uid">小红书号：{{user.id}}</view>
-          </view>
-        </view>
-        <view class="desc">{{user.desc || '点击编辑，填写简介'}}</view>
-        <view class="stats">
-          <view class="stat" data-type="follow" bindtap="goRelations">
-            <text class="num">{{followCount}}</text><text class="label">关注</text>
-          </view>
-          <view class="stat" data-type="fans" bindtap="goRelations">
-            <text class="num">{{fansCount}}</text><text class="label">粉丝</text>
-          </view>
-          <view class="stat" bindtap="showStats">
-            <text class="num">{{likeCollectCount}}</text><text class="label">获赞与收藏</text>
-          </view>
-        </view>
-        <view class="logout" bindtap="onLogout">退出登录</view>
-      </block>
-
-      <view wx:if="{{user}}" class="vip-banner" bindtap="goVip">
-        <view class="vip-left">
-          <text class="vip-crown">👑</text>
-          <view class="vip-texts">
-            <text class="vip-title">{{vipActive ? 'VIP 会员' : '开通 VIP 会员'}}</text>
-            <text class="vip-sub">{{vipStatusText}}</text>
-          </view>
-        </view>
-        <view class="vip-go">{{vipActive ? '查看权益' : '了解详情'}}</view>
+      <view wx:if="{{user}}" class="row">
+        <image class="avatar" src="{{user.avatar}}" mode="aspectFill" />
+        <view class="meta"><view class="name">{{user.name}}</view><view class="uid">{{accessText}}</view></view>
       </view>
-
-      <block wx:else>
-        <view class="login-prompt" bindtap="goLogin">
-          <image class="avatar" src="https://i.pravatar.cc/150?img=68" mode="aspectFill" />
-          <view class="meta">
-            <view class="name">点击登录</view>
-            <view class="uid">登录后体验完整功能</view>
-          </view>
-        </view>
-      </block>
+      <view wx:if="{{user}}" class="desc">{{user.desc || '暂无简介'}}</view>
+      <view wx:if="{{user}}" class="logout" bindtap="onLogout">退出登录</view>
+      <view wx:else class="login-prompt" bindtap="goLogin">
+        <image class="avatar" src="https://i.pravatar.cc/150?img=68" mode="aspectFill" />
+        <view class="meta"><view class="name">点击登录</view><view class="uid">登录并通过审核后查看笔记</view></view>
+      </view>
+      <view class="vip-banner" bindtap="goService">
+        <view class="vip-left"><text class="vip-crown">💬</text><view class="vip-texts"><text class="vip-title">联系客服</text><text class="vip-sub">权限问题或内容咨询</text></view></view>
+        <view class="vip-go">去咨询</view>
+      </view>
     </view>
   </view>
-
-  <!-- 标签栏 -->
-  <view class="tabs">
-    <view
-      wx:for="{{tabs}}"
-      wx:key="*this"
-      class="tab {{tabIndex === index ? 'active' : ''}}"
-      data-index="{{index}}"
-      bindtap="onTab"
-    >{{item}}</view>
-  </view>
-
-  <!-- 内容 -->
+  <view class="tabs"><view wx:for="{{tabs}}" wx:key="*this" class="tab {{tabIndex === index ? 'active' : ''}}" data-index="{{index}}" bindtap="onTab">{{item}}</view></view>
   <view class="list">
-    <view wx:if="{{(tabIndex === 0 && hasDraft) || currentNotes.length}}" class="waterfall">
-      <view class="column">
-        <!-- 草稿卡片（笔记形式，仅笔记 tab 且有草稿时显示在最前） -->
-        <view wx:if="{{tabIndex === 0 && hasDraft}}" class="draft-card" bindtap="goDraft">
-          <view class="d-cover">
-            <image wx:if="{{draftCover}}" class="d-img" src="{{draftCover}}" mode="aspectFill" />
-            <view wx:else class="d-noimg">请先上传图片</view>
-            <view class="d-tag">草稿箱</view>
-          </view>
-          <view class="d-info">
-            <view class="d-title">{{draftTitle || '未命名草稿'}}</view>
-          </view>
-        </view>
-        <note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindtap="goDetail" />
-      </view>
-      <view class="column">
-        <note-card wx:for="{{right}}" wx:key="id" note="{{item}}" bindtap="goDetail" />
-      </view>
+    <view wx:if="{{currentNotes.length}}" class="waterfall">
+      <view class="column"><note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindtap="goDetail" /></view>
+      <view class="column"><note-card wx:for="{{right}}" wx:key="id" note="{{item}}" bindtap="goDetail" /></view>
     </view>
     <view wx:else class="placeholder">{{emptyText}}</view>
   </view>
