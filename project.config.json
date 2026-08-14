@@ -43,7 +43,7 @@
     "useCompilerPlugins": false
   },
   "compileType": "miniprogram",
-  "libVersion": "3.0.0",
+  "libVersion": "3.17.1",
   "appid": "touristappid",
   "projectname": "xiaohongshu-miniapp",
   "condition": {},
