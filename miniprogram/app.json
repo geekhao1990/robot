@@ -9,6 +9,7 @@
     "pages/login/login",
     "pages/user/user"
   ],
+  "subPackages": [],
   "window": {
     "backgroundTextStyle": "dark",
     "navigationBarBackgroundColor": "#ffffff",
