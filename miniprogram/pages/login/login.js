@@ -59,9 +59,14 @@ Page({
         if (pages.length > 1) wx.navigateBack();
         else wx.switchTab({ url: '/pages/profile/profile' });
       }, 700);
-    }).catch(() => {
+    }).catch((err) => {
       wx.hideLoading();
-      wx.showModal({ title: '登录失败', content: '无法连接服务器，请检查后端地址和网络。', showCancel: false });
+      const detail = (err && (err.errMsg || (err.data && err.data.error))) || '未知网络错误';
+      wx.showModal({
+        title: '登录失败',
+        content: `无法连接服务器。\n${detail}`,
+        showCancel: false,
+      });
     });
   },
 });

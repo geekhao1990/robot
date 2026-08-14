@@ -25,11 +25,18 @@ function request(method, path, { data, auth } = {}) {
       method,
       data: data || {},
       header,
+      timeout: 10000,
       success: (r) => {
         if (r.statusCode >= 200 && r.statusCode < 300) resolve(r.data);
-        else reject(r);
+        else {
+          console.error('[API]', method, path, r.statusCode, r.data);
+          reject(r);
+        }
       },
-      fail: reject,
+      fail: (err) => {
+        console.error('[API]', method, config.baseUrl + path, err);
+        reject(err);
+      },
     });
   });
 }

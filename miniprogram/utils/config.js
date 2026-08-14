@@ -6,7 +6,8 @@ const vipContact = 'finance-vip-001';
 
 module.exports = {
   useRemote: true,
-  baseUrl: 'http://localhost:3000',
+  // 微信开发者工具本地调试地址。显式使用 IPv4，避免 localhost 被解析为 ::1。
+  baseUrl: 'http://127.0.0.1:3000',
   // 开通会员的企业微信联系方式（展示用）
   vipContact,
   // 企业微信二维码图片（本地资源，真机/开发者工具均可显示）
