@@ -44,20 +44,7 @@ Page({
   },
 
   ensureAccess() {
-    const user = store.getUser();
-    if (!user) {
-      wx.navigateTo({ url: '/pages/login/login' });
-      return false;
-    }
-    if (user.accessEnabled === false) {
-      wx.showModal({
-        title: '等待权限审核',
-        content: '账号已登录，但管理员尚未开通笔记查看权限。',
-        showCancel: false,
-        confirmText: '知道了',
-      });
-      return false;
-    }
+    // 本地演示阶段关闭登录/权限校验。
     return true;
   },
 

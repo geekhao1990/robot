@@ -55,6 +55,7 @@ function decorate(note) {
   const bump = remote() ? 0 : 1;
   return {
     ...note,
+    hasResource: !!(note.hasResource || note.courseUrl),
     liked,
     collected,
     likes: note.likes + (liked ? bump : 0),
@@ -104,6 +105,10 @@ function getNoteById(id) {
 }
 
 function getResource(id) {
+  if (!remote()) {
+    const note = allNotes().find((n) => n.id === id);
+    return delay({ url: (note && note.courseUrl) || '' }, 0);
+  }
   return request('GET', '/api/notes/' + id + '/resource', { auth: true });
 }
 

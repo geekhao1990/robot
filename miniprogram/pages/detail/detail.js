@@ -29,7 +29,6 @@ Page({
   },
 
   loadNote() {
-    if (!store.isLogin()) return this.requireLogin();
     api.getNoteById(this.noteId).then((note) => {
       if (!note) return toast('笔记不存在');
       this.setData({
