@@ -24,7 +24,7 @@ Page({
       const user = store.getUser();
       this.setData({
         user,
-        accessText: user ? (user.accessEnabled ? '已通过访问审核' : '等待管理员审核') : '',
+        accessText: user ? '已登录' : '',
       });
       this.loadTab(this.data.tabIndex);
     };

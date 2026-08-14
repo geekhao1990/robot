@@ -29,6 +29,7 @@ Page({
   },
 
   loadNote() {
+    if (!store.isLogin()) return this.requireLogin();
     api.getNoteById(this.noteId).then((note) => {
       if (!note) return toast('笔记不存在');
       this.setData({
@@ -42,10 +43,10 @@ Page({
     }).catch((err) => {
       const code = err && err.statusCode;
       wx.showModal({
-        title: code === 403 ? '暂无查看权限' : '请先登录',
-        content: code === 403 ? '请联系客服或等待管理员审核。' : '登录后才能查看笔记。',
+        title: code === 401 ? '请先登录' : '加载失败',
+        content: code === 401 ? '登录后才能查看内容。' : '内容暂时无法加载，请稍后重试。',
         showCancel: false,
-        success: () => code === 403 ? this.goService() : this.requireLogin(),
+        success: () => { if (code === 401) this.requireLogin(); },
       });
     });
   },

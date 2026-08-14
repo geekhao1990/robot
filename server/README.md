@@ -6,7 +6,17 @@
 
 ## 运行
 
-零依赖，无需 `npm install`，需 Node ≥ 14：
+零依赖，无需 `npm install`，需 Node ≥ 18：
+
+1. 复制 `.env.example` 为 `.env`，填写微信小程序配置：
+
+```env
+WECHAT_APP_ID=你的小程序AppID
+WECHAT_APP_SECRET=你的小程序AppSecret
+```
+
+2. 将项目根目录 `project.config.json` 的 `appid` 改为同一个 AppID。
+3. 启动服务：
 
 ```bash
 cd server
@@ -41,18 +51,12 @@ GET /api/hotSearch
 
 小程序登录与写操作（需先 POST /api/login 拿 token，请求头带 Authorization: Bearer <token>）：
 ```
-POST   /api/login                 登录/注册，返回 { token, user }
+POST   /api/login                 微信登录 { code }，返回 { token, user }
 GET    /api/me                    当前用户 + 赞/藏/关注 状态
 POST   /api/like/:noteId          点赞切换
 POST   /api/collect/:noteId       收藏切换
-POST   /api/follow/:userId        关注切换
-POST   /api/notes                 发布笔记
-PUT    /api/notes/:id             编辑自己的笔记
-DELETE /api/notes/:id             删除自己的笔记
-GET    /api/me/notes              我发布的
 GET    /api/me/collects           我收藏的
 GET    /api/me/likes              我赞过的
-GET    /api/me/following          我关注的人
 POST   /api/upload                图片上传(multipart, 字段 file)，返回 { url }
 GET    /api/messages/summary      未读汇总 { like, comment, follow, conv, total }
 GET    /api/notifications         通知列表(已填充 actor/笔记)
@@ -63,8 +67,7 @@ POST   /api/conversations/:id/read       标记会话已读
 POST   /api/conversations/:id/messages   发送私信 { text }，返回 { added:[我,自动回复] }
 ```
 
-> 发布笔记时，小程序会先用 `wx.uploadFile` 把本地图片传到 `/api/upload`，
-> 服务端存到 `public/uploads/` 并返回可访问 URL，再用 URL 提交笔记。
+> `WECHAT_APP_SECRET` 只能放在服务器 `.env`，不能写入小程序代码或提交到 Git。
 
 管理（需先 POST /api/admin/login 拿 token）：
 ```

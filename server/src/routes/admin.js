@@ -103,7 +103,6 @@ module.exports = function register(router, HttpError) {
       follows: b.follows || 0,
       likes: b.likes || 0,
       vip: !!b.vip,
-      accessEnabled: !!b.accessEnabled,
     };
     d.users.push(user);
     db.save();
@@ -147,16 +146,6 @@ module.exports = function register(router, HttpError) {
     } else {
       throw new HttpError(400, 'plan 须为 month/year/none');
     }
-    db.save();
-    return user;
-  });
-
-  // 审核用户是否可以查看笔记
-  router.put('/api/admin/users/:id/access', (ctx) => {
-    requireAuth(ctx);
-    const user = db.get().users.find((u) => u.id === ctx.params.id);
-    if (!user) throw new HttpError(404, 'not found');
-    user.accessEnabled = !!(ctx.body || {}).enabled;
     db.save();
     return user;
   });

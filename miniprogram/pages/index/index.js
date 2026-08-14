@@ -44,8 +44,9 @@ Page({
   },
 
   ensureAccess() {
-    // 本地演示阶段关闭登录/权限校验。
-    return true;
+    if (store.isLogin()) return true;
+    wx.navigateTo({ url: '/pages/login/login' });
+    return false;
   },
 
   // 以 store 为准，刷新当前卡片的点赞状态与数量
@@ -95,7 +96,7 @@ Page({
       });
       wx.stopPullDownRefresh();
     }).catch((err) => {
-      this.setData({ loading: false, emptyText: err && err.statusCode === 403 ? '账号尚未通过审核' : '加载失败，请稍后重试' });
+      this.setData({ loading: false, emptyText: '加载失败，请稍后重试' });
       wx.stopPullDownRefresh();
     });
   },

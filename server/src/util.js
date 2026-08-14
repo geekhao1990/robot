@@ -8,7 +8,8 @@ function vipActive(user) {
 // 对外输出的用户对象（附带 vipActive）
 function pubUser(user) {
   if (!user) return user;
-  return { ...user, vipActive: vipActive(user) };
+  const { wxOpenId, ...safe } = user;
+  return { ...safe, vipActive: vipActive(user) };
 }
 
 // 小程序内容接口不直接暴露网盘地址

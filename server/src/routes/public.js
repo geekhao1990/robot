@@ -9,7 +9,6 @@ module.exports = function register(router, HttpError) {
     if (!uid) throw new HttpError(401, '请先登录');
     const user = db.get().users.find((u) => u.id === uid);
     if (!user) throw new HttpError(401, '用户不存在');
-    if (!user.accessEnabled) throw new HttpError(403, '账号尚未通过管理员审核');
     return user;
   };
 

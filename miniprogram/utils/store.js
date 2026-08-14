@@ -85,7 +85,7 @@ function isLogin() {
 
 // 登录：远程换取 token + 用户并同步交互状态；离线则降级为本地
 function login(profile) {
-  if (config.useRemote) {
+  if (config.useRemote || config.wechatAuthRemote) {
     return getApi()
       .login(profile)
       .then((res) => {
@@ -95,7 +95,14 @@ function login(profile) {
       })
       .catch((err) => Promise.reject(err));
   }
-  setUser(profile);
+  const previous = state.user || {};
+  setUser({
+    id: previous.id || 'wx_local_preview',
+    name: profile.name || previous.name || '微信用户',
+    avatar: profile.avatar || previous.avatar || '',
+    desc: previous.desc || '',
+    vip: false,
+  });
   return Promise.resolve(state.user);
 }
 

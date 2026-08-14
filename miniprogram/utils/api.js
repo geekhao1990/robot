@@ -113,12 +113,12 @@ function getResource(id) {
 }
 
 function getCategories() {
-  if (remote()) return http('/api/categories').catch(() => delay(data.categories, 0));
+  if (remote()) return http('/api/categories');
   return delay(data.categories, 0);
 }
 
 function getHotSearch() {
-  if (remote()) return http('/api/hotSearch').catch(() => delay(data.hotSearch, 0));
+  if (remote()) return http('/api/hotSearch');
   return delay(data.hotSearch, 0);
 }
 
@@ -127,8 +127,7 @@ function search(keyword) {
   if (!kw) return delay([]);
   if (remote()) {
     return http('/api/search', { kw })
-      .then((list) => (list || []).map(decorate))
-      .catch(() => mockSearch(kw));
+      .then((list) => (list || []).map(decorate));
   }
   return mockSearch(kw);
 }
@@ -148,15 +147,14 @@ function mockSearch(kw) {
 }
 
 function getUserById(id) {
-  if (remote()) return http('/api/users/' + id).catch(() => delay(data.userMap[id] || null));
+  if (remote()) return http('/api/users/' + id);
   return delay(data.userMap[id] || null);
 }
 
 function getNotesByAuthor(authorId) {
   if (remote()) {
     return http('/api/users/' + authorId + '/notes')
-      .then((list) => (list || []).map(decorate))
-      .catch(() => delay(allNotes().filter((n) => n.authorId === authorId).map(decorate)));
+      .then((list) => (list || []).map(decorate));
   }
   return delay(allNotes().filter((n) => n.authorId === authorId).map(decorate));
 }
@@ -217,28 +215,25 @@ function deleteNote(id) {
   return request('DELETE', '/api/notes/' + id, { auth: true });
 }
 
-// 我的笔记 / 收藏 / 赞过（远程优先，失败回退本地）
+// 我的笔记 / 收藏 / 赞过
 function getMyNotes() {
   if (remote()) {
     return request('GET', '/api/me/notes', { auth: true })
-      .then((list) => (list || []).map(decorate))
-      .catch(() => delay(store.getMyNotes().map(decorate)));
+      .then((list) => (list || []).map(decorate));
   }
   return delay(store.getMyNotes().map(decorate));
 }
 function getMyCollects() {
   if (remote()) {
     return request('GET', '/api/me/collects', { auth: true })
-      .then((list) => (list || []).map(decorate))
-      .catch(() => getNotesByIds(store.collectedIds()));
+      .then((list) => (list || []).map(decorate));
   }
   return getNotesByIds(store.collectedIds());
 }
 function getMyLikes() {
   if (remote()) {
     return request('GET', '/api/me/likes', { auth: true })
-      .then((list) => (list || []).map(decorate))
-      .catch(() => getNotesByIds(store.likedIds()));
+      .then((list) => (list || []).map(decorate));
   }
   return getNotesByIds(store.likedIds());
 }

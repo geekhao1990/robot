@@ -7,6 +7,8 @@ const vipContact = 'finance-vip-001';
 module.exports = {
   // 暂时使用本地数据：不发起 wx.request，不受微信合法域名校验影响。
   useRemote: false,
+  // 配置真实 AppID/AppSecret 与 HTTPS 后端后改为 true。
+  wechatAuthRemote: false,
   // 微信开发者工具本地调试地址。显式使用 IPv4，避免 localhost 被解析为 ::1。
   baseUrl: 'http://127.0.0.1:3000',
   // 开通会员的企业微信联系方式（展示用）

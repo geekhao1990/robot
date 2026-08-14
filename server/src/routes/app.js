@@ -3,6 +3,8 @@
 const db = require('../db');
 const { pubUser, pubNote } = require('../util');
 const auth = require('../auth');
+const crypto = require('crypto');
+const { code2Session } = require('../wechat');
 
 function getState(userId) {
   const d = db.get();
@@ -23,21 +25,18 @@ module.exports = function register(router, HttpError) {
     if (!u) throw new HttpError(401, '用户不存在');
     return u;
   };
-  const approvedUser = (ctx) => {
-    const user = currentUser(ctx);
-    if (!user.accessEnabled) throw new HttpError(403, '账号尚未通过管理员审核');
-    return user;
-  };
-
-  // 登录：upsert 用户并发放 token
-  router.post('/api/login', ({ body }) => {
+  // 微信登录：后端用 code 换取 openid，再发放业务 token。
+  router.post('/api/login', async ({ body }) => {
     const d = db.get();
     const b = body || {};
-    let user = b.id && d.users.find((u) => u.id === b.id);
+    const session = await code2Session(b.code);
+    const openid = session.openid;
+    let user = d.users.find((u) => u.wxOpenId === openid);
     if (!user) {
       user = {
-        id: b.id || 'u' + Date.now(),
-        name: b.name || '小红薯用户',
+        id: 'wx_' + crypto.createHash('sha256').update(openid).digest('hex').slice(0, 16),
+        wxOpenId: openid,
+        name: b.name || '微信用户',
         avatar: b.avatar || 'https://i.pravatar.cc/150?img=68',
         desc: b.desc || '这个人很懒，什么都没留下',
         fans: b.fans || 0,
@@ -46,7 +45,6 @@ module.exports = function register(router, HttpError) {
         vip: false,
         vipPlan: '',
         vipExpire: 0,
-        accessEnabled: false,
       };
       d.users.push(user);
       db.save();
@@ -74,7 +72,7 @@ module.exports = function register(router, HttpError) {
 
   // 点赞
   router.post('/api/like/:id', (ctx) => {
-    const u = approvedUser(ctx);
+    const u = currentUser(ctx);
     const s = getState(u.id);
     const note = db.get().notes.find((n) => n.id === ctx.params.id);
     if (!note) throw new HttpError(404, 'not found');
@@ -87,7 +85,7 @@ module.exports = function register(router, HttpError) {
 
   // 收藏
   router.post('/api/collect/:id', (ctx) => {
-    const u = approvedUser(ctx);
+    const u = currentUser(ctx);
     const s = getState(u.id);
     const note = db.get().notes.find((n) => n.id === ctx.params.id);
     if (!note) throw new HttpError(404, 'not found');
@@ -118,14 +116,14 @@ module.exports = function register(router, HttpError) {
 
   // 我赞过 / 收藏的笔记
   router.get('/api/me/likes', (ctx) => {
-    const u = approvedUser(ctx);
+    const u = currentUser(ctx);
     const s = getState(u.id);
     const map = {};
     db.get().notes.forEach((n) => (map[n.id] = n));
     return Object.keys(s.likes).sort((a, b) => s.likes[b] - s.likes[a]).map((id) => map[id]).filter(Boolean).map(pubNote);
   });
   router.get('/api/me/collects', (ctx) => {
-    const u = approvedUser(ctx);
+    const u = currentUser(ctx);
     const s = getState(u.id);
     const map = {};
     db.get().notes.forEach((n) => (map[n.id] = n));
@@ -134,7 +132,7 @@ module.exports = function register(router, HttpError) {
 
   // 我发布的笔记
   router.get('/api/me/notes', (ctx) => {
-    const u = approvedUser(ctx);
+    const u = currentUser(ctx);
     return db.get().notes.filter((n) => n.authorId === u.id).map(pubNote);
   });
 

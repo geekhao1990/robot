@@ -10,7 +10,7 @@
       <view wx:if="{{user}}" class="logout" bindtap="onLogout">退出登录</view>
       <view wx:else class="login-prompt" bindtap="goLogin">
         <image class="avatar" src="https://i.pravatar.cc/150?img=68" mode="aspectFill" />
-        <view class="meta"><view class="name">点击登录</view><view class="uid">登录并通过审核后查看笔记</view></view>
+        <view class="meta"><view class="name">点击登录</view><view class="uid">使用微信账号登录</view></view>
       </view>
       <view class="vip-banner" bindtap="goService">
         <view class="vip-left"><text class="vip-crown">💬</text><view class="vip-texts"><text class="vip-title">联系客服</text><text class="vip-sub">权限问题或内容咨询</text></view></view>

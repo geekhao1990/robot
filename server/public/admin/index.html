@@ -361,18 +361,13 @@ function drawUsers() {
     const status = active
       ? `<span class="tag vip">${u.vipPlan === 'year' ? '年卡' : '月卡'} · 至 ${fmtDate(u.vipExpire)}</span>`
       : (u.vipExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
-    const access = u.accessEnabled
-      ? '<span class="tag vip">已通过</span>'
-      : '<span class="tag">待审核</span>';
     return `
       <tr>
         <td>${start + i + 1}</td>
         <td><img src="${esc(u.avatar)}" /></td>
         <td>${esc(u.name)}</td>
-        <td>${access}</td>
         <td>${status}</td>
         <td>
-          <button class="btn-sm" onclick='setAccess("${u.id}",${!u.accessEnabled})'>${u.accessEnabled ? '禁用访问' : '通过审核'}</button>
           <button class="btn-sm" onclick='setVip("${u.id}","month")'>开通月卡</button>
           <button class="btn-sm" onclick='setVip("${u.id}","year")'>开通年卡</button>
           <button class="btn-sm del" ${active ? '' : 'disabled'} onclick='setVip("${u.id}","none")'>取消VIP</button>
@@ -389,7 +384,7 @@ function drawUsers() {
       </div>
       <button class="btn-primary" onclick="editUser()">+ 新增用户</button>
     </div>
-    <table><thead><tr><th>序号</th><th>头像</th><th>昵称</th><th>访问权限</th><th>VIP 状态</th><th>操作</th></tr></thead>
+    <table><thead><tr><th>序号</th><th>头像</th><th>昵称</th><th>VIP 状态</th><th>操作</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${pagerHtml(_userPage, pages, total, 'gotoUserPage')}`;
 }
@@ -398,13 +393,6 @@ function setVip(id, plan) {
   const label = { month: '开通月卡', year: '开通年卡', none: '取消VIP' }[plan];
   if (!confirm(`确定为该用户「${label}」吗？`)) return;
   api('/api/admin/users/' + id + '/vip', { method: 'PUT', body: JSON.stringify({ plan }) }).then(renderUsers);
-}
-function setAccess(id, enabled) {
-  const label = enabled ? '通过审核' : '禁用访问';
-  if (!confirm(`确定${label}该用户吗？`)) return;
-  api('/api/admin/users/' + id + '/access', {
-    method: 'PUT', body: JSON.stringify({ enabled })
-  }).then(renderUsers);
 }
 function editUser(id) {
   const u = id ? _users.find((x) => x.id === id) : {};
