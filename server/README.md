@@ -85,10 +85,10 @@ GET                   /api/admin/stats
 
 ## 让小程序连接真实后端
 
-小程序 `miniprogram/utils/config.js` 已默认 `useRemote: true`：
+小程序 `miniprogram/utils/config.js` 当前默认 `useRemote: false`，先使用本地 mock 数据；需要联调真实后台时改为 `true`：
 
 ```js
-module.exports = { useRemote: true, baseUrl: 'http://127.0.0.1:3000', vipContact: 'finance-vip-001' };
+module.exports = { useRemote: false, baseUrl: 'http://127.0.0.1:3000', vipContact: 'finance-vip-001' };
 ```
 
 - **必须先启动本服务**，小程序的登录、点赞、收藏、关注、发布、会员状态都依赖它。
