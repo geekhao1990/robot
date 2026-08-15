@@ -68,8 +68,8 @@ function allNotes() {
   return [...store.getMyNotes(), ...data.notes];
 }
 
-// 首页 feed：home 全部 | material 资料 | course 课程
-function getFeed({ tab = 'home', page = 1, size = 10 } = {}) {
+// 首页 feed：discover 发现 | following 关注
+function getFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
   if (remote()) {
     // 带上登录态，「关注」流需按当前用户的关注关系过滤
     return request('GET', '/api/feed', { data: { tab, page, size }, auth: true })
@@ -78,9 +78,12 @@ function getFeed({ tab = 'home', page = 1, size = 10 } = {}) {
   return mockFeed({ tab, page, size });
 }
 
-function mockFeed({ tab = 'home', page = 1, size = 10 } = {}) {
+function mockFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
   let list = allNotes();
-  if (tab === 'home') {
+  if (tab === 'following') {
+    const followed = new Set(store.followedIds());
+    list = list.filter((n) => followed.has(n.authorId)).sort((a, b) => b.time - a.time);
+  } else if (tab === 'discover' || tab === 'home') {
     list = list.slice().sort((a, b) => b.time - a.time);
   } else if (tab === 'course') {
     list = list.filter((n) => n.type === 'course').sort((a, b) => b.time - a.time);
