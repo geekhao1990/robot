@@ -208,18 +208,6 @@
   margin-left: 28rpx;
 }
 
-/* 课程区块 */
-.course-block {
-  padding: 30rpx;
-}
-.course-tip {
-  background: #fff7ed;
-  color: #b4690e;
-  font-size: 28rpx;
-  line-height: 1.6;
-  padding: 24rpx 28rpx;
-  border-radius: 16rpx;
-}
 .course-btn {
   flex: 1;
   height: 80rpx;

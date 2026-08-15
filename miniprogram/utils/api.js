@@ -14,7 +14,7 @@ function remote() {
 }
 
 // 通用请求封装（支持鉴权 token）
-function request(method, path, { data, auth } = {}) {
+function request(method, path, { data, auth, timeout = 10000 } = {}) {
   return new Promise((resolve, reject) => {
     const header = { 'Content-Type': 'application/json' };
     if (auth && store.getToken && store.getToken()) {
@@ -25,7 +25,7 @@ function request(method, path, { data, auth } = {}) {
       method,
       data: data || {},
       header,
-      timeout: 10000,
+      timeout,
       success: (r) => {
         if (r.statusCode >= 200 && r.statusCode < 300) resolve(r.data);
         else {
@@ -123,6 +123,20 @@ function getCategories() {
 function getHotSearch() {
   if (remote()) return http('/api/hotSearch');
   return delay(data.hotSearch, 0);
+}
+
+// 全局功能设置。即使内容使用 mock，也会优先读取本地后台，失败后自动回退。
+function getAppSettings() {
+  const fallback = {
+    rewardedAdEnabled: config.rewardedAdEnabled === true,
+    featuredNoteId: config.featuredNoteId || 'n13',
+  };
+  return request('GET', '/api/settings', { timeout: 3000 })
+    .then((settings) => ({
+      rewardedAdEnabled: settings && settings.rewardedAdEnabled === true,
+      featuredNoteId: (settings && settings.featuredNoteId) || fallback.featuredNoteId,
+    }))
+    .catch(() => fallback);
 }
 
 function search(keyword) {
@@ -342,6 +356,7 @@ module.exports = {
   getResource,
   getCategories,
   getHotSearch,
+  getAppSettings,
   search,
   getUserById,
   getNotesByAuthor,

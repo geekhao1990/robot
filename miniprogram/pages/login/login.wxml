@@ -9,8 +9,8 @@
     <view class="wx-tip">使用微信账号快捷登录</view>
   </view>
 
-  <button class="wx-login-btn" bindtap="onWechatLogin">
-    <text class="wx-logo">💬</text> 微信快捷登录
+  <button class="wx-login-btn" bindtap="onWechatLogin" disabled="{{loggingIn}}">
+    <text class="wx-logo">💬</text> {{loginText}}
   </button>
 
   <view class="agreement">

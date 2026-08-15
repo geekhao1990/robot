@@ -29,9 +29,6 @@
       <view class="tags"><text wx:for="{{note.tags}}" wx:key="*this" class="tag">#{{item}}</text></view>
       <view class="meta">{{timeText}}</view>
     </view>
-    <view class="course-block">
-      <view class="course-tip">{{note.type === 'course' ? '🎓 看完激励广告后获取完整课程' : '📦 看完激励广告后获取完整资料'}}</view>
-    </view>
     <view class="divider"></view>
   </scroll-view>
 

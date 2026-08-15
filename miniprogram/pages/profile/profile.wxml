@@ -12,18 +12,16 @@
         <image class="avatar" src="https://i.pravatar.cc/150?img=68" mode="aspectFill" />
         <view class="meta"><view class="name">点击登录</view><view class="uid">使用微信账号登录</view></view>
       </view>
-      <view class="vip-banner" bindtap="goService">
-        <view class="vip-left"><text class="vip-crown">💬</text><view class="vip-texts"><text class="vip-title">联系客服</text><text class="vip-sub">权限问题或内容咨询</text></view></view>
-        <view class="vip-go">去咨询</view>
+    </view>
+  </view>
+  <block wx:if="{{loggedIn}}">
+    <view class="tabs"><view wx:for="{{tabs}}" wx:key="*this" class="tab {{tabIndex === index ? 'active' : ''}}" data-index="{{index}}" bindtap="onTab">{{item}}</view></view>
+    <view class="list">
+      <view wx:if="{{currentNotes.length}}" class="waterfall">
+        <view class="column"><note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindtap="goDetail" /></view>
+        <view class="column"><note-card wx:for="{{right}}" wx:key="id" note="{{item}}" bindtap="goDetail" /></view>
       </view>
+      <view wx:else class="placeholder">{{emptyText}}</view>
     </view>
-  </view>
-  <view class="tabs"><view wx:for="{{tabs}}" wx:key="*this" class="tab {{tabIndex === index ? 'active' : ''}}" data-index="{{index}}" bindtap="onTab">{{item}}</view></view>
-  <view class="list">
-    <view wx:if="{{currentNotes.length}}" class="waterfall">
-      <view class="column"><note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindtap="goDetail" /></view>
-      <view class="column"><note-card wx:for="{{right}}" wx:key="id" note="{{item}}" bindtap="goDetail" /></view>
-    </view>
-    <view wx:else class="placeholder">{{emptyText}}</view>
-  </view>
+  </block>
 </view>

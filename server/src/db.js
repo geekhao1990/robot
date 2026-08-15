@@ -8,13 +8,33 @@ const path = require('path');
 const FILE = path.join(__dirname, '../data/db.json');
 let db = null;
 
+function ensureSettings() {
+  const notes = Array.isArray(db.notes) ? db.notes : [];
+  const fallbackNote = notes.find((n) => n.type === 'course') || notes[0];
+  let changed = false;
+  if (!db.settings || typeof db.settings !== 'object') {
+    db.settings = {};
+    changed = true;
+  }
+  if (typeof db.settings.rewardedAdEnabled !== 'boolean') {
+    db.settings.rewardedAdEnabled = false;
+    changed = true;
+  }
+  const featuredExists = notes.some((n) => n.id === db.settings.featuredNoteId);
+  if (!featuredExists) {
+    db.settings.featuredNoteId = fallbackNote ? fallbackNote.id : '';
+    changed = true;
+  }
+  return changed;
+}
+
 function load() {
   if (fs.existsSync(FILE)) {
     db = JSON.parse(fs.readFileSync(FILE, 'utf8'));
   } else {
     db = require('./seed')();
-    save();
   }
+  if (ensureSettings() || !fs.existsSync(FILE)) save();
   return db;
 }
 

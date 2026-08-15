@@ -15,6 +15,10 @@ module.exports = {
   vipContact,
   // 企业微信二维码图片（本地资源，真机/开发者工具均可显示）
   vipQr: '/images/vip-qr.jpg',
+  // 本地预览兜底：红色加号打开的指定笔记。
+  featuredNoteId: 'n13',
+  // 后台不可用时的广告兜底状态；默认关闭，避免未配置广告位时阻塞领取。
+  rewardedAdEnabled: false,
   // 微信公众平台创建的激励视频广告位 ID，上线前必须替换
   rewardedVideoAdUnitId: 'adunit-xxxxxxxxxxxxxxxx',
 };

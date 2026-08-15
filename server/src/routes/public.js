@@ -1,6 +1,6 @@
 // server/src/routes/public.js —— 小程序只读接口
 const db = require('../db');
-const { pubUser, pubNote } = require('../util');
+const { pubUser, pubNote, pubSettings } = require('../util');
 const auth = require('../auth');
 
 module.exports = function register(router, HttpError) {
@@ -11,6 +11,9 @@ module.exports = function register(router, HttpError) {
     if (!user) throw new HttpError(401, '用户不存在');
     return user;
   };
+
+  // 小程序公共功能设置（广告开关、首页加号入口）。
+  router.get('/api/settings', () => pubSettings(db.get()));
 
   // 首页 feed
   router.get('/api/feed', (ctx) => {

@@ -8,6 +8,7 @@ Page({
     statusBarHeight: 20,
     navBarHeight: 44,
     user: null,
+    loggedIn: false,
     tabs: ['收藏', '赞过'],
     tabIndex: 0,
     currentNotes: [], left: [], right: [],
@@ -24,25 +25,39 @@ Page({
       const user = store.getUser();
       this.setData({
         user,
-        accessText: user ? '已登录' : '',
+        loggedIn: !!user,
+        accessText: user
+          ? (config.useRemote || config.wechatAuthRemote ? '已登录' : '已登录（模拟）')
+          : '',
       });
-      this.loadTab(this.data.tabIndex);
+      if (user) {
+        this.loadTab(this.data.tabIndex);
+      } else {
+        this._loadRequestId = (this._loadRequestId || 0) + 1;
+        this.setData({ currentNotes: [], left: [], right: [], emptyText: '登录后查看' });
+      }
     };
     if (store.isLogin() && config.useRemote) store.syncMe().then(proceed); else proceed();
   },
   onTab(e) { const index = Number(e.currentTarget.dataset.index); this.setData({ tabIndex: index }); this.loadTab(index); },
   loadTab(index) {
     const user = store.getUser();
+    const requestId = (this._loadRequestId || 0) + 1;
+    this._loadRequestId = requestId;
     const promise = !user ? Promise.resolve([]) : (index === 0 ? api.getMyCollects() : api.getMyLikes());
     const emptyText = !user ? '登录后查看' : (index === 0 ? '还没有收藏的笔记' : '还没有赞过的笔记');
     promise.then((notes) => {
+      if (requestId !== this._loadRequestId || !store.isLogin()) return;
       const left = [], right = []; let lh = 0, rh = 0;
       notes.forEach((n) => { const h = n.coverRatio || 1.3; if (lh <= rh) { left.push(n); lh += h; } else { right.push(n); rh += h; } });
       this.setData({ currentNotes: notes, left, right, emptyText });
-    }).catch(() => this.setData({ currentNotes: [], left: [], right: [], emptyText: '暂无权限查看' }));
+    }).catch(() => {
+      if (requestId === this._loadRequestId) {
+        this.setData({ currentNotes: [], left: [], right: [], emptyText: '暂无权限查看' });
+      }
+    });
   },
   goLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
-  goService() { wx.switchTab({ url: '/pages/agent/agent' }); },
   onLogout() {
     wx.showModal({ title: '提示', content: '确定要退出登录吗？', success: (res) => { if (res.confirm) { store.logout(); this.onShow(); } } });
   },

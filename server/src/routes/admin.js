@@ -1,6 +1,7 @@
 // server/src/routes/admin.js —— 管理后台接口（登录 + 笔记/用户/分类 CRUD）
 const db = require('../db');
 const auth = require('../auth');
+const { pubSettings } = require('../util');
 
 module.exports = function register(router, HttpError) {
   const requireAuth = (ctx) => {
@@ -26,6 +27,30 @@ module.exports = function register(router, HttpError) {
       courses: d.notes.filter((n) => n.type === 'course').length,
       categories: d.categories.length,
     };
+  });
+
+  // ---------- 功能设置 ----------
+  router.get('/api/admin/settings', (ctx) => {
+    requireAuth(ctx);
+    return pubSettings(db.get());
+  });
+
+  router.put('/api/admin/settings', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const b = ctx.body || {};
+    if (typeof b.rewardedAdEnabled !== 'boolean') {
+      throw new HttpError(400, '广告开关必须为布尔值');
+    }
+    if (!d.notes.some((n) => n.id === b.featuredNoteId)) {
+      throw new HttpError(400, '请选择有效的入口笔记');
+    }
+    d.settings = {
+      rewardedAdEnabled: b.rewardedAdEnabled,
+      featuredNoteId: b.featuredNoteId,
+    };
+    db.save();
+    return pubSettings(d);
   });
 
   // ---------- 笔记 ----------

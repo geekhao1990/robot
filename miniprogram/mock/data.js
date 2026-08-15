@@ -111,7 +111,7 @@ const rawNotes = [
     courseUrl: 'https://pan.baidu.com/s/1AbCdEfGhIjKlMn 提取码: xhs8',
     title: '【保姆级教程】从0到1搭建你的第一个网站', ratio: 1.15,
     images: ['course1', 'course2'],
-    content: '零基础也能学会！本课程包含全部源码 + 视频讲解：\n\n1️⃣ 环境搭建\n2️⃣ 前端页面开发\n3️⃣ 后端接口与部署\n\n点击下方「获取课程」即可领取完整资料～',
+    content: '零基础也能学会！本课程包含全部源码 + 视频讲解：\n\n1️⃣ 环境搭建\n2️⃣ 前端页面开发\n3️⃣ 后端接口与部署\n\n点击下方「点击领取」即可领取完整资料～',
     tags: ['建站', '编程教程', '干货'], likes: 8900, collects: 5600, comments: 0, time: 4, video: false,
   },
 ];

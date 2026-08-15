@@ -43,7 +43,7 @@ function note(o) {
 const notes = [
   note({ id: 'n1', authorId: 'u4', category: '指标', title: 'MACD 顶背离实战图解', ratio: 1.3, images: ['fin1', 'fin2'], content: '顶背离的三个确认信号……', tags: ['指标', '技术分析'], likes: 23400, collects: 8900, comments: 342, hours: 1 }),
   note({ id: 'n2', authorId: 'u2', category: '视频', title: '10分钟看懂均线系统', ratio: 0.8, images: ['vid1'], content: '均线多头排列怎么看……', tags: ['视频', '入门'], likes: 56700, collects: 23400, comments: 891, hours: 3 }),
-  note({ id: 'n3', authorId: 'u4', category: '其他', type: 'course', courseUrl: 'https://pan.baidu.com/s/1AbCdEfG 提取码: jz88', title: '缠论买卖点系统课', ratio: 1.15, images: ['gold1', 'gold2'], content: '完整视频 + 源码，点击获取课程……', tags: ['课程'], likes: 8900, collects: 5600, comments: 0, hours: 4 }),
+  note({ id: 'n3', authorId: 'u4', category: '其他', type: 'course', courseUrl: 'https://pan.baidu.com/s/1AbCdEfG 提取码: jz88', title: '缠论买卖点系统课', ratio: 1.15, images: ['gold1', 'gold2'], content: '完整视频 + 源码，点击领取……', tags: ['课程'], likes: 8900, collects: 5600, comments: 0, hours: 4 }),
   note({ id: 'n4', authorId: 'u6', category: '指标', title: '主力资金流向指标解读', ratio: 1.0, images: ['fin3', 'fin4'], content: '资金流向怎么用……', tags: ['指标'], likes: 89000, collects: 45000, comments: 1203, hours: 8 }),
   note({ id: 'n5', authorId: 'u2', category: '视频', title: '盘前复盘的正确姿势', ratio: 1.25, images: ['vid2', 'vid3'], content: '每天 15 分钟复盘……', tags: ['视频', '复盘'], likes: 67800, collects: 34000, comments: 567, hours: 12 }),
   note({ id: 'n6', authorId: 'u1', category: '指标', title: 'KDJ 金叉死叉避坑指南', ratio: 0.9, images: ['fin5'], content: 'KDJ 钝化怎么办……', tags: ['指标'], likes: 34500, collects: 12000, comments: 456, hours: 20 }),
@@ -59,7 +59,8 @@ const admins = [{ username: 'admin', password: 'admin123' }];
 const userState = {};
 // 每个用户的消息数据（通知/会话），首次访问时按模板懒初始化。
 const messageData = {};
+const settings = { rewardedAdEnabled: false, featuredNoteId: 'n3' };
 
 module.exports = function seed() {
-  return { users, notes, categories, hotSearch, admins, userState, messageData };
+  return { users, notes, categories, hotSearch, admins, userState, messageData, settings };
 };

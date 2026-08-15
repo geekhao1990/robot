@@ -14,8 +14,11 @@ Page({
     likeText: '0',
     collectText: '0',
     timeText: '',
-    resourceLabel: '获取资料',
+    resourceLabel: '点击领取',
     followed: false,
+    rewardedAdEnabled: config.rewardedAdEnabled === true,
+    featuredNoteId: config.featuredNoteId || 'n13',
+    isFeatured: false,
   },
 
   onLoad(options) {
@@ -26,7 +29,21 @@ Page({
       headerHeight: app.globalData.statusBarHeight + app.globalData.navBarHeight,
     });
     this.noteId = options.id;
+    this.loadSettings();
     this.loadNote();
+  },
+
+  loadSettings() {
+    this.settingsPromise = api.getAppSettings().then((settings) => {
+      const featuredNoteId = settings.featuredNoteId || this.data.featuredNoteId;
+      this.setData({
+        rewardedAdEnabled: settings.rewardedAdEnabled === true,
+        featuredNoteId,
+        isFeatured: this.noteId === featuredNoteId,
+      });
+      return settings;
+    });
+    return this.settingsPromise;
   },
 
   loadNote() {
@@ -39,8 +56,8 @@ Page({
         likeText: formatCount(note.likes),
         collectText: formatCount(note.collects),
         timeText: fromNow(note.time),
-        resourceLabel: note.type === 'course' ? '获取课程' : '获取资料',
         followed: store.isFollowed(note.authorId || note.author.id),
+        isFeatured: this.noteId === this.data.featuredNoteId,
       });
     }).catch((err) => {
       const code = err && err.statusCode;
@@ -78,13 +95,18 @@ Page({
     toast(followed ? '已关注' : '已取消关注');
   },
   onGetResource() {
+    return Promise.resolve(this.settingsPromise).then(() => this.handleGetResource());
+  },
+  handleGetResource() {
     const note = this.data.note;
+    if (this.data.isFeatured) return this.showEnterpriseWechat();
     if (!note.hasResource) return toast('管理员尚未配置获取地址');
+    if (!this.data.rewardedAdEnabled) return this.showResource();
     const adUnitId = config.rewardedVideoAdUnitId;
     if (!adUnitId || /x{4,}/i.test(adUnitId)) {
       return wx.showModal({
-        title: '激励广告未配置',
-        content: '请先在微信公众平台创建激励视频广告位，并在 config.js 中填写 adUnitId。',
+        title: '暂时无法领取',
+        content: '领取服务暂未配置完成，请稍后再试。',
         showCancel: false,
       });
     }
@@ -99,10 +121,20 @@ Page({
     }
     this.rewardAd.show().catch(() => this.rewardAd.load().then(() => this.rewardAd.show()).catch(() => {}));
   },
+  showEnterpriseWechat() {
+    wx.showModal({
+      title: '添加企业微信',
+      content: '点击查看二维码，长按识别后添加企业微信领取资料。',
+      confirmText: '查看二维码',
+      success: (res) => {
+        if (res.confirm) wx.previewImage({ current: config.vipQr, urls: [config.vipQr] });
+      },
+    });
+  },
   showResource() {
     api.getResource(this.data.note.id).then(({ url }) => {
       wx.showModal({
-        title: this.data.resourceLabel,
+        title: '领取成功',
         content: url,
         confirmText: '复制链接',
         cancelText: '关闭',

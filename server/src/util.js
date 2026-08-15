@@ -19,4 +19,16 @@ function pubNote(note) {
   return { ...safe, hasResource: !!courseUrl };
 }
 
-module.exports = { vipActive, pubUser, pubNote };
+function pubSettings(data) {
+  const notes = (data && data.notes) || [];
+  const raw = (data && data.settings) || {};
+  const featured = notes.find((n) => n.id === raw.featuredNoteId)
+    || notes.find((n) => n.type === 'course')
+    || notes[0];
+  return {
+    rewardedAdEnabled: raw.rewardedAdEnabled === true,
+    featuredNoteId: featured ? featured.id : '',
+  };
+}
+
+module.exports = { vipActive, pubUser, pubNote, pubSettings };

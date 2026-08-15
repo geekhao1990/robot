@@ -31,7 +31,7 @@ function refreshTabBar(page, index) {
   const tb = page.getTabBar && page.getTabBar();
   if (tb) {
     tb.setData({ selected: index });
-    tb.refreshBadge();
+    if (tb.refreshBadge) tb.refreshBadge();
   }
 }
 

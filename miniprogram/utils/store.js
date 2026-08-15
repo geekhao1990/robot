@@ -53,6 +53,14 @@ function init() {
   state.follows = load(KEY.FOLLOWS, {});
   state.myNotes = load(KEY.MY_NOTES, []);
   state.read = load(KEY.READ, { notify: {}, conv: {} });
+  if (!state.user) {
+    state.likes = {};
+    state.collects = {};
+    state.follows = {};
+    save(KEY.LIKES, {});
+    save(KEY.COLLECTS, {});
+    save(KEY.FOLLOWS, {});
+  }
 }
 
 // 数组 -> 时间戳 map（保持顺序）

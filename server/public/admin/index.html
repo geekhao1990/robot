@@ -95,6 +95,7 @@
       <div class="nav-item" data-view="notes" onclick="switchView('notes')">📝 笔记管理</div>
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
       <div class="nav-item" data-view="categories" onclick="switchView('categories')">🏷️ 分类管理</div>
+      <div class="nav-item" data-view="settings" onclick="switchView('settings')">⚙️ 功能设置</div>
     </div>
     <div class="main">
       <div class="topbar">
@@ -152,7 +153,7 @@ function enterApp() {
   switchView('overview');
 }
 
-const TITLES = { overview: '数据概览', notes: '笔记管理', users: '用户管理', categories: '分类管理' };
+const TITLES = { overview: '数据概览', notes: '笔记管理', users: '用户管理', categories: '分类管理', settings: '功能设置' };
 function switchView(v) {
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === v));
   document.getElementById('viewTitle').textContent = TITLES[v];
@@ -160,6 +161,7 @@ function switchView(v) {
   if (v === 'notes') renderNotes();
   if (v === 'users') renderUsers();
   if (v === 'categories') renderCategories();
+  if (v === 'settings') renderSettings();
 }
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -427,6 +429,42 @@ function renderCategories() {
 function saveCats() {
   const categories = document.getElementById('catText').value.split('\n').map((s) => s.trim()).filter(Boolean);
   api('/api/admin/categories', { method: 'PUT', body: JSON.stringify({ categories }) }).then(() => alert('已保存'));
+}
+
+// 功能设置
+function renderSettings() {
+  Promise.all([api('/api/admin/settings'), api('/api/admin/notes')]).then(([settings, notes]) => {
+    const noteOptions = notes.map((n) => `
+      <option value="${esc(n.id)}" ${n.id === settings.featuredNoteId ? 'selected' : ''}>
+        ${esc(n.title)}（${esc(n.author && n.author.name)}）
+      </option>`).join('');
+    document.getElementById('content').innerHTML = `
+      <div class="card" style="max-width:640px">
+        <div class="field">
+          <label>首页红色加号打开的笔记</label>
+          <select id="settingFeatured">${noteOptions}</select>
+          <div class="hint">这篇笔记点击「点击领取」时直接展示企业微信二维码，不播放广告。</div>
+        </div>
+        <div class="field">
+          <label>普通笔记激励广告</label>
+          <select id="settingAd">
+            <option value="false" ${settings.rewardedAdEnabled ? '' : 'selected'}>关闭</option>
+            <option value="true" ${settings.rewardedAdEnabled ? 'selected' : ''}>开启</option>
+          </select>
+          <div class="hint">关闭后直接展示领取链接；开启后需看完激励广告才能领取。</div>
+        </div>
+        <button class="btn-primary" onclick="saveSettings()">保存设置</button>
+      </div>`;
+  });
+}
+
+function saveSettings() {
+  const body = {
+    featuredNoteId: document.getElementById('settingFeatured').value,
+    rewardedAdEnabled: document.getElementById('settingAd').value === 'true',
+  };
+  api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(body) })
+    .then(() => alert('设置已保存'));
 }
 
 // 弹窗
