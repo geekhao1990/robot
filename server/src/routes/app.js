@@ -17,6 +17,16 @@ function getState(userId) {
   return s;
 }
 
+function previewLoginAllowed(ctx) {
+  if (process.env.NODE_ENV === 'production') return false;
+  if (process.env.DEV_PREVIEW_LOGIN === 'false') return false;
+  const host = String((ctx.headers && ctx.headers.host) || '').replace(/:\d+$/, '');
+  const address = String(ctx.remoteAddress || '');
+  const localHost = host === '127.0.0.1' || host === 'localhost' || host === '[::1]';
+  const localAddress = address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
+  return localHost && localAddress;
+}
+
 module.exports = function register(router, HttpError) {
   const currentUser = (ctx) => {
     const uid = auth.userIdFor(ctx.headers.authorization);
@@ -26,11 +36,17 @@ module.exports = function register(router, HttpError) {
     return u;
   };
   // 微信登录：后端用 code 换取 openid，再发放业务 token。
-  router.post('/api/login', async ({ body }) => {
+  router.post('/api/login', async (ctx) => {
     const d = db.get();
-    const b = body || {};
-    const session = await code2Session(b.code);
-    const openid = session.openid;
+    const b = ctx.body || {};
+    let openid;
+    if (b.preview === true) {
+      if (!previewLoginAllowed(ctx)) throw new HttpError(403, '预览登录仅限本地开发环境');
+      openid = 'local-preview-user';
+    } else {
+      const session = await code2Session(b.code);
+      openid = session.openid;
+    }
     let user = d.users.find((u) => u.wxOpenId === openid);
     if (!user) {
       user = {

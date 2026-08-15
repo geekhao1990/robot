@@ -4,15 +4,17 @@ const config = require('../../utils/config');
 Page({
   data: {
     loggingIn: false,
-    loginText: '微信快捷登录',
+    loginText: config.wechatAuthRemote ? '微信快捷登录' : '进入预览',
+    loginTip: config.wechatAuthRemote ? '使用微信账号快捷登录' : '连接本地后台并使用真实数据',
   },
 
   onWechatLogin() {
     if (this.data.loggingIn) return;
     this.setData({ loggingIn: true, loginText: '登录中…' });
-    wx.showLoading({ title: '微信登录中' });
-    if (!config.useRemote && !config.wechatAuthRemote) {
+    wx.showLoading({ title: config.wechatAuthRemote ? '微信登录中' : '连接后台中' });
+    if (!config.wechatAuthRemote) {
       return this.doLogin({
+        preview: true,
         name: '微信用户',
         avatar: 'https://i.pravatar.cc/150?img=68',
       });
@@ -45,7 +47,10 @@ Page({
 
   loginFailed(detail) {
     wx.hideLoading();
-    this.setData({ loggingIn: false, loginText: '微信快捷登录' });
+    this.setData({
+      loggingIn: false,
+      loginText: config.wechatAuthRemote ? '微信快捷登录' : '进入预览',
+    });
     wx.showModal({ title: '微信登录失败', content: detail, showCancel: false });
   },
 });

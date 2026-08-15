@@ -103,6 +103,7 @@ Page({
     }).catch((err) => {
       this.setData({ loading: false, emptyText: '加载失败，请稍后重试' });
       wx.stopPullDownRefresh();
+      if (err && err.statusCode === 401) this.ensureAccess();
     });
   },
 

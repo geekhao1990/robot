@@ -64,7 +64,13 @@ const server = http.createServer((req, res) => {
   req.on('end', () => {
     let parsedBody = {};
     if (body) { try { parsedBody = JSON.parse(body); } catch (e) { parsedBody = {}; } }
-    const ctx = { params: m.params, query: parsed.query, body: parsedBody, headers: req.headers };
+    const ctx = {
+      params: m.params,
+      query: parsed.query,
+      body: parsedBody,
+      headers: req.headers,
+      remoteAddress: req.socket.remoteAddress,
+    };
     Promise.resolve()
       .then(() => m.handler(ctx))
       .then((result) => sendJson(res, 200, result === undefined ? { ok: true } : result))

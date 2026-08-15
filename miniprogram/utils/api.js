@@ -29,6 +29,7 @@ function request(method, path, { data, auth, timeout = 10000 } = {}) {
       success: (r) => {
         if (r.statusCode >= 200 && r.statusCode < 300) resolve(r.data);
         else {
+          if (auth && r.statusCode === 401 && store.logout) store.logout();
           console.error('[API]', method, path, r.statusCode, r.data);
           reject(r);
         }

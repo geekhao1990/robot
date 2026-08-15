@@ -8,14 +8,16 @@
 
 零依赖，无需 `npm install`，需 Node ≥ 18：
 
-1. 复制 `.env.example` 为 `.env`，填写微信小程序配置：
+1. 复制 `.env.example` 为 `.env`。本地开发者工具可直接使用预览登录；接入真实微信登录时再填写 AppID 和 AppSecret：
 
 ```env
+NODE_ENV=development
+DEV_PREVIEW_LOGIN=true
 WECHAT_APP_ID=你的小程序AppID
 WECHAT_APP_SECRET=你的小程序AppSecret
 ```
 
-2. 将项目根目录 `project.config.json` 的 `appid` 改为同一个 AppID。
+2. 接入真实微信登录时，将项目根目录 `project.config.json` 的 `appid` 改为同一个 AppID。
 3. 启动服务：
 
 ```bash
@@ -38,7 +40,7 @@ npm start      # 或 node src/index.js
 
 ## 接口一览
 
-公开读接口（小程序用）：
+登录后读接口（小程序用，请求头需带 Bearer token）：
 ```
 GET /api/feed?tab=&page=&size=
 GET /api/notes/:id
@@ -51,7 +53,7 @@ GET /api/hotSearch
 
 小程序登录与写操作（需先 POST /api/login 拿 token，请求头带 Authorization: Bearer <token>）：
 ```
-POST   /api/login                 微信登录 { code }，返回 { token, user }
+POST   /api/login                 微信登录 { code }；本地预览 { preview:true }
 GET    /api/me                    当前用户 + 赞/藏/关注 状态
 POST   /api/like/:noteId          点赞切换
 POST   /api/collect/:noteId       收藏切换
@@ -67,7 +69,7 @@ POST   /api/conversations/:id/read       标记会话已读
 POST   /api/conversations/:id/messages   发送私信 { text }，返回 { added:[我,自动回复] }
 ```
 
-> `WECHAT_APP_SECRET` 只能放在服务器 `.env`，不能写入小程序代码或提交到 Git。
+> `WECHAT_APP_SECRET` 只能放在服务器 `.env`，不能写入小程序代码或提交到 Git。预览登录只接受本机请求，并在 `NODE_ENV=production` 时强制关闭。
 
 管理（需先 POST /api/admin/login 拿 token）：
 ```
@@ -86,13 +88,13 @@ GET                   /api/admin/stats
 小程序 `miniprogram/utils/config.js` 已默认 `useRemote: true`：
 
 ```js
-module.exports = { useRemote: true, baseUrl: 'http://localhost:3000', vipContact: 'finance-vip-001' };
+module.exports = { useRemote: true, baseUrl: 'http://127.0.0.1:3000', vipContact: 'finance-vip-001' };
 ```
 
 - **必须先启动本服务**，小程序的登录、点赞、收藏、关注、发布、会员状态都依赖它。
 - 开发者工具：勾选「详情 → 本地设置 → 不校验合法域名」。
 - 真机：需把后端部署到 HTTPS 域名，并在小程序后台「开发设置 → request 合法域名」中配置。
-- 后端不可用时：读接口自动回退本地 mock，登录走离线降级；写操作会提示失败。
+- 搜索、列表、详情、点赞和收藏均直接读写后端；后端不可用时会明确提示失败，不再回退 mock 内容。
 - 草稿箱仍只存本地。
 - 发布图片会自动上传到后端 `public/uploads/`（生产建议改用对象存储 OSS/COS）。
 - 消息（通知 + 私信）已后端化：每个用户首次访问时按模板懒初始化示例消息，

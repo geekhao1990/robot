@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const store = require('../../utils/store');
 
 const HISTORY_KEY = 'xhs_search_history';
 
@@ -26,14 +27,38 @@ Page({
       headerHeight: app.globalData.statusBarHeight + app.globalData.navBarHeight,
       history: wx.getStorageSync(HISTORY_KEY) || [],
     });
-    api.getHotSearch().then((hot) => this.setData({ hot }));
+  },
+
+  onShow() {
+    if (!store.isLogin()) {
+      if (!this._loginRedirected) {
+        this._loginRedirected = true;
+        wx.navigateTo({ url: '/pages/login/login' });
+      }
+      return;
+    }
+    this._loginRedirected = false;
+    if (this._hotLoaded) return;
+    this._hotLoaded = true;
+    api.getHotSearch()
+      .then((hot) => this.setData({ hot }))
+      .catch((err) => {
+        this._hotLoaded = false;
+        this.setData({ hot: [] });
+        if (err && err.statusCode === 401 && !this._loginRedirected) {
+          this._loginRedirected = true;
+          wx.navigateTo({ url: '/pages/login/login' });
+        }
+      });
   },
 
   onInput(e) {
+    this._searchRequestId = (this._searchRequestId || 0) + 1;
     this.setData({ keyword: e.detail.value, searched: false });
   },
 
   clearInput() {
+    this._searchRequestId = (this._searchRequestId || 0) + 1;
     this.setData({ keyword: '', searched: false, results: [], left: [], right: [] });
   },
 
@@ -51,7 +76,10 @@ Page({
     if (!kw) return;
     this.saveHistory(kw);
     this.setData({ searched: true, loading: true, left: [], right: [] });
+    const requestId = (this._searchRequestId || 0) + 1;
+    this._searchRequestId = requestId;
     api.search(kw).then((results) => {
+      if (requestId !== this._searchRequestId) return;
       const left = [], right = [];
       let lh = 0, rh = 0;
       results.forEach((n) => {
@@ -60,6 +88,20 @@ Page({
         else { right.push(n); rh += h; }
       });
       this.setData({ results, left, right, loading: false });
+    }).catch((err) => {
+      if (requestId !== this._searchRequestId) return;
+      this.setData({ results: [], left: [], right: [], loading: false });
+      if (err && err.statusCode === 401) {
+        this._loginRedirected = true;
+        wx.showModal({
+          title: '登录已失效',
+          content: '请重新登录后搜索。',
+          showCancel: false,
+          success: () => wx.navigateTo({ url: '/pages/login/login' }),
+        });
+      } else {
+        wx.showToast({ title: '搜索失败，请稍后重试', icon: 'none' });
+      }
     });
   },
 

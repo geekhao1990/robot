@@ -6,7 +6,7 @@
 
   <view class="wx-box">
     <view class="wx-icon">💬</view>
-    <view class="wx-tip">使用微信账号快捷登录</view>
+    <view class="wx-tip">{{loginTip}}</view>
   </view>
 
   <button class="wx-login-btn" bindtap="onWechatLogin" disabled="{{loggingIn}}">

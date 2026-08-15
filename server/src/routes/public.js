@@ -46,15 +46,18 @@ module.exports = function register(router, HttpError) {
 
   router.get('/api/search', (ctx) => {
     requireReader(ctx);
-    const kw = (ctx.query.kw || '').trim();
+    const kw = String(ctx.query.kw || '').trim().toLowerCase();
     if (!kw) return [];
+    const contains = (value) => String(value || '').toLowerCase().includes(kw);
+    const typeLabel = (type) => ({ material: '资料', course: '课程', gold: '金手指' }[type] || '资料');
     return db.get().notes.filter(
       (n) =>
-        n.title.includes(kw) ||
-        (n.content || '').includes(kw) ||
-        (n.category || '').includes(kw) ||
-        (n.tags || []).some((t) => t.includes(kw)) ||
-        n.author.name.includes(kw)
+        contains(n.title) ||
+        contains(n.content) ||
+        contains(n.category) ||
+        contains(typeLabel(n.type)) ||
+        (n.tags || []).some(contains) ||
+        contains(n.author && n.author.name)
     ).map(pubNote);
   });
 

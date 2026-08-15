@@ -31,6 +31,13 @@ Page({
     this.loadNote();
   },
 
+  onShow() {
+    if (this.noteId && !this.data.note && store.isLogin()) {
+      this._loginRedirected = false;
+      this.loadNote();
+    }
+  },
+
   loadSettings() {
     this.settingsPromise = api.getAppSettings().then((settings) => {
       this.setData({
@@ -43,7 +50,10 @@ Page({
 
   loadNote() {
     if (!store.isLogin()) return this.requireLogin();
+    if (this._loadingNote) return;
+    this._loadingNote = true;
     api.getNoteById(this.noteId).then((note) => {
+      this._loadingNote = false;
       if (!note) return toast('笔记不存在');
       this.setData({
         note,
@@ -54,6 +64,7 @@ Page({
         followed: store.isFollowed(note.authorId || note.author.id),
       });
     }).catch((err) => {
+      this._loadingNote = false;
       const code = err && err.statusCode;
       wx.showModal({
         title: code === 401 ? '请先登录' : '加载失败',
@@ -138,5 +149,9 @@ Page({
   },
   goService() { wx.switchTab({ url: '/pages/agent/agent' }); },
   goBack() { wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) }); },
-  requireLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
+  requireLogin() {
+    if (this._loginRedirected) return;
+    this._loginRedirected = true;
+    wx.navigateTo({ url: '/pages/login/login' });
+  },
 });

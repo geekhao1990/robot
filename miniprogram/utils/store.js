@@ -53,6 +53,11 @@ function init() {
   state.follows = load(KEY.FOLLOWS, {});
   state.myNotes = load(KEY.MY_NOTES, []);
   state.read = load(KEY.READ, { notify: {}, conv: {} });
+  // 从本地 mock 切换到真实后端时，旧缓存没有服务端 token，必须重新登录。
+  if (config.useRemote && !state.token) {
+    state.user = null;
+    save(KEY.USER, null);
+  }
   if (!state.user) {
     state.likes = {};
     state.collects = {};
@@ -88,7 +93,7 @@ function setUser(user) {
   if (app) app.globalData.userInfo = user;
 }
 function isLogin() {
-  return !!state.user;
+  return !!state.user && (!config.useRemote || !!state.token);
 }
 
 // 登录：远程换取 token + 用户并同步交互状态；离线则降级为本地
