@@ -6,13 +6,13 @@ Page({
   data: {
     statusBarHeight: 20,
     navBarHeight: 44,
-    headerHeight: 64,
+    searchBarHeight: 52,
+    headerHeight: 116,
     navTabs: [
-      { key: 'home', label: '首页' },
-      { key: 'material', label: '资料' },
-      { key: 'course', label: '课程' },
+      { key: 'following', label: '关注' },
+      { key: 'discover', label: '发现' },
     ],
-    tab: 'home',
+    tab: 'discover',
     left: [],
     right: [],
     leftH: 0,
@@ -30,7 +30,7 @@ Page({
     this.setData({
       statusBarHeight,
       navBarHeight,
-      headerHeight: statusBarHeight + navBarHeight,
+      headerHeight: statusBarHeight + navBarHeight + this.data.searchBarHeight,
     });
 
     if (!this.ensureAccess()) return;
@@ -92,7 +92,7 @@ Page({
         page: page + 1,
         hasMore: res.hasMore,
         loading: false,
-        emptyText: '这里还没有内容～',
+        emptyText: this.data.tab === 'following' ? '还没有关注内容' : '这里还没有内容～',
       });
       wx.stopPullDownRefresh();
     }).catch((err) => {

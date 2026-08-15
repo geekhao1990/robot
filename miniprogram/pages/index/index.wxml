@@ -11,7 +11,12 @@
           bindtap="onTabChange"
         >{{item.label}}</view>
       </view>
-      <view class="search-btn" bindtap="goSearch">🔍</view>
+    </view>
+    <view class="search-row" style="height: {{searchBarHeight}}px;" bindtap="goSearch">
+      <view class="search-box">
+        <view class="search-icon"></view>
+        <text class="search-placeholder">搜索资料、课程</text>
+      </view>
     </view>
   </view>
 
