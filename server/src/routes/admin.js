@@ -2,6 +2,8 @@
 const db = require('../db');
 const auth = require('../auth');
 const { pubSettings } = require('../util');
+const NOTE_TYPES = new Set(['material', 'course', 'gold']);
+const noteType = (value) => NOTE_TYPES.has(value) ? value : 'material';
 
 module.exports = function register(router, HttpError) {
   const requireAuth = (ctx) => {
@@ -24,7 +26,9 @@ module.exports = function register(router, HttpError) {
       notes: d.notes.length,
       users: d.users.length,
       vipUsers: d.users.filter((u) => u.vip).length,
+      materials: d.notes.filter((n) => !n.type || n.type === 'normal' || n.type === 'material').length,
       courses: d.notes.filter((n) => n.type === 'course').length,
+      goldNotes: d.notes.filter((n) => n.type === 'gold').length,
       categories: d.categories.length,
     };
   });
@@ -42,8 +46,8 @@ module.exports = function register(router, HttpError) {
     if (typeof b.rewardedAdEnabled !== 'boolean') {
       throw new HttpError(400, '广告开关必须为布尔值');
     }
-    if (!d.notes.some((n) => n.id === b.featuredNoteId)) {
-      throw new HttpError(400, '请选择有效的入口笔记');
+    if (!d.notes.some((n) => n.id === b.featuredNoteId && n.type === 'gold')) {
+      throw new HttpError(400, '请选择金手指类型的入口笔记');
     }
     d.settings = {
       rewardedAdEnabled: b.rewardedAdEnabled,
@@ -61,13 +65,16 @@ module.exports = function register(router, HttpError) {
     const d = db.get();
     const b = ctx.body || {};
     const author = d.users.find((u) => u.id === b.authorId) || d.users[0];
+    const type = noteType(b.type);
+    const courseUrl = type === 'gold' ? '' : String(b.courseUrl || '').trim();
+    if (type !== 'gold' && !courseUrl) throw new HttpError(400, '请填写获取地址');
     const note = {
       id: 'n' + Date.now(),
       authorId: author.id,
       author: { id: author.id, name: author.name, avatar: author.avatar },
       category: b.category || d.categories[0],
-      type: b.type === 'course' ? 'course' : 'material',
-      courseUrl: b.courseUrl || '',
+      type,
+      courseUrl,
       title: b.title || '未命名',
       content: b.content || '',
       images: b.images || [],
@@ -93,7 +100,12 @@ module.exports = function register(router, HttpError) {
     if (i < 0) throw new HttpError(404, 'not found');
     const b = ctx.body || {};
     const note = { ...d.notes[i], ...b };
-    note.type = b.type === 'course' ? 'course' : 'material';
+    note.type = noteType(Object.prototype.hasOwnProperty.call(b, 'type') ? b.type : note.type);
+    note.courseUrl = note.type === 'gold' ? '' : String(note.courseUrl || '').trim();
+    if (note.type !== 'gold' && !note.courseUrl) throw new HttpError(400, '请填写获取地址');
+    if (d.settings && d.settings.featuredNoteId === note.id && note.type !== 'gold') {
+      throw new HttpError(400, '加号入口笔记必须保持为金手指类型');
+    }
     if (b.authorId) {
       const a = d.users.find((u) => u.id === b.authorId);
       if (a) note.author = { id: a.id, name: a.name, avatar: a.avatar };
@@ -107,6 +119,11 @@ module.exports = function register(router, HttpError) {
   router.delete('/api/admin/notes/:id', (ctx) => {
     requireAuth(ctx);
     const d = db.get();
+    if (d.settings && d.settings.featuredNoteId === ctx.params.id) {
+      const nextGold = d.notes.find((n) => n.id !== ctx.params.id && n.type === 'gold');
+      if (!nextGold) throw new HttpError(400, '请先新增另一篇金手指内容再删除');
+      d.settings.featuredNoteId = nextGold.id;
+    }
     d.notes = d.notes.filter((n) => n.id !== ctx.params.id);
     db.save();
     return { ok: true };

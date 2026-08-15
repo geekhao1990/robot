@@ -7,7 +7,7 @@
         <input
           class="input"
           value="{{keyword}}"
-          placeholder="搜索资料、课程"
+          placeholder="搜索资料、课程、金手指"
           confirm-type="search"
           focus="{{autoFocus}}"
           bindinput="onInput"

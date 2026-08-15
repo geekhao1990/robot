@@ -37,11 +37,11 @@ const rawNotes = [
     tags: ['快手早餐', '减脂餐', '美食'], likes: 56700, collects: 23400, comments: 891, time: 3, video: false,
   },
   {
-    id: 'n3', authorId: 'u3', category: '穿搭',
-    title: '初秋通勤穿搭｜温柔知性风全攻略', ratio: 1.5,
-    images: ['ootd1', 'ootd2', 'ootd3', 'ootd4'],
-    content: '换季啦！分享几套适合通勤的初秋穿搭，温柔又显气质～\n\n🤎 大地色系永远不会出错\n👗 一条好看的半裙能拯救一切\n👜 配饰要克制，简单才高级',
-    tags: ['通勤穿搭', '初秋', 'OOTD'], likes: 12300, collects: 9800, comments: 234, time: 5, video: false,
+    id: 'n3', authorId: 'u3', category: '金手指', type: 'gold',
+    title: '金手指｜领取与使用说明', ratio: 1.5,
+    images: ['gold-finger1', 'gold-finger2'],
+    content: '金手指资料与使用说明。点击下方「点击领取」，添加企业微信后领取完整内容。',
+    tags: ['金手指', '领取说明'], likes: 12300, collects: 9800, comments: 0, time: 5, video: false,
   },
   {
     id: 'n4', authorId: 'u4', category: '健身',
@@ -133,6 +133,7 @@ function buildNote(raw) {
   const images = raw.images.map((s) => img(s, 800, Math.round(800 * raw.ratio)));
   return {
     ...raw,
+    type: raw.type === 'course' || raw.type === 'gold' ? raw.type : 'material',
     cover,
     coverRatio: raw.ratio,
     images,
@@ -167,7 +168,7 @@ const notes = rawNotes.map(buildNote);
 const noteMap = {};
 notes.forEach((n) => (noteMap[n.id] = n));
 
-const categories = ['推荐', '旅行', '美食', '穿搭', '健身', '家居', '数码'];
+const categories = ['推荐', '旅行', '美食', '穿搭', '健身', '家居', '数码', '金手指'];
 const hotSearch = ['多巴胺穿搭', 'citywalk', '露营', '美拉德', '特种兵旅行', '抄作业', '平价好物', '减脂餐'];
 
 // ---------------- 消息：通知（赞/收藏/关注/评论） ----------------

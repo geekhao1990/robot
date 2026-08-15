@@ -49,6 +49,7 @@
   td img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
   .tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; background: #f3f3f3; color: #666; }
   .tag.course { background: #fff0f2; color: var(--primary); }
+  .tag.gold { background: #fff6db; color: #a86b00; }
   .tag.vip { background: #fbf0d9; color: #b4690e; }
   /* 弹窗 */
   .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 20; }
@@ -172,7 +173,9 @@ function renderOverview() {
     document.getElementById('content').innerHTML = `
       <div class="cards">
         <div class="card"><div class="n">${s.notes}</div><div class="l">笔记总数</div></div>
+        <div class="card"><div class="n">${s.materials}</div><div class="l">资料内容</div></div>
         <div class="card"><div class="n">${s.courses}</div><div class="l">课程内容</div></div>
+        <div class="card"><div class="n">${s.goldNotes}</div><div class="l">金手指内容</div></div>
         <div class="card"><div class="n">${s.users}</div><div class="l">用户总数</div></div>
         <div class="card"><div class="n">${s.vipUsers}</div><div class="l">VIP 用户</div></div>
         <div class="card"><div class="n">${s.categories}</div><div class="l">分类数</div></div>
@@ -232,7 +235,7 @@ function drawNotes() {
       <td>${esc(n.title)}</td>
       <td>${esc(n.author && n.author.name)}</td>
       <td><span class="tag">${esc(n.category)}</span></td>
-      <td>${n.type === 'course' ? '<span class="tag course">课程</span>' : '<span class="tag">资料</span>'}</td>
+      <td>${n.type === 'gold' ? '<span class="tag gold">金手指</span>' : (n.type === 'course' ? '<span class="tag course">课程</span>' : '<span class="tag">资料</span>')}</td>
       <td>赞 ${n.likes} · 藏 ${n.collects} · 评 ${n.comments}</td>
       <td>
         <button class="btn-sm" onclick='editNote("${n.id}")'>编辑</button>
@@ -265,10 +268,11 @@ function editNote(id) {
     <div class="field"><label>作者</label><select id="f_author">${userOpts}</select></div>
     <div class="field"><label>分类</label><select id="f_category">${catOpts}</select></div>
     <div class="field"><label>类型</label><select id="f_type">
-      <option value="material" ${n.type !== 'course' ? 'selected' : ''}>资料</option>
+      <option value="material" ${!n.type || n.type === 'normal' || n.type === 'material' ? 'selected' : ''}>资料</option>
       <option value="course" ${n.type === 'course' ? 'selected' : ''}>课程</option>
+      <option value="gold" ${n.type === 'gold' ? 'selected' : ''}>金手指</option>
     </select></div>
-    <div class="field"><label>获取地址（百度网盘 / 夸克网盘）</label><input id="f_course" value="${esc(n.courseUrl)}" placeholder="链接及提取码" /></div>
+    <div class="field"><label>获取地址（资料 / 课程）</label><input id="f_course" value="${esc(n.courseUrl)}" placeholder="百度网盘或夸克网盘链接及提取码" /><div class="hint">金手指统一通过企业微信领取，无需填写地址。</div></div>
     <div class="field"><label>图片（第一张为封面，可增删）</label>
       <div id="imgGrid" class="img-grid"></div>
       <div class="hint">支持选择多张图片上传</div>
@@ -276,13 +280,14 @@ function editNote(id) {
     ${id ? `<div class="hint">互动数据：赞 ${n.likes || 0} · 藏 ${n.collects || 0} · 评 ${n.comments || 0}（不可修改）</div>` : ''}
   `, () => {
     const link = document.getElementById('f_course').value.trim();
-    if (!link) return alert('请填写百度网盘或夸克网盘地址');
+    const type = document.getElementById('f_type').value;
+    if (!link && type !== 'gold') return alert('请填写百度网盘或夸克网盘地址');
     const body = {
       title: document.getElementById('f_title').value,
       content: document.getElementById('f_content').value,
       authorId: document.getElementById('f_author').value,
       category: document.getElementById('f_category').value,
-      type: document.getElementById('f_type').value,
+      type,
       courseUrl: link,
       images: _modalImages,
     };
@@ -434,14 +439,14 @@ function saveCats() {
 // 功能设置
 function renderSettings() {
   Promise.all([api('/api/admin/settings'), api('/api/admin/notes')]).then(([settings, notes]) => {
-    const noteOptions = notes.map((n) => `
+    const noteOptions = notes.filter((n) => n.type === 'gold').map((n) => `
       <option value="${esc(n.id)}" ${n.id === settings.featuredNoteId ? 'selected' : ''}>
         ${esc(n.title)}（${esc(n.author && n.author.name)}）
       </option>`).join('');
     document.getElementById('content').innerHTML = `
       <div class="card" style="max-width:640px">
         <div class="field">
-          <label>首页红色加号打开的笔记</label>
+          <label>首页红色加号（金手指）打开的笔记</label>
           <select id="settingFeatured">${noteOptions}</select>
           <div class="hint">这篇笔记点击「点击领取」时直接展示企业微信二维码，不播放广告。</div>
         </div>

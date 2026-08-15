@@ -88,7 +88,9 @@ function mockFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
   } else if (tab === 'course') {
     list = list.filter((n) => n.type === 'course').sort((a, b) => b.time - a.time);
   } else if (tab === 'material') {
-    list = list.filter((n) => n.type !== 'course').sort((a, b) => b.time - a.time);
+    list = list.filter((n) => !n.type || n.type === 'normal' || n.type === 'material').sort((a, b) => b.time - a.time);
+  } else if (tab === 'gold') {
+    list = list.filter((n) => n.type === 'gold').sort((a, b) => b.time - a.time);
   }
   const start = (page - 1) * size;
   const slice = list.slice(start, start + size).map(decorate);
@@ -104,7 +106,7 @@ function getNoteById(id) {
     return http('/api/notes/' + id).then((n) => decorate(n));
   }
   const note = allNotes().find((n) => n.id === id);
-  return delay(decorate(note));
+  return delay(decorate(note), 0);
 }
 
 function getResource(id) {
@@ -129,12 +131,14 @@ function getHotSearch() {
 function getAppSettings() {
   const fallback = {
     rewardedAdEnabled: config.rewardedAdEnabled === true,
-    featuredNoteId: config.featuredNoteId || 'n13',
+    featuredNoteId: config.featuredNoteId || 'n3',
   };
   return request('GET', '/api/settings', { timeout: 3000 })
     .then((settings) => ({
       rewardedAdEnabled: settings && settings.rewardedAdEnabled === true,
-      featuredNoteId: (settings && settings.featuredNoteId) || fallback.featuredNoteId,
+      featuredNoteId: settings && typeof settings.featuredNoteId === 'string'
+        ? settings.featuredNoteId
+        : fallback.featuredNoteId,
     }))
     .catch(() => fallback);
 }

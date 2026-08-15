@@ -22,9 +22,8 @@ function pubNote(note) {
 function pubSettings(data) {
   const notes = (data && data.notes) || [];
   const raw = (data && data.settings) || {};
-  const featured = notes.find((n) => n.id === raw.featuredNoteId)
-    || notes.find((n) => n.type === 'course')
-    || notes[0];
+  const featured = notes.find((n) => n.id === raw.featuredNoteId && n.type === 'gold')
+    || notes.find((n) => n.type === 'gold');
   return {
     rewardedAdEnabled: raw.rewardedAdEnabled === true,
     featuredNoteId: featured ? featured.id : '',

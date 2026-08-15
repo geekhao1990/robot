@@ -45,4 +45,4 @@
     </view>
   </view>
 </view>
-<view wx:else class="placeholder" style="padding-top: 200rpx;">加载中...</view>
+<view wx:else class="placeholder"></view>

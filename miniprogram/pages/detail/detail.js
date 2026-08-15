@@ -17,8 +17,6 @@ Page({
     resourceLabel: '点击领取',
     followed: false,
     rewardedAdEnabled: config.rewardedAdEnabled === true,
-    featuredNoteId: config.featuredNoteId || 'n13',
-    isFeatured: false,
   },
 
   onLoad(options) {
@@ -35,11 +33,8 @@ Page({
 
   loadSettings() {
     this.settingsPromise = api.getAppSettings().then((settings) => {
-      const featuredNoteId = settings.featuredNoteId || this.data.featuredNoteId;
       this.setData({
         rewardedAdEnabled: settings.rewardedAdEnabled === true,
-        featuredNoteId,
-        isFeatured: this.noteId === featuredNoteId,
       });
       return settings;
     });
@@ -57,7 +52,6 @@ Page({
         collectText: formatCount(note.collects),
         timeText: fromNow(note.time),
         followed: store.isFollowed(note.authorId || note.author.id),
-        isFeatured: this.noteId === this.data.featuredNoteId,
       });
     }).catch((err) => {
       const code = err && err.statusCode;
@@ -95,11 +89,11 @@ Page({
     toast(followed ? '已关注' : '已取消关注');
   },
   onGetResource() {
+    if (this.data.note && this.data.note.type === 'gold') return this.showEnterpriseWechat();
     return Promise.resolve(this.settingsPromise).then(() => this.handleGetResource());
   },
   handleGetResource() {
     const note = this.data.note;
-    if (this.data.isFeatured) return this.showEnterpriseWechat();
     if (!note.hasResource) return toast('管理员尚未配置获取地址');
     if (!this.data.rewardedAdEnabled) return this.showResource();
     const adUnitId = config.rewardedVideoAdUnitId;

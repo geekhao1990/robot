@@ -29,9 +29,11 @@ module.exports = function register(router, HttpError) {
       // 首页：全部笔记，按时间倒序
       list.sort((a, b) => b.time - a.time);
     } else if (tab === 'material') {
-      list = list.filter((n) => n.type !== 'course').sort((a, b) => b.time - a.time);
+      list = list.filter((n) => !n.type || n.type === 'normal' || n.type === 'material').sort((a, b) => b.time - a.time);
     } else if (tab === 'course') {
       list = list.filter((n) => n.type === 'course').sort((a, b) => b.time - a.time);
+    } else if (tab === 'gold') {
+      list = list.filter((n) => n.type === 'gold').sort((a, b) => b.time - a.time);
     }
     const p = Number(page) || 1;
     const s = Number(size) || 10;
@@ -68,6 +70,7 @@ module.exports = function register(router, HttpError) {
     requireReader(ctx);
     const note = db.get().notes.find((n) => n.id === ctx.params.id);
     if (!note) throw new HttpError(404, 'not found');
+    if (note.type === 'gold') throw new HttpError(400, '金手指内容请通过企业微信领取');
     if (!note.courseUrl) throw new HttpError(404, '暂未配置获取地址');
     return { url: note.courseUrl };
   });

@@ -1,10 +1,19 @@
 const api = require('../utils/api');
 const config = require('../utils/config');
+const FEATURED_CACHE_KEY = 'xhs_featured_note_id';
+
+function cachedFeaturedNoteId() {
+  try {
+    return wx.getStorageSync(FEATURED_CACHE_KEY) || config.featuredNoteId || 'n3';
+  } catch (e) {
+    return config.featuredNoteId || 'n3';
+  }
+}
 
 Component({
   data: {
     selected: 0,
-    featuredNoteId: config.featuredNoteId || 'n13',
+    featuredNoteId: cachedFeaturedNoteId(),
     list: [
       { pagePath: '/pages/index/index', text: '首页' },
       { action: 'featured', text: '', plus: true },
@@ -22,7 +31,14 @@ Component({
     loadSettings() {
       if (this._settingsPromise) return this._settingsPromise;
       this._settingsPromise = api.getAppSettings().then((settings) => {
-        this.setData({ featuredNoteId: settings.featuredNoteId || this.data.featuredNoteId });
+        const featuredNoteId = typeof settings.featuredNoteId === 'string'
+          ? settings.featuredNoteId
+          : this.data.featuredNoteId;
+        this.setData({ featuredNoteId });
+        try {
+          if (featuredNoteId) wx.setStorageSync(FEATURED_CACHE_KEY, featuredNoteId);
+          else wx.removeStorageSync(FEATURED_CACHE_KEY);
+        } catch (e) {}
         this._settingsPromise = null;
         return settings;
       }).catch(() => {
@@ -35,13 +51,9 @@ Component({
       const index = e.currentTarget.dataset.index;
       const item = this.data.list[index];
       if (item.action === 'featured') {
-        wx.showLoading({ title: '加载中' });
-        return this.loadSettings().then(() => {
-          wx.hideLoading();
-          const id = this.data.featuredNoteId;
-          if (!id) return wx.showToast({ title: '暂未配置入口笔记', icon: 'none' });
-          wx.navigateTo({ url: `/pages/detail/detail?id=${encodeURIComponent(id)}` });
-        });
+        const id = this.data.featuredNoteId;
+        if (!id) return wx.showToast({ title: '暂未配置金手指内容', icon: 'none' });
+        return wx.navigateTo({ url: `/pages/detail/detail?id=${encodeURIComponent(id)}` });
       }
       const url = item.pagePath;
       this.setData({ selected: index });

@@ -8,9 +8,35 @@ const path = require('path');
 const FILE = path.join(__dirname, '../data/db.json');
 let db = null;
 
+function ensureContentTypes() {
+  let changed = false;
+  if (!Array.isArray(db.notes)) {
+    db.notes = [];
+    changed = true;
+  }
+  db.notes.forEach((note) => {
+    if (!['material', 'course', 'gold'].includes(note.type)) {
+      note.type = 'material';
+      changed = true;
+    }
+    if (note.type === 'gold' && note.courseUrl) {
+      note.courseUrl = '';
+      changed = true;
+    }
+  });
+  if (!Array.isArray(db.categories)) {
+    db.categories = [];
+    changed = true;
+  }
+  if (!db.categories.includes('金手指')) {
+    db.categories.push('金手指');
+    changed = true;
+  }
+  return changed;
+}
+
 function ensureSettings() {
   const notes = Array.isArray(db.notes) ? db.notes : [];
-  const fallbackNote = notes.find((n) => n.type === 'course') || notes[0];
   let changed = false;
   if (!db.settings || typeof db.settings !== 'object') {
     db.settings = {};
@@ -20,9 +46,23 @@ function ensureSettings() {
     db.settings.rewardedAdEnabled = false;
     changed = true;
   }
-  const featuredExists = notes.some((n) => n.id === db.settings.featuredNoteId);
-  if (!featuredExists) {
-    db.settings.featuredNoteId = fallbackNote ? fallbackNote.id : '';
+  const configured = notes.find((n) => n.id === db.settings.featuredNoteId);
+  let goldNote = configured && configured.type === 'gold'
+    ? configured
+    : notes.find((n) => n.type === 'gold');
+  if (!goldNote) {
+    goldNote = configured || notes.find((n) => n.type === 'course') || notes[0];
+    if (goldNote) {
+      goldNote.type = 'gold';
+      changed = true;
+    }
+  }
+  if (goldNote && goldNote.courseUrl) {
+    goldNote.courseUrl = '';
+    changed = true;
+  }
+  if (db.settings.featuredNoteId !== (goldNote ? goldNote.id : '')) {
+    db.settings.featuredNoteId = goldNote ? goldNote.id : '';
     changed = true;
   }
   return changed;
@@ -34,7 +74,9 @@ function load() {
   } else {
     db = require('./seed')();
   }
-  if (ensureSettings() || !fs.existsSync(FILE)) save();
+  const contentChanged = ensureContentTypes();
+  const settingsChanged = ensureSettings();
+  if (contentChanged || settingsChanged || !fs.existsSync(FILE)) save();
   return db;
 }
 
