@@ -40,7 +40,12 @@ Page({
   onShow() {
     refreshTabBar(this, 0);
     if (!this.ensureAccess()) return;
-    this.syncLikes();
+    if (this.data.tab === 'following') {
+      this.setData({ page: 1, hasMore: true });
+      this.loadFeed(true);
+    } else {
+      this.syncLikes();
+    }
   },
 
   ensureAccess() {

@@ -96,6 +96,28 @@ module.exports = function register(router, HttpError) {
     return { collected, collects: note.collects };
   });
 
+  // 关注 / 取消关注作者
+  router.post('/api/follow/:id', (ctx) => {
+    const u = currentUser(ctx);
+    const target = db.get().users.find((user) => user.id === ctx.params.id);
+    if (!target) throw new HttpError(404, '用户不存在');
+    if (target.id === u.id) throw new HttpError(400, '不能关注自己');
+
+    const s = getState(u.id);
+    const followed = !s.follows[target.id];
+    if (followed) {
+      s.follows[target.id] = Date.now();
+      u.follows = (u.follows || 0) + 1;
+      target.fans = (target.fans || 0) + 1;
+    } else {
+      delete s.follows[target.id];
+      u.follows = Math.max(0, (u.follows || 0) - 1);
+      target.fans = Math.max(0, (target.fans || 0) - 1);
+    }
+    db.save();
+    return { followed, fans: target.fans };
+  });
+
 
   // 我关注的人
   router.get('/api/me/following', (ctx) => {

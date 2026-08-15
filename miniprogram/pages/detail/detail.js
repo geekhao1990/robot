@@ -15,6 +15,7 @@ Page({
     collectText: '0',
     timeText: '',
     resourceLabel: '获取资料',
+    followed: false,
   },
 
   onLoad(options) {
@@ -39,6 +40,7 @@ Page({
         collectText: formatCount(note.collects),
         timeText: fromNow(note.time),
         resourceLabel: note.type === 'course' ? '获取课程' : '获取资料',
+        followed: store.isFollowed(note.authorId || note.author.id),
       });
     }).catch((err) => {
       const code = err && err.statusCode;
@@ -67,6 +69,13 @@ Page({
     const collects = note.collects + (collected ? 1 : -1);
     this.setData({ 'note.collected': collected, 'note.collects': collects, collectText: formatCount(collects) });
     toast(collected ? '已收藏' : '已取消收藏');
+  },
+  onFollow() {
+    const note = this.data.note;
+    const authorId = note.authorId || note.author.id;
+    const followed = store.toggleFollow(authorId);
+    this.setData({ followed });
+    toast(followed ? '已关注' : '已取消关注');
   },
   onGetResource() {
     const note = this.data.note;
