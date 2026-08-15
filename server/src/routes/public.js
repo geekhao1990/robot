@@ -14,11 +14,15 @@ module.exports = function register(router, HttpError) {
 
   // 首页 feed
   router.get('/api/feed', (ctx) => {
-    requireReader(ctx);
-    const { tab = 'home', page = 1, size = 10 } = ctx.query;
+    const reader = requireReader(ctx);
+    const { tab = 'discover', page = 1, size = 10 } = ctx.query;
     const d = db.get();
     let list = d.notes.slice();
-    if (tab === 'home') {
+    if (tab === 'following') {
+      const state = (d.userState && d.userState[reader.id]) || {};
+      const follows = state.follows || {};
+      list = list.filter((n) => !!follows[n.authorId]).sort((a, b) => b.time - a.time);
+    } else if (tab === 'discover' || tab === 'home') {
       // 首页：全部笔记，按时间倒序
       list.sort((a, b) => b.time - a.time);
     } else if (tab === 'material') {
