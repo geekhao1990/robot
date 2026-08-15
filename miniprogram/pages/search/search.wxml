@@ -7,7 +7,7 @@
         <input
           class="input"
           value="{{keyword}}"
-          placeholder="搜索笔记"
+          placeholder="搜索资料、课程"
           confirm-type="search"
           focus="{{autoFocus}}"
           bindinput="onInput"
