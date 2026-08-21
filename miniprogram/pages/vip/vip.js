@@ -33,11 +33,12 @@ Page({
     vipActive: false,
     vipStatusText: '',
     vipContact: config.vipContact,
+    memberCode: '',
   },
 
   onShow() {
     const proceed = () => this.render(store.getUser());
-    if (store.isLogin() && config.useRemote) store.syncMe().then(proceed);
+    if (store.isLogin() && (config.useRemote || config.previewAuthRemote || config.wechatAuthRemote)) store.syncMe().then(proceed);
     else proceed();
   },
 
@@ -49,7 +50,7 @@ Page({
     else if (vipActive) vipStatusText = '会员有效期至 ' + this.fmt(user.vipExpire);
     else if (user.vipExpire) vipStatusText = 'VIP 已过期，续费请联系企业微信';
     else vipStatusText = '开通会员，畅享专属权益';
-    this.setData({ user, vipActive, vipStatusText });
+    this.setData({ user, vipActive, vipStatusText, memberCode: user ? user.id : '' });
   },
 
   fmt(ts) {
@@ -57,26 +58,14 @@ Page({
     return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
   },
 
-  // 联系企业微信开通
+  copyMemberCode() {
+    if (!this.data.memberCode) return wx.navigateTo({ url: '/pages/login/login' });
+    wx.setClipboardData({ data: this.data.memberCode });
+  },
+
+  // 添加企业微信，添加后把会员编号发给客服，由后台手动开通。
   onContact() {
-    wx.setClipboardData({
-      data: this.data.vipContact,
-      success: () => {
-        wx.showModal({
-          title: '联系企业微信开通',
-          content: `企业微信号「${this.data.vipContact}」已复制。\n请添加企业微信，由客服为你开通月卡 / 年卡会员。`,
-          showCancel: false,
-          confirmText: '我知道了',
-        });
-      },
-      fail: () => {
-        wx.showModal({
-          title: '联系企业微信开通',
-          content: `请添加企业微信「${this.data.vipContact}」，由客服为你开通会员。`,
-          showCancel: false,
-          confirmText: '我知道了',
-        });
-      },
-    });
+    if (!this.data.user) return wx.navigateTo({ url: '/pages/login/login' });
+    wx.previewImage({ current: config.vipQr, urls: [config.vipQr] });
   },
 });

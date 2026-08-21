@@ -62,6 +62,8 @@ module.exports = function register(router, HttpError) {
         vipPlan: '',
         vipExpire: 0,
         official: false,
+        createdAt: Date.now(),
+        tags: ['new'],
       };
       d.users.push(user);
       db.save();

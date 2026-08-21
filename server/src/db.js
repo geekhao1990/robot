@@ -45,6 +45,14 @@ function ensureContentTypes() {
       user.official = !user.wxOpenId && existingAuthors.has(user.id);
       changed = true;
     }
+    if (!Number.isFinite(user.createdAt)) {
+      user.createdAt = user.wxOpenId ? Date.now() : 0;
+      changed = true;
+    }
+    if (!Array.isArray(user.tags)) {
+      user.tags = user.wxOpenId && !user.vip ? ['new'] : [];
+      changed = true;
+    }
   });
   return changed;
 }

@@ -133,6 +133,18 @@
   margin-top: 50rpx;
   text-align: center;
 }
+.member-code {
+  position: relative;
+  margin-bottom: 24rpx;
+  padding: 22rpx 24rpx;
+  text-align: left;
+  background: #34343f;
+  border: 2rpx solid #4a4a55;
+  border-radius: 18rpx;
+}
+.member-code-label { color: #b9a98a; font-size: 22rpx; }
+.member-code-value { color: #f5d9a8; font-size: 25rpx; margin-top: 8rpx; word-break: break-all; }
+.member-code-copy { position: absolute; right: 24rpx; top: 22rpx; color: #f5d18b; font-size: 22rpx; }
 .contact-btn {
   background: linear-gradient(90deg, #f7dca0, #e9b765);
   color: #5a3d0a;

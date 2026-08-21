@@ -24,6 +24,7 @@ module.exports = function register(router, HttpError) {
     return {
       notes: d.notes.length,
       users: d.users.length,
+      newUsers: d.users.filter((u) => Array.isArray(u.tags) && u.tags.includes('new')).length,
       vipUsers: d.users.filter((u) => u.vip).length,
       materials: d.notes.filter((n) => !n.type || n.type === 'normal' || n.type === 'material').length,
       courses: d.notes.filter((n) => n.type === 'course').length,
@@ -136,7 +137,14 @@ module.exports = function register(router, HttpError) {
   });
 
   // ---------- 用户 ----------
-  router.get('/api/admin/users', (ctx) => { requireAuth(ctx); return db.get().users; });
+  router.get('/api/admin/users', (ctx) => {
+    requireAuth(ctx);
+    return db.get().users.slice().sort((a, b) => {
+      const aNew = Array.isArray(a.tags) && a.tags.includes('new') ? 1 : 0;
+      const bNew = Array.isArray(b.tags) && b.tags.includes('new') ? 1 : 0;
+      return bNew - aNew || (b.createdAt || 0) - (a.createdAt || 0);
+    });
+  });
 
   router.post('/api/admin/users', (ctx) => {
     requireAuth(ctx);
@@ -152,6 +160,8 @@ module.exports = function register(router, HttpError) {
       likes: b.likes || 0,
       vip: !!b.vip,
       official: b.official === true,
+      createdAt: Date.now(),
+      tags: b.official === true ? [] : ['new'],
     };
     d.users.push(user);
     db.save();
@@ -200,6 +210,8 @@ module.exports = function register(router, HttpError) {
       user.vip = true;
       user.vipPlan = plan;
       user.vipExpire = base + (plan === 'year' ? 365 : 30) * DAY;
+      user.tags = (user.tags || []).filter((tag) => tag !== 'new');
+      user.vipActivatedAt = now;
     } else {
       throw new HttpError(400, 'plan 须为 month/year/none');
     }

@@ -4,8 +4,8 @@ const config = require('../../utils/config');
 Page({
   data: {
     loggingIn: false,
-    loginText: config.wechatAuthRemote ? '微信快捷登录' : '进入预览',
-    loginTip: config.wechatAuthRemote ? '使用微信账号快捷登录' : '连接本地后台并使用真实数据',
+    loginText: config.wechatAuthRemote ? '微信快捷登录' : '注册并进入预览',
+    loginTip: config.wechatAuthRemote ? '使用微信账号快捷登录' : '连接本地后台并创建预览账号',
   },
 
   onWechatLogin() {
@@ -49,7 +49,7 @@ Page({
     wx.hideLoading();
     this.setData({
       loggingIn: false,
-      loginText: config.wechatAuthRemote ? '微信快捷登录' : '进入预览',
+      loginText: config.wechatAuthRemote ? '微信快捷登录' : '注册并进入预览',
     });
     wx.showModal({ title: '微信登录失败', content: detail, showCancel: false });
   },

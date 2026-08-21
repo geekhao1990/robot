@@ -51,6 +51,7 @@
   .tag.course { background: #fff0f2; color: var(--primary); }
   .tag.gold { background: #fff6db; color: #a86b00; }
   .tag.vip { background: #fbf0d9; color: #b4690e; }
+  .tag.new { background: #ffe9ed; color: var(--primary); }
   /* 弹窗 */
   .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 20; }
   .modal { background: #fff; border-radius: 12px; width: 520px; max-height: 86vh; overflow: auto; padding: 24px; }
@@ -179,6 +180,7 @@ function renderOverview() {
         <div class="card"><div class="n">${s.courses}</div><div class="l">课程内容</div></div>
         <div class="card"><div class="n">${s.goldNotes}</div><div class="l">金手指内容</div></div>
         <div class="card"><div class="n">${s.users}</div><div class="l">用户总数</div></div>
+        <div class="card"><div class="n">${s.newUsers}</div><div class="l">新用户待处理</div></div>
         <div class="card"><div class="n">${s.vipUsers}</div><div class="l">VIP 用户</div></div>
         <div class="card"><div class="n">${s.categories}</div><div class="l">分类数</div></div>
       </div>`;
@@ -392,7 +394,10 @@ function gotoUserPage(p) { _userPage = p; drawUsers(); }
 
 function drawUsers() {
   const kw = _userKeyword.toLowerCase();
-  const all = kw ? _users.filter((u) => (u.name || '').toLowerCase().includes(kw)) : _users;
+  const all = kw ? _users.filter((u) =>
+    (u.name || '').toLowerCase().includes(kw) ||
+    (u.id || '').toLowerCase().includes(kw)
+  ) : _users;
   const total = all.length;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   if (_userPage > pages) _userPage = pages;
@@ -408,10 +413,15 @@ function drawUsers() {
         <td>${start + i + 1}</td>
         <td><img src="${esc(u.avatar)}" /></td>
         <td>${esc(u.name)}</td>
+        <td>
+          ${Array.isArray(u.tags) && u.tags.includes('new') ? '<span class="tag new">新用户</span>' : ''}
+          <div class="hint">${esc(u.id)}</div>
+          <div class="hint">${u.createdAt ? '注册于 ' + fmtDate(u.createdAt) : ''}</div>
+        </td>
         <td>${u.official ? '<span class="tag course">官方账号</span>' : '<span class="tag">普通用户</span>'}</td>
         <td>${status}</td>
         <td>
-          <button class="btn-sm" onclick='setVip("${u.id}","month")'>开通月卡</button>
+          <button class="btn-sm" onclick='setVip("${u.id}","month")'>开通一个月</button>
           <button class="btn-sm" onclick='setVip("${u.id}","year")'>开通年卡</button>
           <button class="btn-sm del" ${active ? '' : 'disabled'} onclick='setVip("${u.id}","none")'>取消VIP</button>
           <button class="btn-sm" onclick='editUser("${u.id}")'>编辑</button>
@@ -421,19 +431,19 @@ function drawUsers() {
   document.getElementById('content').innerHTML = `
     <div class="toolbar">
       <div class="search-box">
-        <input id="userSearch" class="search" placeholder="按昵称搜索用户" value="${esc(_userKeyword)}"
+        <input id="userSearch" class="search" placeholder="按昵称或会员编号搜索" value="${esc(_userKeyword)}"
                onkeydown="if(event.key==='Enter')doUserSearch()" />
         <button class="btn-primary" onclick="doUserSearch()">搜索</button>
       </div>
       <button class="btn-primary" onclick="editUser()">+ 新增用户</button>
     </div>
-    <table><thead><tr><th>序号</th><th>头像</th><th>昵称</th><th>账号类型</th><th>VIP 状态</th><th>操作</th></tr></thead>
+    <table><thead><tr><th>序号</th><th>头像</th><th>昵称</th><th>注册信息</th><th>账号类型</th><th>VIP 状态</th><th>操作</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${pagerHtml(_userPage, pages, total, 'gotoUserPage')}`;
 }
 
 function setVip(id, plan) {
-  const label = { month: '开通月卡', year: '开通年卡', none: '取消VIP' }[plan];
+  const label = { month: '开通一个月会员', year: '开通一年会员', none: '取消VIP' }[plan];
   if (!confirm(`确定为该用户「${label}」吗？`)) return;
   api('/api/admin/users/' + id + '/vip', { method: 'PUT', body: JSON.stringify({ plan }) }).then(renderUsers);
 }

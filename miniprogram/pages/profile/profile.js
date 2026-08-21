@@ -27,7 +27,7 @@ Page({
         user,
         loggedIn: !!user,
         accessText: user
-          ? (config.useRemote || config.wechatAuthRemote ? '已登录' : '已登录（模拟）')
+          ? (config.useRemote || config.previewAuthRemote || config.wechatAuthRemote ? '已登录' : '已登录（模拟）')
           : '',
       });
       if (user) {
@@ -37,7 +37,7 @@ Page({
         this.setData({ currentNotes: [], left: [], right: [], emptyText: '登录后查看' });
       }
     };
-    if (store.isLogin() && config.useRemote) store.syncMe().then(proceed); else proceed();
+    if (store.isLogin() && (config.useRemote || config.previewAuthRemote || config.wechatAuthRemote)) store.syncMe().then(proceed); else proceed();
   },
   onTab(e) { const index = Number(e.currentTarget.dataset.index); this.setData({ tabIndex: index }); this.loadTab(index); },
   loadTab(index) {

@@ -7,6 +7,8 @@ const vipContact = 'finance-vip-001';
 module.exports = {
   // 当前先使用本地 mock 数据；后端联调完成后改为 true。
   useRemote: false,
+  // 尚未配置 AppID 时，登录仍连接本地后端完成注册并生成用户记录。
+  previewAuthRemote: true,
   // 配置真实 AppID/AppSecret 与 HTTPS 后端后改为 true。
   wechatAuthRemote: false,
   // 微信开发者工具本地调试地址。显式使用 IPv4，避免 localhost 被解析为 ::1。

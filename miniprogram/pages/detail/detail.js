@@ -127,13 +127,21 @@ Page({
     this.rewardAd.show().catch(() => this.rewardAd.load().then(() => this.rewardAd.show()).catch(() => {}));
   },
   showEnterpriseWechat() {
-    wx.showModal({
-      title: '添加企业微信',
-      content: '点击查看二维码，长按识别后添加企业微信领取资料。',
-      confirmText: '查看二维码',
-      success: (res) => {
-        if (res.confirm) wx.previewImage({ current: config.vipQr, urls: [config.vipQr] });
+    const user = store.getUser();
+    if (!user) return wx.navigateTo({ url: '/pages/login/login' });
+    wx.setClipboardData({
+      data: user.id,
+      success: () => {
+        wx.showModal({
+          title: '添加企业微信',
+          content: '会员编号已复制。添加企业微信后发送该编号，由管理员在后台开通会员。',
+          confirmText: '查看二维码',
+          success: (res) => {
+            if (res.confirm) wx.previewImage({ current: config.vipQr, urls: [config.vipQr] });
+          },
+        });
       },
+      fail: () => wx.previewImage({ current: config.vipQr, urls: [config.vipQr] }),
     });
   },
   showResource() {

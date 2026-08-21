@@ -33,7 +33,7 @@ npm start      # 或 node src/index.js
 
 - 📊 数据概览：笔记/收费笔记/用户/VIP/分类 数量
 - 📝 笔记管理：资料 / 课程 / 金手指固定分类；仅官方账号可作为作者；图片支持拖拽排序
-- 👤 用户管理：列表 + 新增 / 编辑 / 删除 + 官方账号标记 + 一键 VIP
+- 👤 用户管理：新用户标签、会员编号搜索、官方账号标记、手动开通一个月 / 一年会员
 - 🏷️ 分类管理：查看资料 / 课程 / 金手指三个固定分类及内容数量
 
 数据改动实时写入 `data/db.json`，小程序拉取的接口随之变化。
@@ -85,10 +85,10 @@ GET                   /api/admin/stats
 
 ## 让小程序连接真实后端
 
-小程序 `miniprogram/utils/config.js` 当前默认 `useRemote: false`，先使用本地 mock 数据；需要联调真实后台时改为 `true`。只接入真实微信登录、内容仍用 mock 时，可只把 `wechatAuthRemote` 改为 `true`：
+小程序 `miniprogram/utils/config.js` 当前默认使用 mock 内容，但预览登录会连接本地后端完成用户注册。需要联调真实内容时把 `useRemote` 改为 `true`；获得 AppID/AppSecret 后再把 `wechatAuthRemote` 改为 `true`：
 
 ```js
-module.exports = { useRemote: false, wechatAuthRemote: true, baseUrl: 'http://127.0.0.1:3000' };
+module.exports = { useRemote: false, previewAuthRemote: true, wechatAuthRemote: false, baseUrl: 'http://127.0.0.1:3000' };
 ```
 
 - **必须先启动本服务**，小程序的登录、点赞、收藏、关注、发布、会员状态都依赖它。

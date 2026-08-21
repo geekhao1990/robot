@@ -10,6 +10,10 @@ function getApi() {
   return require('./api');
 }
 
+function authRemote() {
+  return !!(config.useRemote || config.previewAuthRemote || config.wechatAuthRemote);
+}
+
 const KEY = {
   TOKEN: 'xhs_token',
   USER: 'xhs_user',
@@ -54,7 +58,7 @@ function init() {
   state.myNotes = load(KEY.MY_NOTES, []);
   state.read = load(KEY.READ, { notify: {}, conv: {} });
   // 从本地 mock 切换到真实后端时，旧缓存没有服务端 token，必须重新登录。
-  if ((config.useRemote || config.wechatAuthRemote) && !state.token) {
+  if (authRemote() && !state.token) {
     state.user = null;
     save(KEY.USER, null);
   }
@@ -93,12 +97,12 @@ function setUser(user) {
   if (app) app.globalData.userInfo = user;
 }
 function isLogin() {
-  return !!state.user && (!(config.useRemote || config.wechatAuthRemote) || !!state.token);
+  return !!state.user && (!authRemote() || !!state.token);
 }
 
 // 登录：远程换取 token + 用户并同步交互状态；离线则降级为本地
 function login(profile) {
-  if (config.useRemote || config.wechatAuthRemote) {
+  if (authRemote()) {
     return getApi()
       .login(profile)
       .then((res) => {
@@ -121,7 +125,7 @@ function login(profile) {
 
 // 从后端刷新当前用户 + 交互状态
 function syncMe() {
-  if (!(config.useRemote || config.wechatAuthRemote) || !state.token) return Promise.resolve(state.user);
+  if (!authRemote() || !state.token) return Promise.resolve(state.user);
   return getApi()
     .getMe()
     .then((d) => {
