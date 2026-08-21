@@ -131,9 +131,12 @@ function buildNote(raw) {
   const author = userMap[raw.authorId];
   const cover = img(raw.images[0], 400, Math.round(400 * raw.ratio));
   const images = raw.images.map((s) => img(s, 800, Math.round(800 * raw.ratio)));
+  const type = raw.type === 'course' || raw.type === 'gold' ? raw.type : 'material';
+  const category = { material: '资料', course: '课程', gold: '金手指' }[type];
   return {
     ...raw,
-    type: raw.type === 'course' || raw.type === 'gold' ? raw.type : 'material',
+    type,
+    category,
     cover,
     coverRatio: raw.ratio,
     images,
@@ -168,7 +171,7 @@ const notes = rawNotes.map(buildNote);
 const noteMap = {};
 notes.forEach((n) => (noteMap[n.id] = n));
 
-const categories = ['推荐', '旅行', '美食', '穿搭', '健身', '家居', '数码', '金手指'];
+const categories = ['资料', '课程', '金手指'];
 const hotSearch = ['多巴胺穿搭', 'citywalk', '露营', '美拉德', '特种兵旅行', '抄作业', '平价好物', '减脂餐'];
 
 // ---------------- 消息：通知（赞/收藏/关注/评论） ----------------

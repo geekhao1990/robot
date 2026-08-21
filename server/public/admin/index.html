@@ -68,7 +68,9 @@
   .pager-total { color: #888; font-size: 13px; margin-right: 6px; }
   /* 图片上传组件 */
   .img-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-  .img-cell { position: relative; width: 90px; height: 90px; border-radius: 8px; overflow: hidden; border: 1px solid #eee; }
+  .img-cell { position: relative; width: 90px; height: 90px; border-radius: 8px; overflow: hidden; border: 1px solid #eee; cursor: grab; }
+  .img-cell.dragging { opacity: .35; }
+  .img-cell.drag-over { box-shadow: 0 0 0 2px var(--primary); }
   .img-cell img { width: 100%; height: 100%; object-fit: cover; }
   .img-del { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; line-height: 18px; text-align: center; background: rgba(0,0,0,.55); color: #fff; border-radius: 50%; font-size: 16px; cursor: pointer; }
   .img-add { display: flex; align-items: center; justify-content: center; width: 90px; height: 90px; border: 1px dashed #ccc; border-radius: 8px; color: #bbb; font-size: 30px; cursor: pointer; }
@@ -185,7 +187,7 @@ function renderOverview() {
 
 // 笔记
 const PAGE_SIZE = 10;
-let _notes = [], _users = [], _cats = [];
+let _notes = [], _users = [];
 let _noteKeyword = '';
 let _notePage = 1;
 
@@ -199,9 +201,9 @@ function pagerHtml(page, pages, total, fnName) {
 }
 
 function renderNotes() {
-  Promise.all([api('/api/admin/notes'), api('/api/admin/users'), api('/api/admin/categories')])
-    .then(([notes, users, cats]) => {
-      _notes = notes; _users = users; _cats = cats;
+  Promise.all([api('/api/admin/notes'), api('/api/admin/users')])
+    .then(([notes, users]) => {
+      _notes = notes; _users = users;
       _notePage = 1;
       drawNotes();
     });
@@ -234,7 +236,6 @@ function drawNotes() {
       <td><img src="${esc(n.cover)}" /></td>
       <td>${esc(n.title)}</td>
       <td>${esc(n.author && n.author.name)}</td>
-      <td><span class="tag">${esc(n.category)}</span></td>
       <td>${n.type === 'gold' ? '<span class="tag gold">金手指</span>' : (n.type === 'course' ? '<span class="tag course">课程</span>' : '<span class="tag">资料</span>')}</td>
       <td>赞 ${n.likes} · 藏 ${n.collects} · 评 ${n.comments}</td>
       <td>
@@ -251,7 +252,7 @@ function drawNotes() {
       </div>
       <button class="btn-primary" onclick="editNote()">+ 新增笔记</button>
     </div>
-    <table><thead><tr><th>序号</th><th>封面</th><th>标题</th><th>作者</th><th>分类</th><th>类型</th><th>互动数据</th><th>操作</th></tr></thead>
+    <table><thead><tr><th>序号</th><th>封面</th><th>标题</th><th>作者</th><th>分类</th><th>互动数据</th><th>操作</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${pagerHtml(_notePage, pages, total, 'gotoNotePage')}`;
 }
@@ -259,23 +260,24 @@ function drawNotes() {
 let _modalImages = [];
 function editNote(id) {
   const n = id ? _notes.find((x) => x.id === id) : {};
-  const catOpts = _cats.map((c) => `<option ${n.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('');
-  const userOpts = _users.map((u) => `<option value="${u.id}" ${n.authorId === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
+  const officialAuthors = _users.filter((u) => u.official === true);
+  const userOpts = officialAuthors.map((u) => `<option value="${u.id}" ${n.authorId === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
+  if (!userOpts) return alert('请先在用户管理中创建并标记官方账号');
   _modalImages = (n.images || []).slice();
   openModal(`${id ? '编辑' : '新增'}内容`, `
     <div class="field"><label>标题</label><input id="f_title" value="${esc(n.title)}" /></div>
     <div class="field"><label>正文</label><textarea id="f_content">${esc(n.content)}</textarea></div>
     <div class="field"><label>作者</label><select id="f_author">${userOpts}</select></div>
-    <div class="field"><label>分类</label><select id="f_category">${catOpts}</select></div>
-    <div class="field"><label>类型</label><select id="f_type">
+    <div class="field"><label>分类</label><select id="f_type" onchange="syncResourceField()">
       <option value="material" ${!n.type || n.type === 'normal' || n.type === 'material' ? 'selected' : ''}>资料</option>
       <option value="course" ${n.type === 'course' ? 'selected' : ''}>课程</option>
       <option value="gold" ${n.type === 'gold' ? 'selected' : ''}>金手指</option>
     </select></div>
-    <div class="field"><label>获取地址（资料 / 课程）</label><input id="f_course" value="${esc(n.courseUrl)}" placeholder="百度网盘或夸克网盘链接及提取码" /><div class="hint">金手指统一通过企业微信领取，无需填写地址。</div></div>
-    <div class="field"><label>图片（第一张为封面，可增删）</label>
+    <div class="field" id="resourceField"><label>获取地址（资料 / 课程）</label><input id="f_course" value="${esc(n.courseUrl)}" placeholder="百度网盘或夸克网盘链接及提取码" /></div>
+    <div class="field" id="goldHint"><div class="hint">金手指点击领取后展示企业微信二维码，无需填写获取地址。</div></div>
+    <div class="field"><label>图片</label>
       <div id="imgGrid" class="img-grid"></div>
-      <div class="hint">支持选择多张图片上传</div>
+      <div class="hint">支持多图上传；拖拽图片可调整顺序，第一张为封面</div>
     </div>
     ${id ? `<div class="hint">互动数据：赞 ${n.likes || 0} · 藏 ${n.collects || 0} · 评 ${n.comments || 0}（不可修改）</div>` : ''}
   `, () => {
@@ -286,7 +288,6 @@ function editNote(id) {
       title: document.getElementById('f_title').value,
       content: document.getElementById('f_content').value,
       authorId: document.getElementById('f_author').value,
-      category: document.getElementById('f_category').value,
       type,
       courseUrl: link,
       images: _modalImages,
@@ -296,18 +297,52 @@ function editNote(id) {
     req.then(() => { closeModal(); renderNotes(); });
   });
   renderImgGrid();
+  syncResourceField();
 }
 
+function syncResourceField() {
+  const type = document.getElementById('f_type');
+  const resource = document.getElementById('resourceField');
+  const goldHint = document.getElementById('goldHint');
+  if (!type || !resource || !goldHint) return;
+  const isGold = type.value === 'gold';
+  resource.style.display = isGold ? 'none' : 'block';
+  goldHint.style.display = isGold ? 'block' : 'none';
+}
+
+let _dragImageIndex = -1;
 function renderImgGrid() {
   const grid = document.getElementById('imgGrid');
   if (!grid) return;
   grid.innerHTML =
     _modalImages.map((url, i) => `
-      <div class="img-cell">
+      <div class="img-cell" draggable="true" ondragstart="startImageDrag(event,${i})" ondragover="overImageDrag(event)" ondragleave="leaveImageDrag(event)" ondrop="dropImage(event,${i})" ondragend="endImageDrag()">
         <img src="${esc(url)}" />
         <span class="img-del" onclick="removeModalImage(${i})">×</span>
       </div>`).join('') +
     `<label class="img-add">＋<input type="file" accept="image/*" multiple style="display:none" onchange="onPickImages(event)" /></label>`;
+}
+function startImageDrag(event, i) {
+  _dragImageIndex = i;
+  event.currentTarget.classList.add('dragging');
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+}
+function overImageDrag(event) {
+  event.preventDefault();
+  event.currentTarget.classList.add('drag-over');
+}
+function leaveImageDrag(event) { event.currentTarget.classList.remove('drag-over'); }
+function dropImage(event, targetIndex) {
+  event.preventDefault();
+  if (_dragImageIndex < 0 || _dragImageIndex === targetIndex) return endImageDrag();
+  const moved = _modalImages.splice(_dragImageIndex, 1)[0];
+  _modalImages.splice(targetIndex, 0, moved);
+  _dragImageIndex = -1;
+  renderImgGrid();
+}
+function endImageDrag() {
+  _dragImageIndex = -1;
+  document.querySelectorAll('.img-cell').forEach((cell) => cell.classList.remove('dragging', 'drag-over'));
 }
 function removeModalImage(i) { _modalImages.splice(i, 1); renderImgGrid(); }
 function onPickImages(e) {
@@ -373,6 +408,7 @@ function drawUsers() {
         <td>${start + i + 1}</td>
         <td><img src="${esc(u.avatar)}" /></td>
         <td>${esc(u.name)}</td>
+        <td>${u.official ? '<span class="tag course">官方账号</span>' : '<span class="tag">普通用户</span>'}</td>
         <td>${status}</td>
         <td>
           <button class="btn-sm" onclick='setVip("${u.id}","month")'>开通月卡</button>
@@ -391,7 +427,7 @@ function drawUsers() {
       </div>
       <button class="btn-primary" onclick="editUser()">+ 新增用户</button>
     </div>
-    <table><thead><tr><th>序号</th><th>头像</th><th>昵称</th><th>VIP 状态</th><th>操作</th></tr></thead>
+    <table><thead><tr><th>序号</th><th>头像</th><th>昵称</th><th>账号类型</th><th>VIP 状态</th><th>操作</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${pagerHtml(_userPage, pages, total, 'gotoUserPage')}`;
 }
@@ -407,12 +443,17 @@ function editUser(id) {
     <div class="field"><label>昵称</label><input id="u_name" value="${esc(u.name)}" /></div>
     <div class="field"><label>头像地址</label><input id="u_avatar" value="${esc(u.avatar)}" /></div>
     <div class="field"><label>简介</label><input id="u_desc" value="${esc(u.desc)}" /></div>
+    <div class="field"><label>账号类型</label><select id="u_official">
+      <option value="false" ${u.official ? '' : 'selected'}>普通用户（不可发布笔记）</option>
+      <option value="true" ${u.official ? 'selected' : ''}>官方账号（可作为笔记作者）</option>
+    </select></div>
     <div class="hint">VIP 开通/取消请用列表中的「开通月卡 / 年卡 / 取消VIP」按钮</div>
   `, () => {
     const body = {
       name: document.getElementById('u_name').value,
       avatar: document.getElementById('u_avatar').value,
       desc: document.getElementById('u_desc').value,
+      official: document.getElementById('u_official').value === 'true',
     };
     const req = id ? api('/api/admin/users/' + id, { method: 'PUT', body: JSON.stringify(body) })
                    : api('/api/admin/users', { method: 'POST', body: JSON.stringify(body) });
@@ -422,18 +463,14 @@ function editUser(id) {
 
 // 分类
 function renderCategories() {
-  api('/api/admin/categories').then((cats) => {
+  Promise.all([api('/api/admin/categories'), api('/api/admin/notes')]).then(([cats, notes]) => {
+    const items = cats.map((cat) => `<div style="display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid #f0f0f0"><strong>${esc(cat)}</strong><span class="tag">${notes.filter((n) => n.category === cat).length} 篇</span></div>`).join('');
     document.getElementById('content').innerHTML = `
       <div class="card" style="max-width:560px">
-        <div class="field"><label>分类（每行一个）</label>
-          <textarea id="catText" style="min-height:160px">${esc(cats.join('\\n'))}</textarea></div>
-        <button class="btn-primary" onclick="saveCats()">保存</button>
+        <div class="field"><label>固定内容分类</label><div class="hint">笔记仅支持资料、课程、金手指三种分类。</div></div>
+        ${items}
       </div>`;
   });
-}
-function saveCats() {
-  const categories = document.getElementById('catText').value.split('\n').map((s) => s.trim()).filter(Boolean);
-  api('/api/admin/categories', { method: 'PUT', body: JSON.stringify({ categories }) }).then(() => alert('已保存'));
 }
 
 // 功能设置

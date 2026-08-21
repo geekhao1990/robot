@@ -2,8 +2,7 @@
 const db = require('../db');
 const auth = require('../auth');
 const { pubSettings } = require('../util');
-const NOTE_TYPES = new Set(['material', 'course', 'gold']);
-const noteType = (value) => NOTE_TYPES.has(value) ? value : 'material';
+const { TYPE_LABELS, normalizeType, typeLabel } = require('../content-types');
 
 module.exports = function register(router, HttpError) {
   const requireAuth = (ctx) => {
@@ -64,15 +63,19 @@ module.exports = function register(router, HttpError) {
     requireAuth(ctx);
     const d = db.get();
     const b = ctx.body || {};
-    const author = d.users.find((u) => u.id === b.authorId) || d.users[0];
-    const type = noteType(b.type);
+    const officialAuthors = d.users.filter((u) => u.official === true);
+    const author = b.authorId
+      ? officialAuthors.find((u) => u.id === b.authorId)
+      : officialAuthors[0];
+    if (!author) throw new HttpError(400, '请选择有效的官方作者账号');
+    const type = normalizeType(b.type);
     const courseUrl = type === 'gold' ? '' : String(b.courseUrl || '').trim();
     if (type !== 'gold' && !courseUrl) throw new HttpError(400, '请填写获取地址');
     const note = {
       id: 'n' + Date.now(),
       authorId: author.id,
       author: { id: author.id, name: author.name, avatar: author.avatar },
-      category: b.category || d.categories[0],
+      category: typeLabel(type),
       type,
       courseUrl,
       title: b.title || '未命名',
@@ -100,17 +103,20 @@ module.exports = function register(router, HttpError) {
     if (i < 0) throw new HttpError(404, 'not found');
     const b = ctx.body || {};
     const note = { ...d.notes[i], ...b };
-    note.type = noteType(Object.prototype.hasOwnProperty.call(b, 'type') ? b.type : note.type);
+    note.type = normalizeType(Object.prototype.hasOwnProperty.call(b, 'type') ? b.type : note.type);
+    note.category = typeLabel(note.type);
     note.courseUrl = note.type === 'gold' ? '' : String(note.courseUrl || '').trim();
     if (note.type !== 'gold' && !note.courseUrl) throw new HttpError(400, '请填写获取地址');
     if (d.settings && d.settings.featuredNoteId === note.id && note.type !== 'gold') {
       throw new HttpError(400, '加号入口笔记必须保持为金手指类型');
     }
     if (b.authorId) {
-      const a = d.users.find((u) => u.id === b.authorId);
-      if (a) note.author = { id: a.id, name: a.name, avatar: a.avatar };
+      const a = d.users.find((u) => u.id === b.authorId && u.official === true);
+      if (!a) throw new HttpError(400, '请选择有效的官方作者账号');
+      note.authorId = a.id;
+      note.author = { id: a.id, name: a.name, avatar: a.avatar };
     }
-    if (b.images && b.images.length) note.cover = b.images[0];
+    if (Array.isArray(b.images)) note.cover = b.images[0] || '';
     d.notes[i] = note;
     db.save();
     return note;
@@ -145,6 +151,7 @@ module.exports = function register(router, HttpError) {
       follows: b.follows || 0,
       likes: b.likes || 0,
       vip: !!b.vip,
+      official: b.official === true,
     };
     d.users.push(user);
     db.save();
@@ -156,7 +163,12 @@ module.exports = function register(router, HttpError) {
     const d = db.get();
     const i = d.users.findIndex((u) => u.id === ctx.params.id);
     if (i < 0) throw new HttpError(404, 'not found');
-    d.users[i] = { ...d.users[i], ...ctx.body };
+    const update = { ...(ctx.body || {}) };
+    if (Object.prototype.hasOwnProperty.call(update, 'official')) update.official = update.official === true;
+    if (update.official === false && d.notes.some((n) => n.authorId === ctx.params.id)) {
+      throw new HttpError(400, '该账号仍是笔记作者，请先更换对应笔记作者');
+    }
+    d.users[i] = { ...d.users[i], ...update };
     db.save();
     return d.users[i];
   });
@@ -164,6 +176,9 @@ module.exports = function register(router, HttpError) {
   router.delete('/api/admin/users/:id', (ctx) => {
     requireAuth(ctx);
     const d = db.get();
+    if (d.notes.some((n) => n.authorId === ctx.params.id)) {
+      throw new HttpError(400, '该账号仍是笔记作者，不能删除');
+    }
     d.users = d.users.filter((u) => u.id !== ctx.params.id);
     db.save();
     return { ok: true };
@@ -198,7 +213,8 @@ module.exports = function register(router, HttpError) {
   router.put('/api/admin/categories', (ctx) => {
     requireAuth(ctx);
     const d = db.get();
-    if (Array.isArray(ctx.body.categories)) { d.categories = ctx.body.categories; db.save(); }
+    d.categories = Object.values(TYPE_LABELS);
+    db.save();
     return d.categories;
   });
 };

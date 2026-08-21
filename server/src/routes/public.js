@@ -2,6 +2,7 @@
 const db = require('../db');
 const { pubUser, pubNote, pubSettings } = require('../util');
 const auth = require('../auth');
+const { typeLabel } = require('../content-types');
 
 module.exports = function register(router, HttpError) {
   const requireReader = (ctx) => {
@@ -49,7 +50,6 @@ module.exports = function register(router, HttpError) {
     const kw = String(ctx.query.kw || '').trim().toLowerCase();
     if (!kw) return [];
     const contains = (value) => String(value || '').toLowerCase().includes(kw);
-    const typeLabel = (type) => ({ material: '资料', course: '课程', gold: '金手指' }[type] || '资料');
     return db.get().notes.filter(
       (n) =>
         contains(n.title) ||

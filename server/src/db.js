@@ -4,6 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { CONTENT_TYPES, TYPE_LABELS, typeLabel } = require('./content-types');
 
 const FILE = path.join(__dirname, '../data/db.json');
 let db = null;
@@ -15,8 +16,13 @@ function ensureContentTypes() {
     changed = true;
   }
   db.notes.forEach((note) => {
-    if (!['material', 'course', 'gold'].includes(note.type)) {
+    if (!CONTENT_TYPES.includes(note.type)) {
       note.type = 'material';
+      changed = true;
+    }
+    const category = typeLabel(note.type);
+    if (note.category !== category) {
+      note.category = category;
       changed = true;
     }
     if (note.type === 'gold' && note.courseUrl) {
@@ -24,14 +30,22 @@ function ensureContentTypes() {
       changed = true;
     }
   });
-  if (!Array.isArray(db.categories)) {
-    db.categories = [];
+  const categories = Object.values(TYPE_LABELS);
+  if (!Array.isArray(db.categories) || JSON.stringify(db.categories) !== JSON.stringify(categories)) {
+    db.categories = categories;
     changed = true;
   }
-  if (!db.categories.includes('金手指')) {
-    db.categories.push('金手指');
+  if (!Array.isArray(db.users)) {
+    db.users = [];
     changed = true;
   }
+  const existingAuthors = new Set(db.notes.map((note) => note.authorId).filter(Boolean));
+  db.users.forEach((user) => {
+    if (typeof user.official !== 'boolean') {
+      user.official = !user.wxOpenId && existingAuthors.has(user.id);
+      changed = true;
+    }
+  });
   return changed;
 }
 
@@ -54,6 +68,7 @@ function ensureSettings() {
     goldNote = configured || notes.find((n) => n.type === 'course') || notes[0];
     if (goldNote) {
       goldNote.type = 'gold';
+      goldNote.category = typeLabel('gold');
       changed = true;
     }
   }

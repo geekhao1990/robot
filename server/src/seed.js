@@ -3,9 +3,10 @@
 
 const img = (seed, w = 800, h = 1000) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
 const avatar = (n) => `https://i.pravatar.cc/150?img=${n}`;
+const { normalizeType, typeLabel } = require('./content-types');
 
 const YEAR = 365 * 24 * 3600 * 1000;
-const u = (o) => ({ vip: false, vipPlan: '', vipExpire: 0, ...o });
+const u = (o) => ({ vip: false, vipPlan: '', vipExpire: 0, official: true, ...o });
 const users = [
   u({ id: 'u1', name: '旅行的猫', avatar: avatar(11), desc: '世界那么大，我想去看看 🌍', fans: 12800, follows: 231, likes: 98000 }),
   u({ id: 'u2', name: '美食研究所', avatar: avatar(12), desc: '一个爱做饭的程序员', fans: 45600, follows: 88, likes: 320000, vip: true, vipPlan: 'year', vipExpire: Date.now() + YEAR }),
@@ -18,12 +19,13 @@ const users = [
 function note(o) {
   const ratio = o.ratio || 1.25;
   const author = users.find((u) => u.id === o.authorId);
+  const type = normalizeType(o.type);
   return {
     id: o.id,
     authorId: o.authorId,
     author: { id: author.id, name: author.name, avatar: author.avatar },
-    category: o.category,
-    type: o.type === 'course' || o.type === 'gold' ? o.type : 'material',
+    category: typeLabel(type),
+    type,
     courseUrl: o.courseUrl || '',
     title: o.title,
     content: o.content,
@@ -51,7 +53,7 @@ const notes = [
   note({ id: 'n8', authorId: 'u5', category: '视频', title: '从0到1搭建交易系统', ratio: 1.1, images: ['vid4', 'vid5'], content: '交易系统三要素……', tags: ['视频'], likes: 78900, collects: 56000, comments: 1456, hours: 30 }),
 ];
 
-const categories = ['指标', '视频', '其他', '金手指'];
+const categories = ['资料', '课程', '金手指'];
 const hotSearch = ['缠论', 'MACD', '均线', '波段', '复盘', '资金流向', '选股公式', '交易系统'];
 const admins = [{ username: 'admin', password: 'admin123' }];
 
