@@ -53,7 +53,15 @@ function ensureContentTypes() {
       user.tags = user.wxOpenId && !user.vip ? ['new'] : [];
       changed = true;
     }
+    if (typeof user.vipPermanent !== 'boolean') {
+      user.vipPermanent = user.vipPlan === 'lifetime';
+      changed = true;
+    }
   });
+  if (!Array.isArray(db.paymentOrders)) {
+    db.paymentOrders = [];
+    changed = true;
+  }
   return changed;
 }
 

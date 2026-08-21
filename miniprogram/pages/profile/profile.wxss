@@ -69,6 +69,27 @@
   border-radius: 999rpx;
 }
 
+.member-panel {
+  position: relative;
+  z-index: 2;
+  margin: -16rpx 20rpx 24rpx;
+  padding: 28rpx 24rpx;
+  background: #2f2f38;
+  border-radius: 22rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0,0,0,.12);
+}
+.member-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22rpx; }
+.member-title { color: #f7dca0; font-size: 30rpx; font-weight: 700; }
+.member-status { color: #a9a9b4; font-size: 22rpx; margin-top: 6rpx; }
+.wechat-pay { color: #34b46e; font-size: 22rpx; }
+.member-plans { display: flex; gap: 14rpx; }
+.member-plan { flex: 1; padding: 20rpx 8rpx; text-align: center; background: #3b3b46; border: 2rpx solid #50505b; border-radius: 16rpx; }
+.member-plan.paying { opacity: .6; }
+.member-plan-name { color: #f5d9a8; font-size: 25rpx; font-weight: 600; }
+.member-price { color: #fff; font-size: 38rpx; font-weight: 800; margin: 8rpx 0; }
+.member-price text { font-size: 22rpx; }
+.member-buy { color: #5a3d0a; background: #f5d18b; border-radius: 999rpx; padding: 8rpx 0; font-size: 21rpx; }
+
 .tabs {
   display: flex;
   background: #fff;

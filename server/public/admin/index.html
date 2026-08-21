@@ -371,7 +371,7 @@ function delNote(id) {
 
 // 用户
 function fmtDate(ts) { if (!ts) return ''; const d = new Date(ts); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
-function vipActive(u) { return u.vip && u.vipExpire && u.vipExpire > Date.now(); }
+function vipActive(u) { return u.vip && (u.vipPermanent || (u.vipExpire && u.vipExpire > Date.now())); }
 
 let _userKeyword = '';
 let _userPage = 1;
@@ -406,7 +406,7 @@ function drawUsers() {
   const rows = pageItems.map((u, i) => {
     const active = vipActive(u);
     const status = active
-      ? `<span class="tag vip">${u.vipPlan === 'year' ? '年卡' : '月卡'} · 至 ${fmtDate(u.vipExpire)}</span>`
+      ? (u.vipPermanent ? '<span class="tag vip">永久会员</span>' : `<span class="tag vip">${u.vipPlan === 'year' ? '年卡' : '月卡'} · 至 ${fmtDate(u.vipExpire)}</span>`)
       : (u.vipExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
     return `
       <tr>
@@ -423,6 +423,7 @@ function drawUsers() {
         <td>
           <button class="btn-sm" onclick='setVip("${u.id}","month")'>开通一个月</button>
           <button class="btn-sm" onclick='setVip("${u.id}","year")'>开通年卡</button>
+          <button class="btn-sm" onclick='setVip("${u.id}","lifetime")'>开通永久卡</button>
           <button class="btn-sm del" ${active ? '' : 'disabled'} onclick='setVip("${u.id}","none")'>取消VIP</button>
           <button class="btn-sm" onclick='editUser("${u.id}")'>编辑</button>
         </td>
@@ -443,7 +444,7 @@ function drawUsers() {
 }
 
 function setVip(id, plan) {
-  const label = { month: '开通一个月会员', year: '开通一年会员', none: '取消VIP' }[plan];
+  const label = { month: '开通一个月会员', year: '开通一年会员', lifetime: '开通永久会员', none: '取消VIP' }[plan];
   if (!confirm(`确定为该用户「${label}」吗？`)) return;
   api('/api/admin/users/' + id + '/vip', { method: 'PUT', body: JSON.stringify({ plan }) }).then(renderUsers);
 }

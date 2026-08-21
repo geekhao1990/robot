@@ -13,6 +13,7 @@ const router = createRouter();
 require('./routes/public')(router, HttpError);
 require('./routes/app')(router, HttpError);
 require('./routes/message')(router, HttpError);
+require('./routes/payment')(router, HttpError);
 require('./routes/admin')(router, HttpError);
 
 const STATIC_DIR = path.join(__dirname, '../public');
@@ -59,15 +60,17 @@ const server = http.createServer((req, res) => {
   const m = router.match(req.method, pathname);
   if (!m) return sendJson(res, 404, { error: 'not found' });
 
-  let body = '';
-  req.on('data', (c) => (body += c));
+  const chunks = [];
+  req.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
   req.on('end', () => {
+    const body = Buffer.concat(chunks).toString('utf8');
     let parsedBody = {};
     if (body) { try { parsedBody = JSON.parse(body); } catch (e) { parsedBody = {}; } }
     const ctx = {
       params: m.params,
       query: parsed.query,
       body: parsedBody,
+      rawBody: body,
       headers: req.headers,
       remoteAddress: req.socket.remoteAddress,
     };

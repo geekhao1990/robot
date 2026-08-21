@@ -2,7 +2,7 @@
 
 // VIP 是否在有效期内
 function vipActive(user) {
-  return !!(user && user.vip && user.vipExpire && user.vipExpire > Date.now());
+  return !!(user && user.vip && (user.vipPermanent || (user.vipExpire && user.vipExpire > Date.now())));
 }
 
 // 对外输出的用户对象（附带 vipActive）

@@ -5,16 +5,24 @@ const PLANS = [
   {
     id: 'month',
     name: '月卡',
-    price: 100,
+    price: 10,
     unit: '月',
     features: ['金手指（永久使用权）', '阴阳谱（永久使用权）'],
   },
   {
     id: 'year',
     name: '年卡',
-    price: 1000,
+    price: 99,
     unit: '年',
     badge: '最超值',
+    features: ['金手指（永久使用权）', '阴阳谱（永久使用权）'],
+  },
+  {
+    id: 'lifetime',
+    name: '永久卡',
+    price: 188,
+    unit: '永久',
+    badge: '一次开通',
     features: ['金手指（永久使用权）', '阴阳谱（永久使用权）'],
   },
 ];
@@ -47,6 +55,7 @@ Page({
     const vipActive = !!(user && (user.vipActive || (user.vip && user.vipExpire && user.vipExpire > now)));
     let vipStatusText;
     if (!user) vipStatusText = '登录后查看会员状态';
+    else if (user.vipPermanent) vipStatusText = '永久会员';
     else if (vipActive) vipStatusText = '会员有效期至 ' + this.fmt(user.vipExpire);
     else if (user.vipExpire) vipStatusText = 'VIP 已过期，续费请联系企业微信';
     else vipStatusText = '开通会员，畅享专属权益';

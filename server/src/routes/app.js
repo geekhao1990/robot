@@ -61,6 +61,7 @@ module.exports = function register(router, HttpError) {
         vip: false,
         vipPlan: '',
         vipExpire: 0,
+        vipPermanent: false,
         official: false,
         createdAt: Date.now(),
         tags: ['new'],

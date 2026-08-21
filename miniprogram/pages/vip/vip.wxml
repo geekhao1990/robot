@@ -8,7 +8,7 @@
 
   <!-- 套餐对比 -->
   <view class="plans">
-    <view wx:for="{{plans}}" wx:key="id" class="plan {{item.id === 'year' ? 'plan-year' : ''}}">
+    <view wx:for="{{plans}}" wx:key="id" class="plan {{item.id === 'year' || item.id === 'lifetime' ? 'plan-year' : ''}}">
       <view wx:if="{{item.badge}}" class="plan-badge">{{item.badge}}</view>
       <view class="plan-name">{{item.name}}</view>
       <view class="plan-price"><text class="cur">¥</text>{{item.price}}<text class="unit">/{{item.unit}}</text></view>

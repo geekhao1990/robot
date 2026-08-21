@@ -3,6 +3,7 @@ const db = require('../db');
 const auth = require('../auth');
 const { pubSettings } = require('../util');
 const { TYPE_LABELS, normalizeType, typeLabel } = require('../content-types');
+const { getPlan, activateMembership } = require('../membership');
 
 module.exports = function register(router, HttpError) {
   const requireAuth = (ctx) => {
@@ -159,6 +160,7 @@ module.exports = function register(router, HttpError) {
       follows: b.follows || 0,
       likes: b.likes || 0,
       vip: !!b.vip,
+      vipPermanent: false,
       official: b.official === true,
       createdAt: Date.now(),
       tags: b.official === true ? [] : ['new'],
@@ -201,19 +203,12 @@ module.exports = function register(router, HttpError) {
     const user = d.users.find((u) => u.id === ctx.params.id);
     if (!user) throw new HttpError(404, 'not found');
     const plan = (ctx.body || {}).plan;
-    const DAY = 24 * 3600 * 1000;
     if (plan === 'none') {
-      user.vip = false; user.vipPlan = ''; user.vipExpire = 0;
-    } else if (plan === 'month' || plan === 'year') {
-      const now = Date.now();
-      const base = user.vip && user.vipExpire > now ? user.vipExpire : now;
-      user.vip = true;
-      user.vipPlan = plan;
-      user.vipExpire = base + (plan === 'year' ? 365 : 30) * DAY;
-      user.tags = (user.tags || []).filter((tag) => tag !== 'new');
-      user.vipActivatedAt = now;
+      user.vip = false; user.vipPlan = ''; user.vipExpire = 0; user.vipPermanent = false;
+    } else if (getPlan(plan)) {
+      activateMembership(user, plan);
     } else {
-      throw new HttpError(400, 'plan 须为 month/year/none');
+      throw new HttpError(400, 'plan 须为 month/year/lifetime/none');
     }
     db.save();
     return user;

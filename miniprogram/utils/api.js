@@ -197,6 +197,14 @@ function getMe() {
   return request('GET', '/api/me', { auth: true });
 }
 
+function createVipOrder(plan) {
+  return request('POST', '/api/payments/orders', { auth: true, data: { plan } });
+}
+
+function getVipOrder(orderId) {
+  return request('GET', '/api/payments/orders/' + encodeURIComponent(orderId), { auth: true });
+}
+
 // 上传图片，返回可访问 URL（用 wx.uploadFile）
 function uploadImage(filePath) {
   return new Promise((resolve, reject) => {
@@ -379,6 +387,8 @@ module.exports = {
   // 登录 / 当前用户
   login,
   getMe,
+  createVipOrder,
+  getVipOrder,
   // 写操作
   uploadImage,
   likeNote,

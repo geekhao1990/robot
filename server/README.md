@@ -15,6 +15,13 @@ NODE_ENV=development
 DEV_PREVIEW_LOGIN=true
 WECHAT_APP_ID=你的小程序AppID
 WECHAT_APP_SECRET=你的小程序AppSecret
+WECHAT_PAY_MCH_ID=微信支付商户号
+WECHAT_PAY_CERT_SERIAL=商户API证书序列号
+WECHAT_PAY_PRIVATE_KEY_PATH=./certs/apiclient_key.pem
+WECHAT_PAY_API_V3_KEY=32字节APIv3密钥
+WECHAT_PAY_NOTIFY_URL=https://你的域名/api/payments/notify
+WECHAT_PAY_PLATFORM_SERIAL=微信支付平台公钥ID或平台证书序列号
+WECHAT_PAY_PLATFORM_PUBLIC_KEY_PATH=./certs/wechatpay_public_key.pem
 ```
 
 2. 接入真实微信登录时，将项目根目录 `project.config.json` 的 `appid` 改为同一个 AppID。
@@ -33,7 +40,8 @@ npm start      # 或 node src/index.js
 
 - 📊 数据概览：笔记/收费笔记/用户/VIP/分类 数量
 - 📝 笔记管理：资料 / 课程 / 金手指固定分类；仅官方账号可作为作者；图片支持拖拽排序
-- 👤 用户管理：新用户标签、会员编号搜索、官方账号标记、手动开通一个月 / 一年会员
+- 👤 用户管理：新用户标签、会员编号搜索、官方账号标记、手动开通月卡 / 年卡 / 永久卡
+- 💳 会员支付：月卡 10 元、年卡 99 元、永久卡 188 元；微信支付 V3 JSAPI 下单、查单、回调验签后自动开通
 - 🏷️ 分类管理：查看资料 / 课程 / 金手指三个固定分类及内容数量
 
 数据改动实时写入 `data/db.json`，小程序拉取的接口随之变化。
@@ -55,6 +63,9 @@ GET /api/hotSearch
 ```
 POST   /api/login                 微信登录 { code }；本地预览 { preview:true }
 GET    /api/me                    当前用户 + 赞/藏/关注 状态
+POST   /api/payments/orders       创建会员支付订单 { plan: month|year|lifetime }
+GET    /api/payments/orders/:id   服务端向微信查单并返回支付状态
+POST   /api/payments/notify       微信支付成功回调（HTTPS 公网地址）
 POST   /api/like/:noteId          点赞切换
 POST   /api/collect/:noteId       收藏切换
 GET    /api/me/collects           我收藏的
@@ -69,7 +80,7 @@ POST   /api/conversations/:id/read       标记会话已读
 POST   /api/conversations/:id/messages   发送私信 { text }，返回 { added:[我,自动回复] }
 ```
 
-> `WECHAT_APP_SECRET` 只能放在服务器 `.env`，不能写入小程序代码或提交到 Git。预览登录只接受本机请求，并在 `NODE_ENV=production` 时强制关闭。
+> AppSecret、APIv3 密钥、商户私钥和平台公钥文件只能放在服务器环境中，不能写入小程序代码或提交到 Git。会员只会在微信支付查单或回调验签、金额校验通过后开通，不能依赖前端支付回调。
 
 管理（需先 POST /api/admin/login 拿 token）：
 ```
