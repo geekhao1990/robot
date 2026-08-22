@@ -37,17 +37,17 @@
       <view><view class="section-title">邀请好友赚积分</view><view class="section-sub">每成功邀请1位新用户，奖励{{perInvite}}积分</view></view>
       <view class="invite-total">已邀请<text>{{invitedCount}}</text>人</view>
     </view>
-    <view class="invite-body">
-      <view class="qr-box" bindtap="previewQr">
-        <image wx:if="{{qrPath}}" class="qr-image" src="{{qrPath}}" mode="aspectFit" />
-        <view wx:elif="{{qrLoading}}" class="qr-state">生成中…</view>
-        <view wx:else class="qr-state"><view class="qr-placeholder">▦</view><view>{{qrUnavailable ? '配置AppID后生成' : '邀请二维码'}}</view></view>
+    <view class="invite-link" bindtap="copyInviteLink">
+      <view class="link-copy">
+        <view class="link-label">我的专属拉新链接</view>
+        <view class="link-value">{{inviteLink}}</view>
       </view>
-      <view class="invite-info">
-        <view class="invite-code-label">我的邀请码</view>
-        <view class="invite-code" bindtap="copyInviteCode">{{inviteCode}} <text>复制</text></view>
-        <button class="share-btn" open-type="share" disabled="{{!inviteCode}}">立即邀请好友</button>
-      </view>
+      <view class="link-copy-btn">复制</view>
+    </view>
+    <view class="invite-note">好友通过此链接进入并首次注册，奖励将发放到你的账户。</view>
+    <view class="invite-buttons">
+      <button class="invite-btn invite-btn-light" bindtap="copyInviteLink" disabled="{{!inviteLink}}">复制拉新链接</button>
+      <button class="invite-btn" open-type="share" disabled="{{!inviteCode}}">微信发送</button>
     </view>
     <view class="invite-summary">
       <view><text>{{invitePoints}}</text><label>本月拉新积分</label></view>
@@ -56,10 +56,12 @@
   </view>
 
   <view class="rank-card">
-    <view class="rank-head"><view><view class="section-title">{{inviteMonth}} 拉新积分榜</view><view class="section-sub">新用户首次注册并绑定邀请关系后计入</view></view></view>
-    <view class="prize-banner">
-      <view wx:for="{{prizes}}" wx:key="range" class="prize-item"><text>{{item.range}}</text>{{item.prize}}</view>
+    <view class="prize-heading">本月前五名奖励</view>
+    <view class="prize-grid">
+      <view wx:for="{{prizes}}" wx:key="rank" class="prize-item prize-{{item.rank}}"><text>{{item.range}}</text>{{item.prize}}</view>
     </view>
+    <view class="rank-head"><view><view class="section-title">{{inviteMonth}} 拉新积分榜</view><view class="section-sub">新用户首次注册并绑定邀请关系后计入</view></view></view>
+    <view class="update-date">榜单将于 <text>{{nextUpdateDate}}</text> 更新并发放奖励</view>
     <view wx:if="{{ranking.length}}" class="ranking">
       <view class="rank-row" wx:for="{{ranking}}" wx:key="userId">
         <view class="rank-number rank-{{item.rank}}">{{item.rank}}</view>

@@ -21,17 +21,16 @@ Page({
     pointsPerYuan: 200,
     transactions: [],
     inviteCode: '',
+    inviteLink: '',
     invitedCount: 0,
     invitePoints: 0,
     inviteRank: 0,
     inviteRankText: '未上榜',
     inviteMonth: '',
+    nextUpdateDate: '',
     perInvite: 100,
     ranking: [],
     prizes: [],
-    qrPath: '',
-    qrLoading: false,
-    qrUnavailable: false,
   },
 
   onLoad(options) {
@@ -81,36 +80,19 @@ Page({
       .then((result) => {
         this.setData({
           inviteCode: result.inviteCode || '',
+          inviteLink: result.inviteLink || `/pages/points/points?invite=${result.inviteCode || ''}`,
           invitedCount: Number(result.invitedCount) || 0,
           invitePoints: Number(result.invitePoints) || 0,
           inviteRank: Number(result.rank) || 0,
           inviteRankText: Number(result.rank) ? `第${Number(result.rank)}名` : '未上榜',
           inviteMonth: result.month || '',
+          nextUpdateDate: result.nextUpdateDate || '',
           perInvite: Number(result.perInvite) || 100,
           ranking: result.ranking || [],
           prizes: result.prizes || [],
         });
-        this.loadInviteQr();
       })
       .catch(() => wx.showToast({ title: '邀请数据加载失败', icon: 'none' }));
-  },
-
-  loadInviteQr() {
-    if (!this.data.inviteCode || this.data.qrLoading || this.data.qrPath) return;
-    this.setData({ qrLoading: true, qrUnavailable: false });
-    api.getInviteQrCode()
-      .then((result) => {
-        const extension = String(result.mimeType || '').includes('jpeg') ? 'jpg' : 'png';
-        const filePath = `${wx.env.USER_DATA_PATH}/invite-${this.data.inviteCode}.${extension}`;
-        wx.getFileSystemManager().writeFile({
-          filePath,
-          data: result.imageBase64,
-          encoding: 'base64',
-          success: () => this.setData({ qrPath: filePath, qrLoading: false }),
-          fail: () => this.setData({ qrLoading: false, qrUnavailable: true }),
-        });
-      })
-      .catch(() => this.setData({ qrLoading: false, qrUnavailable: true }));
   },
 
   applySummary(summary) {
@@ -223,12 +205,8 @@ Page({
     wx.showToast({ title: '功能即将开放', icon: 'none' });
   },
 
-  previewQr() {
-    if (this.data.qrPath) wx.previewImage({ current: this.data.qrPath, urls: [this.data.qrPath] });
-  },
-
-  copyInviteCode() {
-    if (this.data.inviteCode) wx.setClipboardData({ data: this.data.inviteCode });
+  copyInviteLink() {
+    if (this.data.inviteLink) wx.setClipboardData({ data: this.data.inviteLink });
   },
 
   onShareAppMessage() {

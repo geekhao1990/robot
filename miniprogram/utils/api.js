@@ -221,10 +221,6 @@ function getInvites() {
   return request('GET', '/api/invites', { auth: true });
 }
 
-function getInviteQrCode() {
-  return request('GET', '/api/invites/qrcode', { auth: true, timeout: 15000 });
-}
-
 // 上传图片，返回可访问 URL（用 wx.uploadFile）
 function uploadImage(filePath) {
   return new Promise((resolve, reject) => {
@@ -413,7 +409,6 @@ module.exports = {
   createAdRewardTicket,
   claimAdReward,
   getInvites,
-  getInviteQrCode,
   // 写操作
   uploadImage,
   likeNote,

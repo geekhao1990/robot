@@ -4,7 +4,7 @@ const db = require('../db');
 const { pubUser, pubNote } = require('../util');
 const auth = require('../auth');
 const crypto = require('crypto');
-const { code2Session, getUnlimitedCode } = require('../wechat');
+const { code2Session } = require('../wechat');
 
 function getState(userId) {
   const d = db.get();
@@ -25,6 +25,12 @@ function chinaDateKey() {
 
 function chinaMonthKey(timestamp = Date.now()) {
   return new Date(timestamp + 8 * 3600 * 1000).toISOString().slice(0, 7);
+}
+
+function nextLeaderboardUpdateDate() {
+  const chinaNow = new Date(Date.now() + 8 * 3600 * 1000);
+  const next = new Date(Date.UTC(chinaNow.getUTCFullYear(), chinaNow.getUTCMonth() + 1, 5));
+  return `${next.getUTCFullYear()}年${next.getUTCMonth() + 1}月5日`;
 }
 
 function inviteCodeFor(user) {
@@ -124,17 +130,23 @@ function inviteSummary(user) {
     .map((item, index) => ({ ...item, rank: index + 1 }));
   const mine = grouped[user.id] || { count: 0, points: 0 };
   const myRanking = ranking.find((item) => item.userId === user.id);
+  const inviteCode = inviteCodeFor(user);
   return {
-    inviteCode: inviteCodeFor(user),
+    inviteCode,
+    inviteLink: `/pages/points/points?invite=${inviteCode}`,
     month,
+    nextUpdateDate: nextLeaderboardUpdateDate(),
     invitedCount: mine.count,
     invitePoints: mine.points,
     rank: myRanking ? myRanking.rank : 0,
     perInvite: POINT_RULES.perInvite,
     ranking: ranking.slice(0, 20),
     prizes: [
-      { range: '第1名', prize: 'iPhone 17 一台' },
-      { range: '第2-5名', prize: '200元' },
+      { rank: 1, range: '第1名', prize: 'iPhone 17 一台' },
+      { rank: 2, range: '第2名', prize: '200元' },
+      { rank: 3, range: '第3名', prize: '200元' },
+      { rank: 4, range: '第4名', prize: '200元' },
+      { rank: 5, range: '第5名', prize: '200元' },
     ],
   };
 }
@@ -225,14 +237,6 @@ module.exports = function register(router, HttpError) {
     const result = inviteSummary(user);
     db.save();
     return result;
-  });
-
-  router.get('/api/invites/qrcode', async (ctx) => {
-    const user = currentUser(ctx);
-    const code = inviteCodeFor(user);
-    const result = await getUnlimitedCode(`i=${code}`, 'pages/points/points');
-    db.save();
-    return { imageBase64: result.buffer.toString('base64'), mimeType: result.mimeType };
   });
 
   router.post('/api/points/ad-ticket', (ctx) => {
