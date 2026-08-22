@@ -17,9 +17,9 @@ page { background: #f7f7f7; }
 .balance-label { font-size: 26rpx; opacity: .86; }
 .balance-value { margin-top: 8rpx; font-size: 72rpx; line-height: 1.15; font-weight: 800; }
 .balance-cash { margin-top: 6rpx; font-size: 24rpx; opacity: .78; }
-.balance-actions { display: flex; gap: 18rpx; margin-top: 30rpx; }
+.balance-actions { display: flex; margin-top: 30rpx; }
 .balance-action {
-  flex: 1;
+  width: 210rpx;
   padding: 17rpx 0;
   text-align: center;
   font-size: 25rpx;
@@ -65,16 +65,14 @@ page { background: #f7f7f7; }
 .invite-card, .rank-card { margin-top: 24rpx; padding: 30rpx; background: #fff; border-radius: 24rpx; }
 .invite-total { color: #777; font-size: 23rpx; }
 .invite-total text { margin: 0 5rpx; color: #ff2442; font-size: 34rpx; font-weight: 750; }
-.invite-link { display: flex; align-items: center; margin-top: 26rpx; padding: 24rpx; background: #f7f7f7; border: 2rpx solid #eee; border-radius: 18rpx; }
-.link-copy { flex: 1; min-width: 0; }
+.invite-link-row { display: flex; align-items: center; gap: 10rpx; margin-top: 26rpx; }
+.invite-link { flex: 1; min-width: 0; height: 96rpx; padding: 15rpx 18rpx; background: #f7f7f7; border: 2rpx solid #eee; border-radius: 14rpx; box-sizing: border-box; }
 .link-label { color: #777; font-size: 22rpx; }
-.link-value { margin-top: 10rpx; overflow: hidden; color: #333; font-size: 23rpx; white-space: nowrap; text-overflow: ellipsis; }
-.link-copy-btn { margin-left: 20rpx; padding: 11rpx 20rpx; color: #ff2442; font-size: 22rpx; background: #ffe9ec; border-radius: 999rpx; }
+.link-value { margin-top: 6rpx; overflow: hidden; color: #333; font-size: 20rpx; white-space: nowrap; text-overflow: ellipsis; }
+.link-action { display: flex; flex: none; align-items: center; justify-content: center; width: 126rpx; height: 96rpx; min-height: 0; margin: 0; padding: 0 8rpx; color: #fff; font-size: 21rpx; line-height: 1.25; background: #ff2442; border-radius: 14rpx; box-sizing: border-box; }
+.link-action::after { border: 0; }
+.link-action-light { color: #ff2442; background: #ffe9ec; }
 .invite-note { margin-top: 16rpx; color: #999; font-size: 21rpx; line-height: 1.55; }
-.invite-buttons { display: flex; gap: 16rpx; margin-top: 24rpx; }
-.invite-btn { flex: 1; height: 72rpx; margin: 0; padding: 0; color: #fff; font-size: 25rpx; line-height: 72rpx; background: #ff2442; border-radius: 999rpx; }
-.invite-btn::after { border: 0; }
-.invite-btn-light { color: #ff2442; background: #ffe9ec; }
 .invite-summary { display: flex; margin-top: 28rpx; padding: 22rpx 0; background: #fff5f6; border-radius: 16rpx; }
 .invite-summary view { flex: 1; text-align: center; }
 .invite-summary view + view { border-left: 1rpx solid #ffd8de; }
