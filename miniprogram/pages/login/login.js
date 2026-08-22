@@ -8,6 +8,10 @@ Page({
     loginTip: config.wechatAuthRemote ? '使用微信账号快捷登录' : '连接本地后台并创建预览账号',
   },
 
+  onLoad(options) {
+    store.captureInvite(options);
+  },
+
   onWechatLogin() {
     if (this.data.loggingIn) return;
     this.setData({ loggingIn: true, loginText: '登录中…' });

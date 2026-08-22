@@ -11,7 +11,7 @@ App({
     openDraft: false, // 从「我-草稿箱」进入发布页时为 true
   },
 
-  onLaunch() {
+  onLaunch(options) {
     // 初始化云开发（用于 AI 客服知识库云函数）。
     // 需先在开发者工具开通「云开发」；未开通时静默跳过，AI 助手走本地降级回复。
     if (wx.cloud) {
@@ -39,11 +39,16 @@ App({
 
     // 初始化本地缓存，并从后端同步当前用户与交互状态
     store.init();
+    store.captureInvite(options);
     this.globalData.userInfo = store.getUser();
     if (store.isLogin()) {
       store.syncMe().then((user) => {
         this.globalData.userInfo = user;
       });
     }
+  },
+
+  onShow(options) {
+    store.captureInvite(options);
   },
 });

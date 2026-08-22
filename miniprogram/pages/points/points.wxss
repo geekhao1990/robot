@@ -40,8 +40,14 @@ page { background: #f7f7f7; }
 .section-sub { margin-top: 8rpx; color: #999; font-size: 23rpx; }
 .count { color: #999; font-size: 25rpx; }
 .count text { color: #ff2442; font-size: 38rpx; font-weight: 750; }
-.progress { height: 14rpx; margin-top: 28rpx; overflow: hidden; background: #f1f1f1; border-radius: 999rpx; }
+.reward-progress { position: relative; height: 100rpx; margin-top: 26rpx; padding-right: 96rpx; box-sizing: border-box; }
+.reward-track { position: absolute; left: 0; right: 84rpx; top: 35rpx; height: 16rpx; overflow: hidden; background: #f1f1f1; border-radius: 999rpx; }
 .progress-inner { height: 100%; background: linear-gradient(90deg, #ff6a7f, #ff2442); border-radius: inherit; transition: width .25s; }
+.reward-goal { position: absolute; right: 0; top: 0; width: 124rpx; text-align: center; }
+.gift-icon { width: 58rpx; height: 58rpx; margin: 0 auto; color: #fff; font-size: 23rpx; font-weight: 750; line-height: 58rpx; background: #ff2442; border: 7rpx solid #ffe3e7; border-radius: 50%; box-sizing: border-box; }
+.reward-goal.reached .gift-icon { background: #ffb21d; border-color: #fff0cc; }
+.goal-points { margin-top: 5rpx; color: #ff2442; font-size: 23rpx; font-weight: 750; }
+.goal-label { color: #999; font-size: 18rpx; white-space: nowrap; transform: translateX(-4rpx); }
 .task-tip { margin-top: 18rpx; color: #777; font-size: 23rpx; line-height: 1.5; }
 .task-tip.done { color: #ff2442; }
 .watch-btn {
@@ -55,6 +61,43 @@ page { background: #f7f7f7; }
 }
 .watch-btn::after { border: 0; }
 .watch-btn.disabled { color: #aaa; background: #eee; }
+
+.invite-card, .rank-card { margin-top: 24rpx; padding: 30rpx; background: #fff; border-radius: 24rpx; }
+.invite-total { color: #777; font-size: 23rpx; }
+.invite-total text { margin: 0 5rpx; color: #ff2442; font-size: 34rpx; font-weight: 750; }
+.invite-body { display: flex; align-items: center; margin-top: 28rpx; }
+.qr-box { display: flex; align-items: center; justify-content: center; width: 190rpx; height: 190rpx; overflow: hidden; background: #fafafa; border: 2rpx solid #eee; border-radius: 18rpx; }
+.qr-image { width: 174rpx; height: 174rpx; }
+.qr-state { color: #999; font-size: 20rpx; text-align: center; line-height: 1.5; }
+.qr-placeholder { color: #ff2442; font-size: 68rpx; line-height: 1; }
+.invite-info { flex: 1; margin-left: 26rpx; }
+.invite-code-label { color: #999; font-size: 22rpx; }
+.invite-code { margin-top: 9rpx; color: #222; font-size: 32rpx; font-weight: 750; letter-spacing: 2rpx; }
+.invite-code text { margin-left: 8rpx; color: #ff2442; font-size: 21rpx; font-weight: 400; letter-spacing: 0; }
+.share-btn { height: 68rpx; margin: 22rpx 0 0; padding: 0; color: #fff; font-size: 25rpx; line-height: 68rpx; background: #ff2442; border-radius: 999rpx; }
+.share-btn::after { border: 0; }
+.invite-summary { display: flex; margin-top: 28rpx; padding: 22rpx 0; background: #fff5f6; border-radius: 16rpx; }
+.invite-summary view { flex: 1; text-align: center; }
+.invite-summary view + view { border-left: 1rpx solid #ffd8de; }
+.invite-summary text { display: block; color: #ff2442; font-size: 30rpx; font-weight: 750; }
+.invite-summary label { display: block; margin-top: 6rpx; color: #999; font-size: 21rpx; }
+
+.rank-head { display: flex; align-items: center; justify-content: space-between; }
+.prize-banner { display: flex; gap: 12rpx; margin-top: 24rpx; }
+.prize-item { flex: 1; padding: 18rpx 10rpx; color: #8d5d00; font-size: 22rpx; text-align: center; background: linear-gradient(135deg, #fff6d7, #ffe8a6); border-radius: 14rpx; }
+.prize-item text { display: block; margin-bottom: 5rpx; color: #b77900; font-size: 20rpx; font-weight: 750; }
+.ranking { margin-top: 18rpx; }
+.rank-row { display: flex; align-items: center; padding: 20rpx 0; border-bottom: 1rpx solid #f1f1f1; }
+.rank-row:last-child { border-bottom: 0; }
+.rank-number { width: 44rpx; color: #999; font-size: 25rpx; font-weight: 700; text-align: center; }
+.rank-1 { color: #e6a400; font-size: 34rpx; }
+.rank-2 { color: #8c98a6; font-size: 31rpx; }
+.rank-3 { color: #bb7840; font-size: 29rpx; }
+.rank-avatar { width: 64rpx; height: 64rpx; margin-left: 12rpx; background: #eee; border-radius: 50%; }
+.rank-name { flex: 1; margin-left: 18rpx; color: #333; font-size: 25rpx; }
+.rank-score { text-align: right; }
+.rank-score text { display: block; color: #ff2442; font-size: 25rpx; font-weight: 700; }
+.rank-score label { display: block; margin-top: 3rpx; color: #aaa; font-size: 19rpx; }
 
 .rules { display: flex; align-items: center; margin-top: 30rpx; }
 .rule { flex: 1; text-align: center; }

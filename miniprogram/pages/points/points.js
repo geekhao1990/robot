@@ -12,25 +12,45 @@ Page({
     todayViews: 0,
     todayEarned: 0,
     remaining: 40,
+    dailyDone: false,
+    watchButtonText: '看激励广告 +5积分',
     progress: 0,
     dailyLimit: 40,
     perAd: 5,
     completionBonus: 200,
     pointsPerYuan: 200,
     transactions: [],
+    inviteCode: '',
+    invitedCount: 0,
+    invitePoints: 0,
+    inviteRank: 0,
+    inviteRankText: '未上榜',
+    inviteMonth: '',
+    perInvite: 100,
+    ranking: [],
+    prizes: [],
+    qrPath: '',
+    qrLoading: false,
+    qrUnavailable: false,
   },
 
-  onLoad() {
+  onLoad(options) {
+    store.captureInvite(options);
     if (!store.isLogin()) {
-      wx.redirectTo({ url: '/pages/login/login' });
+      const invite = store.getPendingInvite();
+      wx.redirectTo({ url: `/pages/login/login${invite ? '?invite=' + invite : ''}` });
       return;
     }
     this.loadSettings();
     this.loadPoints();
+    this.loadInvites();
   },
 
   onShow() {
-    if (store.isLogin() && !this.data.loading) this.loadPoints();
+    if (store.isLogin() && !this.data.loading) {
+      this.loadPoints();
+      this.loadInvites();
+    }
   },
 
   onUnload() {
@@ -56,6 +76,43 @@ Page({
       });
   },
 
+  loadInvites() {
+    api.getInvites()
+      .then((result) => {
+        this.setData({
+          inviteCode: result.inviteCode || '',
+          invitedCount: Number(result.invitedCount) || 0,
+          invitePoints: Number(result.invitePoints) || 0,
+          inviteRank: Number(result.rank) || 0,
+          inviteRankText: Number(result.rank) ? `第${Number(result.rank)}名` : '未上榜',
+          inviteMonth: result.month || '',
+          perInvite: Number(result.perInvite) || 100,
+          ranking: result.ranking || [],
+          prizes: result.prizes || [],
+        });
+        this.loadInviteQr();
+      })
+      .catch(() => wx.showToast({ title: '邀请数据加载失败', icon: 'none' }));
+  },
+
+  loadInviteQr() {
+    if (!this.data.inviteCode || this.data.qrLoading || this.data.qrPath) return;
+    this.setData({ qrLoading: true, qrUnavailable: false });
+    api.getInviteQrCode()
+      .then((result) => {
+        const extension = String(result.mimeType || '').includes('jpeg') ? 'jpg' : 'png';
+        const filePath = `${wx.env.USER_DATA_PATH}/invite-${this.data.inviteCode}.${extension}`;
+        wx.getFileSystemManager().writeFile({
+          filePath,
+          data: result.imageBase64,
+          encoding: 'base64',
+          success: () => this.setData({ qrPath: filePath, qrLoading: false }),
+          fail: () => this.setData({ qrLoading: false, qrUnavailable: true }),
+        });
+      })
+      .catch(() => this.setData({ qrLoading: false, qrUnavailable: true }));
+  },
+
   applySummary(summary) {
     const rules = summary.rules || {};
     const dailyLimit = Number(rules.dailyLimit) || 40;
@@ -71,6 +128,8 @@ Page({
       todayViews,
       todayEarned: Number(summary.todayEarned) || 0,
       remaining: Number(summary.remaining) || 0,
+      dailyDone: Number(summary.remaining) <= 0,
+      watchButtonText: Number(summary.remaining) > 0 ? `看激励广告 +${Number(rules.perAd) || 5}积分` : '今日任务已完成',
       progress: Math.min(100, Math.round((todayViews / dailyLimit) * 100)),
       dailyLimit,
       perAd: Number(rules.perAd) || 5,
@@ -162,6 +221,21 @@ Page({
 
   comingSoon() {
     wx.showToast({ title: '功能即将开放', icon: 'none' });
+  },
+
+  previewQr() {
+    if (this.data.qrPath) wx.previewImage({ current: this.data.qrPath, urls: [this.data.qrPath] });
+  },
+
+  copyInviteCode() {
+    if (this.data.inviteCode) wx.setClipboardData({ data: this.data.inviteCode });
+  },
+
+  onShareAppMessage() {
+    return {
+      title: `邀请你加入，新用户注册后我可得${this.data.perInvite}积分`,
+      path: `/pages/points/points?invite=${this.data.inviteCode}`,
+    };
   },
 
   destroyAd() {

@@ -17,12 +17,58 @@
       </view>
       <view class="count"><text>{{todayViews}}</text>/{{dailyLimit}}</view>
     </view>
-    <view class="progress"><view class="progress-inner" style="width: {{progress}}%;"></view></view>
-    <view class="task-tip" wx:if="{{remaining > 0}}">再看 {{remaining}} 次完成今日任务，完成后额外奖励 {{completionBonus}} 积分</view>
+    <view class="reward-progress">
+      <view class="reward-track"><view class="progress-inner" style="width: {{progress}}%;"></view></view>
+      <view class="reward-goal {{dailyDone ? 'reached' : ''}}">
+        <view class="gift-icon">礼</view>
+        <view class="goal-points">+{{completionBonus}}积分</view>
+        <view class="goal-label">完成{{dailyLimit}}次奖励</view>
+      </view>
+    </view>
+    <view class="task-tip" wx:if="{{remaining > 0}}">再看 {{remaining}} 次，自动领取上方完成奖励</view>
     <view class="task-tip done" wx:else>今日任务已完成，明天再来</view>
-    <button class="watch-btn {{remaining <= 0 ? 'disabled' : ''}}" loading="{{watching}}" disabled="{{watching || remaining <= 0}}" bindtap="watchAd">
-      {{remaining > 0 ? '看激励广告 +' + perAd + '积分' : '今日任务已完成'}}
+    <button class="watch-btn {{dailyDone ? 'disabled' : ''}}" loading="{{watching}}" disabled="{{watching || dailyDone}}" bindtap="watchAd">
+      {{watchButtonText}}
     </button>
+  </view>
+
+  <view class="invite-card">
+    <view class="section-head">
+      <view><view class="section-title">邀请好友赚积分</view><view class="section-sub">每成功邀请1位新用户，奖励{{perInvite}}积分</view></view>
+      <view class="invite-total">已邀请<text>{{invitedCount}}</text>人</view>
+    </view>
+    <view class="invite-body">
+      <view class="qr-box" bindtap="previewQr">
+        <image wx:if="{{qrPath}}" class="qr-image" src="{{qrPath}}" mode="aspectFit" />
+        <view wx:elif="{{qrLoading}}" class="qr-state">生成中…</view>
+        <view wx:else class="qr-state"><view class="qr-placeholder">▦</view><view>{{qrUnavailable ? '配置AppID后生成' : '邀请二维码'}}</view></view>
+      </view>
+      <view class="invite-info">
+        <view class="invite-code-label">我的邀请码</view>
+        <view class="invite-code" bindtap="copyInviteCode">{{inviteCode}} <text>复制</text></view>
+        <button class="share-btn" open-type="share" disabled="{{!inviteCode}}">立即邀请好友</button>
+      </view>
+    </view>
+    <view class="invite-summary">
+      <view><text>{{invitePoints}}</text><label>本月拉新积分</label></view>
+      <view><text>{{inviteRankText}}</text><label>我的排名</label></view>
+    </view>
+  </view>
+
+  <view class="rank-card">
+    <view class="rank-head"><view><view class="section-title">{{inviteMonth}} 拉新积分榜</view><view class="section-sub">新用户首次注册并绑定邀请关系后计入</view></view></view>
+    <view class="prize-banner">
+      <view wx:for="{{prizes}}" wx:key="range" class="prize-item"><text>{{item.range}}</text>{{item.prize}}</view>
+    </view>
+    <view wx:if="{{ranking.length}}" class="ranking">
+      <view class="rank-row" wx:for="{{ranking}}" wx:key="userId">
+        <view class="rank-number rank-{{item.rank}}">{{item.rank}}</view>
+        <image class="rank-avatar" src="{{item.avatar}}" mode="aspectFill" />
+        <view class="rank-name">{{item.name}}</view>
+        <view class="rank-score"><text>{{item.count}}人</text><label>{{item.points}}积分</label></view>
+      </view>
+    </view>
+    <view wx:else class="empty">本月还没有人上榜，快去邀请第一位好友</view>
   </view>
 
   <view class="rule-card">

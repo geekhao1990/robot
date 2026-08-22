@@ -22,6 +22,7 @@ const KEY = {
   FOLLOWS: 'xhs_follows',
   MY_NOTES: 'xhs_my_notes',
   READ: 'xhs_read',
+  PENDING_INVITE: 'xhs_pending_invite',
 };
 
 let state = {
@@ -100,14 +101,34 @@ function isLogin() {
   return !!state.user && (!authRemote() || !!state.token);
 }
 
+function captureInvite(options) {
+  const query = (options && options.query) || {};
+  let code = query.invite || '';
+  if (!code && query.scene) {
+    let scene = String(query.scene);
+    try { scene = decodeURIComponent(scene); } catch (e) {}
+    const match = scene.match(/(?:^|&)i=([A-Za-z0-9]+)/);
+    if (match) code = match[1];
+  }
+  code = String(code || '').trim().toUpperCase();
+  if (code) save(KEY.PENDING_INVITE, code);
+  return code;
+}
+
+function getPendingInvite() {
+  return load(KEY.PENDING_INVITE, '');
+}
+
 // 登录：远程换取 token + 用户并同步交互状态；离线则降级为本地
 function login(profile) {
   if (authRemote()) {
+    const inviteCode = getPendingInvite();
     return getApi()
-      .login(profile)
+      .login({ ...profile, inviteCode })
       .then((res) => {
         setToken(res.token);
         setUser(res.user);
+        save(KEY.PENDING_INVITE, '');
         return syncMe().then(() => state.user);
       })
       .catch((err) => Promise.reject(err));
@@ -298,6 +319,7 @@ module.exports = {
   init,
   getToken, setToken,
   getUser, setUser, login, syncMe, logout, isLogin,
+  captureInvite, getPendingInvite,
   isLiked, toggleLike,
   isCollected, toggleCollect,
   isFollowed, toggleFollow,

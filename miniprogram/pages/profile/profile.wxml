@@ -16,7 +16,7 @@
   </view>
   <view class="points-entry" bindtap="goPoints">
     <view class="points-icon">积</view>
-    <view class="points-copy"><view class="points-title">积分中心</view><view class="points-sub">看激励广告赚积分</view></view>
+    <view class="points-copy"><view class="points-title">积分中心</view><view class="points-sub">看广告、邀请好友赚积分</view></view>
     <view class="points-arrow">›</view>
   </view>
   <block wx:if="{{loggedIn}}">

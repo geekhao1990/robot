@@ -4,7 +4,7 @@ const db = require('../db');
 const { pubUser, pubNote } = require('../util');
 const auth = require('../auth');
 const crypto = require('crypto');
-const { code2Session } = require('../wechat');
+const { code2Session, getUnlimitedCode } = require('../wechat');
 
 function getState(userId) {
   const d = db.get();
@@ -17,10 +17,21 @@ function getState(userId) {
   return s;
 }
 
-const POINT_RULES = Object.freeze({ perAd: 5, dailyLimit: 40, completionBonus: 200, pointsPerYuan: 200 });
+const POINT_RULES = Object.freeze({ perAd: 5, dailyLimit: 40, completionBonus: 200, pointsPerYuan: 200, perInvite: 100 });
 
 function chinaDateKey() {
   return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+function chinaMonthKey(timestamp = Date.now()) {
+  return new Date(timestamp + 8 * 3600 * 1000).toISOString().slice(0, 7);
+}
+
+function inviteCodeFor(user) {
+  if (!user.inviteCode) {
+    user.inviteCode = crypto.createHash('sha256').update(`invite:${user.id}`).digest('hex').slice(0, 10).toUpperCase();
+  }
+  return user.inviteCode;
 }
 
 function getPointAccount(userId) {
@@ -58,6 +69,76 @@ function ensureRewardedAdsEnabled(HttpError) {
   if (settings.rewardedAdEnabled !== true) throw new HttpError(400, '激励广告尚未开启');
 }
 
+function applyInviteReward(user, rawCode) {
+  const code = String(rawCode || '').trim().toUpperCase();
+  if (!code || user.invitedBy) return false;
+  const d = db.get();
+  d.invites = Array.isArray(d.invites) ? d.invites : [];
+  const inviter = d.users.find((candidate) => candidate.id !== user.id && inviteCodeFor(candidate) === code);
+  if (!inviter) return false;
+  if (d.invites.some((item) => item.inviteeId === user.id)) return false;
+  const time = Date.now();
+  user.invitedBy = inviter.id;
+  user.invitedAt = time;
+  user.tags = Array.from(new Set([...(user.tags || []), 'invited']));
+  const account = getPointAccount(inviter.id);
+  account.balance += POINT_RULES.perInvite;
+  account.totalEarned += POINT_RULES.perInvite;
+  account.transactions.unshift({
+    id: 'pt_' + time + crypto.randomBytes(3).toString('hex'),
+    type: 'invite',
+    title: '成功邀请新用户',
+    delta: POINT_RULES.perInvite,
+    time,
+  });
+  account.transactions = account.transactions.slice(0, 100);
+  d.invites.push({
+    id: 'iv_' + time + crypto.randomBytes(3).toString('hex'),
+    inviterId: inviter.id,
+    inviteeId: user.id,
+    points: POINT_RULES.perInvite,
+    time,
+    month: chinaMonthKey(time),
+  });
+  return true;
+}
+
+function inviteSummary(user) {
+  const d = db.get();
+  d.invites = Array.isArray(d.invites) ? d.invites : [];
+  const month = chinaMonthKey();
+  const current = d.invites.filter((item) => item.month === month || chinaMonthKey(item.time) === month);
+  const grouped = {};
+  current.forEach((item) => {
+    if (!grouped[item.inviterId]) grouped[item.inviterId] = { count: 0, points: 0, lastTime: 0 };
+    grouped[item.inviterId].count += 1;
+    grouped[item.inviterId].points += Number(item.points) || POINT_RULES.perInvite;
+    grouped[item.inviterId].lastTime = Math.max(grouped[item.inviterId].lastTime, Number(item.time) || 0);
+  });
+  const ranking = Object.keys(grouped)
+    .map((userId) => {
+      const rankedUser = d.users.find((candidate) => candidate.id === userId) || {};
+      return { userId, name: rankedUser.name || '微信用户', avatar: rankedUser.avatar || '', ...grouped[userId] };
+    })
+    .sort((a, b) => b.points - a.points || b.count - a.count || a.lastTime - b.lastTime)
+    .map((item, index) => ({ ...item, rank: index + 1 }));
+  const mine = grouped[user.id] || { count: 0, points: 0 };
+  const myRanking = ranking.find((item) => item.userId === user.id);
+  return {
+    inviteCode: inviteCodeFor(user),
+    month,
+    invitedCount: mine.count,
+    invitePoints: mine.points,
+    rank: myRanking ? myRanking.rank : 0,
+    perInvite: POINT_RULES.perInvite,
+    ranking: ranking.slice(0, 20),
+    prizes: [
+      { range: '第1名', prize: 'iPhone 17 一台' },
+      { range: '第2-5名', prize: '200元' },
+    ],
+  };
+}
+
 function previewLoginAllowed(ctx) {
   if (process.env.NODE_ENV === 'production') return false;
   if (process.env.DEV_PREVIEW_LOGIN === 'false') return false;
@@ -89,6 +170,7 @@ module.exports = function register(router, HttpError) {
       openid = session.openid;
     }
     let user = d.users.find((u) => u.wxOpenId === openid);
+    let created = false;
     if (!user) {
       user = {
         id: 'wx_' + crypto.createHash('sha256').update(openid).digest('hex').slice(0, 16),
@@ -108,13 +190,15 @@ module.exports = function register(router, HttpError) {
         tags: ['new'],
       };
       d.users.push(user);
-      db.save();
+      created = true;
     } else {
       // 同步昵称头像
       if (b.name) user.name = b.name;
       if (b.avatar) user.avatar = b.avatar;
-      db.save();
     }
+    if (created) applyInviteReward(user, b.inviteCode);
+    inviteCodeFor(user);
+    db.save();
     const token = auth.issue(user.id);
     return { token, user: pubUser(user) };
   });
@@ -134,6 +218,21 @@ module.exports = function register(router, HttpError) {
   router.get('/api/points', (ctx) => {
     const user = currentUser(ctx);
     return pointSummary(getPointAccount(user.id));
+  });
+
+  router.get('/api/invites', (ctx) => {
+    const user = currentUser(ctx);
+    const result = inviteSummary(user);
+    db.save();
+    return result;
+  });
+
+  router.get('/api/invites/qrcode', async (ctx) => {
+    const user = currentUser(ctx);
+    const code = inviteCodeFor(user);
+    const result = await getUnlimitedCode(`i=${code}`, 'pages/points/points');
+    db.save();
+    return { imageBase64: result.buffer.toString('base64'), mimeType: result.mimeType };
   });
 
   router.post('/api/points/ad-ticket', (ctx) => {
