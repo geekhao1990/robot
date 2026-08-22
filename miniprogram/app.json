@@ -5,7 +5,7 @@
     "pages/search/search",
     "pages/agent/agent",
     "pages/profile/profile",
-    "pages/vip/vip",
+    "pages/points/points",
     "pages/login/login",
     "pages/user/user"
   ],

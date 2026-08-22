@@ -17,6 +17,47 @@ function getState(userId) {
   return s;
 }
 
+const POINT_RULES = Object.freeze({ perAd: 5, dailyLimit: 40, completionBonus: 200, pointsPerYuan: 200 });
+
+function chinaDateKey() {
+  return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+function getPointAccount(userId) {
+  const state = getState(userId);
+  if (!state.points) state.points = { balance: 0, totalEarned: 0, transactions: [], tickets: [], daily: {} };
+  const account = state.points;
+  account.balance = Number(account.balance) || 0;
+  account.totalEarned = Number(account.totalEarned) || 0;
+  account.transactions = Array.isArray(account.transactions) ? account.transactions : [];
+  account.tickets = Array.isArray(account.tickets) ? account.tickets : [];
+  const date = chinaDateKey();
+  if (!account.daily || account.daily.date !== date) {
+    account.daily = { date, views: 0, earned: 0, bonusGranted: false };
+  }
+  account.tickets = account.tickets.filter((ticket) => !ticket.used && ticket.expiresAt > Date.now());
+  return account;
+}
+
+function pointSummary(account) {
+  return {
+    balance: account.balance,
+    totalEarned: account.totalEarned,
+    cashValue: Number((account.balance / POINT_RULES.pointsPerYuan).toFixed(2)),
+    todayViews: account.daily.views,
+    todayEarned: account.daily.earned,
+    bonusGranted: account.daily.bonusGranted,
+    remaining: Math.max(0, POINT_RULES.dailyLimit - account.daily.views),
+    rules: POINT_RULES,
+    transactions: account.transactions.slice(0, 20),
+  };
+}
+
+function ensureRewardedAdsEnabled(HttpError) {
+  const settings = db.get().settings || {};
+  if (settings.rewardedAdEnabled !== true) throw new HttpError(400, '激励广告尚未开启');
+}
+
 function previewLoginAllowed(ctx) {
   if (process.env.NODE_ENV === 'production') return false;
   if (process.env.DEV_PREVIEW_LOGIN === 'false') return false;
@@ -88,6 +129,62 @@ module.exports = function register(router, HttpError) {
       collects: Object.keys(s.collects),
       follows: Object.keys(s.follows),
     };
+  });
+
+  router.get('/api/points', (ctx) => {
+    const user = currentUser(ctx);
+    return pointSummary(getPointAccount(user.id));
+  });
+
+  router.post('/api/points/ad-ticket', (ctx) => {
+    const user = currentUser(ctx);
+    ensureRewardedAdsEnabled(HttpError);
+    const account = getPointAccount(user.id);
+    if (account.daily.views >= POINT_RULES.dailyLimit) throw new HttpError(400, '今日40次积分奖励已完成');
+    const existing = account.tickets.find((ticket) => !ticket.used && ticket.expiresAt > Date.now());
+    if (existing) return { ticket: existing.id, expiresAt: existing.expiresAt };
+    const ticket = {
+      id: crypto.randomBytes(18).toString('hex'),
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 10 * 60 * 1000,
+      used: false,
+    };
+    account.tickets.push(ticket);
+    db.save();
+    return { ticket: ticket.id, expiresAt: ticket.expiresAt };
+  });
+
+  router.post('/api/points/ad-reward', (ctx) => {
+    const user = currentUser(ctx);
+    ensureRewardedAdsEnabled(HttpError);
+    const account = getPointAccount(user.id);
+    const ticketId = String((ctx.body || {}).ticket || '');
+    const ticket = account.tickets.find((item) => item.id === ticketId);
+    if (!ticket || ticket.used || ticket.expiresAt <= Date.now()) throw new HttpError(400, '广告奖励凭证无效或已过期');
+    if (Date.now() - ticket.createdAt < 3000) throw new HttpError(400, '广告尚未完成');
+    if (account.daily.views >= POINT_RULES.dailyLimit) throw new HttpError(400, '今日40次积分奖励已完成');
+    ticket.used = true;
+    account.daily.views += 1;
+    let awarded = POINT_RULES.perAd;
+    let completedBonus = false;
+    if (account.daily.views === POINT_RULES.dailyLimit && !account.daily.bonusGranted) {
+      awarded += POINT_RULES.completionBonus;
+      account.daily.bonusGranted = true;
+      completedBonus = true;
+    }
+    account.daily.earned += awarded;
+    account.balance += awarded;
+    account.totalEarned += awarded;
+    account.transactions.unshift({
+      id: 'pt_' + Date.now() + crypto.randomBytes(3).toString('hex'),
+      type: completedBonus ? 'daily_complete' : 'rewarded_ad',
+      title: completedBonus ? '完成今日40次广告' : '观看激励广告',
+      delta: awarded,
+      time: Date.now(),
+    });
+    account.transactions = account.transactions.slice(0, 100);
+    db.save();
+    return { awarded, completedBonus, summary: pointSummary(account) };
   });
 
   // 点赞

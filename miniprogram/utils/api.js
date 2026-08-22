@@ -205,6 +205,18 @@ function getVipOrder(orderId) {
   return request('GET', '/api/payments/orders/' + encodeURIComponent(orderId), { auth: true });
 }
 
+function getPoints() {
+  return request('GET', '/api/points', { auth: true });
+}
+
+function createAdRewardTicket() {
+  return request('POST', '/api/points/ad-ticket', { auth: true });
+}
+
+function claimAdReward(ticket) {
+  return request('POST', '/api/points/ad-reward', { auth: true, data: { ticket } });
+}
+
 // 上传图片，返回可访问 URL（用 wx.uploadFile）
 function uploadImage(filePath) {
   return new Promise((resolve, reject) => {
@@ -389,6 +401,9 @@ module.exports = {
   getMe,
   createVipOrder,
   getVipOrder,
+  getPoints,
+  createAdRewardTicket,
+  claimAdReward,
   // 写操作
   uploadImage,
   likeNote,
