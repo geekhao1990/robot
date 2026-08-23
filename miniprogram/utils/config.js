@@ -12,7 +12,7 @@ module.exports = {
   // 使用 wx.login 获取临时 code，由后端换取 openid 并签发登录 token。
   wechatAuthRemote: true,
   // 正式后端地址；需在微信公众平台配置为 request 合法域名。
-  baseUrl: 'https://h5.nankaitechschool.com',
+  baseUrl: 'https://app.nankaitechschool.com',
   // 开通会员的企业微信联系方式（展示用）
   vipContact,
   // 企业微信二维码图片（本地资源，真机/开发者工具均可显示）
