@@ -17,7 +17,7 @@ function getState(userId) {
   return s;
 }
 
-const POINT_RULES = Object.freeze({ perAd: 5, dailyLimit: 40, completionBonus: 200, pointsPerYuan: 200, perInvite: 100 });
+const POINT_RULES = Object.freeze({ perAd: 5, dailyLimit: 40, completionBonus: 200, pointsPerYuan: 200, perInvite: 200 });
 
 function chinaDateKey() {
   return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
@@ -141,13 +141,6 @@ function inviteSummary(user) {
     rank: myRanking ? myRanking.rank : 0,
     perInvite: POINT_RULES.perInvite,
     ranking: ranking.slice(0, 20),
-    prizes: [
-      { rank: 1, range: '第1名', prize: 'iPhone 17 一台' },
-      { rank: 2, range: '第2名', prize: '200元' },
-      { rank: 3, range: '第3名', prize: '200元' },
-      { rank: 4, range: '第4名', prize: '200元' },
-      { rank: 5, range: '第5名', prize: '200元' },
-    ],
   };
 }
 

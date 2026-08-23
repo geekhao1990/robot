@@ -38,7 +38,7 @@
     </view>
     <view class="invite-link-row">
       <view class="invite-link" bindtap="copyInviteLink">
-        <view class="link-label">我的专属拉新链接</view>
+        <view class="link-label">专属拉新链接</view>
         <view class="link-value">{{inviteLink}}</view>
       </view>
       <button class="link-action link-action-light" bindtap="copyInviteLink" disabled="{{!inviteLink}}">复制链接</button>
@@ -52,11 +52,8 @@
   </view>
 
   <view class="rank-card">
-    <view class="prize-heading">本月前五名：iPhone 17 + 现金奖励</view>
-    <view class="prize-grid">
-      <view wx:for="{{prizes}}" wx:key="rank" class="prize-item prize-{{item.rank}}"><text>{{item.range}}</text>{{item.prize}}</view>
-    </view>
     <view class="rank-head"><view><view class="section-title">{{inviteMonth}} 拉新积分榜</view><view class="section-sub">新用户首次注册并绑定邀请关系后计入</view></view></view>
+    <view class="cash-reward">每月拉新前五名将获得现金奖励</view>
     <view class="update-date">本月榜单正在统计，<text>{{nextUpdateDate}}前公布</text></view>
     <view wx:if="{{ranking.length}}" class="ranking">
       <view class="rank-row" wx:for="{{ranking}}" wx:key="userId">

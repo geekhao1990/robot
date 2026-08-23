@@ -65,11 +65,11 @@ page { background: #f7f7f7; }
 .invite-card, .rank-card { margin-top: 24rpx; padding: 30rpx; background: #fff; border-radius: 24rpx; }
 .invite-total { color: #777; font-size: 23rpx; }
 .invite-total text { margin: 0 5rpx; color: #ff2442; font-size: 34rpx; font-weight: 750; }
-.invite-link-row { display: flex; align-items: center; gap: 10rpx; margin-top: 26rpx; }
-.invite-link { flex: 1; min-width: 0; height: 96rpx; padding: 15rpx 18rpx; background: #f7f7f7; border: 2rpx solid #eee; border-radius: 14rpx; box-sizing: border-box; }
-.link-label { color: #777; font-size: 22rpx; }
-.link-value { margin-top: 6rpx; overflow: hidden; color: #333; font-size: 20rpx; white-space: nowrap; text-overflow: ellipsis; }
-.link-action { display: flex; flex: none; align-items: center; justify-content: center; width: 126rpx; height: 96rpx; min-height: 0; margin: 0; padding: 0 8rpx; color: #fff; font-size: 21rpx; line-height: 1.25; background: #ff2442; border-radius: 14rpx; box-sizing: border-box; }
+.invite-link-row { display: flex; align-items: center; gap: 8rpx; margin-top: 24rpx; overflow: hidden; }
+.invite-link { flex: 1; min-width: 0; height: 78rpx; padding: 9rpx 14rpx; overflow: hidden; background: #f7f7f7; border: 2rpx solid #eee; border-radius: 12rpx; box-sizing: border-box; }
+.link-label { overflow: hidden; color: #777; font-size: 20rpx; line-height: 26rpx; white-space: nowrap; text-overflow: ellipsis; }
+.link-value { width: 100%; margin-top: 2rpx; overflow: hidden; color: #333; font-size: 17rpx; line-height: 24rpx; white-space: nowrap; text-overflow: ellipsis; }
+.link-action { display: flex; flex: none; align-items: center; justify-content: center; width: 104rpx; height: 78rpx; min-height: 0; margin: 0; padding: 0 5rpx; color: #fff; font-size: 19rpx; line-height: 1.2; background: #ff2442; border-radius: 12rpx; box-sizing: border-box; }
 .link-action::after { border: 0; }
 .link-action-light { color: #ff2442; background: #ffe9ec; }
 .invite-note { margin-top: 16rpx; color: #999; font-size: 21rpx; line-height: 1.55; }
@@ -79,13 +79,8 @@ page { background: #f7f7f7; }
 .invite-summary text { display: block; color: #ff2442; font-size: 30rpx; font-weight: 750; }
 .invite-summary label { display: block; margin-top: 6rpx; color: #999; font-size: 21rpx; }
 
-.prize-heading { color: #8d5d00; font-size: 27rpx; font-weight: 750; }
-.prize-grid { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 20rpx; }
-.prize-item { width: calc(50% - 6rpx); padding: 18rpx 10rpx; color: #8d5d00; font-size: 22rpx; text-align: center; background: linear-gradient(135deg, #fff6d7, #ffe8a6); border-radius: 14rpx; box-sizing: border-box; }
-.prize-item.prize-1 { width: 100%; padding: 24rpx 10rpx; color: #8a5700; font-size: 29rpx; background: linear-gradient(135deg, #fff3c5, #ffd978); }
-.prize-item text { display: block; margin-bottom: 5rpx; color: #b77900; font-size: 20rpx; font-weight: 750; }
-.prize-item.prize-1 text { font-size: 23rpx; }
-.rank-head { display: flex; align-items: center; justify-content: space-between; margin-top: 32rpx; }
+.rank-head { display: flex; align-items: center; justify-content: space-between; }
+.cash-reward { margin-top: 20rpx; padding: 18rpx 20rpx; color: #8d5d00; font-size: 24rpx; font-weight: 700; text-align: center; background: linear-gradient(135deg, #fff6d7, #ffe8a6); border-radius: 12rpx; }
 .update-date { margin-top: 16rpx; padding: 16rpx 20rpx; color: #777; font-size: 22rpx; text-align: center; background: #f7f7f7; border-radius: 12rpx; }
 .update-date text { color: #ff2442; font-weight: 700; }
 .ranking { margin-top: 18rpx; }

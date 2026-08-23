@@ -28,9 +28,8 @@ Page({
     inviteRankText: '未上榜',
     inviteMonth: '',
     nextUpdateDate: '',
-    perInvite: 100,
+    perInvite: 200,
     ranking: [],
-    prizes: [],
   },
 
   onLoad(options) {
@@ -87,9 +86,8 @@ Page({
           inviteRankText: Number(result.rank) ? `第${Number(result.rank)}名` : '未上榜',
           inviteMonth: result.month || '',
           nextUpdateDate: result.nextUpdateDate || '',
-          perInvite: Number(result.perInvite) || 100,
+          perInvite: Number(result.perInvite) || 200,
           ranking: result.ranking || [],
-          prizes: result.prizes || [],
         });
       })
       .catch(() => wx.showToast({ title: '邀请数据加载失败', icon: 'none' }));
