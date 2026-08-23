@@ -9,10 +9,10 @@ module.exports = {
   useRemote: false,
   // 尚未配置 AppID 时，登录仍连接本地后端完成注册并生成用户记录。
   previewAuthRemote: true,
-  // 配置真实 AppID/AppSecret 与 HTTPS 后端后改为 true。
-  wechatAuthRemote: false,
-  // 微信开发者工具本地调试地址。显式使用 IPv4，避免 localhost 被解析为 ::1。
-  baseUrl: 'http://127.0.0.1:3000',
+  // 使用 wx.login 获取临时 code，由后端换取 openid 并签发登录 token。
+  wechatAuthRemote: true,
+  // 正式后端地址；需在微信公众平台配置为 request 合法域名。
+  baseUrl: 'https://h5.nankaitechschool.com',
   // 开通会员的企业微信联系方式（展示用）
   vipContact,
   // 企业微信二维码图片（本地资源，真机/开发者工具均可显示）
