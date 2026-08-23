@@ -41,8 +41,12 @@
         <view class="link-label">专属拉新链接</view>
         <view class="link-value">{{inviteLink}}</view>
       </view>
-      <button class="link-action link-action-light" bindtap="copyInviteLink" disabled="{{!inviteLink}}">复制链接</button>
-      <button class="link-action" open-type="share" disabled="{{!inviteCode}}">微信发送</button>
+      <view class="link-action-slot">
+        <view class="link-action link-action-light" bindtap="copyInviteLink">复制链接</view>
+      </view>
+      <view class="link-action-slot">
+        <button class="link-action" open-type="share" disabled="{{!inviteCode}}">微信发送</button>
+      </view>
     </view>
     <view class="invite-note">好友通过此链接进入并首次注册，奖励将发放到你的账户。</view>
     <view class="invite-summary">
