@@ -13,8 +13,12 @@ module.exports = function register(router, HttpError) {
   // 登录
   router.post('/api/admin/login', ({ body }) => {
     const { username, password } = body || {};
-    const admin = db.get().admins.find((a) => a.username === username && a.password === password);
-    if (!admin) throw new HttpError(401, '账号或密码错误');
+    const envUsername = process.env.ADMIN_USERNAME;
+    const envPassword = process.env.ADMIN_PASSWORD;
+    const valid = envUsername && envPassword
+      ? username === envUsername && password === envPassword
+      : db.get().admins.some((a) => a.username === username && a.password === password);
+    if (!valid) throw new HttpError(401, '账号或密码错误');
     return { token: auth.issueAdmin(), username };
   });
 
