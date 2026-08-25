@@ -82,4 +82,5 @@ const server = http.createServer((req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`API & 管理后台运行中： http://localhost:${PORT}/admin`));
+const HOST = process.env.HOST || '127.0.0.1';
+server.listen(PORT, HOST, () => console.log(`API & 管理后台运行中： http://${HOST}:${PORT}/admin`));
