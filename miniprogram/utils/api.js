@@ -1,5 +1,5 @@
 // utils/api.js
-// 模拟接口层：基于 mock 数据 + 本地交互状态，返回 Promise，模拟网络延迟。
+// 小程序接口层：生产环境连接真实后端，mock 仅作为显式关闭远程模式时的开发数据。
 
 const data = require('../mock/data');
 const store = require('./store');
@@ -128,7 +128,7 @@ function getHotSearch() {
   return delay(data.hotSearch, 0);
 }
 
-// 全局功能设置。即使内容使用 mock，也会优先读取本地后台，失败后自动回退。
+// 全局功能设置。生产环境读取后端，开发模式失败时才回退本地默认值。
 function getAppSettings() {
   const fallback = {
     rewardedAdEnabled: config.rewardedAdEnabled === true,
@@ -183,6 +183,10 @@ function getNotesByAuthor(authorId) {
 
 // 我点赞 / 收藏的笔记
 function getNotesByIds(ids) {
+  if (remote()) {
+    return Promise.all((ids || []).map((id) => getNoteById(id).catch(() => null)))
+      .then((notes) => notes.filter(Boolean));
+  }
   const map = {};
   allNotes().forEach((n) => (map[n.id] = n));
   return delay(ids.map((id) => map[id]).filter(Boolean).map(decorate));
@@ -288,8 +292,7 @@ function getMyLikes() {
 function getNotifications(type) {
   if (remote()) {
     return request('GET', '/api/notifications', { auth: true })
-      .then((list) => (type && type !== 'all' ? (list || []).filter((n) => n.type === type) : list || []))
-      .catch(() => mockNotifications(type));
+      .then((list) => (type && type !== 'all' ? (list || []).filter((n) => n.type === type) : list || []));
   }
   return mockNotifications(type);
 }
@@ -313,7 +316,7 @@ function noteMapOf() {
 
 function getConversations() {
   if (remote()) {
-    return request('GET', '/api/conversations', { auth: true }).catch(() => mockConversations());
+    return request('GET', '/api/conversations', { auth: true });
   }
   return mockConversations();
 }
@@ -329,7 +332,7 @@ function mockConversations() {
 
 function getConversation(id) {
   if (remote()) {
-    return request('GET', '/api/conversations/' + id, { auth: true }).catch(() => mockConversation(id));
+    return request('GET', '/api/conversations/' + id, { auth: true });
   }
   return mockConversation(id);
 }

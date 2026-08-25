@@ -5,8 +5,8 @@
 const vipContact = 'finance-vip-001';
 
 module.exports = {
-  // 当前先使用本地 mock 数据；后端联调完成后改为 true。
-  useRemote: false,
+  // 生产环境统一以后端数据为准，后台修改会实时反映到小程序。
+  useRemote: true,
   // 尚未配置 AppID 时，登录仍连接本地后端完成注册并生成用户记录。
   previewAuthRemote: true,
   // 使用 wx.login 获取临时 code，由后端换取 openid 并签发登录 token。

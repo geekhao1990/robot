@@ -96,10 +96,10 @@ GET                   /api/admin/stats
 
 ## 让小程序连接真实后端
 
-小程序 `miniprogram/utils/config.js` 当前默认使用 mock 内容，但预览登录会连接本地后端完成用户注册。需要联调真实内容时把 `useRemote` 改为 `true`；获得 AppID/AppSecret 后再把 `wechatAuthRemote` 改为 `true`：
+小程序 `miniprogram/utils/config.js` 当前默认连接正式后端，笔记、搜索、领取地址、互动状态和后台设置均以后端数据为准：
 
 ```js
-module.exports = { useRemote: false, previewAuthRemote: true, wechatAuthRemote: false, baseUrl: 'http://127.0.0.1:3000' };
+module.exports = { useRemote: true, previewAuthRemote: true, wechatAuthRemote: true, baseUrl: 'https://app.nankaitechschool.com' };
 ```
 
 - **必须先启动本服务**，小程序的登录、点赞、收藏、关注、发布、会员状态都依赖它。
