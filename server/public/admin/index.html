@@ -76,6 +76,13 @@
   .img-del { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; line-height: 18px; text-align: center; background: rgba(0,0,0,.55); color: #fff; border-radius: 50%; font-size: 16px; cursor: pointer; }
   .img-add { display: flex; align-items: center; justify-content: center; width: 90px; height: 90px; border: 1px dashed #ccc; border-radius: 8px; color: #bbb; font-size: 30px; cursor: pointer; }
   .img-add:hover { border-color: var(--primary); color: var(--primary); }
+  .avatar-picker { display: flex; align-items: center; gap: 16px; }
+  .avatar-preview { width: 82px; height: 82px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; background: #f6f6f6; }
+  .avatar-upload-btn { display: inline-flex; align-items: center; justify-content: center; padding: 9px 16px; color: var(--primary); border: 1px solid #ffccd2; border-radius: 8px; cursor: pointer; }
+  .avatar-upload-btn:hover { background: #fff3f5; }
+  .category-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 15px 0; border-bottom: 1px solid #f0f0f0; }
+  .category-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .category-actions { display: flex; align-items: center; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -98,7 +105,7 @@
       <div class="nav-item active" data-view="overview" onclick="switchView('overview')">📊 数据概览</div>
       <div class="nav-item" data-view="notes" onclick="switchView('notes')">📝 笔记管理</div>
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
-      <div class="nav-item" data-view="categories" onclick="switchView('categories')">🏷️ 分类管理</div>
+      <div class="nav-item" data-view="categories" onclick="switchView('categories')">🏷️ 笔记类型</div>
       <div class="nav-item" data-view="settings" onclick="switchView('settings')">⚙️ 功能设置</div>
     </div>
     <div class="main">
@@ -157,7 +164,8 @@ function enterApp() {
   switchView('overview');
 }
 
-const TITLES = { overview: '数据概览', notes: '笔记管理', users: '用户管理', categories: '分类管理', settings: '功能设置' };
+const TITLES = { overview: '数据概览', notes: '笔记管理', users: '用户管理', categories: '笔记类型', settings: '功能设置' };
+const BASE_CATEGORIES = ['资料', '课程', '金手指'];
 function switchView(v) {
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === v));
   document.getElementById('viewTitle').textContent = TITLES[v];
@@ -180,7 +188,7 @@ function renderOverview() {
         <div class="card"><div class="n">${s.courses}</div><div class="l">课程内容</div></div>
         <div class="card"><div class="n">${s.goldNotes}</div><div class="l">金手指内容</div></div>
         <div class="card"><div class="n">${s.users}</div><div class="l">用户总数</div></div>
-        <div class="card"><div class="n">${s.newUsers}</div><div class="l">新用户待处理</div></div>
+        <div class="card"><div class="n">${s.newUsers}</div><div class="l">新注册用户</div></div>
         <div class="card"><div class="n">${s.vipUsers}</div><div class="l">VIP 用户</div></div>
         <div class="card"><div class="n">${s.categories}</div><div class="l">分类数</div></div>
       </div>`;
@@ -189,7 +197,7 @@ function renderOverview() {
 
 // 笔记
 const PAGE_SIZE = 10;
-let _notes = [], _users = [];
+let _notes = [], _users = [], _categories = BASE_CATEGORIES.slice();
 let _noteKeyword = '';
 let _notePage = 1;
 
@@ -203,9 +211,9 @@ function pagerHtml(page, pages, total, fnName) {
 }
 
 function renderNotes() {
-  Promise.all([api('/api/admin/notes'), api('/api/admin/users')])
-    .then(([notes, users]) => {
-      _notes = notes; _users = users;
+  Promise.all([api('/api/admin/notes'), api('/api/admin/users'), api('/api/admin/categories')])
+    .then(([notes, users, categories]) => {
+      _notes = notes; _users = users; _categories = categories;
       _notePage = 1;
       drawNotes();
     });
@@ -238,7 +246,7 @@ function drawNotes() {
       <td><img src="${esc(n.cover)}" /></td>
       <td>${esc(n.title)}</td>
       <td>${esc(n.author && n.author.name)}</td>
-      <td>${n.type === 'gold' ? '<span class="tag gold">金手指</span>' : (n.type === 'course' ? '<span class="tag course">课程</span>' : '<span class="tag">资料</span>')}</td>
+      <td><span class="tag ${n.type === 'gold' ? 'gold' : (n.type === 'course' ? 'course' : '')}">${esc(n.category || '资料')}</span></td>
       <td>赞 ${n.likes} · 藏 ${n.collects} · 评 ${n.comments}</td>
       <td>
         <button class="btn-sm" onclick='editNote("${n.id}")'>编辑</button>
@@ -267,17 +275,15 @@ function editNote(id) {
   const quarkLink = n.quarkUrl || (legacyLink && /quark\.cn/i.test(legacyLink) ? legacyLink : '');
   const officialAuthors = _users.filter((u) => u.official === true);
   const userOpts = officialAuthors.map((u) => `<option value="${u.id}" ${n.authorId === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
+  const selectedCategory = n.category || (n.type === 'gold' ? '金手指' : (n.type === 'course' ? '课程' : '资料'));
+  const categoryOpts = _categories.map((category) => `<option value="${esc(category)}" ${selectedCategory === category ? 'selected' : ''}>${esc(category)}</option>`).join('');
   if (!userOpts) return alert('请先在用户管理中创建并标记官方账号');
   _modalImages = (n.images || []).slice();
   openModal(`${id ? '编辑' : '新增'}内容`, `
     <div class="field"><label>标题</label><input id="f_title" value="${esc(n.title)}" /></div>
     <div class="field"><label>正文</label><textarea id="f_content">${esc(n.content)}</textarea></div>
     <div class="field"><label>作者</label><select id="f_author">${userOpts}</select></div>
-    <div class="field"><label>分类</label><select id="f_type" onchange="syncResourceField()">
-      <option value="material" ${!n.type || n.type === 'normal' || n.type === 'material' ? 'selected' : ''}>资料</option>
-      <option value="course" ${n.type === 'course' ? 'selected' : ''}>课程</option>
-      <option value="gold" ${n.type === 'gold' ? 'selected' : ''}>金手指</option>
-    </select></div>
+    <div class="field"><label>笔记类型</label><select id="f_category" onchange="syncResourceField()">${categoryOpts}</select></div>
     <div id="resourceField">
       <div class="field"><label>百度网盘地址（选填）</label><input id="f_baidu" value="${esc(baiduLink)}" placeholder="百度网盘链接及提取码" /></div>
       <div class="field"><label>夸克网盘地址（选填）</label><input id="f_quark" value="${esc(quarkLink)}" placeholder="夸克网盘链接及提取码" /></div>
@@ -292,13 +298,15 @@ function editNote(id) {
   `, () => {
     const baiduUrl = document.getElementById('f_baidu').value.trim();
     const quarkUrl = document.getElementById('f_quark').value.trim();
-    const type = document.getElementById('f_type').value;
+    const category = document.getElementById('f_category').value;
+    const type = category === '金手指' ? 'gold' : (category === '课程' ? 'course' : 'material');
     if (!baiduUrl && !quarkUrl && type !== 'gold') return alert('请至少填写一个网盘地址');
     const body = {
       title: document.getElementById('f_title').value,
       content: document.getElementById('f_content').value,
       authorId: document.getElementById('f_author').value,
       type,
+      category,
       baiduUrl,
       quarkUrl,
       images: _modalImages,
@@ -312,11 +320,11 @@ function editNote(id) {
 }
 
 function syncResourceField() {
-  const type = document.getElementById('f_type');
+  const type = document.getElementById('f_category');
   const resource = document.getElementById('resourceField');
   const goldHint = document.getElementById('goldHint');
   if (!type || !resource || !goldHint) return;
-  const isGold = type.value === 'gold';
+  const isGold = type.value === '金手指';
   resource.style.display = isGold ? 'none' : 'block';
   goldHint.style.display = isGold ? 'block' : 'none';
 }
@@ -459,9 +467,10 @@ function setVip(id, plan) {
 }
 function editUser(id) {
   const u = id ? _users.find((x) => x.id === id) : {};
+  _modalAvatar = u.avatar || '';
   openModal(`${id ? '编辑' : '新增'}用户`, `
     <div class="field"><label>昵称</label><input id="u_name" value="${esc(u.name)}" /></div>
-    <div class="field"><label>头像地址</label><input id="u_avatar" value="${esc(u.avatar)}" /></div>
+    <div class="field"><label>头像</label><div id="userAvatarPicker" class="avatar-picker"></div><div class="hint">支持 JPG、PNG、GIF、WebP，上限8MB</div></div>
     <div class="field"><label>简介</label><input id="u_desc" value="${esc(u.desc)}" /></div>
     <div class="field"><label>账号类型</label><select id="u_official">
       <option value="false" ${u.official ? '' : 'selected'}>普通用户（不可发布笔记）</option>
@@ -471,7 +480,7 @@ function editUser(id) {
   `, () => {
     const body = {
       name: document.getElementById('u_name').value,
-      avatar: document.getElementById('u_avatar').value,
+      avatar: _modalAvatar,
       desc: document.getElementById('u_desc').value,
       official: document.getElementById('u_official').value === 'true',
     };
@@ -479,18 +488,71 @@ function editUser(id) {
                    : api('/api/admin/users', { method: 'POST', body: JSON.stringify(body) });
     req.then(() => { closeModal(); renderUsers(); });
   });
+  renderUserAvatarPicker();
+}
+
+let _modalAvatar = '';
+function renderUserAvatarPicker() {
+  const picker = document.getElementById('userAvatarPicker');
+  if (!picker) return;
+  picker.innerHTML = `
+    ${_modalAvatar ? `<img class="avatar-preview" src="${esc(_modalAvatar)}" />` : '<div class="avatar-preview"></div>'}
+    <label class="avatar-upload-btn">${_modalAvatar ? '更换头像' : '上传头像'}<input type="file" accept="image/*" style="display:none" onchange="onPickUserAvatar(event)" /></label>`;
+}
+function onPickUserAvatar(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const picker = document.getElementById('userAvatarPicker');
+  if (picker) picker.style.opacity = '.5';
+  uploadAdminImage(file)
+    .then((url) => { _modalAvatar = url; renderUserAvatarPicker(); })
+    .catch(() => alert('头像上传失败'))
+    .then(() => { if (picker) picker.style.opacity = '1'; });
 }
 
 // 分类
 function renderCategories() {
   Promise.all([api('/api/admin/categories'), api('/api/admin/notes')]).then(([cats, notes]) => {
-    const items = cats.map((cat) => `<div style="display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid #f0f0f0"><strong>${esc(cat)}</strong><span class="tag">${notes.filter((n) => n.category === cat).length} 篇</span></div>`).join('');
+    _categories = cats;
+    const items = cats.map((cat) => {
+      const fixed = BASE_CATEGORIES.includes(cat);
+      const count = notes.filter((n) => n.category === cat).length;
+      return `<div class="category-row">
+        <div class="category-main"><strong>${esc(cat)}</strong>${fixed ? '<span class="tag">系统类型</span>' : ''}<span class="tag">${count} 篇</span></div>
+        <div class="category-actions">
+          ${fixed ? '<span class="hint">不可修改或删除</span>' : `<button class="btn-sm" onclick="renameCategory(decodeURIComponent('${encodeURIComponent(cat)}'))">重命名</button><button class="btn-sm del" onclick="deleteCategory(decodeURIComponent('${encodeURIComponent(cat)}'))">删除</button>`}
+        </div>
+      </div>`;
+    }).join('');
     document.getElementById('content').innerHTML = `
       <div class="card" style="max-width:560px">
-        <div class="field"><label>固定内容分类</label><div class="hint">笔记仅支持资料、课程、金手指三种分类。</div></div>
+        <div class="field">
+          <label>新增笔记类型</label>
+          <div class="search-box"><input id="newCategoryName" class="search" maxlength="12" placeholder="输入类型名称" /><button class="btn-primary" onclick="addCategory()">新增</button></div>
+          <div class="hint">资料、课程、金手指为系统类型，永久保留；自定义类型按资料类领取逻辑处理。</div>
+        </div>
         ${items}
       </div>`;
   });
+}
+
+function addCategory() {
+  const input = document.getElementById('newCategoryName');
+  const name = (input ? input.value : '').trim();
+  if (!name) return alert('请输入笔记类型名称');
+  api('/api/admin/categories', { method: 'POST', body: JSON.stringify({ name }) })
+    .then(renderCategories).catch((error) => alert(error.message));
+}
+function renameCategory(oldName) {
+  const name = prompt('请输入新的笔记类型名称', oldName);
+  if (name == null || !name.trim() || name.trim() === oldName) return;
+  api('/api/admin/categories/' + encodeURIComponent(oldName), { method: 'PUT', body: JSON.stringify({ name: name.trim() }) })
+    .then(renderCategories).catch((error) => alert(error.message));
+}
+function deleteCategory(name) {
+  if (!confirm(`确定删除笔记类型「${name}」吗？`)) return;
+  api('/api/admin/categories/' + encodeURIComponent(name), { method: 'DELETE' })
+    .then(renderCategories).catch((error) => alert(error.message));
 }
 
 // 功能设置

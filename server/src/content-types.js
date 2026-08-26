@@ -13,4 +13,9 @@ function typeLabel(value) {
   return TYPE_LABELS[normalizeType(value)];
 }
 
-module.exports = { CONTENT_TYPES, TYPE_LABELS, normalizeType, typeLabel };
+function typeForCategory(category) {
+  const entry = Object.entries(TYPE_LABELS).find(([, label]) => label === category);
+  return entry ? entry[0] : 'material';
+}
+
+module.exports = { CONTENT_TYPES, TYPE_LABELS, normalizeType, typeLabel, typeForCategory };

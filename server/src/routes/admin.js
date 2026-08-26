@@ -2,11 +2,18 @@
 const db = require('../db');
 const auth = require('../auth');
 const { pubSettings } = require('../util');
-const { TYPE_LABELS, normalizeType, typeLabel } = require('../content-types');
+const { TYPE_LABELS, normalizeType, typeLabel, typeForCategory } = require('../content-types');
 const { getPlan, activateMembership } = require('../membership');
 const { normalizeResourceLinks } = require('../resource-links');
 
 module.exports = function register(router, HttpError) {
+  const baseCategories = Object.values(TYPE_LABELS);
+  const cleanCategory = (value) => String(value || '').trim();
+  const resolveCategory = (data, value, fallbackType) => {
+    const category = cleanCategory(value) || typeLabel(normalizeType(fallbackType));
+    if (!data.categories.includes(category)) throw new HttpError(400, '请选择有效的笔记类型');
+    return { category, type: typeForCategory(category) };
+  };
   const requireAuth = (ctx) => {
     if (!auth.isAdmin(ctx.headers.authorization)) throw new HttpError(401, '未登录或登录失效');
   };
@@ -75,7 +82,8 @@ module.exports = function register(router, HttpError) {
       ? officialAuthors.find((u) => u.id === b.authorId)
       : officialAuthors[0];
     if (!author) throw new HttpError(400, '请选择有效的官方作者账号');
-    const type = normalizeType(b.type);
+    const resolved = resolveCategory(d, b.category, b.type);
+    const type = resolved.type;
     const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
     const links = normalizeResourceLinks(b, type, !hasProviderFields);
@@ -84,7 +92,7 @@ module.exports = function register(router, HttpError) {
       id: 'n' + Date.now(),
       authorId: author.id,
       author: { id: author.id, name: author.name, avatar: author.avatar },
-      category: typeLabel(type),
+      category: resolved.category,
       type,
       ...links,
       title: b.title || '未命名',
@@ -112,8 +120,12 @@ module.exports = function register(router, HttpError) {
     if (i < 0) throw new HttpError(404, 'not found');
     const b = ctx.body || {};
     const note = { ...d.notes[i], ...b };
-    note.type = normalizeType(Object.prototype.hasOwnProperty.call(b, 'type') ? b.type : note.type);
-    note.category = typeLabel(note.type);
+    const requestedCategory = Object.prototype.hasOwnProperty.call(b, 'category')
+      ? b.category
+      : (Object.prototype.hasOwnProperty.call(b, 'type') ? typeLabel(b.type) : note.category);
+    const resolved = resolveCategory(d, requestedCategory, note.type);
+    note.type = resolved.type;
+    note.category = resolved.category;
     const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
     Object.assign(note, normalizeResourceLinks(note, note.type, !hasProviderFields));
@@ -190,6 +202,16 @@ module.exports = function register(router, HttpError) {
       throw new HttpError(400, '该账号仍是笔记作者，请先更换对应笔记作者');
     }
     d.users[i] = { ...d.users[i], ...update };
+    if (Object.prototype.hasOwnProperty.call(update, 'name') || Object.prototype.hasOwnProperty.call(update, 'avatar')) {
+      d.notes.filter((note) => note.authorId === ctx.params.id).forEach((note) => {
+        note.author = {
+          ...(note.author || {}),
+          id: d.users[i].id,
+          name: d.users[i].name,
+          avatar: d.users[i].avatar,
+        };
+      });
+    }
     db.save();
     return d.users[i];
   });
@@ -226,10 +248,42 @@ module.exports = function register(router, HttpError) {
   // ---------- 分类 ----------
   router.get('/api/admin/categories', (ctx) => { requireAuth(ctx); return db.get().categories; });
 
-  router.put('/api/admin/categories', (ctx) => {
+  router.post('/api/admin/categories', (ctx) => {
     requireAuth(ctx);
     const d = db.get();
-    d.categories = Object.values(TYPE_LABELS);
+    const name = cleanCategory((ctx.body || {}).name);
+    if (!name) throw new HttpError(400, '请输入笔记类型名称');
+    if (name.length > 12) throw new HttpError(400, '笔记类型名称不能超过12个字');
+    if (d.categories.includes(name)) throw new HttpError(400, '该笔记类型已存在');
+    d.categories.push(name);
+    db.save();
+    return d.categories;
+  });
+
+  router.put('/api/admin/categories/:name', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const oldName = cleanCategory(ctx.params.name);
+    const name = cleanCategory((ctx.body || {}).name);
+    if (baseCategories.includes(oldName)) throw new HttpError(400, '资料、课程、金手指为系统类型，不能修改');
+    if (!d.categories.includes(oldName)) throw new HttpError(404, '笔记类型不存在');
+    if (!name) throw new HttpError(400, '请输入笔记类型名称');
+    if (name.length > 12) throw new HttpError(400, '笔记类型名称不能超过12个字');
+    if (d.categories.some((item) => item !== oldName && item === name)) throw new HttpError(400, '该笔记类型已存在');
+    d.categories[d.categories.indexOf(oldName)] = name;
+    d.notes.filter((note) => note.category === oldName).forEach((note) => { note.category = name; });
+    db.save();
+    return d.categories;
+  });
+
+  router.delete('/api/admin/categories/:name', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const name = cleanCategory(ctx.params.name);
+    if (baseCategories.includes(name)) throw new HttpError(400, '资料、课程、金手指为系统类型，不能删除');
+    if (!d.categories.includes(name)) throw new HttpError(404, '笔记类型不存在');
+    if (d.notes.some((note) => note.category === name)) throw new HttpError(400, '该类型下还有笔记，请先更换笔记类型');
+    d.categories = d.categories.filter((item) => item !== name);
     db.save();
     return d.categories;
   });

@@ -4,7 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { CONTENT_TYPES, TYPE_LABELS, typeLabel } = require('./content-types');
+const { CONTENT_TYPES, TYPE_LABELS, typeLabel, typeForCategory } = require('./content-types');
 const { normalizeResourceLinks } = require('./resource-links');
 
 const FILE = path.join(__dirname, '../data/db.json');
@@ -16,14 +16,26 @@ function ensureContentTypes() {
     db.notes = [];
     changed = true;
   }
+  const baseCategories = Object.values(TYPE_LABELS);
+  const savedCategories = Array.isArray(db.categories) ? db.categories : [];
+  const customCategories = [...savedCategories, ...db.notes.map((note) => note.category)]
+    .map((name) => String(name || '').trim())
+    .filter((name, index, list) => name && !baseCategories.includes(name) && list.indexOf(name) === index);
+  const categories = [...baseCategories, ...customCategories];
+  if (!Array.isArray(db.categories) || JSON.stringify(db.categories) !== JSON.stringify(categories)) {
+    db.categories = categories;
+    changed = true;
+  }
   db.notes.forEach((note) => {
-    if (!CONTENT_TYPES.includes(note.type)) {
-      note.type = 'material';
+    const category = String(note.category || '').trim();
+    const nextCategory = categories.includes(category) ? category : typeLabel(note.type);
+    const nextType = typeForCategory(nextCategory);
+    if (!CONTENT_TYPES.includes(note.type) || note.type !== nextType) {
+      note.type = nextType;
       changed = true;
     }
-    const category = typeLabel(note.type);
-    if (note.category !== category) {
-      note.category = category;
+    if (note.category !== nextCategory) {
+      note.category = nextCategory;
       changed = true;
     }
     const links = normalizeResourceLinks(note, note.type, true);
@@ -32,11 +44,6 @@ function ensureContentTypes() {
       changed = true;
     }
   });
-  const categories = Object.values(TYPE_LABELS);
-  if (!Array.isArray(db.categories) || JSON.stringify(db.categories) !== JSON.stringify(categories)) {
-    db.categories = categories;
-    changed = true;
-  }
   if (!Array.isArray(db.users)) {
     db.users = [];
     changed = true;
