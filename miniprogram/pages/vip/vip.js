@@ -5,7 +5,7 @@ const PLANS = [
   {
     id: 'month',
     name: '月卡',
-    price: 10,
+    price: 9.9,
     unit: '月',
     features: ['金手指（永久使用权）', '阴阳谱（永久使用权）'],
   },

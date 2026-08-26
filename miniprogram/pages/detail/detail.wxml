@@ -70,11 +70,13 @@
 <view wx:if="{{vipModalVisible}}" class="vip-mask" catchtap="closeVipOffer">
   <view class="vip-panel" catchtap="noop">
     <view class="vip-badge">VIP</view>
-    <view class="vip-title">月卡 ¥9.9</view>
-    <view class="vip-subtitle">添加企业微信，优惠购买</view>
-    <image class="vip-qr" src="{{vipQr}}" mode="aspectFit" bindtap="previewVipQr" />
-    <view class="vip-tip">添加后发送会员编号，管理员为你开通</view>
-    <button class="vip-copy" bindtap="copyMemberCode">复制会员编号</button>
+    <view class="vip-title">9.9元开通月卡</view>
+    <view class="vip-subtitle">微信支付 · 支付成功立即生效</view>
+    <view class="vip-benefit">
+      <view class="vip-benefit-item"><text>✓</text> 30天会员领取权限</view>
+      <view class="vip-benefit-item"><text>✓</text> 支付成功后添加企业微信再送一个月</view>
+    </view>
+    <button class="vip-pay" bindtap="onBuyVip" loading="{{paymentPending}}" disabled="{{paymentPending}}">微信支付 ¥9.9</button>
     <view class="vip-close" bindtap="closeVipOffer">暂不开通</view>
   </view>
 </view>

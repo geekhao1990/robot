@@ -1,5 +1,5 @@
 const PLANS = Object.freeze({
-  month: Object.freeze({ id: 'month', name: '月卡', amount: 1000, days: 30 }),
+  month: Object.freeze({ id: 'month', name: '月卡', amount: 990, days: 30 }),
   year: Object.freeze({ id: 'year', name: '年卡', amount: 9900, days: 365 }),
   lifetime: Object.freeze({ id: 'lifetime', name: '永久卡', amount: 18800, permanent: true }),
 });

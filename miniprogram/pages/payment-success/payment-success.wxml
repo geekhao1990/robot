@@ -1,0 +1,19 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="loading">正在确认支付结果…</view>
+  <view wx:elif="{{verified}}" class="success-card">
+    <view class="success-icon">✓</view>
+    <view class="success-title">月卡开通成功</view>
+    <view class="success-expire">会员有效期至 {{expireText}}</view>
+    <view class="gift-card">
+      <view class="gift-title">添加企业微信，再送一个月会员</view>
+      <view class="gift-subtitle">长按或点击二维码添加，发送下面的会员编号，管理员确认后再赠送30天。</view>
+      <image class="qr" src="{{vipQr}}" mode="aspectFit" bindtap="previewQr" show-menu-by-longpress />
+      <view class="member-code" bindtap="copyMemberCode">
+        <view class="code-label">会员编号</view>
+        <view class="code-value">{{memberCode}}</view>
+        <view class="code-copy">点击复制</view>
+      </view>
+    </view>
+    <button class="done-button" bindtap="goBack">完成</button>
+  </view>
+</view>

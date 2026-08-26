@@ -22,7 +22,7 @@ Page({
     rewardedAdEnabled: config.rewardedAdEnabled === true,
     vipEnabled: false,
     vipModalVisible: false,
-    vipQr: config.vipQr,
+    paymentPending: false,
   },
 
   onLoad(options) {
@@ -139,18 +139,59 @@ Page({
     this.setData({ vipModalVisible: true });
   },
   closeVipOffer() {
-    this.setData({ vipModalVisible: false });
+    if (!this.data.paymentPending) this.setData({ vipModalVisible: false });
   },
-  previewVipQr() {
-    wx.previewImage({ current: config.vipQr, urls: [config.vipQr] });
+  onBuyVip() {
+    if (this.data.paymentPending) return;
+    if (!store.isLogin()) return this.requireLogin();
+    this.setData({ paymentPending: true });
+    wx.showLoading({ title: '创建订单' });
+    api.createVipOrder('month')
+      .then((order) => {
+        wx.hideLoading();
+        if (!order || !order.orderId || !order.payment) throw new Error('支付订单创建失败');
+        return this.requestVipPayment(order.payment).then(() => this.confirmVipPayment(order.orderId, 5));
+      })
+      .catch((error) => {
+        wx.hideLoading();
+        const message = this.paymentErrorText(error);
+        if (/cancel/i.test(message)) wx.showToast({ title: '已取消支付', icon: 'none' });
+        else wx.showModal({ title: '支付失败', content: message, showCancel: false });
+      })
+      .finally(() => this.setData({ paymentPending: false }));
   },
-  copyMemberCode() {
-    const user = store.getUser();
-    if (!user) return this.requireLogin();
-    wx.setClipboardData({
-      data: user.id,
-      success: () => wx.showToast({ title: '会员编号已复制', icon: 'none' }),
+  requestVipPayment(payment) {
+    return new Promise((resolve, reject) => {
+      wx.requestPayment({
+        timeStamp: payment.timeStamp,
+        nonceStr: payment.nonceStr,
+        package: payment.package,
+        signType: payment.signType || 'RSA',
+        paySign: payment.paySign,
+        success: resolve,
+        fail: reject,
+      });
     });
+  },
+  confirmVipPayment(orderId, retries) {
+    wx.showLoading({ title: '确认支付' });
+    return api.getVipOrder(orderId).then((result) => {
+      if (result && result.status === 'SUCCESS' && result.user) {
+        store.setUser(result.user);
+        wx.hideLoading();
+        this.setData({ vipModalVisible: false });
+        wx.navigateTo({ url: `/pages/payment-success/payment-success?orderId=${encodeURIComponent(orderId)}` });
+        return result;
+      }
+      if (retries > 0) {
+        return new Promise((resolve) => setTimeout(resolve, 1000))
+          .then(() => this.confirmVipPayment(orderId, retries - 1));
+      }
+      throw new Error('支付结果确认中，请稍后在“我”页面查看会员状态');
+    });
+  },
+  paymentErrorText(error) {
+    return (error && (error.errMsg || (error.data && error.data.error) || error.message)) || '请稍后重试';
   },
   handleGetResource() {
     const note = this.data.note;
