@@ -89,6 +89,10 @@ function ensureSettings() {
     db.settings.rewardedAdEnabled = false;
     changed = true;
   }
+  if (typeof db.settings.vipEnabled !== 'boolean') {
+    db.settings.vipEnabled = false;
+    changed = true;
+  }
   const configured = notes.find((n) => n.id === db.settings.featuredNoteId);
   let goldNote = configured && configured.type === 'gold'
     ? configured

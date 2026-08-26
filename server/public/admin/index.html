@@ -580,6 +580,14 @@ function renderSettings() {
           </select>
           <div class="hint">关闭后直接展示领取链接；开启后需看完激励广告才能领取。</div>
         </div>
+        <div class="field">
+          <label>VIP 功能</label>
+          <select id="settingVip">
+            <option value="false" ${settings.vipEnabled ? '' : 'selected'}>关闭</option>
+            <option value="true" ${settings.vipEnabled ? 'selected' : ''}>开启</option>
+          </select>
+          <div class="hint">开启后仅有效VIP可进入广告领取，非VIP展示9.9元月卡和企业微信二维码；关闭后所有登录用户按广告设置领取。</div>
+        </div>
         <button class="btn-primary" onclick="saveSettings()">保存设置</button>
       </div>`;
   });
@@ -589,6 +597,7 @@ function saveSettings() {
   const body = {
     featuredNoteId: document.getElementById('settingFeatured').value,
     rewardedAdEnabled: document.getElementById('settingAd').value === 'true',
+    vipEnabled: document.getElementById('settingVip').value === 'true',
   };
   api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(body) })
     .then(() => alert('设置已保存'));

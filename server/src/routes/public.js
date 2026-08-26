@@ -1,6 +1,6 @@
 // server/src/routes/public.js —— 小程序只读接口
 const db = require('../db');
-const { pubUser, pubNote, pubSettings } = require('../util');
+const { vipActive, pubUser, pubNote, pubSettings } = require('../util');
 const auth = require('../auth');
 const { typeLabel } = require('../content-types');
 const { resourceList } = require('../resource-links');
@@ -71,10 +71,14 @@ module.exports = function register(router, HttpError) {
 
   // 激励广告完成后由小程序单独请求。
   router.get('/api/notes/:id/resource', (ctx) => {
-    requireReader(ctx);
-    const note = db.get().notes.find((n) => n.id === ctx.params.id);
+    const reader = requireReader(ctx);
+    const data = db.get();
+    const note = data.notes.find((n) => n.id === ctx.params.id);
     if (!note) throw new HttpError(404, 'not found');
     if (note.type === 'gold') throw new HttpError(400, '金手指内容请通过企业微信领取');
+    if (data.settings && data.settings.vipEnabled === true && !vipActive(reader)) {
+      throw new HttpError(403, '开通VIP后可领取该资源');
+    }
     const resources = resourceList(note);
     if (!resources.length) throw new HttpError(404, '暂未配置获取地址');
     return { resources, url: resources[0].url };

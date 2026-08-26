@@ -66,3 +66,15 @@
     <view class="resource-close" bindtap="closeResourceModal">关闭</view>
   </view>
 </view>
+
+<view wx:if="{{vipModalVisible}}" class="vip-mask" catchtap="closeVipOffer">
+  <view class="vip-panel" catchtap="noop">
+    <view class="vip-badge">VIP</view>
+    <view class="vip-title">月卡 ¥9.9</view>
+    <view class="vip-subtitle">添加企业微信，优惠购买</view>
+    <image class="vip-qr" src="{{vipQr}}" mode="aspectFit" bindtap="previewVipQr" />
+    <view class="vip-tip">添加后发送会员编号，管理员为你开通</view>
+    <button class="vip-copy" bindtap="copyMemberCode">复制会员编号</button>
+    <view class="vip-close" bindtap="closeVipOffer">暂不开通</view>
+  </view>
+</view>

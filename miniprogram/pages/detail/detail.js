@@ -20,6 +20,9 @@ Page({
     resourceModalVisible: false,
     resourceOptions: [],
     rewardedAdEnabled: config.rewardedAdEnabled === true,
+    vipEnabled: false,
+    vipModalVisible: false,
+    vipQr: config.vipQr,
   },
 
   onLoad(options) {
@@ -47,6 +50,7 @@ Page({
     this.settingsPromise = api.getAppSettings().then((settings) => {
       this.setData({
         rewardedAdEnabled: settings.rewardedAdEnabled === true,
+        vipEnabled: settings.vipEnabled === true,
       });
       return settings;
     });
@@ -120,7 +124,33 @@ Page({
   },
   onGetResource() {
     if (this.data.note && this.data.note.type === 'gold') return this.showEnterpriseWechat();
-    return Promise.resolve(this.settingsPromise).then(() => this.handleGetResource());
+    return Promise.resolve(this.settingsPromise).then(() => {
+      if (!this.data.vipEnabled) return this.handleGetResource();
+      return store.syncMe().then((user) => {
+        if (!this.isVipActive(user)) return this.showVipOffer();
+        return this.handleGetResource();
+      });
+    });
+  },
+  isVipActive(user) {
+    return !!(user && (user.vipActive || (user.vip && (user.vipPermanent || (user.vipExpire && user.vipExpire > Date.now())))));
+  },
+  showVipOffer() {
+    this.setData({ vipModalVisible: true });
+  },
+  closeVipOffer() {
+    this.setData({ vipModalVisible: false });
+  },
+  previewVipQr() {
+    wx.previewImage({ current: config.vipQr, urls: [config.vipQr] });
+  },
+  copyMemberCode() {
+    const user = store.getUser();
+    if (!user) return this.requireLogin();
+    wx.setClipboardData({
+      data: user.id,
+      success: () => wx.showToast({ title: '会员编号已复制', icon: 'none' }),
+    });
   },
   handleGetResource() {
     const note = this.data.note;
@@ -181,7 +211,10 @@ Page({
       }));
       if (!resources.length) return toast('管理员尚未配置获取地址');
       this.setData({ resourceOptions: resources, resourceModalVisible: true });
-    }).catch(() => toast('获取地址失败，请联系客服'));
+    }).catch((err) => {
+      if (err && err.statusCode === 403) return this.showVipOffer();
+      toast('获取地址失败，请联系客服');
+    });
   },
   closeResourceModal() {
     this.setData({ resourceModalVisible: false });

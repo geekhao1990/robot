@@ -33,6 +33,7 @@ function pubSettings(data) {
     || notes.find((n) => n.type === 'gold');
   return {
     rewardedAdEnabled: raw.rewardedAdEnabled === true,
+    vipEnabled: raw.vipEnabled === true,
     featuredNoteId: featured ? featured.id : '',
   };
 }

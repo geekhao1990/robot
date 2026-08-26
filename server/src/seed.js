@@ -63,7 +63,7 @@ const admins = [{ username: 'admin', password: 'admin123' }];
 const userState = {};
 // 每个用户的消息数据（通知/会话），首次访问时按模板懒初始化。
 const messageData = {};
-const settings = { rewardedAdEnabled: false, featuredNoteId: 'n3' };
+const settings = { rewardedAdEnabled: false, vipEnabled: false, featuredNoteId: 'n3' };
 
 module.exports = function seed() {
   return { users, notes, categories, hotSearch, admins, userState, messageData, settings, paymentOrders: [] };
