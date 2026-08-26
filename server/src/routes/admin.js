@@ -4,6 +4,7 @@ const auth = require('../auth');
 const { pubSettings } = require('../util');
 const { TYPE_LABELS, normalizeType, typeLabel } = require('../content-types');
 const { getPlan, activateMembership } = require('../membership');
+const { normalizeResourceLinks } = require('../resource-links');
 
 module.exports = function register(router, HttpError) {
   const requireAuth = (ctx) => {
@@ -75,15 +76,17 @@ module.exports = function register(router, HttpError) {
       : officialAuthors[0];
     if (!author) throw new HttpError(400, '请选择有效的官方作者账号');
     const type = normalizeType(b.type);
-    const courseUrl = type === 'gold' ? '' : String(b.courseUrl || '').trim();
-    if (type !== 'gold' && !courseUrl) throw new HttpError(400, '请填写获取地址');
+    const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
+      || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
+    const links = normalizeResourceLinks(b, type, !hasProviderFields);
+    if (type !== 'gold' && !links.baiduUrl && !links.quarkUrl) throw new HttpError(400, '请至少填写一个网盘地址');
     const note = {
       id: 'n' + Date.now(),
       authorId: author.id,
       author: { id: author.id, name: author.name, avatar: author.avatar },
       category: typeLabel(type),
       type,
-      courseUrl,
+      ...links,
       title: b.title || '未命名',
       content: b.content || '',
       images: b.images || [],
@@ -111,8 +114,10 @@ module.exports = function register(router, HttpError) {
     const note = { ...d.notes[i], ...b };
     note.type = normalizeType(Object.prototype.hasOwnProperty.call(b, 'type') ? b.type : note.type);
     note.category = typeLabel(note.type);
-    note.courseUrl = note.type === 'gold' ? '' : String(note.courseUrl || '').trim();
-    if (note.type !== 'gold' && !note.courseUrl) throw new HttpError(400, '请填写获取地址');
+    const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
+      || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
+    Object.assign(note, normalizeResourceLinks(note, note.type, !hasProviderFields));
+    if (note.type !== 'gold' && !note.baiduUrl && !note.quarkUrl) throw new HttpError(400, '请至少填写一个网盘地址');
     if (d.settings && d.settings.featuredNoteId === note.id && note.type !== 'gold') {
       throw new HttpError(400, '加号入口笔记必须保持为金手指类型');
     }

@@ -262,6 +262,9 @@ function drawNotes() {
 let _modalImages = [];
 function editNote(id) {
   const n = id ? _notes.find((x) => x.id === id) : {};
+  const legacyLink = n.courseUrl || '';
+  const baiduLink = n.baiduUrl || (legacyLink && !/quark\.cn/i.test(legacyLink) ? legacyLink : '');
+  const quarkLink = n.quarkUrl || (legacyLink && /quark\.cn/i.test(legacyLink) ? legacyLink : '');
   const officialAuthors = _users.filter((u) => u.official === true);
   const userOpts = officialAuthors.map((u) => `<option value="${u.id}" ${n.authorId === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
   if (!userOpts) return alert('请先在用户管理中创建并标记官方账号');
@@ -275,7 +278,11 @@ function editNote(id) {
       <option value="course" ${n.type === 'course' ? 'selected' : ''}>课程</option>
       <option value="gold" ${n.type === 'gold' ? 'selected' : ''}>金手指</option>
     </select></div>
-    <div class="field" id="resourceField"><label>获取地址（资料 / 课程）</label><input id="f_course" value="${esc(n.courseUrl)}" placeholder="百度网盘或夸克网盘链接及提取码" /></div>
+    <div id="resourceField">
+      <div class="field"><label>百度网盘地址（选填）</label><input id="f_baidu" value="${esc(baiduLink)}" placeholder="百度网盘链接及提取码" /></div>
+      <div class="field"><label>夸克网盘地址（选填）</label><input id="f_quark" value="${esc(quarkLink)}" placeholder="夸克网盘链接及提取码" /></div>
+      <div class="hint">至少填写一个；前台只显示已填写的网盘。</div>
+    </div>
     <div class="field" id="goldHint"><div class="hint">金手指点击领取后展示企业微信二维码，无需填写获取地址。</div></div>
     <div class="field"><label>图片</label>
       <div id="imgGrid" class="img-grid"></div>
@@ -283,15 +290,17 @@ function editNote(id) {
     </div>
     ${id ? `<div class="hint">互动数据：赞 ${n.likes || 0} · 藏 ${n.collects || 0} · 评 ${n.comments || 0}（不可修改）</div>` : ''}
   `, () => {
-    const link = document.getElementById('f_course').value.trim();
+    const baiduUrl = document.getElementById('f_baidu').value.trim();
+    const quarkUrl = document.getElementById('f_quark').value.trim();
     const type = document.getElementById('f_type').value;
-    if (!link && type !== 'gold') return alert('请填写百度网盘或夸克网盘地址');
+    if (!baiduUrl && !quarkUrl && type !== 'gold') return alert('请至少填写一个网盘地址');
     const body = {
       title: document.getElementById('f_title').value,
       content: document.getElementById('f_content').value,
       authorId: document.getElementById('f_author').value,
       type,
-      courseUrl: link,
+      baiduUrl,
+      quarkUrl,
       images: _modalImages,
     };
     const req = id ? api('/api/admin/notes/' + id, { method: 'PUT', body: JSON.stringify(body) })

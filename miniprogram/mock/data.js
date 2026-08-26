@@ -108,6 +108,7 @@ const rawNotes = [
   },
   {
     id: 'n13', authorId: 'u6', category: '数码', type: 'course',
+    baiduUrl: 'https://pan.baidu.com/s/1AbCdEfGhIjKlMn 提取码: xhs8',
     courseUrl: 'https://pan.baidu.com/s/1AbCdEfGhIjKlMn 提取码: xhs8',
     title: '【保姆级教程】从0到1搭建你的第一个网站', ratio: 1.15,
     images: ['course1', 'course2'],

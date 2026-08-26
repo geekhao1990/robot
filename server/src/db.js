@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const { CONTENT_TYPES, TYPE_LABELS, typeLabel } = require('./content-types');
+const { normalizeResourceLinks } = require('./resource-links');
 
 const FILE = path.join(__dirname, '../data/db.json');
 let db = null;
@@ -25,8 +26,9 @@ function ensureContentTypes() {
       note.category = category;
       changed = true;
     }
-    if (note.type === 'gold' && note.courseUrl) {
-      note.courseUrl = '';
+    const links = normalizeResourceLinks(note, note.type, true);
+    if (note.baiduUrl !== links.baiduUrl || note.quarkUrl !== links.quarkUrl || note.courseUrl !== links.courseUrl) {
+      Object.assign(note, links);
       changed = true;
     }
   });
@@ -92,8 +94,8 @@ function ensureSettings() {
       changed = true;
     }
   }
-  if (goldNote && goldNote.courseUrl) {
-    goldNote.courseUrl = '';
+  if (goldNote && (goldNote.courseUrl || goldNote.baiduUrl || goldNote.quarkUrl)) {
+    Object.assign(goldNote, normalizeResourceLinks(goldNote, 'gold'));
     changed = true;
   }
   if (db.settings.featuredNoteId !== (goldNote ? goldNote.id : '')) {

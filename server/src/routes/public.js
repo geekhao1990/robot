@@ -3,6 +3,7 @@ const db = require('../db');
 const { pubUser, pubNote, pubSettings } = require('../util');
 const auth = require('../auth');
 const { typeLabel } = require('../content-types');
+const { resourceList } = require('../resource-links');
 
 module.exports = function register(router, HttpError) {
   const requireReader = (ctx) => {
@@ -74,8 +75,9 @@ module.exports = function register(router, HttpError) {
     const note = db.get().notes.find((n) => n.id === ctx.params.id);
     if (!note) throw new HttpError(404, 'not found');
     if (note.type === 'gold') throw new HttpError(400, '金手指内容请通过企业微信领取');
-    if (!note.courseUrl) throw new HttpError(404, '暂未配置获取地址');
-    return { url: note.courseUrl };
+    const resources = resourceList(note);
+    if (!resources.length) throw new HttpError(404, '暂未配置获取地址');
+    return { resources, url: resources[0].url };
   });
 
   router.get('/api/users/:id', (ctx) => {

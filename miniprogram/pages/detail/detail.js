@@ -17,6 +17,8 @@ Page({
     resourceLabel: '点击领取',
     followed: false,
     inviteCode: '',
+    resourceModalVisible: false,
+    resourceOptions: [],
     rewardedAdEnabled: config.rewardedAdEnabled === true,
   },
 
@@ -162,15 +164,40 @@ Page({
     });
   },
   showResource() {
-    api.getResource(this.data.note.id).then(({ url }) => {
-      wx.showModal({
-        title: '领取成功',
-        content: url,
-        confirmText: '复制链接',
-        cancelText: '关闭',
-        success: (res) => { if (res.confirm) wx.setClipboardData({ data: url }); },
-      });
+    api.getResource(this.data.note.id).then((result) => {
+      let resources = Array.isArray(result.resources) ? result.resources : [];
+      if (!resources.length && result.url) {
+        const provider = /quark\.cn/i.test(result.url) ? 'quark' : 'baidu';
+        resources = [{
+          provider,
+          name: provider === 'quark' ? '夸克网盘' : '百度网盘',
+          url: result.url,
+        }];
+      }
+      resources = resources.filter((item) => item && item.url).map((item) => ({
+        provider: item.provider === 'quark' ? 'quark' : 'baidu',
+        name: item.name || (item.provider === 'quark' ? '夸克网盘' : '百度网盘'),
+        url: item.url,
+      }));
+      if (!resources.length) return toast('管理员尚未配置获取地址');
+      this.setData({ resourceOptions: resources, resourceModalVisible: true });
     }).catch(() => toast('获取地址失败，请联系客服'));
+  },
+  closeResourceModal() {
+    this.setData({ resourceModalVisible: false });
+  },
+  noop() {},
+  copyResourceLink(e) {
+    const resource = this.data.resourceOptions[Number(e.currentTarget.dataset.index)];
+    if (!resource || !resource.url) return;
+    wx.setClipboardData({
+      data: resource.url,
+      success: () => {
+        this.closeResourceModal();
+        wx.showToast({ title: `已复制，请打开${resource.name}`, icon: 'none', duration: 2200 });
+      },
+      fail: () => toast('复制失败，请重试'),
+    });
   },
   onShareAppMessage() {
     const note = this.data.note || {};

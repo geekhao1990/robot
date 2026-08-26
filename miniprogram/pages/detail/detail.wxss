@@ -383,6 +383,98 @@
   background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNTU1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PHBhdGggZD0iTTQgMTJ2N2ExIDEgMCAwIDAgMSAxaDE0YTEgMSAwIDAgMCAxLTF2LTciLz48cGF0aCBkPSJNMTIgM3YxMiIvPjxwYXRoIGQ9Ik03LjUgNy41TDEyIDNsNC41IDQuNSIvPjwvc3ZnPg==");
 }
 
+/* 网盘领取 */
+.resource-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, .42);
+}
+.resource-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 34rpx 28rpx calc(24rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  border-radius: 28rpx 28rpx 0 0;
+  box-sizing: border-box;
+}
+.resource-title {
+  color: #222;
+  font-size: 32rpx;
+  font-weight: 700;
+  text-align: center;
+}
+.resource-subtitle {
+  margin-top: 10rpx;
+  color: #999;
+  font-size: 23rpx;
+  text-align: center;
+}
+.resource-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+  margin-top: 30rpx;
+}
+.resource-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 22rpx 22rpx;
+  background: #f7f8fa;
+  border: 2rpx solid transparent;
+  border-radius: 18rpx;
+}
+.resource-item.baidu { border-color: #dce8ff; }
+.resource-item.quark { border-color: #ffe1e8; }
+.resource-brand {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  color: #222;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+.resource-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 58rpx;
+  height: 58rpx;
+  margin-right: 16rpx;
+  color: #fff;
+  font-size: 25rpx;
+  font-weight: 700;
+  border-radius: 16rpx;
+  background: #3b76f6;
+}
+.resource-item.quark .resource-logo { background: #ff4d68; }
+.resource-copy {
+  flex-shrink: 0;
+  min-height: 0;
+  margin: 0 0 0 16rpx;
+  padding: 14rpx 24rpx;
+  color: #fff;
+  font-size: 24rpx;
+  line-height: 1;
+  background: #3b76f6;
+  border-radius: 999rpx;
+}
+.resource-item.quark .resource-copy { background: #ff2442; }
+.resource-copy::after { border: 0; }
+.resource-close {
+  margin-top: 24rpx;
+  padding: 18rpx 0 6rpx;
+  color: #777;
+  font-size: 28rpx;
+  text-align: center;
+}
+
 /* 选择好友面板 */
 .friend-panel {
   position: absolute;

@@ -13,6 +13,17 @@ function remote() {
   return !!config.useRemote;
 }
 
+function resourceOptionsOf(note) {
+  if (!note) return [];
+  const options = [];
+  const legacy = String(note.courseUrl || '').trim();
+  const baiduUrl = String(note.baiduUrl || (!/quark\.cn/i.test(legacy) ? legacy : '')).trim();
+  const quarkUrl = String(note.quarkUrl || (/quark\.cn/i.test(legacy) ? legacy : '')).trim();
+  if (baiduUrl) options.push({ provider: 'baidu', name: '百度网盘', url: baiduUrl });
+  if (quarkUrl) options.push({ provider: 'quark', name: '夸克网盘', url: quarkUrl });
+  return options;
+}
+
 // 通用请求封装（支持鉴权 token）
 function request(method, path, { data, auth, timeout = 10000 } = {}) {
   return new Promise((resolve, reject) => {
@@ -56,7 +67,7 @@ function decorate(note) {
   const bump = remote() ? 0 : 1;
   return {
     ...note,
-    hasResource: !!(note.hasResource || note.courseUrl),
+    hasResource: !!(note.hasResource || resourceOptionsOf(note).length),
     liked,
     collected,
     likes: note.likes + (liked ? bump : 0),
@@ -113,7 +124,8 @@ function getNoteById(id) {
 function getResource(id) {
   if (!remote()) {
     const note = allNotes().find((n) => n.id === id);
-    return delay({ url: (note && note.courseUrl) || '' }, 0);
+    const resources = resourceOptionsOf(note);
+    return delay({ resources, url: resources[0] ? resources[0].url : '' }, 0);
   }
   return request('GET', '/api/notes/' + id + '/resource', { auth: true });
 }

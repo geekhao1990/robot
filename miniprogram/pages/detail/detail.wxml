@@ -49,3 +49,20 @@
   </view>
 </view>
 <view wx:else class="placeholder"></view>
+
+<view wx:if="{{resourceModalVisible}}" class="resource-mask" catchtap="closeResourceModal">
+  <view class="resource-panel" catchtap="noop">
+    <view class="resource-title">选择领取方式</view>
+    <view class="resource-subtitle">链接复制后，打开对应网盘即可领取</view>
+    <view class="resource-list">
+      <view wx:for="{{resourceOptions}}" wx:key="provider" class="resource-item {{item.provider}}">
+        <view class="resource-brand">
+          <view class="resource-logo">{{item.provider === 'quark' ? '夸' : '度'}}</view>
+          <text>{{item.name}}</text>
+        </view>
+        <button class="resource-copy" data-index="{{index}}" bindtap="copyResourceLink">复制链接</button>
+      </view>
+    </view>
+    <view class="resource-close" bindtap="closeResourceModal">关闭</view>
+  </view>
+</view>
