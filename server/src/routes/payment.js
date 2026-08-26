@@ -86,7 +86,7 @@ module.exports = function register(router, HttpError) {
       } else order.status = result.trade_state || order.status;
       db.save();
     }
-    return { orderId: order.id, status: order.status, user: pubUser(user) };
+    return { orderId: order.id, status: order.status, user: pubUser(user, true) };
   });
 
   router.post('/api/payments/notify', (ctx) => {

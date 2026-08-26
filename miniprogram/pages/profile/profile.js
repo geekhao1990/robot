@@ -14,6 +14,12 @@ Page({
     currentNotes: [], left: [], right: [],
     emptyText: '还没有收藏的笔记',
     accessText: '',
+    phoneText: '未绑定手机号',
+    editingProfile: false,
+    savingProfile: false,
+    bindingPhone: false,
+    draftName: '',
+    draftAvatar: '',
   },
   onLoad() {
     const app = getApp();
@@ -26,6 +32,7 @@ Page({
       this.setData({
         user,
         loggedIn: !!user,
+        phoneText: this.phoneText(user && user.phone),
         accessText: user
           ? (config.useRemote || config.previewAuthRemote || config.wechatAuthRemote ? '已登录' : '已登录（模拟）')
           : '',
@@ -56,6 +63,79 @@ Page({
         this.setData({ currentNotes: [], left: [], right: [], emptyText: '暂无权限查看' });
       }
     });
+  },
+  phoneText(phone) {
+    const value = String(phone || '');
+    if (value.length === 11) return value.slice(0, 3) + '****' + value.slice(7);
+    return value || '未绑定手机号';
+  },
+  openProfileEditor() {
+    const user = store.getUser();
+    if (!user) return this.goLogin();
+    this.setData({
+      editingProfile: true,
+      draftName: user.name || '',
+      draftAvatar: user.avatar || '',
+    });
+  },
+  closeProfileEditor() {
+    if (!this.data.savingProfile && !this.data.bindingPhone) this.setData({ editingProfile: false });
+  },
+  onNameInput(e) {
+    this.setData({ draftName: e.detail.value });
+  },
+  onChooseAvatar(e) {
+    const avatarUrl = e.detail && e.detail.avatarUrl;
+    if (avatarUrl) this.setData({ draftAvatar: avatarUrl });
+  },
+  saveProfile() {
+    if (this.data.savingProfile) return;
+    const name = String(this.data.draftName || '').trim();
+    const avatar = String(this.data.draftAvatar || '').trim();
+    if (!avatar) return wx.showToast({ title: '请先选择头像', icon: 'none' });
+    if (!name) return wx.showToast({ title: '请输入昵称', icon: 'none' });
+    this.setData({ savingProfile: true });
+    wx.showLoading({ title: '保存中' });
+    const upload = /^https?:\/\//i.test(avatar) ? Promise.resolve(avatar) : api.uploadImage(avatar);
+    upload
+      .then((avatarUrl) => store.updateProfile({ name, avatar: avatarUrl }))
+      .then((user) => {
+        this.setData({ user, editingProfile: false, phoneText: this.phoneText(user.phone) });
+        wx.hideLoading();
+        wx.showToast({ title: '资料已更新', icon: 'success' });
+      })
+      .catch((err) => {
+        wx.hideLoading();
+        wx.showModal({ title: '保存失败', content: this.errorText(err), showCancel: false });
+      })
+      .finally(() => {
+        this.setData({ savingProfile: false });
+      });
+  },
+  onGetPhoneNumber(e) {
+    if (this.data.bindingPhone) return;
+    const detail = e.detail || {};
+    if (!detail.code || !/getPhoneNumber:ok/i.test(detail.errMsg || '')) {
+      return wx.showToast({ title: '未授权手机号', icon: 'none' });
+    }
+    this.setData({ bindingPhone: true });
+    wx.showLoading({ title: '绑定中' });
+    store.bindPhone(detail.code)
+      .then((user) => {
+        this.setData({ user, phoneText: this.phoneText(user.phone) });
+        wx.hideLoading();
+        wx.showToast({ title: '手机号已绑定', icon: 'success' });
+      })
+      .catch((err) => {
+        wx.hideLoading();
+        wx.showModal({ title: '绑定失败', content: this.errorText(err), showCancel: false });
+      })
+      .finally(() => {
+        this.setData({ bindingPhone: false });
+      });
+  },
+  errorText(err) {
+    return (err && (err.errMsg || (err.data && err.data.error) || err.message)) || '请稍后重试';
   },
   goLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
   goPoints() {

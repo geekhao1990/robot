@@ -213,6 +213,14 @@ function getMe() {
   return request('GET', '/api/me', { auth: true });
 }
 
+function updateMyProfile(profile) {
+  return request('PUT', '/api/me/profile', { auth: true, data: profile });
+}
+
+function bindWechatPhone(code) {
+  return request('POST', '/api/me/phone', { auth: true, data: { code } });
+}
+
 function createVipOrder(plan) {
   return request('POST', '/api/payments/orders', { auth: true, data: { plan } });
 }
@@ -418,6 +426,8 @@ module.exports = {
   // 登录 / 当前用户
   login,
   getMe,
+  updateMyProfile,
+  bindWechatPhone,
   createVipOrder,
   getVipOrder,
   getPoints,

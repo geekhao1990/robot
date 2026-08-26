@@ -4,7 +4,7 @@ const db = require('../db');
 const { pubUser, pubNote } = require('../util');
 const auth = require('../auth');
 const crypto = require('crypto');
-const { code2Session } = require('../wechat');
+const { code2Session, getPhoneNumber } = require('../wechat');
 
 function getState(userId) {
   const d = db.get();
@@ -205,7 +205,7 @@ module.exports = function register(router, HttpError) {
     inviteCodeFor(user);
     db.save();
     const token = auth.issue(user.id);
-    return { token, user: pubUser(user) };
+    return { token, user: pubUser(user, true) };
   });
 
   // 当前用户 + 交互状态
@@ -213,11 +213,37 @@ module.exports = function register(router, HttpError) {
     const u = currentUser(ctx);
     const s = getState(u.id);
     return {
-      user: pubUser(u),
+      user: pubUser(u, true),
       likes: Object.keys(s.likes),
       collects: Object.keys(s.collects),
       follows: Object.keys(s.follows),
     };
+  });
+
+  // 用户本人修改头像和昵称。昵称允许重复，只做长度和空值校验。
+  router.put('/api/me/profile', (ctx) => {
+    const user = currentUser(ctx);
+    const body = ctx.body || {};
+    const name = String(body.name || '').trim();
+    const avatar = String(body.avatar || '').trim();
+    if (!name) throw new HttpError(400, '昵称不能为空');
+    if (name.length > 24) throw new HttpError(400, '昵称最多24个字符');
+    if (!avatar) throw new HttpError(400, '请先选择头像');
+    user.name = name;
+    user.avatar = avatar;
+    db.save();
+    return { user: pubUser(user, true) };
+  });
+
+  // 手机号必须使用微信 getPhoneNumber 返回的一次性 code，由服务端向微信换取。
+  router.post('/api/me/phone', async (ctx) => {
+    const user = currentUser(ctx);
+    const phoneInfo = await getPhoneNumber(String((ctx.body || {}).code || ''));
+    user.phone = phoneInfo.purePhoneNumber || phoneInfo.phoneNumber || '';
+    user.phoneCountryCode = phoneInfo.countryCode || '86';
+    user.phoneBoundAt = Date.now();
+    db.save();
+    return { user: pubUser(user, true) };
   });
 
   router.get('/api/points', (ctx) => {

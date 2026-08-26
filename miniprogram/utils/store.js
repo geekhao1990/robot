@@ -162,6 +162,25 @@ function syncMe() {
     .catch(() => state.user);
 }
 
+function updateProfile(profile) {
+  if (!authRemote()) {
+    setUser({ ...state.user, ...profile });
+    return Promise.resolve(state.user);
+  }
+  return getApi().updateMyProfile(profile).then((result) => {
+    if (result && result.user) setUser(result.user);
+    return state.user;
+  });
+}
+
+function bindPhone(code) {
+  if (!authRemote()) return Promise.reject(new Error('手机号授权仅支持真实微信登录'));
+  return getApi().bindWechatPhone(code).then((result) => {
+    if (result && result.user) setUser(result.user);
+    return state.user;
+  });
+}
+
 function logout() {
   setToken(null);
   setUser(null);
@@ -318,7 +337,7 @@ function isConvRead(id) {
 module.exports = {
   init,
   getToken, setToken,
-  getUser, setUser, login, syncMe, logout, isLogin,
+  getUser, setUser, login, syncMe, updateProfile, bindPhone, logout, isLogin,
   captureInvite, getPendingInvite,
   isLiked, toggleLike,
   isCollected, toggleCollect,
