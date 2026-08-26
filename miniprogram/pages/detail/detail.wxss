@@ -479,6 +479,21 @@
   margin-left: 6rpx;
   flex-shrink: 0;
 }
+.share-action {
+  box-sizing: content-box;
+  min-height: 0;
+  padding: 0;
+  color: inherit;
+  line-height: normal;
+  background: transparent;
+  border-radius: 0;
+}
+.share-action::after {
+  border: 0;
+}
+.share-action[disabled] {
+  opacity: .45;
+}
 .ic {
   width: 44rpx;
   height: 44rpx;

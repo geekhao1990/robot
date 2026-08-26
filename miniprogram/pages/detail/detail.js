@@ -16,10 +16,12 @@ Page({
     timeText: '',
     resourceLabel: '点击领取',
     followed: false,
+    inviteCode: '',
     rewardedAdEnabled: config.rewardedAdEnabled === true,
   },
 
   onLoad(options) {
+    store.captureInvite(options);
     const app = getApp();
     this.setData({
       statusBarHeight: app.globalData.statusBarHeight,
@@ -27,6 +29,7 @@ Page({
       headerHeight: app.globalData.statusBarHeight + app.globalData.navBarHeight,
     });
     this.noteId = options.id;
+    this.loadInviteCode();
     this.loadSettings();
     this.loadNote();
   },
@@ -46,6 +49,20 @@ Page({
       return settings;
     });
     return this.settingsPromise;
+  },
+
+  loadInviteCode() {
+    const user = store.getUser();
+    const cachedCode = user && user.inviteCode;
+    if (cachedCode) this.setData({ inviteCode: cachedCode });
+    if (!store.isLogin()) return Promise.resolve('');
+    return api.getInvites()
+      .then((result) => {
+        const inviteCode = (result && result.inviteCode) || cachedCode || '';
+        this.setData({ inviteCode });
+        return inviteCode;
+      })
+      .catch(() => cachedCode || '');
   },
 
   loadNote() {
@@ -154,6 +171,18 @@ Page({
         success: (res) => { if (res.confirm) wx.setClipboardData({ data: url }); },
       });
     }).catch(() => toast('获取地址失败，请联系客服'));
+  },
+  onShareAppMessage() {
+    const note = this.data.note || {};
+    const inviteCode = this.data.inviteCode || '';
+    const query = [`id=${encodeURIComponent(note.id || this.noteId || '')}`];
+    if (inviteCode) query.push(`invite=${encodeURIComponent(inviteCode)}`);
+    const share = {
+      title: note.title || '分享一篇笔记给你',
+      path: `/pages/detail/detail?${query.join('&')}`,
+    };
+    if (note.images && note.images[0]) share.imageUrl = note.images[0];
+    return share;
   },
   goService() { wx.switchTab({ url: '/pages/agent/agent' }); },
   goBack() { wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) }); },
