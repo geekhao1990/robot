@@ -209,7 +209,8 @@
 }
 
 .course-btn {
-  flex: 0 0 180rpx;
+  flex: 1 1 auto;
+  min-width: 0;
   height: 76rpx;
   line-height: 76rpx;
   text-align: center;
@@ -218,7 +219,7 @@
   font-size: 28rpx;
   font-weight: 600;
   border-radius: 999rpx;
-  margin-right: 10rpx;
+  margin-right: 8rpx;
 }
 /* 评论点赞（竖排小爱心） */
 .c-like {
@@ -564,12 +565,12 @@
 }
 .action {
   display: flex;
-  flex: 1 1 0;
+  flex: 0 0 58rpx;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 0;
-  min-width: 0;
+  width: 58rpx;
+  min-width: 58rpx;
   height: 76rpx;
   margin: 0;
   padding: 0;
@@ -591,8 +592,8 @@
   opacity: .45;
 }
 .ic {
-  width: 42rpx;
-  height: 42rpx;
+  width: 36rpx;
+  height: 36rpx;
   background-size: 100% 100%;
   background-repeat: no-repeat;
 }
@@ -615,7 +616,7 @@
 }
 .num {
   max-width: 100%;
-  font-size: 21rpx;
+  font-size: 18rpx;
   color: #666;
   margin-top: 5rpx;
   line-height: 1;
