@@ -432,8 +432,7 @@ function drawUsers() {
   const kw = _userKeyword.toLowerCase();
   const all = kw ? _users.filter((u) =>
     (u.name || '').toLowerCase().includes(kw) ||
-    (u.id || '').toLowerCase().includes(kw) ||
-    (u.phone || '').includes(kw)
+    (u.id || '').toLowerCase().includes(kw)
   ) : _users;
   const total = all.length;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -450,7 +449,6 @@ function drawUsers() {
         <td>${start + i + 1}</td>
         <td><img src="${esc(u.avatar)}" /></td>
         <td>${esc(u.name)}</td>
-        <td>${esc(u.phone || '未绑定')}</td>
         <td>
           ${Array.isArray(u.tags) && u.tags.includes('new') ? '<span class="tag new">新用户</span>' : ''}
           <div class="hint">${esc(u.id)}</div>
@@ -470,13 +468,13 @@ function drawUsers() {
   document.getElementById('content').innerHTML = `
     <div class="toolbar">
       <div class="search-box">
-        <input id="userSearch" class="search" placeholder="按昵称、手机号或会员编号搜索" value="${esc(_userKeyword)}"
+        <input id="userSearch" class="search" placeholder="按昵称或会员编号搜索" value="${esc(_userKeyword)}"
                onkeydown="if(event.key==='Enter')doUserSearch()" />
         <button class="btn-primary" onclick="doUserSearch()">搜索</button>
       </div>
       <button class="btn-primary" onclick="editUser()">+ 新增用户</button>
     </div>
-    <table><thead><tr><th>序号</th><th>头像</th><th>昵称</th><th>手机号</th><th>注册信息</th><th>账号类型</th><th>VIP 状态</th><th>操作</th></tr></thead>
+    <table><thead><tr><th>序号</th><th>头像</th><th>昵称</th><th>注册信息</th><th>账号类型</th><th>VIP 状态</th><th>操作</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${pagerHtml(_userPage, pages, total, 'gotoUserPage')}`;
 }
@@ -491,8 +489,7 @@ function editUser(id) {
   _modalAvatar = u.avatar || '';
   openModal(`${id ? '编辑' : '新增'}用户`, `
     <div class="field"><label>昵称</label><input id="u_name" value="${esc(u.name)}" /></div>
-    ${id ? `<div class="field"><label>手机号</label><input value="${esc(u.phone || '未绑定')}" disabled /><div class="hint">手机号只能由用户在小程序内通过微信授权绑定</div></div>` : ''}
-    <div class="field"><label>头像</label><div id="userAvatarPicker" class="avatar-picker"></div><div class="hint">支持 JPG、PNG、GIF、WebP，上限8MB</div></div>
+    <div class="field"><label>头像</label><div id="userAvatarPicker" class="avatar-picker"></div><div class="hint">支持 JPG、PNG、GIF、WebP，上限5MB</div></div>
     <div class="field"><label>简介</label><input id="u_desc" value="${esc(u.desc)}" /></div>
     <div class="field"><label>账号类型</label><select id="u_official">
       <option value="false" ${u.official ? '' : 'selected'}>普通用户（不可发布笔记）</option>
@@ -582,8 +579,7 @@ function drawPaymentOrders() {
     const user = order.user || {};
     return (order.id || '').toLowerCase().includes(keyword) ||
       (user.id || '').toLowerCase().includes(keyword) ||
-      (user.name || '').toLowerCase().includes(keyword) ||
-      (user.phone || '').includes(keyword);
+      (user.name || '').toLowerCase().includes(keyword);
   }) : _paymentOrders;
   const total = all.length;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -598,7 +594,7 @@ function drawPaymentOrders() {
     return `<tr>
       <td>${start + index + 1}</td>
       <td><strong>${esc(order.id)}</strong><div class="hint">微信单号：${esc(order.transactionId || '—')}</div></td>
-      <td>${esc(user.name || '用户不存在')}<div class="hint">${esc(user.id || order.userId || '')}</div><div class="hint">${esc(user.phone || '')}</div></td>
+      <td>${esc(user.name || '用户不存在')}<div class="hint">${esc(user.id || order.userId || '')}</div></td>
       <td>${order.plan === 'month' ? '月卡' : esc(order.plan)}<div class="hint">¥${((Number(order.amount) || 0) / 100).toFixed(2)}</div></td>
       <td>${paymentStatus(order)}</td>
       <td>${order.createdAt ? fmtDate(order.createdAt) : '—'}<div class="hint">${order.paidAt ? '支付于 ' + fmtDate(order.paidAt) : ''}</div></td>
@@ -609,7 +605,7 @@ function drawPaymentOrders() {
   document.getElementById('content').innerHTML = `
     <div class="toolbar">
       <div class="search-box">
-        <input id="orderSearch" class="search" placeholder="按订单号、昵称、手机号或会员编号搜索" value="${esc(_orderKeyword)}" onkeydown="if(event.key==='Enter')doOrderSearch()" />
+        <input id="orderSearch" class="search" placeholder="按订单号、昵称或会员编号搜索" value="${esc(_orderKeyword)}" onkeydown="if(event.key==='Enter')doOrderSearch()" />
         <button class="btn-primary" onclick="doOrderSearch()">搜索</button>
       </div>
       <div class="hint">添加企业微信赠送月卡：每个账号仅可核销一次</div>
@@ -658,7 +654,7 @@ function drawWithdrawals() {
   const keyword = _withdrawKeyword.toLowerCase();
   const filtered = keyword ? _withdrawals.filter((item) => {
     const user = item.user || {};
-    return [item.id, item.realName, item.contact, user.id, user.name, user.phone]
+    return [item.id, item.realName, item.contact, user.id, user.name]
       .some((value) => String(value || '').toLowerCase().includes(keyword));
   }) : _withdrawals;
   const total = filtered.length;

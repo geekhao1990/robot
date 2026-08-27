@@ -8,14 +8,9 @@ function vipActive(user) {
 }
 
 // 对外输出的用户对象（附带 vipActive）
-function pubUser(user, includePrivate = false) {
+function pubUser(user) {
   if (!user) return user;
   const { wxOpenId, phone, phoneCountryCode, phoneBoundAt, ...safe } = user;
-  if (includePrivate) {
-    safe.phone = phone || '';
-    safe.phoneCountryCode = phoneCountryCode || '';
-    safe.phoneBoundAt = phoneBoundAt || 0;
-  }
   return { ...safe, vipActive: vipActive(user) };
 }
 

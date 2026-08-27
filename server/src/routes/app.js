@@ -4,7 +4,7 @@ const db = require('../db');
 const { pubUser, pubNote } = require('../util');
 const auth = require('../auth');
 const crypto = require('crypto');
-const { code2Session, getPhoneNumber } = require('../wechat');
+const { code2Session } = require('../wechat');
 
 function getState(userId) {
   const d = db.get();
@@ -266,17 +266,6 @@ module.exports = function register(router, HttpError) {
     return { user: pubUser(user, true) };
   });
 
-  // 手机号必须使用微信 getPhoneNumber 返回的一次性 code，由服务端向微信换取。
-  router.post('/api/me/phone', async (ctx) => {
-    const user = currentUser(ctx);
-    const phoneInfo = await getPhoneNumber(String((ctx.body || {}).code || ''));
-    user.phone = phoneInfo.purePhoneNumber || phoneInfo.phoneNumber || '';
-    user.phoneCountryCode = phoneInfo.countryCode || '86';
-    user.phoneBoundAt = Date.now();
-    db.save();
-    return { user: pubUser(user, true) };
-  });
-
   router.get('/api/points', (ctx) => {
     const user = currentUser(ctx);
     return pointSummary(getPointAccount(user.id));
@@ -303,7 +292,7 @@ module.exports = function register(router, HttpError) {
     if (!Number.isFinite(amountYuan) || amountYuan < 1) throw new HttpError(400, '最低提现1元');
     if (Math.round(amountYuan * 100) !== amountYuan * 100) throw new HttpError(400, '提现金额最多保留两位小数');
     if (!realName || realName.length > 30) throw new HttpError(400, '请填写正确的收款人姓名');
-    if (!contact || contact.length > 60) throw new HttpError(400, '请填写收款微信号或手机号');
+    if (!contact || contact.length > 60) throw new HttpError(400, '请填写收款微信号');
     const points = Math.round(amountYuan * POINT_RULES.pointsPerYuan);
     const account = getPointAccount(user.id);
     if (account.balance < points) {

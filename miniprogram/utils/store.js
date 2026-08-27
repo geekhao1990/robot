@@ -173,14 +173,6 @@ function updateProfile(profile) {
   });
 }
 
-function bindPhone(code) {
-  if (!authRemote()) return Promise.reject(new Error('手机号授权仅支持真实微信登录'));
-  return getApi().bindWechatPhone(code).then((result) => {
-    if (result && result.user) setUser(result.user);
-    return state.user;
-  });
-}
-
 function logout() {
   setToken(null);
   setUser(null);
@@ -337,7 +329,7 @@ function isConvRead(id) {
 module.exports = {
   init,
   getToken, setToken,
-  getUser, setUser, login, syncMe, updateProfile, bindPhone, logout, isLogin,
+  getUser, setUser, login, syncMe, updateProfile, logout, isLogin,
   captureInvite, getPendingInvite,
   isLiked, toggleLike,
   isCollected, toggleCollect,
