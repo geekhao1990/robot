@@ -220,7 +220,7 @@ Page({
     if (this._openingGoldAssistant) return;
     this._openingGoldAssistant = true;
     const messageKey = 'agent_auto_message';
-    wx.showLoading({ title: '正在连接 AI 助手', mask: true });
+    wx.showLoading({ title: '请稍后...', mask: true });
     setTimeout(() => {
       wx.setStorageSync(messageKey, '金手指');
       wx.switchTab({
