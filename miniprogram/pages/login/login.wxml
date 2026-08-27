@@ -4,14 +4,21 @@
     <view class="slogan">标记我的生活</view>
   </view>
 
-  <view class="wx-box">
+  <view wx:if="{{!phoneStep}}" class="wx-box">
     <view class="wx-icon">💬</view>
     <view class="wx-tip">{{loginTip}}</view>
   </view>
 
-  <button class="wx-login-btn" bindtap="onWechatLogin" disabled="{{loggingIn}}">
+  <button wx:if="{{!phoneStep}}" class="wx-login-btn" bindtap="onWechatLogin" disabled="{{loggingIn}}">
     <text class="wx-logo">💬</text> {{loginText}}
   </button>
+
+  <view wx:else class="phone-consent">
+    <view class="phone-title">是否授权手机号</view>
+    <view class="phone-desc">授权后便于完善账号信息；不同意也可以正常进入和使用小程序。</view>
+    <button class="phone-allow" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber" loading="{{bindingPhone}}" disabled="{{bindingPhone}}">同意并获取手机号</button>
+    <button class="phone-skip" bindtap="skipPhone" disabled="{{bindingPhone}}">暂不授权，继续进入</button>
+  </view>
 
   <view class="agreement">
     登录即代表同意《用户协议》和《隐私政策》

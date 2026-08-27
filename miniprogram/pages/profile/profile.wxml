@@ -30,6 +30,13 @@
       <view class="editor-label">昵称</view>
       <input class="nickname-input" type="nickname" maxlength="24" value="{{draftName}}" placeholder="请输入昵称" bindinput="onNameInput" />
     </view>
+    <view class="editor-field">
+      <view class="editor-label">手机号</view>
+      <view class="phone-row">
+        <text class="phone-value">{{phoneText}}</text>
+        <button class="phone-button" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber" loading="{{bindingPhone}}" disabled="{{bindingPhone}}">{{user.phone ? '重新绑定' : '微信授权'}}</button>
+      </view>
+    </view>
     <view class="editor-actions">
       <button class="editor-button cancel" bindtap="closeProfileEditor">取消</button>
       <button class="editor-button save" bindtap="saveProfile" loading="{{savingProfile}}" disabled="{{savingProfile}}">保存</button>

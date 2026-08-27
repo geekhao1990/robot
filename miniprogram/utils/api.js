@@ -219,6 +219,10 @@ function updateMyProfile(profile) {
   return request('PUT', '/api/me/profile', { auth: true, data: profile });
 }
 
+function bindWechatPhone(code) {
+  return request('POST', '/api/me/phone', { auth: true, data: { code } });
+}
+
 function createVipOrder(plan) {
   return request('POST', '/api/payments/orders', { auth: true, data: { plan } });
 }
@@ -433,6 +437,7 @@ module.exports = {
   login,
   getMe,
   updateMyProfile,
+  bindWechatPhone,
   createVipOrder,
   getVipOrder,
   getPoints,

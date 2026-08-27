@@ -10,11 +10,6 @@ const crypto = require('crypto');
 module.exports = function register(router, HttpError) {
   const baseCategories = Object.values(TYPE_LABELS);
   const cleanCategory = (value) => String(value || '').trim();
-  const adminUserView = (user) => {
-    if (!user) return null;
-    const { phone, phoneCountryCode, phoneBoundAt, ...safe } = user;
-    return safe;
-  };
   const resolveCategory = (data, value, fallbackType) => {
     const category = cleanCategory(value) || typeLabel(normalizeType(fallbackType));
     if (!data.categories.includes(category)) throw new HttpError(400, '请选择有效的笔记类型');
@@ -206,7 +201,7 @@ module.exports = function register(router, HttpError) {
       const aNew = Array.isArray(a.tags) && a.tags.includes('new') ? 1 : 0;
       const bNew = Array.isArray(b.tags) && b.tags.includes('new') ? 1 : 0;
       return bNew - aNew || (b.createdAt || 0) - (a.createdAt || 0);
-    }).map(adminUserView);
+    });
   });
 
   router.get('/api/admin/notifications/summary', (ctx) => {
@@ -244,7 +239,7 @@ module.exports = function register(router, HttpError) {
     };
     d.users.push(user);
     db.save();
-    return adminUserView(user);
+    return user;
   });
 
   router.put('/api/admin/users/:id', (ctx) => {
@@ -252,11 +247,7 @@ module.exports = function register(router, HttpError) {
     const d = db.get();
     const i = d.users.findIndex((u) => u.id === ctx.params.id);
     if (i < 0) throw new HttpError(404, 'not found');
-    const body = ctx.body || {};
-    const update = {};
-    ['name', 'avatar', 'desc', 'official'].forEach((key) => {
-      if (Object.prototype.hasOwnProperty.call(body, key)) update[key] = body[key];
-    });
+    const update = { ...(ctx.body || {}) };
     if (Object.prototype.hasOwnProperty.call(update, 'official')) update.official = update.official === true;
     if (update.official === false && d.notes.some((n) => n.authorId === ctx.params.id)) {
       throw new HttpError(400, '该账号仍是笔记作者，请先更换对应笔记作者');
@@ -273,7 +264,7 @@ module.exports = function register(router, HttpError) {
       });
     }
     db.save();
-    return adminUserView(d.users[i]);
+    return d.users[i];
   });
 
   router.delete('/api/admin/users/:id', (ctx) => {
@@ -302,7 +293,7 @@ module.exports = function register(router, HttpError) {
       throw new HttpError(400, 'plan 须为 month/year/lifetime/none');
     }
     db.save();
-    return adminUserView(user);
+    return user;
   });
 
   // ---------- 会员订单 / 企业微信赠送核销 ----------
@@ -317,6 +308,7 @@ module.exports = function register(router, HttpError) {
           id: user.id,
           name: user.name,
           avatar: user.avatar,
+          phone: user.phone || '',
           wechatGiftRedeemedAt: user.wechatGiftRedeemedAt || 0,
           wechatGiftOrderId: user.wechatGiftOrderId || '',
         } : null,
@@ -340,7 +332,7 @@ module.exports = function register(router, HttpError) {
     user.wechatGiftOrderId = order.id;
     order.wechatGiftRedeemedAt = redeemedAt;
     db.save();
-    return { ok: true, order, user: adminUserView(user) };
+    return { ok: true, order, user };
   });
 
   // ---------- 积分流水 / 提现人工审核 ----------
@@ -353,7 +345,7 @@ module.exports = function register(router, HttpError) {
       const user = d.users.find((item) => item.id === userId);
       account.transactions.forEach((transaction) => rows.push({
         ...transaction,
-        user: user ? { id: user.id, name: user.name } : { id: userId, name: '用户不存在' },
+        user: user ? { id: user.id, name: user.name, phone: user.phone || '' } : { id: userId, name: '用户不存在', phone: '' },
       }));
     });
     return rows.sort((a, b) => (b.time || 0) - (a.time || 0));
@@ -365,7 +357,7 @@ module.exports = function register(router, HttpError) {
     d.pointAnomalies = Array.isArray(d.pointAnomalies) ? d.pointAnomalies : [];
     return d.pointAnomalies.slice().sort((a, b) => b.createdAt - a.createdAt).map((item) => {
       const user = d.users.find((candidate) => candidate.id === item.userId);
-      return { ...item, user: user ? { id: user.id, name: user.name } : null };
+      return { ...item, user: user ? { id: user.id, name: user.name, phone: user.phone || '' } : null };
     });
   });
 
@@ -390,7 +382,7 @@ module.exports = function register(router, HttpError) {
       return {
         ...item,
         currentBalance: account.balance,
-        user: user ? { id: user.id, name: user.name, avatar: user.avatar } : null,
+        user: user ? { id: user.id, name: user.name, avatar: user.avatar, phone: user.phone || '' } : null,
       };
     });
   });
