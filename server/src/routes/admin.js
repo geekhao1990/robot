@@ -59,7 +59,7 @@ module.exports = function register(router, HttpError) {
       ? username === envUsername && password === envPassword
       : db.get().admins.some((a) => a.username === username && a.password === password);
     if (!valid) throw new HttpError(401, '账号或密码错误');
-    return { token: auth.issueAdmin(), username };
+    return { token: auth.issueAdmin(username), username };
   });
 
   // 概览
@@ -202,6 +202,21 @@ module.exports = function register(router, HttpError) {
       const bNew = Array.isArray(b.tags) && b.tags.includes('new') ? 1 : 0;
       return bNew - aNew || (b.createdAt || 0) - (a.createdAt || 0);
     });
+  });
+
+  router.get('/api/admin/notifications/summary', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    return {
+      pointAnomalies: (d.pointAnomalies || []).filter((item) => item.status !== 'RESOLVED').length,
+      pendingWithdrawals: (d.withdrawals || []).filter((item) => item.status === 'PENDING').length,
+      approvedWithdrawals: (d.withdrawals || []).filter((item) => item.status === 'APPROVED').length,
+    };
+  });
+
+  router.get('/api/admin/operation-logs', (ctx) => {
+    requireAuth(ctx);
+    return (db.get().adminOperationLogs || []).slice().sort((a, b) => b.createdAt - a.createdAt);
   });
 
   router.post('/api/admin/users', (ctx) => {

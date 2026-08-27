@@ -6,8 +6,7 @@ const url = require('url');
 const db = require('./db');
 const { createRouter, HttpError } = require('./router');
 const { handleUpload } = require('./upload');
-
-db.load();
+const audit = require('./audit');
 
 const router = createRouter();
 require('./routes/public')(router, HttpError);
@@ -38,6 +37,9 @@ function serveFile(res, sub, rel) {
 }
 
 const server = http.createServer((req, res) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -74,13 +76,43 @@ const server = http.createServer((req, res) => {
       headers: req.headers,
       remoteAddress: req.socket.remoteAddress,
     };
+    const auditAction = { method: req.method, path: pathname };
     Promise.resolve()
       .then(() => m.handler(ctx))
-      .then((result) => sendJson(res, 200, result === undefined ? { ok: true } : result))
-      .catch((err) => sendJson(res, err.status || 500, { error: err.message || 'server error' }));
+      .then(async (result) => {
+        if (pathname.startsWith('/api/admin/') && pathname !== '/api/admin/login' && req.method !== 'GET') {
+          audit.record(ctx, auditAction, 'SUCCESS');
+        }
+        await db.flush();
+        sendJson(res, 200, result === undefined ? { ok: true } : result);
+      })
+      .catch(async (err) => {
+        try {
+          if (pathname.startsWith('/api/admin/') && pathname !== '/api/admin/login' && req.method !== 'GET') {
+            audit.record(ctx, auditAction, 'FAILED', err.message);
+          }
+          await db.flush();
+        } catch (saveError) {
+          console.error('数据库写入失败', saveError);
+        }
+        sendJson(res, err.status || 500, { error: err.message || 'server error' });
+      });
   });
 });
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '127.0.0.1';
-server.listen(PORT, HOST, () => console.log(`API & 管理后台运行中： http://${HOST}:${PORT}/admin`));
+db.load()
+  .then(() => server.listen(PORT, HOST, () => console.log(`API & 管理后台运行中： http://${HOST}:${PORT}/admin`)))
+  .catch((error) => {
+    console.error('数据库初始化失败', error);
+    process.exit(1);
+  });
+
+async function shutdown() {
+  server.close(async () => {
+    try { await db.close(); } finally { process.exit(0); }
+  });
+}
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

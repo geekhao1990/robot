@@ -1,9 +1,12 @@
 {
   "name": "xhs-admin-server",
   "version": "1.0.0",
-  "description": "仿小红书后端 API + 管理后台（零依赖，仅用 Node 内置模块）",
+  "description": "内容平台后端 API、MySQL 数据层与管理后台",
   "main": "src/index.js",
   "scripts": {
     "start": "node --env-file-if-exists=.env src/index.js"
+  },
+  "dependencies": {
+    "mysql2": "^3.24.2"
   }
 }

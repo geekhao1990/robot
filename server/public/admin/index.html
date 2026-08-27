@@ -22,9 +22,11 @@
   .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 200px; background: #1f1f28; color: #ccc; padding: 20px 0; }
   .sidebar .logo { color: #fff; font-size: 20px; font-weight: 700; padding: 0 24px 24px; }
   .sidebar .logo span { color: var(--primary); }
-  .nav-item { padding: 14px 24px; cursor: pointer; font-size: 15px; }
+  .nav-item { position: relative; padding: 14px 24px; cursor: pointer; font-size: 15px; }
   .nav-item:hover { background: #2a2a36; }
   .nav-item.active { background: var(--primary); color: #fff; }
+  .nav-badge { display: none; position: absolute; top: 9px; right: 18px; min-width: 18px; height: 18px; padding: 0 5px; color: #fff; font-size: 11px; line-height: 18px; text-align: center; background: #ff2442; border: 2px solid #1f1f28; border-radius: 999px; box-sizing: content-box; }
+  .nav-item.active .nav-badge { background: #fff; color: #ff2442; border-color: #ff2442; }
   .main { margin-left: 200px; padding: 0; }
   .topbar { height: 60px; background: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; box-shadow: 0 1px 3px rgba(0,0,0,.06); position: sticky; top: 0; z-index: 5; }
   .topbar h2 { font-size: 18px; }
@@ -110,8 +112,9 @@
       <div class="nav-item" data-view="notes" onclick="switchView('notes')">📝 笔记管理</div>
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
       <div class="nav-item" data-view="orders" onclick="switchView('orders')">💳 会员订单</div>
-      <div class="nav-item" data-view="withdrawals" onclick="switchView('withdrawals')">💰 提现审核</div>
-      <div class="nav-item" data-view="points" onclick="switchView('points')">🧾 积分记录</div>
+      <div class="nav-item" data-view="withdrawals" onclick="switchView('withdrawals')">💰 提现审核<span class="nav-badge" id="withdrawBadge"></span></div>
+      <div class="nav-item" data-view="points" onclick="switchView('points')">🧾 积分记录<span class="nav-badge" id="anomalyBadge"></span></div>
+      <div class="nav-item" data-view="logs" onclick="switchView('logs')">📋 操作日志</div>
       <div class="nav-item" data-view="categories" onclick="switchView('categories')">🏷️ 笔记类型</div>
       <div class="nav-item" data-view="settings" onclick="switchView('settings')">⚙️ 功能设置</div>
     </div>
@@ -160,6 +163,7 @@ function doLogin() {
 function logout() {
   token = ''; me = '';
   localStorage.removeItem('admin_token'); localStorage.removeItem('admin_user');
+  if (_badgeTimer) { clearInterval(_badgeTimer); _badgeTimer = null; }
   document.getElementById('app').style.display = 'none';
   document.getElementById('login').style.display = 'flex';
 }
@@ -169,9 +173,13 @@ function enterApp() {
   document.getElementById('app').style.display = 'block';
   document.getElementById('who').textContent = '👋 ' + me;
   switchView('overview');
+  refreshAdminBadges();
+  if (_badgeTimer) clearInterval(_badgeTimer);
+  _badgeTimer = setInterval(refreshAdminBadges, 30000);
 }
 
-const TITLES = { overview: '数据概览', notes: '笔记管理', users: '用户管理', orders: '会员订单', withdrawals: '提现审核', points: '积分记录', categories: '笔记类型', settings: '功能设置' };
+let _badgeTimer = null;
+const TITLES = { overview: '数据概览', notes: '笔记管理', users: '用户管理', orders: '会员订单', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
 const BASE_CATEGORIES = ['资料', '课程', '金手指'];
 function switchView(v) {
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === v));
@@ -182,6 +190,7 @@ function switchView(v) {
   if (v === 'orders') renderPaymentOrders();
   if (v === 'withdrawals') renderWithdrawals();
   if (v === 'points') renderPointRecords();
+  if (v === 'logs') renderOperationLogs();
   if (v === 'categories') renderCategories();
   if (v === 'settings') renderSettings();
 }
@@ -504,6 +513,22 @@ function editUser(id) {
   renderUserAvatarPicker();
 }
 
+function setBadge(id, count) {
+  const badge = document.getElementById(id);
+  if (!badge) return;
+  const value = Number(count) || 0;
+  badge.textContent = value > 99 ? '99+' : value;
+  badge.style.display = value > 0 ? 'block' : 'none';
+}
+
+function refreshAdminBadges() {
+  if (!token) return;
+  api('/api/admin/notifications/summary').then((summary) => {
+    setBadge('anomalyBadge', summary.pointAnomalies);
+    setBadge('withdrawBadge', Number(summary.pendingWithdrawals) + Number(summary.approvedWithdrawals));
+  }).catch(() => {});
+}
+
 let _modalAvatar = '';
 function renderUserAvatarPicker() {
   const picker = document.getElementById('userAvatarPicker');
@@ -673,7 +698,7 @@ function reviewWithdrawal(id, action) {
   if (!confirm(`确认${labels[action]}？`)) return;
   const note = prompt('审核说明（可留空）', '') || '';
   api('/api/admin/withdrawals/' + encodeURIComponent(id) + '/review', { method: 'PUT', body: JSON.stringify({ action, note }) })
-    .then(renderWithdrawals).catch((error) => alert(error.message));
+    .then(() => { refreshAdminBadges(); renderWithdrawals(); }).catch((error) => alert(error.message));
 }
 
 // 积分流水与异常记录
@@ -711,7 +736,35 @@ function drawPointRecords() {
 function resolvePointAnomaly(id) {
   const note = prompt('处理说明（可留空）', '') || '';
   api('/api/admin/point-anomalies/' + encodeURIComponent(id) + '/resolve', { method: 'PUT', body: JSON.stringify({ note }) })
-    .then(renderPointRecords).catch((error) => alert(error.message));
+    .then(() => { refreshAdminBadges(); renderPointRecords(); }).catch((error) => alert(error.message));
+}
+
+// 管理后台操作日志
+let _operationLogs = [];
+let _logKeyword = '';
+
+function renderOperationLogs() {
+  api('/api/admin/operation-logs').then((logs) => {
+    _operationLogs = logs;
+    drawOperationLogs();
+  });
+}
+
+function doLogSearch() {
+  const input = document.getElementById('logSearch');
+  _logKeyword = (input ? input.value : '').trim();
+  drawOperationLogs();
+}
+
+function drawOperationLogs() {
+  const keyword = _logKeyword.toLowerCase();
+  const rows = (keyword ? _operationLogs.filter((item) => [item.username, item.method, item.path, item.ip, item.outcome, item.error].some((value) => String(value || '').toLowerCase().includes(keyword))) : _operationLogs)
+    .slice(0, 300)
+    .map((item, index) => `<tr><td>${index + 1}</td><td>${esc(item.username)}</td><td><strong>${esc(item.method)}</strong><div class="hint">${esc(item.path)}</div></td><td>${item.outcome === 'SUCCESS' ? '<span class="tag paid">成功</span>' : '<span class="tag rejected">失败</span>'}${item.error ? `<div class="hint">${esc(item.error)}</div>` : ''}</td><td><code>${esc(JSON.stringify(item.body || {}))}</code></td><td>${esc(item.ip || '—')}</td><td>${fmtDate(item.createdAt)}</td></tr>`)
+    .join('');
+  document.getElementById('content').innerHTML = `
+    <div class="toolbar"><div class="search-box"><input id="logSearch" class="search" placeholder="按管理员、接口、IP或结果搜索" value="${esc(_logKeyword)}" onkeydown="if(event.key==='Enter')doLogSearch()" /><button class="btn-primary" onclick="doLogSearch()">搜索</button></div><div class="hint">敏感字段自动脱敏，展示最近300条</div></div>
+    <table><thead><tr><th>序号</th><th>管理员</th><th>操作</th><th>结果</th><th>内容</th><th>IP</th><th>时间</th></tr></thead><tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:#999;padding:40px">暂无操作日志</td></tr>'}</tbody></table>`;
 }
 
 // 分类

@@ -69,5 +69,6 @@ module.exports = function seed() {
   return {
     users, notes, categories, hotSearch, admins, userState, messageData, settings,
     paymentOrders: [], withdrawals: [], pointAnomalies: [],
+    sessions: { app: {}, admin: {} }, adminOperationLogs: [],
   };
 };
