@@ -75,6 +75,14 @@ function ensureContentTypes() {
     db.invites = [];
     changed = true;
   }
+  if (!Array.isArray(db.withdrawals)) {
+    db.withdrawals = [];
+    changed = true;
+  }
+  if (!Array.isArray(db.pointAnomalies)) {
+    db.pointAnomalies = [];
+    changed = true;
+  }
   return changed;
 }
 

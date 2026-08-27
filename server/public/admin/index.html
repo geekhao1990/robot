@@ -54,6 +54,8 @@
   .tag.new { background: #ffe9ed; color: var(--primary); }
   .tag.paid { background: #e8f8ef; color: #168c4b; }
   .tag.pending { background: #fff6db; color: #9b6a00; }
+  .tag.rejected { background: #f1f1f1; color: #888; }
+  .tag.approved { background: #eaf3ff; color: #2877c7; }
   /* 弹窗 */
   .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 20; }
   .modal { background: #fff; border-radius: 12px; width: 520px; max-height: 86vh; overflow: auto; padding: 24px; }
@@ -108,6 +110,8 @@
       <div class="nav-item" data-view="notes" onclick="switchView('notes')">📝 笔记管理</div>
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
       <div class="nav-item" data-view="orders" onclick="switchView('orders')">💳 会员订单</div>
+      <div class="nav-item" data-view="withdrawals" onclick="switchView('withdrawals')">💰 提现审核</div>
+      <div class="nav-item" data-view="points" onclick="switchView('points')">🧾 积分记录</div>
       <div class="nav-item" data-view="categories" onclick="switchView('categories')">🏷️ 笔记类型</div>
       <div class="nav-item" data-view="settings" onclick="switchView('settings')">⚙️ 功能设置</div>
     </div>
@@ -167,7 +171,7 @@ function enterApp() {
   switchView('overview');
 }
 
-const TITLES = { overview: '数据概览', notes: '笔记管理', users: '用户管理', orders: '会员订单', categories: '笔记类型', settings: '功能设置' };
+const TITLES = { overview: '数据概览', notes: '笔记管理', users: '用户管理', orders: '会员订单', withdrawals: '提现审核', points: '积分记录', categories: '笔记类型', settings: '功能设置' };
 const BASE_CATEGORIES = ['资料', '课程', '金手指'];
 function switchView(v) {
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === v));
@@ -176,6 +180,8 @@ function switchView(v) {
   if (v === 'notes') renderNotes();
   if (v === 'users') renderUsers();
   if (v === 'orders') renderPaymentOrders();
+  if (v === 'withdrawals') renderWithdrawals();
+  if (v === 'points') renderPointRecords();
   if (v === 'categories') renderCategories();
   if (v === 'settings') renderSettings();
 }
@@ -593,6 +599,119 @@ function redeemWechatGift(orderId) {
   api('/api/admin/payment-orders/' + encodeURIComponent(orderId) + '/wechat-gift', { method: 'PUT', body: '{}' })
     .then(() => { alert('核销成功，已续期30天'); renderPaymentOrders(); })
     .catch((error) => alert(error.message));
+}
+
+// 提现审核
+let _withdrawals = [];
+let _withdrawKeyword = '';
+let _withdrawPage = 1;
+
+function renderWithdrawals() {
+  api('/api/admin/withdrawals').then((list) => {
+    _withdrawals = list;
+    _withdrawPage = 1;
+    drawWithdrawals();
+  });
+}
+
+function doWithdrawSearch() {
+  const input = document.getElementById('withdrawSearch');
+  _withdrawKeyword = (input ? input.value : '').trim();
+  _withdrawPage = 1;
+  drawWithdrawals();
+}
+
+function gotoWithdrawPage(page) { _withdrawPage = page; drawWithdrawals(); }
+
+function withdrawalStatus(status) {
+  const labels = { PENDING: '待审核', APPROVED: '通过待打款', REJECTED: '已拒绝退款', PAID: '已打款' };
+  const kinds = { PENDING: 'pending', APPROVED: 'approved', REJECTED: 'rejected', PAID: 'paid' };
+  return `<span class="tag ${kinds[status] || ''}">${labels[status] || esc(status)}</span>`;
+}
+
+function drawWithdrawals() {
+  const keyword = _withdrawKeyword.toLowerCase();
+  const filtered = keyword ? _withdrawals.filter((item) => {
+    const user = item.user || {};
+    return [item.id, item.realName, item.contact, user.id, user.name, user.phone]
+      .some((value) => String(value || '').toLowerCase().includes(keyword));
+  }) : _withdrawals;
+  const total = filtered.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (_withdrawPage > pages) _withdrawPage = pages;
+  const start = (_withdrawPage - 1) * PAGE_SIZE;
+  const rows = filtered.slice(start, start + PAGE_SIZE).map((item, index) => {
+    const user = item.user || {};
+    let actions = '<span class="hint">—</span>';
+    if (item.status === 'PENDING') actions = `<button class="btn-sm" onclick="reviewWithdrawal('${item.id}','approve')">通过</button><button class="btn-sm del" onclick="reviewWithdrawal('${item.id}','reject')">拒绝并退积分</button>`;
+    if (item.status === 'APPROVED') actions = `<button class="btn-sm" onclick="reviewWithdrawal('${item.id}','paid')">确认已打款</button><button class="btn-sm del" onclick="reviewWithdrawal('${item.id}','reject')">拒绝并退积分</button>`;
+    return `<tr>
+      <td>${start + index + 1}</td>
+      <td><strong>${esc(item.id)}</strong><div class="hint">${fmtDate(item.createdAt)}</div></td>
+      <td>${esc(user.name || '用户不存在')}<div class="hint">${esc(user.id || item.userId)}</div><div class="hint">当前余额 ${Number(item.currentBalance) || 0} 积分</div></td>
+      <td><strong>¥${Number(item.amountYuan || 0).toFixed(2)}</strong><div class="hint">冻结 ${Number(item.points) || 0} 积分</div></td>
+      <td>${esc(item.realName)}<div class="hint">${esc(item.contact)}</div><div class="hint">${esc(item.remark || '')}</div></td>
+      <td>${withdrawalStatus(item.status)}${item.reviewNote ? `<div class="hint">${esc(item.reviewNote)}</div>` : ''}</td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+  const pending = _withdrawals.filter((item) => item.status === 'PENDING').length;
+  const approved = _withdrawals.filter((item) => item.status === 'APPROVED').length;
+  document.getElementById('content').innerHTML = `
+    <div class="cards" style="margin-bottom:20px">
+      <div class="card"><div class="n">${pending}</div><div class="l">待人工审核</div></div>
+      <div class="card"><div class="n">${approved}</div><div class="l">待人工打款</div></div>
+      <div class="card"><div class="n">${_withdrawals.filter((item) => item.status === 'PAID').length}</div><div class="l">已完成打款</div></div>
+    </div>
+    <div class="toolbar"><div class="search-box"><input id="withdrawSearch" class="search" placeholder="按申请号、用户或收款信息搜索" value="${esc(_withdrawKeyword)}" onkeydown="if(event.key==='Enter')doWithdrawSearch()" /><button class="btn-primary" onclick="doWithdrawSearch()">搜索</button></div><div class="hint">仅人工审核，不启用设备、IP或频次风控</div></div>
+    <table><thead><tr><th>序号</th><th>申请单</th><th>用户</th><th>金额</th><th>收款信息</th><th>状态</th><th>操作</th></tr></thead><tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:#999;padding:40px">暂无提现申请</td></tr>'}</tbody></table>
+    ${pagerHtml(_withdrawPage, pages, total, 'gotoWithdrawPage')}`;
+}
+
+function reviewWithdrawal(id, action) {
+  const labels = { approve: '通过审核并进入待打款', reject: '拒绝申请并退回积分', paid: '确认已经完成微信打款' };
+  if (!confirm(`确认${labels[action]}？`)) return;
+  const note = prompt('审核说明（可留空）', '') || '';
+  api('/api/admin/withdrawals/' + encodeURIComponent(id) + '/review', { method: 'PUT', body: JSON.stringify({ action, note }) })
+    .then(renderWithdrawals).catch((error) => alert(error.message));
+}
+
+// 积分流水与异常记录
+let _pointLedger = [];
+let _pointAnomalies = [];
+let _pointKeyword = '';
+
+function renderPointRecords() {
+  Promise.all([api('/api/admin/point-ledger'), api('/api/admin/point-anomalies')]).then(([ledger, anomalies]) => {
+    _pointLedger = ledger;
+    _pointAnomalies = anomalies;
+    drawPointRecords();
+  });
+}
+
+function doPointSearch() {
+  const input = document.getElementById('pointSearch');
+  _pointKeyword = (input ? input.value : '').trim();
+  drawPointRecords();
+}
+
+function drawPointRecords() {
+  const keyword = _pointKeyword.toLowerCase();
+  const ledger = (keyword ? _pointLedger.filter((item) => [item.title, item.type, item.relatedId, item.user && item.user.id, item.user && item.user.name].some((value) => String(value || '').toLowerCase().includes(keyword))) : _pointLedger).slice(0, 200);
+  const ledgerRows = ledger.map((item, index) => `<tr><td>${index + 1}</td><td>${esc(item.user && item.user.name)}<div class="hint">${esc(item.user && item.user.id)}</div></td><td>${esc(item.title)}<div class="hint">${esc(item.type)} ${esc(item.relatedId || '')}</div></td><td style="color:${Number(item.delta) >= 0 ? '#168c4b' : '#ff2442'};font-weight:700">${Number(item.delta) >= 0 ? '+' : ''}${Number(item.delta) || 0}</td><td>${item.balanceAfter == null ? '—' : Number(item.balanceAfter)}</td><td>${fmtDate(item.time)}</td></tr>`).join('');
+  const anomalyRows = _pointAnomalies.map((item, index) => `<tr><td>${index + 1}</td><td>${esc(item.user && item.user.name || '用户不存在')}<div class="hint">${esc(item.user && item.user.id || item.userId)}</div></td><td>${esc(item.message)}<div class="hint">${esc(item.type)}</div></td><td><code>${esc(JSON.stringify(item.details || {}))}</code></td><td>${fmtDate(item.createdAt)}</td><td>${item.status === 'RESOLVED' ? '<span class="tag paid">已处理</span>' : `<button class="btn-sm" onclick="resolvePointAnomaly('${item.id}')">标记已处理</button>`}</td></tr>`).join('');
+  document.getElementById('content').innerHTML = `
+    <div class="toolbar"><div class="search-box"><input id="pointSearch" class="search" placeholder="按用户、类型或关联单号搜索流水" value="${esc(_pointKeyword)}" onkeydown="if(event.key==='Enter')doPointSearch()" /><button class="btn-primary" onclick="doPointSearch()">搜索</button></div><div class="hint">流水展示最近200条；异常仅供人工查看，不自动限制用户</div></div>
+    <h3 style="margin:4px 0 14px">积分流水</h3>
+    <table><thead><tr><th>序号</th><th>用户</th><th>事项</th><th>变动</th><th>变动后余额</th><th>时间</th></tr></thead><tbody>${ledgerRows || '<tr><td colspan="6" style="text-align:center;color:#999;padding:36px">暂无积分流水</td></tr>'}</tbody></table>
+    <h3 style="margin:28px 0 14px">异常记录</h3>
+    <table><thead><tr><th>序号</th><th>用户</th><th>异常</th><th>详情</th><th>时间</th><th>处理</th></tr></thead><tbody>${anomalyRows || '<tr><td colspan="6" style="text-align:center;color:#999;padding:36px">暂无异常记录</td></tr>'}</tbody></table>`;
+}
+
+function resolvePointAnomaly(id) {
+  const note = prompt('处理说明（可留空）', '') || '';
+  api('/api/admin/point-anomalies/' + encodeURIComponent(id) + '/resolve', { method: 'PUT', body: JSON.stringify({ note }) })
+    .then(renderPointRecords).catch((error) => alert(error.message));
 }
 
 // 分类

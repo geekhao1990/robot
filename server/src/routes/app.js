@@ -66,8 +66,43 @@ function pointSummary(account) {
     bonusGranted: account.daily.bonusGranted,
     remaining: Math.max(0, POINT_RULES.dailyLimit - account.daily.views),
     rules: POINT_RULES,
-    transactions: account.transactions.slice(0, 20),
+    transactions: account.transactions.slice(0, 50),
   };
+}
+
+function pointTransaction(account, data) {
+  const delta = Number(data.delta) || 0;
+  account.balance = Math.max(0, (Number(account.balance) || 0) + delta);
+  if (delta > 0) account.totalEarned = (Number(account.totalEarned) || 0) + delta;
+  const item = {
+    id: 'pt_' + Date.now() + crypto.randomBytes(3).toString('hex'),
+    type: data.type,
+    title: data.title,
+    delta,
+    balanceAfter: account.balance,
+    relatedId: data.relatedId || '',
+    time: Date.now(),
+  };
+  account.transactions.unshift(item);
+  account.transactions = account.transactions.slice(0, 2000);
+  return item;
+}
+
+function recordPointAnomaly(userId, type, message, details = {}) {
+  const d = db.get();
+  d.pointAnomalies = Array.isArray(d.pointAnomalies) ? d.pointAnomalies : [];
+  const anomaly = {
+    id: 'pa_' + Date.now() + crypto.randomBytes(3).toString('hex'),
+    userId,
+    type,
+    message,
+    details,
+    status: 'OPEN',
+    createdAt: Date.now(),
+  };
+  d.pointAnomalies.unshift(anomaly);
+  d.pointAnomalies = d.pointAnomalies.slice(0, 5000);
+  return anomaly;
 }
 
 function ensureRewardedAdsEnabled(HttpError) {
@@ -88,16 +123,12 @@ function applyInviteReward(user, rawCode) {
   user.invitedAt = time;
   user.tags = Array.from(new Set([...(user.tags || []), 'invited']));
   const account = getPointAccount(inviter.id);
-  account.balance += POINT_RULES.perInvite;
-  account.totalEarned += POINT_RULES.perInvite;
-  account.transactions.unshift({
-    id: 'pt_' + time + crypto.randomBytes(3).toString('hex'),
+  pointTransaction(account, {
     type: 'invite',
     title: '成功邀请新用户',
     delta: POINT_RULES.perInvite,
-    time,
+    relatedId: user.id,
   });
-  account.transactions = account.transactions.slice(0, 100);
   d.invites.push({
     id: 'iv_' + time + crypto.randomBytes(3).toString('hex'),
     inviterId: inviter.id,
@@ -251,6 +282,65 @@ module.exports = function register(router, HttpError) {
     return pointSummary(getPointAccount(user.id));
   });
 
+  router.get('/api/withdrawals', (ctx) => {
+    const user = currentUser(ctx);
+    const d = db.get();
+    d.withdrawals = Array.isArray(d.withdrawals) ? d.withdrawals : [];
+    return {
+      rules: { pointsPerYuan: POINT_RULES.pointsPerYuan, minimumPoints: POINT_RULES.pointsPerYuan, minimumYuan: 1 },
+      list: d.withdrawals
+        .filter((item) => item.userId === user.id)
+        .sort((a, b) => b.createdAt - a.createdAt),
+    };
+  });
+
+  router.post('/api/withdrawals', (ctx) => {
+    const user = currentUser(ctx);
+    const body = ctx.body || {};
+    const amountYuan = Number(body.amountYuan);
+    const realName = String(body.realName || '').trim();
+    const contact = String(body.contact || '').trim();
+    if (!Number.isFinite(amountYuan) || amountYuan < 1) throw new HttpError(400, '最低提现1元');
+    if (Math.round(amountYuan * 100) !== amountYuan * 100) throw new HttpError(400, '提现金额最多保留两位小数');
+    if (!realName || realName.length > 30) throw new HttpError(400, '请填写正确的收款人姓名');
+    if (!contact || contact.length > 60) throw new HttpError(400, '请填写收款微信号或手机号');
+    const points = Math.round(amountYuan * POINT_RULES.pointsPerYuan);
+    const account = getPointAccount(user.id);
+    if (account.balance < points) {
+      recordPointAnomaly(user.id, 'INSUFFICIENT_BALANCE', '提现积分不足', {
+        requestedPoints: points,
+        balance: account.balance,
+      });
+      db.save();
+      throw new HttpError(400, '可用积分不足');
+    }
+    const d = db.get();
+    d.withdrawals = Array.isArray(d.withdrawals) ? d.withdrawals : [];
+    const withdrawal = {
+      id: 'wd_' + Date.now() + crypto.randomBytes(4).toString('hex'),
+      userId: user.id,
+      amountYuan: Number(amountYuan.toFixed(2)),
+      points,
+      realName,
+      contact,
+      remark: String(body.remark || '').trim().slice(0, 200),
+      status: 'PENDING',
+      reviewNote: '',
+      refunded: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    d.withdrawals.unshift(withdrawal);
+    pointTransaction(account, {
+      type: 'withdraw_freeze',
+      title: '申请提现（积分冻结）',
+      delta: -points,
+      relatedId: withdrawal.id,
+    });
+    db.save();
+    return { withdrawal, summary: pointSummary(account) };
+  });
+
   router.get('/api/invites', (ctx) => {
     const user = currentUser(ctx);
     const result = inviteSummary(user);
@@ -295,16 +385,11 @@ module.exports = function register(router, HttpError) {
       completedBonus = true;
     }
     account.daily.earned += awarded;
-    account.balance += awarded;
-    account.totalEarned += awarded;
-    account.transactions.unshift({
-      id: 'pt_' + Date.now() + crypto.randomBytes(3).toString('hex'),
+    pointTransaction(account, {
       type: completedBonus ? 'daily_complete' : 'rewarded_ad',
       title: completedBonus ? '完成今日40次广告' : '观看激励广告',
       delta: awarded,
-      time: Date.now(),
     });
-    account.transactions = account.transactions.slice(0, 100);
     db.save();
     return { awarded, completedBonus, summary: pointSummary(account) };
   });

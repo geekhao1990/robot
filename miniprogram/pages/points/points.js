@@ -199,8 +199,8 @@ Page({
     return (data && (data.message || data.error)) || fallback;
   },
 
-  comingSoon() {
-    wx.showToast({ title: '功能即将开放', icon: 'none' });
+  openWithdraw() {
+    wx.navigateTo({ url: '/pages/withdraw/withdraw' });
   },
 
   copyInviteLink() {

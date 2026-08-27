@@ -5,6 +5,7 @@ const { pubSettings } = require('../util');
 const { TYPE_LABELS, normalizeType, typeLabel, typeForCategory } = require('../content-types');
 const { getPlan, activateMembership } = require('../membership');
 const { normalizeResourceLinks } = require('../resource-links');
+const crypto = require('crypto');
 
 module.exports = function register(router, HttpError) {
   const baseCategories = Object.values(TYPE_LABELS);
@@ -16,6 +17,37 @@ module.exports = function register(router, HttpError) {
   };
   const requireAuth = (ctx) => {
     if (!auth.isAdmin(ctx.headers.authorization)) throw new HttpError(401, '未登录或登录失效');
+  };
+  const pointAccount = (userId) => {
+    const d = db.get();
+    d.userState = d.userState || {};
+    d.userState[userId] = d.userState[userId] || { likes: {}, collects: {}, follows: {} };
+    const state = d.userState[userId];
+    state.points = state.points || { balance: 0, totalEarned: 0, transactions: [], tickets: [], daily: {} };
+    state.points.balance = Number(state.points.balance) || 0;
+    state.points.transactions = Array.isArray(state.points.transactions) ? state.points.transactions : [];
+    return state.points;
+  };
+  const appendPointTransaction = (account, data) => {
+    account.balance = Math.max(0, account.balance + Number(data.delta));
+    account.transactions.unshift({
+      id: 'pt_' + Date.now() + crypto.randomBytes(3).toString('hex'),
+      type: data.type,
+      title: data.title,
+      delta: Number(data.delta),
+      balanceAfter: account.balance,
+      relatedId: data.relatedId || '',
+      time: Date.now(),
+    });
+    account.transactions = account.transactions.slice(0, 2000);
+  };
+  const appendAnomaly = (userId, type, message, details) => {
+    const d = db.get();
+    d.pointAnomalies = Array.isArray(d.pointAnomalies) ? d.pointAnomalies : [];
+    d.pointAnomalies.unshift({
+      id: 'pa_' + Date.now() + crypto.randomBytes(3).toString('hex'),
+      userId, type, message, details: details || {}, status: 'OPEN', createdAt: Date.now(),
+    });
   };
 
   // 登录
@@ -286,6 +318,100 @@ module.exports = function register(router, HttpError) {
     order.wechatGiftRedeemedAt = redeemedAt;
     db.save();
     return { ok: true, order, user };
+  });
+
+  // ---------- 积分流水 / 提现人工审核 ----------
+  router.get('/api/admin/point-ledger', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const rows = [];
+    Object.keys(d.userState || {}).forEach((userId) => {
+      const account = pointAccount(userId);
+      const user = d.users.find((item) => item.id === userId);
+      account.transactions.forEach((transaction) => rows.push({
+        ...transaction,
+        user: user ? { id: user.id, name: user.name, phone: user.phone || '' } : { id: userId, name: '用户不存在', phone: '' },
+      }));
+    });
+    return rows.sort((a, b) => (b.time || 0) - (a.time || 0));
+  });
+
+  router.get('/api/admin/point-anomalies', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    d.pointAnomalies = Array.isArray(d.pointAnomalies) ? d.pointAnomalies : [];
+    return d.pointAnomalies.slice().sort((a, b) => b.createdAt - a.createdAt).map((item) => {
+      const user = d.users.find((candidate) => candidate.id === item.userId);
+      return { ...item, user: user ? { id: user.id, name: user.name, phone: user.phone || '' } : null };
+    });
+  });
+
+  router.put('/api/admin/point-anomalies/:id/resolve', (ctx) => {
+    requireAuth(ctx);
+    const anomaly = (db.get().pointAnomalies || []).find((item) => item.id === ctx.params.id);
+    if (!anomaly) throw new HttpError(404, '异常记录不存在');
+    anomaly.status = 'RESOLVED';
+    anomaly.resolvedAt = Date.now();
+    anomaly.resolveNote = String((ctx.body || {}).note || '').trim().slice(0, 200);
+    db.save();
+    return anomaly;
+  });
+
+  router.get('/api/admin/withdrawals', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    d.withdrawals = Array.isArray(d.withdrawals) ? d.withdrawals : [];
+    return d.withdrawals.slice().sort((a, b) => b.createdAt - a.createdAt).map((item) => {
+      const user = d.users.find((candidate) => candidate.id === item.userId);
+      const account = pointAccount(item.userId);
+      return {
+        ...item,
+        currentBalance: account.balance,
+        user: user ? { id: user.id, name: user.name, avatar: user.avatar, phone: user.phone || '' } : null,
+      };
+    });
+  });
+
+  router.put('/api/admin/withdrawals/:id/review', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const withdrawal = (d.withdrawals || []).find((item) => item.id === ctx.params.id);
+    if (!withdrawal) throw new HttpError(404, '提现申请不存在');
+    const action = String((ctx.body || {}).action || '').toLowerCase();
+    const note = String((ctx.body || {}).note || '').trim().slice(0, 200);
+    const account = pointAccount(withdrawal.userId);
+    const invalid = (message) => {
+      appendAnomaly(withdrawal.userId, 'INVALID_REVIEW_STATE', message, {
+        withdrawalId: withdrawal.id, status: withdrawal.status, action,
+      });
+      db.save();
+      throw new HttpError(409, message);
+    };
+    if (action === 'approve') {
+      if (withdrawal.status !== 'PENDING') invalid('只有待审核申请可以通过');
+      withdrawal.status = 'APPROVED';
+      withdrawal.reviewedAt = Date.now();
+    } else if (action === 'reject') {
+      if (!['PENDING', 'APPROVED'].includes(withdrawal.status)) invalid('当前状态不能拒绝');
+      if (withdrawal.refunded) invalid('该申请已退回积分');
+      appendPointTransaction(account, {
+        type: 'withdraw_refund', title: '提现拒绝（积分退回）', delta: Number(withdrawal.points), relatedId: withdrawal.id,
+      });
+      withdrawal.status = 'REJECTED';
+      withdrawal.refunded = true;
+      withdrawal.refundedAt = Date.now();
+      withdrawal.reviewedAt = Date.now();
+    } else if (action === 'paid') {
+      if (withdrawal.status !== 'APPROVED') invalid('只有审核通过的申请可以确认打款');
+      withdrawal.status = 'PAID';
+      withdrawal.paidAt = Date.now();
+    } else {
+      throw new HttpError(400, 'action 须为 approve/reject/paid');
+    }
+    withdrawal.reviewNote = note;
+    withdrawal.updatedAt = Date.now();
+    db.save();
+    return withdrawal;
   });
 
   // ---------- 分类 ----------

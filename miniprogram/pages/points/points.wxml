@@ -4,7 +4,7 @@
     <view class="balance-value">{{balance}}</view>
     <view class="balance-cash">约 ¥{{cashValue}}</view>
     <view class="balance-actions">
-      <view class="balance-action" bindtap="comingSoon">申请提现</view>
+      <view class="balance-action" bindtap="openWithdraw">申请提现</view>
     </view>
   </view>
 

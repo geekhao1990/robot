@@ -235,6 +235,14 @@ function getPoints() {
   return request('GET', '/api/points', { auth: true });
 }
 
+function getWithdrawals() {
+  return request('GET', '/api/withdrawals', { auth: true });
+}
+
+function createWithdrawal(payload) {
+  return request('POST', '/api/withdrawals', { auth: true, data: payload });
+}
+
 function createAdRewardTicket() {
   return request('POST', '/api/points/ad-ticket', { auth: true });
 }
@@ -433,6 +441,8 @@ module.exports = {
   createVipOrder,
   getVipOrder,
   getPoints,
+  getWithdrawals,
+  createWithdrawal,
   createAdRewardTicket,
   claimAdReward,
   getInvites,

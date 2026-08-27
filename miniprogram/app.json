@@ -6,6 +6,7 @@
     "pages/agent/agent",
     "pages/profile/profile",
     "pages/points/points",
+    "pages/withdraw/withdraw",
     "pages/login/login",
     "pages/payment-success/payment-success",
     "pages/user/user"

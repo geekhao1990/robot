@@ -66,5 +66,8 @@ const messageData = {};
 const settings = { rewardedAdEnabled: false, vipEnabled: false, featuredNoteId: 'n3' };
 
 module.exports = function seed() {
-  return { users, notes, categories, hotSearch, admins, userState, messageData, settings, paymentOrders: [] };
+  return {
+    users, notes, categories, hotSearch, admins, userState, messageData, settings,
+    paymentOrders: [], withdrawals: [], pointAnomalies: [],
+  };
 };
