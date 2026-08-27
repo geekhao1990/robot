@@ -123,7 +123,7 @@ Page({
     toast(followed ? '已关注' : '已取消关注');
   },
   onGetResource() {
-    if (this.data.note && this.data.note.type === 'gold') return this.showEnterpriseWechat();
+    if (this.data.note && this.data.note.type === 'gold') return this.openGoldAssistant();
     return Promise.resolve(this.settingsPromise).then(() => {
       if (!this.data.vipEnabled) return this.handleGetResource();
       return store.syncMe().then((user) => {
@@ -216,22 +216,15 @@ Page({
     }
     this.rewardAd.show().catch(() => this.rewardAd.load().then(() => this.rewardAd.show()).catch(() => {}));
   },
-  showEnterpriseWechat() {
-    const user = store.getUser();
-    if (!user) return wx.navigateTo({ url: '/pages/login/login' });
-    wx.setClipboardData({
-      data: user.id,
-      success: () => {
-        wx.showModal({
-          title: '添加企业微信',
-          content: '会员编号已复制。添加企业微信后发送该编号，由管理员在后台开通会员。',
-          confirmText: '查看二维码',
-          success: (res) => {
-            if (res.confirm) wx.previewImage({ current: config.vipQr, urls: [config.vipQr] });
-          },
-        });
+  openGoldAssistant() {
+    const messageKey = 'agent_auto_message';
+    wx.setStorageSync(messageKey, '金手指');
+    wx.switchTab({
+      url: '/pages/agent/agent',
+      fail: () => {
+        wx.removeStorageSync(messageKey);
+        toast('AI 助手暂时无法打开');
       },
-      fail: () => wx.previewImage({ current: config.vipQr, urls: [config.vipQr] }),
     });
   },
   showResource() {

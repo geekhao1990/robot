@@ -4,6 +4,8 @@ const config = require('../../utils/config');
 const { refreshTabBar } = require('../../utils/util');
 
 const PROMO_TEXT = 'AI 回答不满意？需要金手指、阴阳谱、暗盘，9.9 元即可体验，请联系企业微信 👇';
+const GOLD_REPLY_TEXT = '请添加企业微信领取金手指，点击或长按下方二维码 👇';
+const AUTO_MESSAGE_KEY = 'agent_auto_message';
 
 Page({
   data: {
@@ -27,6 +29,20 @@ Page({
 
   onShow() {
     refreshTabBar(this, 1);
+    const autoMessage = wx.getStorageSync(AUTO_MESSAGE_KEY);
+    if (autoMessage) {
+      wx.removeStorageSync(AUTO_MESSAGE_KEY);
+      if (autoMessage === '金手指') this.replyGoldFinger();
+    }
+  },
+
+  replyGoldFinger() {
+    const messages = this.data.messages.concat(
+      { id: this.nextId(), role: 'user', content: '金手指' },
+      { id: this.nextId(), role: 'assistant', promo: true, content: GOLD_REPLY_TEXT, qr: config.vipQr }
+    );
+    this.setData({ messages, draft: '' });
+    this.scrollToBottom();
   },
 
   pushMessage(msg) {
