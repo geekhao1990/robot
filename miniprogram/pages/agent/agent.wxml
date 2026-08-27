@@ -29,7 +29,7 @@
     >
       <view wx:if="{{item.role === 'assistant'}}" class="avatar bot">AI</view>
       <view class="bubble {{item.role}}">
-        <text wx:if="{{item.typing}}" class="typing">正在搜索</text>
+        <text wx:if="{{item.typing}}" class="typing">{{item.typingText || '正在搜索'}}</text>
         <block wx:else>
           <text wx:if="{{item.content}}" class="b-text">{{item.content}}</text>
 

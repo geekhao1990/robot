@@ -37,12 +37,22 @@ Page({
   },
 
   replyGoldFinger() {
+    const typingId = this.nextId();
     const messages = this.data.messages.concat(
       { id: this.nextId(), role: 'user', content: '金手指' },
-      { id: this.nextId(), role: 'assistant', promo: true, content: GOLD_REPLY_TEXT, qr: config.vipQr }
+      { id: typingId, role: 'assistant', content: '', typing: true, typingText: '正在回复' }
     );
     this.setData({ messages, draft: '' });
     this.scrollToBottom();
+    setTimeout(() => {
+      const nextMessages = this.data.messages.map((message) => (
+        message.id === typingId
+          ? { id: typingId, role: 'assistant', promo: true, content: GOLD_REPLY_TEXT, qr: config.vipQr }
+          : message
+      ));
+      this.setData({ messages: nextMessages });
+      this.scrollToBottom();
+    }, 1000);
   },
 
   pushMessage(msg) {

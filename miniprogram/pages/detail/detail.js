@@ -217,15 +217,23 @@ Page({
     this.rewardAd.show().catch(() => this.rewardAd.load().then(() => this.rewardAd.show()).catch(() => {}));
   },
   openGoldAssistant() {
+    if (this._openingGoldAssistant) return;
+    this._openingGoldAssistant = true;
     const messageKey = 'agent_auto_message';
-    wx.setStorageSync(messageKey, '金手指');
-    wx.switchTab({
-      url: '/pages/agent/agent',
-      fail: () => {
-        wx.removeStorageSync(messageKey);
-        toast('AI 助手暂时无法打开');
-      },
-    });
+    wx.showLoading({ title: '正在连接 AI 助手', mask: true });
+    setTimeout(() => {
+      wx.setStorageSync(messageKey, '金手指');
+      wx.switchTab({
+        url: '/pages/agent/agent',
+        success: () => wx.hideLoading(),
+        fail: () => {
+          wx.hideLoading();
+          wx.removeStorageSync(messageKey);
+          this._openingGoldAssistant = false;
+          toast('AI 助手暂时无法打开');
+        },
+      });
+    }, 800);
   },
   showResource() {
     api.getResource(this.data.note.id).then((result) => {
