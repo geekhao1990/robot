@@ -52,6 +52,8 @@
   .tag.gold { background: #fff6db; color: #a86b00; }
   .tag.vip { background: #fbf0d9; color: #b4690e; }
   .tag.new { background: #ffe9ed; color: var(--primary); }
+  .tag.paid { background: #e8f8ef; color: #168c4b; }
+  .tag.pending { background: #fff6db; color: #9b6a00; }
   /* 弹窗 */
   .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 20; }
   .modal { background: #fff; border-radius: 12px; width: 520px; max-height: 86vh; overflow: auto; padding: 24px; }
@@ -93,7 +95,7 @@
       <p>内容运营管理系统（演示）</p>
       <div class="err" id="loginErr"></div>
       <input id="username" placeholder="账号 (admin)" value="admin" />
-      <input id="password" type="password" placeholder="密码 (admin123)" value="admin123" />
+      <input id="password" type="password" placeholder="密码 (admin)" value="admin" />
       <button onclick="doLogin()">登 录</button>
     </div>
   </div>
@@ -105,6 +107,7 @@
       <div class="nav-item active" data-view="overview" onclick="switchView('overview')">📊 数据概览</div>
       <div class="nav-item" data-view="notes" onclick="switchView('notes')">📝 笔记管理</div>
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
+      <div class="nav-item" data-view="orders" onclick="switchView('orders')">💳 会员订单</div>
       <div class="nav-item" data-view="categories" onclick="switchView('categories')">🏷️ 笔记类型</div>
       <div class="nav-item" data-view="settings" onclick="switchView('settings')">⚙️ 功能设置</div>
     </div>
@@ -164,7 +167,7 @@ function enterApp() {
   switchView('overview');
 }
 
-const TITLES = { overview: '数据概览', notes: '笔记管理', users: '用户管理', categories: '笔记类型', settings: '功能设置' };
+const TITLES = { overview: '数据概览', notes: '笔记管理', users: '用户管理', orders: '会员订单', categories: '笔记类型', settings: '功能设置' };
 const BASE_CATEGORIES = ['资料', '课程', '金手指'];
 function switchView(v) {
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === v));
@@ -172,6 +175,7 @@ function switchView(v) {
   if (v === 'overview') renderOverview();
   if (v === 'notes') renderNotes();
   if (v === 'users') renderUsers();
+  if (v === 'orders') renderPaymentOrders();
   if (v === 'categories') renderCategories();
   if (v === 'settings') renderSettings();
 }
@@ -511,6 +515,84 @@ function onPickUserAvatar(event) {
     .then((url) => { _modalAvatar = url; renderUserAvatarPicker(); })
     .catch(() => alert('头像上传失败'))
     .then(() => { if (picker) picker.style.opacity = '1'; });
+}
+
+// 会员订单
+let _paymentOrders = [];
+let _orderKeyword = '';
+let _orderPage = 1;
+
+function renderPaymentOrders() {
+  api('/api/admin/payment-orders').then((orders) => {
+    _paymentOrders = orders;
+    _orderPage = 1;
+    drawPaymentOrders();
+  });
+}
+
+function doOrderSearch() {
+  const input = document.getElementById('orderSearch');
+  _orderKeyword = (input ? input.value : '').trim();
+  _orderPage = 1;
+  drawPaymentOrders();
+}
+
+function gotoOrderPage(page) { _orderPage = page; drawPaymentOrders(); }
+
+function paymentStatus(order) {
+  const labels = { SUCCESS: '已支付', NOTPAY: '待支付', CREATED: '创建中', FAILED: '失败', CLOSED: '已关闭', REFUND: '已退款' };
+  const kind = order.status === 'SUCCESS' ? 'paid' : (order.status === 'FAILED' || order.status === 'CLOSED' ? '' : 'pending');
+  return `<span class="tag ${kind}">${labels[order.status] || esc(order.status || '未知')}</span>`;
+}
+
+function drawPaymentOrders() {
+  const keyword = _orderKeyword.toLowerCase();
+  const all = keyword ? _paymentOrders.filter((order) => {
+    const user = order.user || {};
+    return (order.id || '').toLowerCase().includes(keyword) ||
+      (user.id || '').toLowerCase().includes(keyword) ||
+      (user.name || '').toLowerCase().includes(keyword) ||
+      (user.phone || '').includes(keyword);
+  }) : _paymentOrders;
+  const total = all.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (_orderPage > pages) _orderPage = pages;
+  const start = (_orderPage - 1) * PAGE_SIZE;
+  const rows = all.slice(start, start + PAGE_SIZE).map((order, index) => {
+    const user = order.user || {};
+    const redeemedAt = user.wechatGiftRedeemedAt || order.wechatGiftRedeemedAt;
+    const giftState = redeemedAt
+      ? `<span class="tag paid">已核销</span><div class="hint">${fmtDate(redeemedAt)} · 订单 ${esc(user.wechatGiftOrderId || order.id)}</div>`
+      : (order.status === 'SUCCESS' ? '<span class="tag pending">待核销</span>' : '<span class="hint">支付后可核销</span>');
+    return `<tr>
+      <td>${start + index + 1}</td>
+      <td><strong>${esc(order.id)}</strong><div class="hint">微信单号：${esc(order.transactionId || '—')}</div></td>
+      <td>${esc(user.name || '用户不存在')}<div class="hint">${esc(user.id || order.userId || '')}</div><div class="hint">${esc(user.phone || '')}</div></td>
+      <td>${order.plan === 'month' ? '月卡' : esc(order.plan)}<div class="hint">¥${((Number(order.amount) || 0) / 100).toFixed(2)}</div></td>
+      <td>${paymentStatus(order)}</td>
+      <td>${order.createdAt ? fmtDate(order.createdAt) : '—'}<div class="hint">${order.paidAt ? '支付于 ' + fmtDate(order.paidAt) : ''}</div></td>
+      <td>${giftState}</td>
+      <td><button class="btn-sm" ${order.giftEligible ? '' : 'disabled'} onclick='redeemWechatGift("${order.id}")'>核销赠送月卡</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('content').innerHTML = `
+    <div class="toolbar">
+      <div class="search-box">
+        <input id="orderSearch" class="search" placeholder="按订单号、昵称、手机号或会员编号搜索" value="${esc(_orderKeyword)}" onkeydown="if(event.key==='Enter')doOrderSearch()" />
+        <button class="btn-primary" onclick="doOrderSearch()">搜索</button>
+      </div>
+      <div class="hint">添加企业微信赠送月卡：每个账号仅可核销一次</div>
+    </div>
+    <table><thead><tr><th>序号</th><th>订单号</th><th>用户</th><th>套餐/金额</th><th>支付状态</th><th>时间</th><th>赠送状态</th><th>操作</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:#999;padding:40px">暂无会员订单</td></tr>'}</tbody></table>
+    ${pagerHtml(_orderPage, pages, total, 'gotoOrderPage')}`;
+}
+
+function redeemWechatGift(orderId) {
+  if (!confirm('确认用户已经添加企业微信，并为该账号赠送一个月会员吗？每个账号只能赠送一次。')) return;
+  api('/api/admin/payment-orders/' + encodeURIComponent(orderId) + '/wechat-gift', { method: 'PUT', body: '{}' })
+    .then(() => { alert('核销成功，已续期30天'); renderPaymentOrders(); })
+    .catch((error) => alert(error.message));
 }
 
 // 分类

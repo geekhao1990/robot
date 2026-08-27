@@ -6,12 +6,12 @@
     <view class="success-expire">会员有效期至 {{expireText}}</view>
     <view class="gift-card">
       <view class="gift-title">添加企业微信，再送一个月会员</view>
-      <view class="gift-subtitle">长按或点击二维码添加，发送下面的会员编号，管理员确认后再赠送30天。</view>
+      <view class="gift-subtitle">长按或点击二维码添加，发送下面的订单号和会员编号，管理员核销后再赠送30天。每个账号仅可赠送一次。</view>
       <image class="qr" src="{{vipQr}}" mode="aspectFit" bindtap="previewQr" show-menu-by-longpress />
-      <view class="member-code" bindtap="copyMemberCode">
-        <view class="code-label">会员编号</view>
-        <view class="code-value">{{memberCode}}</view>
-        <view class="code-copy">点击复制</view>
+      <view class="verify-info" bindtap="copyVerifyInfo">
+        <view class="verify-row"><text class="code-label">订单号</text><text class="code-value">{{orderId}}</text></view>
+        <view class="verify-row"><text class="code-label">会员编号</text><text class="code-value">{{memberCode}}</text></view>
+        <view class="code-copy">点击复制核销信息</view>
       </view>
     </view>
     <button class="done-button" bindtap="goBack">完成</button>

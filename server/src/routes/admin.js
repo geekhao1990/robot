@@ -249,6 +249,45 @@ module.exports = function register(router, HttpError) {
     return user;
   });
 
+  // ---------- 会员订单 / 企业微信赠送核销 ----------
+  router.get('/api/admin/payment-orders', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    return (d.paymentOrders || []).slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map((order) => {
+      const user = d.users.find((item) => item.id === order.userId);
+      return {
+        ...order,
+        user: user ? {
+          id: user.id,
+          name: user.name,
+          avatar: user.avatar,
+          phone: user.phone || '',
+          wechatGiftRedeemedAt: user.wechatGiftRedeemedAt || 0,
+          wechatGiftOrderId: user.wechatGiftOrderId || '',
+        } : null,
+        giftEligible: order.status === 'SUCCESS' && !!user && !user.wechatGiftRedeemedAt,
+      };
+    });
+  });
+
+  router.put('/api/admin/payment-orders/:id/wechat-gift', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const order = (d.paymentOrders || []).find((item) => item.id === ctx.params.id);
+    if (!order) throw new HttpError(404, '订单不存在');
+    if (order.status !== 'SUCCESS') throw new HttpError(400, '只有已支付订单可以核销赠送月卡');
+    const user = d.users.find((item) => item.id === order.userId);
+    if (!user) throw new HttpError(404, '订单用户不存在');
+    if (user.wechatGiftRedeemedAt) throw new HttpError(409, '该账号已经领取过企业微信赠送月卡');
+    const redeemedAt = Date.now();
+    activateMembership(user, 'month', redeemedAt);
+    user.wechatGiftRedeemedAt = redeemedAt;
+    user.wechatGiftOrderId = order.id;
+    order.wechatGiftRedeemedAt = redeemedAt;
+    db.save();
+    return { ok: true, order, user };
+  });
+
   // ---------- 分类 ----------
   router.get('/api/admin/categories', (ctx) => { requireAuth(ctx); return db.get().categories; });
 

@@ -8,6 +8,7 @@ Page({
     loading: true,
     vipQr: config.vipQr,
     memberCode: '',
+    orderId: '',
     expireText: '',
   },
 
@@ -22,6 +23,7 @@ Page({
           verified: true,
           loading: false,
           memberCode: result.user.id,
+          orderId: this.orderId,
           expireText: this.formatExpire(result.user.vipExpire),
         });
       })
@@ -43,11 +45,11 @@ Page({
     wx.previewImage({ current: config.vipQr, urls: [config.vipQr] });
   },
 
-  copyMemberCode() {
-    if (!this.data.memberCode) return;
+  copyVerifyInfo() {
+    if (!this.data.orderId || !this.data.memberCode) return;
     wx.setClipboardData({
-      data: this.data.memberCode,
-      success: () => wx.showToast({ title: '会员编号已复制', icon: 'none' }),
+      data: `订单号：${this.data.orderId}\n会员编号：${this.data.memberCode}`,
+      success: () => wx.showToast({ title: '核销信息已复制', icon: 'none' }),
     });
   },
 
