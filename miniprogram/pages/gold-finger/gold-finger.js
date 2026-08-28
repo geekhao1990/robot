@@ -9,9 +9,6 @@ Page({
     loading: true,
     record: null,
     notice: '',
-    fingerText: '',
-    trendText: '',
-    dateText: '',
     records: [],
     historyExpanded: false,
     historyLoading: false,
@@ -39,9 +36,6 @@ Page({
         loading: false,
         record: record || null,
         notice: (result && result.notice) || '法定节假日休市，以最新交易日数据为准。',
-        fingerText: record && record.finger === 'silver' ? '银手指' : '金手指',
-        trendText: record && record.trend === 'down' ? '下跌' : '上涨',
-        dateText: record ? this.formatDate(record.date) : '',
         records,
         historyExpanded: false,
         nextHistoryMonth: (result && result.historyMonth) || '',
@@ -59,17 +53,16 @@ Page({
     });
   },
 
-  formatDate(value) {
-    const parts = String(value || '').split('-');
-    if (parts.length !== 3) return value || '';
-    return `${parts[0]}年${Number(parts[1])}月${Number(parts[2])}日`;
-  },
-
   decorateRecord(record) {
+    const yang = Math.max(0, Math.min(100, Number(record.yang) || 0));
+    const yin = 100 - yang;
     return {
       ...record,
-      fingerText: record.finger === 'silver' ? '银手指' : '金手指',
-      trendText: record.trend === 'down' ? '下跌' : '上涨',
+      yang,
+      yin,
+      fingerIcon: record.finger === 'silver' ? '👇' : '☝️',
+      yangClass: yang > 50 ? 'strong' : '',
+      yinClass: yin > 50 ? 'strong' : '',
     };
   },
 

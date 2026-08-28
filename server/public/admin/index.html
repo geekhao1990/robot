@@ -786,7 +786,7 @@ function renderGoldFinger() {
     const rows = _goldFingerRecords.map((item, index) => `<tr>
       <td>${index + 1}</td>
       <td><strong>${esc(item.date)}</strong></td>
-      <td>${Number(item.yin)} / ${Number(item.yang)}</td>
+      <td>${Number(item.yang)} / ${100 - Number(item.yang)}</td>
       <td><span class="tag ${item.finger === 'gold' ? 'gold' : ''}">${item.finger === 'gold' ? '金手指' : '银手指'}</span></td>
       <td><span style="color:${item.trend === 'up' ? '#ff2442' : '#168c4b'};font-weight:700">${item.trend === 'up' ? '上涨' : '下跌'}</span></td>
       <td>${Number(item.position)}%</td>
@@ -798,33 +798,20 @@ function renderGoldFinger() {
         <div class="toolbar"><div><h3>维护每日数据</h3><div class="hint">同一天重复保存会覆盖旧值，因此每天始终只有一条最新记录；法定节假日休市时无需新增。</div></div></div>
         <div class="gold-form">
           <div class="field"><label>日期</label><input id="goldDate" type="date" value="${chinaToday()}" /></div>
-          <div class="field"><label>阴谱（0-100）</label><input id="goldYin" type="number" min="0" max="100" step="1" value="50" oninput="syncGoldPair('yin')" /></div>
-          <div class="field"><label>阳谱（与阴谱合计100）</label><input id="goldYang" type="number" min="0" max="100" step="1" value="50" oninput="syncGoldPair('yang')" /></div>
+          <div class="field"><label>阳谱（0-100，阴谱自动计算）</label><input id="goldYang" type="number" min="0" max="100" step="1" value="50" /></div>
           <div class="field"><label>金银手指</label><select id="goldFingerValue"><option value="gold">金手指</option><option value="silver">银手指</option></select></div>
           <div class="field"><label>中期趋势</label><select id="goldTrend"><option value="up">上涨</option><option value="down">下跌</option></select></div>
           <div class="field"><label>仓位（0-100）</label><input id="goldPosition" type="number" min="0" max="100" step="1" value="50" /></div>
           <div class="gold-form-actions"><button class="btn-primary" onclick="saveGoldFinger()">保存当天数据</button><button class="btn-sm" onclick="resetGoldFingerForm()">重置</button></div>
         </div>
       </div>
-      <div class="toolbar"><h3>历史记录</h3><div class="hint">前台会员页始终展示日期最新的一条记录</div></div>
-      <table><thead><tr><th>序号</th><th>日期</th><th>阴谱 / 阳谱</th><th>金银手指</th><th>中期趋势</th><th>仓位</th><th>更新时间</th><th>操作</th></tr></thead><tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:#999;padding:40px">暂无金手指数据</td></tr>'}</tbody></table>`;
+      <div class="toolbar"><h3>历史记录</h3><div class="hint">前台默认展示最近5个交易日，更多历史按自然月分页加载</div></div>
+      <table><thead><tr><th>序号</th><th>日期</th><th>阳谱 / 阴谱</th><th>金银手指</th><th>中期趋势</th><th>仓位</th><th>更新时间</th><th>操作</th></tr></thead><tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:#999;padding:40px">暂无金手指数据</td></tr>'}</tbody></table>`;
   }).catch((error) => alert(error.message));
-}
-
-function syncGoldPair(source) {
-  const yin = document.getElementById('goldYin');
-  const yang = document.getElementById('goldYang');
-  if (!yin || !yang) return;
-  const input = source === 'yin' ? yin : yang;
-  const other = source === 'yin' ? yang : yin;
-  const value = Math.max(0, Math.min(100, Number(input.value) || 0));
-  input.value = value;
-  other.value = 100 - value;
 }
 
 function resetGoldFingerForm() {
   document.getElementById('goldDate').value = chinaToday();
-  document.getElementById('goldYin').value = 50;
   document.getElementById('goldYang').value = 50;
   document.getElementById('goldFingerValue').value = 'gold';
   document.getElementById('goldTrend').value = 'up';
@@ -835,7 +822,6 @@ function editGoldFinger(date) {
   const item = _goldFingerRecords.find((record) => record.date === date);
   if (!item) return;
   document.getElementById('goldDate').value = item.date;
-  document.getElementById('goldYin').value = item.yin;
   document.getElementById('goldYang').value = item.yang;
   document.getElementById('goldFingerValue').value = item.finger;
   document.getElementById('goldTrend').value = item.trend;
@@ -846,14 +832,12 @@ function editGoldFinger(date) {
 function saveGoldFinger() {
   const date = document.getElementById('goldDate').value;
   const body = {
-    yin: Number(document.getElementById('goldYin').value),
     yang: Number(document.getElementById('goldYang').value),
     finger: document.getElementById('goldFingerValue').value,
     trend: document.getElementById('goldTrend').value,
     position: Number(document.getElementById('goldPosition').value),
   };
   if (!date) return alert('请选择日期');
-  if (body.yin + body.yang !== 100) return alert('阴谱和阳谱相加必须等于100');
   api('/api/admin/gold-finger/' + encodeURIComponent(date), { method: 'PUT', body: JSON.stringify(body) })
     .then(() => { alert('金手指数据已保存'); renderGoldFinger(); })
     .catch((error) => alert(error.message));

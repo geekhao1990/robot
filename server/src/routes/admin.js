@@ -124,6 +124,10 @@ module.exports = function register(router, HttpError) {
   router.get('/api/admin/gold-finger', (ctx) => {
     requireAuth(ctx);
     return (db.get().goldFingerRecords || [])
+      .map((item) => {
+        const yang = Math.max(0, Math.min(100, Number(item.yang) || 0));
+        return { ...item, yang, yin: 100 - yang };
+      })
       .slice()
       .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.updatedAt || 0) - (a.updatedAt || 0));
   });
@@ -135,10 +139,9 @@ module.exports = function register(router, HttpError) {
     const date = validGoldFingerDate(ctx.params.date);
     const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
     if (weekday === 0 || weekday === 6) throw new HttpError(400, '周末休市，无需维护金手指数据');
-    const yin = goldPercent(b.yin, '阴谱');
     const yang = goldPercent(b.yang, '阳谱');
+    const yin = 100 - yang;
     const position = goldPercent(b.position, '仓位');
-    if (yin + yang !== 100) throw new HttpError(400, '阴谱和阳谱相加必须等于100');
     if (!['gold', 'silver'].includes(b.finger)) throw new HttpError(400, '请选择金手指或银手指');
     if (!['up', 'down'].includes(b.trend)) throw new HttpError(400, '请选择中期趋势（上涨或下跌）');
     d.goldFingerRecords = Array.isArray(d.goldFingerRecords) ? d.goldFingerRecords : [];

@@ -20,60 +20,16 @@
     </view>
 
     <block wx:else>
-      <view class="hero">
-        <view class="hero-top">
-          <view>
-            <view class="eyebrow">最新交易日</view>
-            <view class="date">{{dateText}}</view>
-          </view>
-          <view class="updated">已更新</view>
-        </view>
-        <view class="finger {{record.finger}}">{{fingerText}}</view>
-        <view class="finger-caption">当日金银手指信号</view>
-      </view>
-
-      <view class="spectrum-card">
-        <view class="section-title">阴阳谱</view>
-        <view class="spectrum-values">
-          <view class="spectrum-value yin"><text class="value">{{record.yin}}</text><text class="unit">阴谱</text></view>
-          <view class="sum-mark">合计 100</view>
-          <view class="spectrum-value yang"><text class="value">{{record.yang}}</text><text class="unit">阳谱</text></view>
-        </view>
-        <view class="spectrum-bar">
-          <view class="yin-bar" style="width: {{record.yin}}%;"></view>
-          <view class="yang-bar" style="width: {{record.yang}}%;"></view>
-        </view>
-      </view>
-
-      <view class="signal-row">
-        <view class="signal-card">
-          <view class="signal-label">中期趋势</view>
-          <view class="trend {{record.trend}}"><text class="trend-icon">{{record.trend === 'up' ? '↗' : '↘'}}</text>{{trendText}}</view>
-        </view>
-        <view class="signal-card">
-          <view class="signal-label">建议仓位</view>
-          <view class="position"><text>{{record.position}}</text>%</view>
-        </view>
-      </view>
-
-      <view class="position-card">
-        <view class="position-head"><text>仓位参考</text><text>{{record.position}} / 100</text></view>
-        <view class="position-track"><view class="position-fill" style="width: {{record.position}}%;"></view></view>
-        <view class="position-labels"><text>谨慎</text><text>均衡</text><text>积极</text></view>
-      </view>
-
       <view class="history-card">
-        <view class="history-title">金手指历史</view>
+        <view class="history-title">点金历史</view>
         <view class="history-head history-grid">
-          <text>日期</text><text>阳谱</text><text>阴谱</text><text>手指</text><text>中期趋势</text><text>仓位</text>
+          <text>日期</text><text>阳谱</text><text>阴谱</text><text>点金</text>
         </view>
         <view wx:for="{{records}}" wx:key="date" class="history-row history-grid">
           <text class="history-date">{{item.date}}</text>
-          <text class="history-yang">{{item.yang}}%</text>
-          <text class="history-yin">{{item.yin}}%</text>
-          <text class="history-finger {{item.finger}}">{{item.fingerText}}</text>
-          <text class="history-trend {{item.trend}}">{{item.trendText}}</text>
-          <text>{{item.position}}%</text>
+          <text class="history-yang {{item.yangClass}}">{{item.yang}}%</text>
+          <text class="history-yin {{item.yinClass}}">{{item.yin}}%</text>
+          <text class="history-finger {{item.finger}}">{{item.fingerIcon}}</text>
         </view>
         <view wx:if="{{hasMoreHistory || historyExpanded}}" class="history-more">
           <view wx:if="{{historyLoading}}">加载中...</view>

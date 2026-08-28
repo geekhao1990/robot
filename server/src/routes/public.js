@@ -26,6 +26,10 @@ module.exports = function register(router, HttpError) {
       const day = new Date(`${item.date}T00:00:00Z`).getUTCDay();
       return day !== 0 && day !== 6;
     })
+    .map((item) => {
+      const yang = Math.max(0, Math.min(100, Number(item.yang) || 0));
+      return { ...item, yang, yin: 100 - yang };
+    })
     .slice()
     .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.updatedAt || 0) - (a.updatedAt || 0));
   const previousMonth = (month) => {
