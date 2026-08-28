@@ -55,7 +55,7 @@ const notes = [
   note({ id: 'n8', authorId: 'u5', category: '视频', title: '从0到1搭建交易系统', ratio: 1.1, images: ['vid4', 'vid5'], content: '交易系统三要素……', tags: ['视频'], likes: 78900, collects: 56000, comments: 1456, hours: 30 }),
 ];
 
-const categories = ['资料', '课程', '金手指'];
+const categories = ['资料', '课程', '金手指', '广告'];
 const hotSearch = ['缠论', 'MACD', '均线', '波段', '复盘', '资金流向', '选股公式', '交易系统'];
 const admins = [{ username: 'admin', password: 'admin123' }];
 

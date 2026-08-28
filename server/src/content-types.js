@@ -1,8 +1,9 @@
-const CONTENT_TYPES = Object.freeze(['material', 'course', 'gold']);
+const CONTENT_TYPES = Object.freeze(['material', 'course', 'gold', 'ad']);
 const TYPE_LABELS = Object.freeze({
   material: '资料',
   course: '课程',
   gold: '金手指',
+  ad: '广告',
 });
 
 function normalizeType(value) {

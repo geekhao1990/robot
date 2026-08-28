@@ -52,6 +52,7 @@
   .tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; background: #f3f3f3; color: #666; }
   .tag.course { background: #fff0f2; color: var(--primary); }
   .tag.gold { background: #fff6db; color: #a86b00; }
+  .tag.ad { background: #eaf4ff; color: #1677c8; }
   .tag.vip { background: #fbf0d9; color: #b4690e; }
   .tag.new { background: #ffe9ed; color: var(--primary); }
   .tag.paid { background: #e8f8ef; color: #168c4b; }
@@ -194,7 +195,7 @@ function enterApp() {
 
 let _badgeTimer = null;
 const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', orders: '会员订单', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
-const BASE_CATEGORIES = ['资料', '课程', '金手指'];
+const BASE_CATEGORIES = ['资料', '课程', '金手指', '广告'];
 function switchView(v) {
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === v));
   document.getElementById('viewTitle').textContent = TITLES[v];
@@ -221,6 +222,7 @@ function renderOverview() {
         <div class="card"><div class="n">${s.materials}</div><div class="l">资料内容</div></div>
         <div class="card"><div class="n">${s.courses}</div><div class="l">课程内容</div></div>
         <div class="card"><div class="n">${s.goldNotes}</div><div class="l">金手指内容</div></div>
+        <div class="card"><div class="n">${s.ads}</div><div class="l">广告内容</div></div>
         <div class="card"><div class="n">${s.users}</div><div class="l">用户总数</div></div>
         <div class="card"><div class="n">${s.newUsers}</div><div class="l">新注册用户</div></div>
         <div class="card"><div class="n">${s.vipUsers}</div><div class="l">VIP 用户</div></div>
@@ -280,7 +282,7 @@ function drawNotes() {
       <td><img src="${esc(n.cover)}" /></td>
       <td>${esc(n.title)}</td>
       <td>${esc(n.author && n.author.name)}</td>
-      <td><span class="tag ${n.type === 'gold' ? 'gold' : (n.type === 'course' ? 'course' : '')}">${esc(n.category || '资料')}</span></td>
+      <td><span class="tag ${n.type === 'gold' ? 'gold' : (n.type === 'course' ? 'course' : (n.type === 'ad' ? 'ad' : ''))}">${esc(n.category || '资料')}</span></td>
       <td>赞 ${n.likes} · 藏 ${n.collects} · 评 ${n.comments}</td>
       <td>
         <button class="btn-sm" onclick='editNote("${n.id}")'>编辑</button>
@@ -309,7 +311,7 @@ function editNote(id) {
   const quarkLink = n.quarkUrl || (legacyLink && /quark\.cn/i.test(legacyLink) ? legacyLink : '');
   const officialAuthors = _users.filter((u) => u.official === true);
   const userOpts = officialAuthors.map((u) => `<option value="${u.id}" ${n.authorId === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
-  const selectedCategory = n.category || (n.type === 'gold' ? '金手指' : (n.type === 'course' ? '课程' : '资料'));
+  const selectedCategory = n.category || (n.type === 'gold' ? '金手指' : (n.type === 'course' ? '课程' : (n.type === 'ad' ? '广告' : '资料')));
   const categoryOpts = _categories.map((category) => `<option value="${esc(category)}" ${selectedCategory === category ? 'selected' : ''}>${esc(category)}</option>`).join('');
   if (!userOpts) return alert('请先在用户管理中创建并标记官方账号');
   _modalImages = (n.images || []).slice();
@@ -324,6 +326,7 @@ function editNote(id) {
       <div class="hint">至少填写一个；前台只显示已填写的网盘。</div>
     </div>
     <div class="field" id="goldHint"><div class="hint">金手指笔记的主图和「点击领取」均进入会员专属金手指页面，无需填写网盘地址。</div></div>
+    <div class="field" id="adHint"><div class="hint">广告笔记作为Banner跳转页面，无需填写网盘地址。</div></div>
     <div class="field"><label>图片</label>
       <div id="imgGrid" class="img-grid"></div>
       <div class="hint">支持多图上传；拖拽图片可调整顺序，第一张为封面</div>
@@ -333,8 +336,8 @@ function editNote(id) {
     const baiduUrl = document.getElementById('f_baidu').value.trim();
     const quarkUrl = document.getElementById('f_quark').value.trim();
     const category = document.getElementById('f_category').value;
-    const type = category === '金手指' ? 'gold' : (category === '课程' ? 'course' : 'material');
-    if (!baiduUrl && !quarkUrl && type !== 'gold') return alert('请至少填写一个网盘地址');
+    const type = category === '金手指' ? 'gold' : (category === '课程' ? 'course' : (category === '广告' ? 'ad' : 'material'));
+    if (!baiduUrl && !quarkUrl && type !== 'gold' && type !== 'ad') return alert('请至少填写一个网盘地址');
     const body = {
       title: document.getElementById('f_title').value,
       content: document.getElementById('f_content').value,
@@ -357,10 +360,13 @@ function syncResourceField() {
   const type = document.getElementById('f_category');
   const resource = document.getElementById('resourceField');
   const goldHint = document.getElementById('goldHint');
-  if (!type || !resource || !goldHint) return;
+  const adHint = document.getElementById('adHint');
+  if (!type || !resource || !goldHint || !adHint) return;
   const isGold = type.value === '金手指';
-  resource.style.display = isGold ? 'none' : 'block';
+  const isAd = type.value === '广告';
+  resource.style.display = isGold || isAd ? 'none' : 'block';
   goldHint.style.display = isGold ? 'block' : 'none';
+  adHint.style.display = isAd ? 'block' : 'none';
 }
 
 let _dragImageIndex = -1;
@@ -796,7 +802,7 @@ function renderGoldFinger() {
   Promise.all([api('/api/admin/gold-finger'), api('/api/admin/gold-finger-banners'), api('/api/admin/notes')]).then(([records, banners, notes]) => {
     _goldFingerRecords = records || [];
     _goldFingerBanners = banners || [];
-    _goldFingerNotes = notes || [];
+    _goldFingerNotes = (notes || []).filter((note) => note.type === 'ad');
     const noteMap = {};
     _goldFingerNotes.forEach((note) => { noteMap[note.id] = note; });
     const bannerCards = _goldFingerBanners.map((item, index) => `<div class="banner-admin-card">
@@ -823,7 +829,7 @@ function renderGoldFinger() {
     </tr>`).join('');
     document.getElementById('content').innerHTML = `
       <div class="card" style="margin-bottom:20px">
-        <div class="toolbar"><div><h3>金手指页面 Banner</h3><div class="hint">上传轮播图片并选择目标笔记；前台点击图片后进入对应笔记。</div></div><button class="btn-primary" onclick="editGoldBanner(-1)">+ 新增Banner</button></div>
+        <div class="toolbar"><div><h3>金手指页面 Banner</h3><div class="hint">上传轮播图片并选择广告类型笔记；前台点击图片后进入对应广告笔记。</div></div><button class="btn-primary" onclick="editGoldBanner(-1)">+ 新增Banner</button></div>
         <div class="banner-admin-list">${bannerCards || '<div class="hint">暂未配置轮播图</div>'}</div>
       </div>
       <div class="card" style="margin-bottom:20px">
@@ -867,7 +873,7 @@ function editGoldBanner(index) {
   const item = index >= 0 ? _goldFingerBanners[index] : null;
   _bannerModalImage = item ? item.image : '';
   const noteOptions = _goldFingerNotes.map((note) => `<option value="${esc(note.id)}" ${item && item.noteId === note.id ? 'selected' : ''}>${esc(note.title)}</option>`).join('');
-  if (!noteOptions) return alert('请先创建笔记');
+  if (!noteOptions) return alert('请先创建广告类型笔记');
   openModal(index >= 0 ? '编辑Banner' : '新增Banner', `
     <div class="field"><label>轮播图片</label><div id="goldBannerPicker"></div><div class="hint">建议使用横版图片，大小不超过5MB</div></div>
     <div class="field"><label>点击后跳转的笔记</label><select id="goldBannerNote">${noteOptions}</select></div>
@@ -956,7 +962,7 @@ function renderCategories() {
         <div class="field">
           <label>新增笔记类型</label>
           <div class="search-box"><input id="newCategoryName" class="search" maxlength="12" placeholder="输入类型名称" /><button class="btn-primary" onclick="addCategory()">新增</button></div>
-          <div class="hint">资料、课程、金手指为系统类型，永久保留；自定义类型按资料类领取逻辑处理。</div>
+          <div class="hint">资料、课程、金手指、广告为系统类型，永久保留；自定义类型按资料类领取逻辑处理。</div>
         </div>
         ${items}
       </div>`;

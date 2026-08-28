@@ -32,8 +32,8 @@
     <view class="divider"></view>
   </scroll-view>
 
-  <view class="actionbar">
-    <view class="course-btn" bindtap="onGetResource">{{resourceLabel}}</view>
+  <view class="actionbar {{note.type === 'ad' ? 'ad-mode' : ''}}">
+    <view wx:if="{{note.type !== 'ad'}}" class="course-btn" bindtap="onGetResource">{{resourceLabel}}</view>
     <view class="action" bindtap="onLike">
       <view class="ic heart {{note.liked ? 'active' : ''}}"></view><text class="num">{{likeText}}</text>
     </view>

@@ -608,6 +608,7 @@
   margin: 0;
   padding: 0;
 }
+.actionbar.ad-mode .action { flex: 1 1 0; }
 .share-action {
   box-sizing: border-box;
   min-height: 0;

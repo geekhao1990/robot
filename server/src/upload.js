@@ -53,7 +53,7 @@ function imageDimensions(data, type) {
 function detectedImageType(data) {
   if (!Buffer.isBuffer(data) || data.length < 12) return '';
   if (data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff && data[data.length - 2] === 0xff && data[data.length - 1] === 0xd9) return 'image/jpeg';
-  if (data.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) && data.subarray(data.length - 12, data.length - 8).toString('ascii') === 'IEND') return 'image/png';
+  if (data.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) && data.subarray(data.length - 8, data.length - 4).toString('ascii') === 'IEND') return 'image/png';
   const gifHeader = data.subarray(0, 6).toString('ascii');
   if ((gifHeader === 'GIF87a' || gifHeader === 'GIF89a') && data[data.length - 1] === 0x3b) return 'image/gif';
   if (data.subarray(0, 4).toString('ascii') === 'RIFF' && data.subarray(8, 12).toString('ascii') === 'WEBP') {

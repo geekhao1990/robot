@@ -49,19 +49,19 @@
 .history-card { margin: 20rpx -28rpx 0; padding: 32rpx 28rpx 0; background: #fff; border-top: 1rpx solid #eee; border-bottom: 1rpx solid #eee; }
 .history-title { padding-left: 22rpx; color: #242424; font-size: 36rpx; font-weight: 850; border-left: 9rpx solid #ff2442; }
 .history-grid { display: flex; align-items: center; width: 100%; }
-.history-grid text { flex: .72 1 0; min-width: 0; text-align: center; }
-.history-grid text:first-child { flex: 1.55 1 0; text-align: left; }
-.history-grid text:nth-child(4) { flex: .68 1 0; }
-.history-grid text:nth-child(5) { flex: 1.05 1 0; }
-.history-grid text:nth-child(6) { flex: .65 1 0; }
+.history-grid > * { flex: .72 1 0; min-width: 0; text-align: center; }
+.history-grid > *:first-child { flex: 1.55 1 0; text-align: left; }
+.history-grid > *:nth-child(4) { flex: .68 1 0; }
+.history-grid > *:nth-child(5) { flex: 1.05 1 0; }
+.history-grid > *:nth-child(6) { flex: .65 1 0; }
 .history-head { margin-top: 28rpx; padding: 24rpx 0; color: #999; font-size: 20rpx; border-top: 1rpx solid #f0f0f0; border-bottom: 1rpx solid #ededed; }
 .history-row { min-height: 104rpx; color: #222; font-size: 23rpx; border-bottom: 1rpx solid #ededed; }
 .history-date { font-size: 22rpx; font-variant-numeric: tabular-nums; }
 .history-yang,.history-yin { color: #222; font-weight: 650; }
 .history-yang.strong { color: #e53935; }
 .history-yin.strong { color: #11a52b; }
-.history-finger { font-size: 42rpx; line-height: 1; }
-.history-finger.silver { filter: grayscale(1); opacity: .62; }
+.history-finger-cell { display: flex; align-items: center; justify-content: center; }
+.history-finger { display: block; width: 42rpx; height: 52rpx; }
 .history-trend { font-weight: 700; }
 .history-trend.up { color: #e53935; }
 .history-trend.down { color: #11a52b; }
@@ -69,6 +69,6 @@
 .history-more { display: flex; align-items: center; justify-content: center; min-height: 104rpx; color: #999; font-size: 28rpx; }
 .history-more view { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 92rpx; }
 .history-end { color: #bbb3aa; }
-.banner-swiper { width: 100%; height: 250rpx; margin-top: 28rpx; overflow: hidden; background: #eee; border-radius: 20rpx; }
+.banner-swiper { width: 100%; height: 250rpx; margin-top: 28rpx; margin-bottom: 8rpx; overflow: hidden; background: #eee; border-radius: 20rpx; }
 .banner-image { display: block; width: 100%; height: 100%; }
 .disclaimer { padding: 24rpx 0 50rpx; color: #aaa095; font-size: 20rpx; text-align: center; }

@@ -74,6 +74,7 @@ module.exports = function register(router, HttpError) {
       materials: d.notes.filter((n) => !n.type || n.type === 'normal' || n.type === 'material').length,
       courses: d.notes.filter((n) => n.type === 'course').length,
       goldNotes: d.notes.filter((n) => n.type === 'gold').length,
+      ads: d.notes.filter((n) => n.type === 'ad').length,
       categories: d.categories.length,
     };
   });
@@ -189,7 +190,7 @@ module.exports = function register(router, HttpError) {
       const image = String(item && item.image || '').trim();
       const noteId = String(item && item.noteId || '').trim();
       if (!image || !/^(https?:\/\/|\/uploads\/)/i.test(image)) throw new HttpError(400, `第${index + 1}张轮播图图片无效`);
-      if (!d.notes.some((note) => note.id === noteId)) throw new HttpError(400, `第${index + 1}张轮播图请选择有效笔记`);
+      if (!d.notes.some((note) => note.id === noteId && note.type === 'ad')) throw new HttpError(400, `第${index + 1}张轮播图请选择广告类型笔记`);
       let id = String(item.id || '').trim();
       if (!id || seen.has(id)) id = 'gfb_' + Date.now() + '_' + index + '_' + crypto.randomBytes(2).toString('hex');
       seen.add(id);
@@ -216,7 +217,7 @@ module.exports = function register(router, HttpError) {
     const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
     const links = normalizeResourceLinks(b, type, !hasProviderFields);
-    if (type !== 'gold' && !links.baiduUrl && !links.quarkUrl) throw new HttpError(400, '请至少填写一个网盘地址');
+    if (type !== 'gold' && type !== 'ad' && !links.baiduUrl && !links.quarkUrl) throw new HttpError(400, '请至少填写一个网盘地址');
     const note = {
       id: 'n' + Date.now(),
       authorId: author.id,
@@ -258,9 +259,12 @@ module.exports = function register(router, HttpError) {
     const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
     Object.assign(note, normalizeResourceLinks(note, note.type, !hasProviderFields));
-    if (note.type !== 'gold' && !note.baiduUrl && !note.quarkUrl) throw new HttpError(400, '请至少填写一个网盘地址');
+    if (note.type !== 'gold' && note.type !== 'ad' && !note.baiduUrl && !note.quarkUrl) throw new HttpError(400, '请至少填写一个网盘地址');
     if (d.settings && d.settings.featuredNoteId === note.id && note.type !== 'gold') {
       throw new HttpError(400, '加号入口笔记必须保持为金手指类型');
+    }
+    if ((d.goldFingerBanners || []).some((item) => item.noteId === note.id) && note.type !== 'ad') {
+      throw new HttpError(400, '该笔记正在被金手指Banner使用，必须保持为广告类型');
     }
     if (b.authorId) {
       const a = d.users.find((u) => u.id === b.authorId && u.official === true);
@@ -545,7 +549,7 @@ module.exports = function register(router, HttpError) {
     const d = db.get();
     const oldName = cleanCategory(ctx.params.name);
     const name = cleanCategory((ctx.body || {}).name);
-    if (baseCategories.includes(oldName)) throw new HttpError(400, '资料、课程、金手指为系统类型，不能修改');
+    if (baseCategories.includes(oldName)) throw new HttpError(400, '资料、课程、金手指、广告为系统类型，不能修改');
     if (!d.categories.includes(oldName)) throw new HttpError(404, '笔记类型不存在');
     if (!name) throw new HttpError(400, '请输入笔记类型名称');
     if (name.length > 12) throw new HttpError(400, '笔记类型名称不能超过12个字');
@@ -560,7 +564,7 @@ module.exports = function register(router, HttpError) {
     requireAuth(ctx);
     const d = db.get();
     const name = cleanCategory(ctx.params.name);
-    if (baseCategories.includes(name)) throw new HttpError(400, '资料、课程、金手指为系统类型，不能删除');
+    if (baseCategories.includes(name)) throw new HttpError(400, '资料、课程、金手指、广告为系统类型，不能删除');
     if (!d.categories.includes(name)) throw new HttpError(404, '笔记类型不存在');
     if (d.notes.some((note) => note.category === name)) throw new HttpError(400, '该类型下还有笔记，请先更换笔记类型');
     d.categories = d.categories.filter((item) => item !== name);

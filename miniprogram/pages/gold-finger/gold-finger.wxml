@@ -20,6 +20,12 @@
     </view>
 
     <block wx:else>
+      <swiper wx:if="{{banners.length}}" class="banner-swiper" indicator-dots="{{banners.length > 1}}" autoplay="{{banners.length > 1}}" interval="4000" duration="450" circular="{{banners.length > 1}}">
+        <swiper-item wx:for="{{banners}}" wx:key="id">
+          <image class="banner-image" src="{{item.image}}" mode="aspectFill" data-id="{{item.noteId}}" bindtap="goBannerNote" />
+        </swiper-item>
+      </swiper>
+
       <view class="history-card">
         <view class="history-title">点金历史</view>
         <view class="history-head history-grid">
@@ -29,7 +35,7 @@
           <text class="history-date">{{item.date}}</text>
           <text class="history-yang {{item.yangClass}}">{{item.yang}}%</text>
           <text class="history-yin {{item.yinClass}}">{{item.yin}}%</text>
-          <text class="history-finger {{item.finger}}">{{item.fingerIcon}}</text>
+          <view class="history-finger-cell"><image class="history-finger" src="{{item.fingerIcon}}" mode="aspectFit" /></view>
           <text class="history-trend {{item.trend}}">{{item.trendText}}</text>
           <text class="history-position">{{item.position}}%</text>
         </view>
@@ -41,12 +47,7 @@
         </view>
       </view>
 
-      <swiper wx:if="{{banners.length}}" class="banner-swiper" indicator-dots="{{banners.length > 1}}" autoplay="{{banners.length > 1}}" interval="4000" duration="450" circular="{{banners.length > 1}}">
-        <swiper-item wx:for="{{banners}}" wx:key="id">
-          <image class="banner-image" src="{{item.image}}" mode="aspectFill" data-id="{{item.noteId}}" bindtap="goBannerNote" />
-        </swiper-item>
-      </swiper>
-      <view class="disclaimer">数据仅供会员参考，不构成任何投资建议</view>
+      <view class="disclaimer">数据来自同花顺，仅供参考不构成投资建议</view>
     </block>
   </scroll-view>
 </view>

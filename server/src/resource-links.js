@@ -9,7 +9,7 @@ function legacyProvider(url) {
 }
 
 function normalizeResourceLinks(source, type, useLegacy = true) {
-  if (type === 'gold') return { baiduUrl: '', quarkUrl: '', courseUrl: '' };
+  if (type === 'gold' || type === 'ad') return { baiduUrl: '', quarkUrl: '', courseUrl: '' };
   let baiduUrl = clean(source && source.baiduUrl);
   let quarkUrl = clean(source && source.quarkUrl);
   const legacyUrl = clean(source && source.courseUrl);
