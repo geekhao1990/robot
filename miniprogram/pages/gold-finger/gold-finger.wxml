@@ -29,7 +29,7 @@
       <view class="history-card">
         <view class="history-title">点金历史</view>
         <view class="history-head history-grid">
-          <text>日期</text><text>阳谱</text><text>阴谱</text><text>点金</text><text>中期趋势</text><text>仓位</text>
+          <text class="history-date-col">日期</text><text>阳谱</text><text>阴谱</text><text class="history-finger-col">点金</text><text class="history-trend-col">中期趋势</text><text class="history-position-col">仓位</text>
         </view>
         <view wx:for="{{records}}" wx:key="date" class="history-row history-grid">
           <text class="history-date">{{item.date}}</text>

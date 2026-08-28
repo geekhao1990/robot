@@ -49,11 +49,11 @@
 .history-card { margin: 20rpx -28rpx 0; padding: 32rpx 28rpx 0; background: #fff; border-top: 1rpx solid #eee; border-bottom: 1rpx solid #eee; }
 .history-title { padding-left: 22rpx; color: #242424; font-size: 36rpx; font-weight: 850; border-left: 9rpx solid #ff2442; }
 .history-grid { display: flex; align-items: center; width: 100%; }
-.history-grid > * { flex: .72 1 0; min-width: 0; text-align: center; }
-.history-grid > *:first-child { flex: 1.55 1 0; text-align: left; }
-.history-grid > *:nth-child(4) { flex: .68 1 0; }
-.history-grid > *:nth-child(5) { flex: 1.05 1 0; }
-.history-grid > *:nth-child(6) { flex: .65 1 0; }
+.history-grid text,.history-finger-cell { flex: .72 1 0; min-width: 0; text-align: center; }
+.history-grid .history-date-col,.history-grid .history-date { flex: 1.55 1 0; text-align: left; }
+.history-grid .history-finger-col,.history-grid .history-finger-cell { flex: .68 1 0; }
+.history-grid .history-trend-col,.history-grid .history-trend { flex: 1.05 1 0; }
+.history-grid .history-position-col,.history-grid .history-position { flex: .65 1 0; }
 .history-head { margin-top: 28rpx; padding: 24rpx 0; color: #999; font-size: 20rpx; border-top: 1rpx solid #f0f0f0; border-bottom: 1rpx solid #ededed; }
 .history-row { min-height: 104rpx; color: #222; font-size: 23rpx; border-bottom: 1rpx solid #ededed; }
 .history-date { font-size: 22rpx; font-variant-numeric: tabular-nums; }
