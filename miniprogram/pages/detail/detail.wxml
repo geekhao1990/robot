@@ -30,24 +30,23 @@
       <view class="meta">{{timeText}}</view>
     </view>
     <view class="divider"></view>
+    <view class="actionbar {{note.type === 'ad' ? 'ad-mode' : ''}}">
+      <view wx:if="{{note.type !== 'ad'}}" class="course-btn" bindtap="onGetResource">{{resourceLabel}}</view>
+      <view class="action" bindtap="onLike">
+        <view class="ic heart {{note.liked ? 'active' : ''}}"></view><text class="num">{{likeText}}</text>
+      </view>
+      <view class="action" bindtap="onCollect">
+        <view class="ic star {{note.collected ? 'active' : ''}}"></view><text class="num">{{collectText}}</text>
+      </view>
+      <button class="action share-action" open-type="share" disabled="{{!inviteCode}}">
+        <view class="ic share"></view><text class="num">分享</text>
+      </button>
+      <view class="action" bindtap="goService">
+        <view class="ic chat"></view><text class="num">客服</text>
+      </view>
+    </view>
     <view class="detail-bottom-spacer"></view>
   </scroll-view>
-
-  <view class="actionbar {{note.type === 'ad' ? 'ad-mode' : ''}}">
-    <view wx:if="{{note.type !== 'ad'}}" class="course-btn" bindtap="onGetResource">{{resourceLabel}}</view>
-    <view class="action" bindtap="onLike">
-      <view class="ic heart {{note.liked ? 'active' : ''}}"></view><text class="num">{{likeText}}</text>
-    </view>
-    <view class="action" bindtap="onCollect">
-      <view class="ic star {{note.collected ? 'active' : ''}}"></view><text class="num">{{collectText}}</text>
-    </view>
-    <button class="action share-action" open-type="share" disabled="{{!inviteCode}}">
-      <view class="ic share"></view><text class="num">分享</text>
-    </button>
-    <view class="action" bindtap="goService">
-      <view class="ic chat"></view><text class="num">客服</text>
-    </view>
-  </view>
 </view>
 <view wx:else class="placeholder"></view>
 
