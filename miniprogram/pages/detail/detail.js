@@ -99,7 +99,10 @@ Page({
   },
 
   onSwiperChange(e) { this.setData({ current: e.detail.current }); },
-  previewImage(e) {
+  onNoteImageTap(e) {
+    if (this.data.note && this.data.note.type === 'gold' && Number(e.currentTarget.dataset.index) === 0) {
+      return this.openGoldFeature();
+    }
     wx.previewImage({ current: e.currentTarget.dataset.url, urls: this.data.note.images });
   },
   onLike() {
@@ -123,7 +126,7 @@ Page({
     toast(followed ? '已关注' : '已取消关注');
   },
   onGetResource() {
-    if (this.data.note && this.data.note.type === 'gold') return this.openGoldAssistant();
+    if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
     return Promise.resolve(this.settingsPromise).then(() => {
       if (!this.data.vipEnabled) return this.handleGetResource();
       return store.syncMe().then((user) => {
@@ -216,24 +219,24 @@ Page({
     }
     this.rewardAd.show().catch(() => this.rewardAd.load().then(() => this.rewardAd.show()).catch(() => {}));
   },
-  openGoldAssistant() {
-    if (this._openingGoldAssistant) return;
-    this._openingGoldAssistant = true;
-    const messageKey = 'agent_auto_message';
+  openGoldFeature() {
+    if (this._checkingGoldFeature) return;
+    if (!store.isLogin()) return this.requireLogin();
+    this._checkingGoldFeature = true;
     wx.showLoading({ title: '请稍后...', mask: true });
-    setTimeout(() => {
-      wx.setStorageSync(messageKey, '金手指');
-      wx.switchTab({
-        url: '/pages/agent/agent',
-        success: () => wx.hideLoading(),
-        fail: () => {
-          wx.hideLoading();
-          wx.removeStorageSync(messageKey);
-          this._openingGoldAssistant = false;
-          toast('AI 助手暂时无法打开');
-        },
+    return store.syncMe()
+      .then((user) => {
+        if (!this.isVipActive(user)) return this.showVipOffer();
+        wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
+      })
+      .catch((error) => {
+        if (error && error.statusCode === 401) return this.requireLogin();
+        toast('会员状态读取失败，请稍后重试');
+      })
+      .finally(() => {
+        wx.hideLoading();
+        this._checkingGoldFeature = false;
       });
-    }, 800);
   },
   showResource() {
     api.getResource(this.data.note.id).then((result) => {
@@ -286,7 +289,13 @@ Page({
     if (note.images && note.images[0]) share.imageUrl = note.images[0];
     return share;
   },
-  goService() { wx.switchTab({ url: '/pages/agent/agent' }); },
+  goService() {
+    wx.setStorageSync('agent_return_target', {
+      path: `/pages/detail/detail?id=${encodeURIComponent(this.noteId || '')}`,
+      createdAt: Date.now(),
+    });
+    wx.switchTab({ url: '/pages/agent/agent' });
+  },
   goBack() { wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) }); },
   requireLogin() {
     if (this._loginRedirected) return;

@@ -89,6 +89,10 @@
   .category-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 15px 0; border-bottom: 1px solid #f0f0f0; }
   .category-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .category-actions { display: flex; align-items: center; flex-shrink: 0; }
+  .gold-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
+  .gold-form .field { flex: 1 1 130px; min-width: 130px; margin-bottom: 0; }
+  .gold-form-actions { display: flex; align-items: center; gap: 8px; padding-bottom: 1px; }
+  .gold-summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -110,6 +114,7 @@
       <div class="logo">小红书<span>·</span>后台</div>
       <div class="nav-item active" data-view="overview" onclick="switchView('overview')">📊 数据概览</div>
       <div class="nav-item" data-view="notes" onclick="switchView('notes')">📝 笔记管理</div>
+      <div class="nav-item" data-view="goldFinger" onclick="switchView('goldFinger')">☝️ 金手指数据</div>
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
       <div class="nav-item" data-view="orders" onclick="switchView('orders')">💳 会员订单</div>
       <div class="nav-item" data-view="withdrawals" onclick="switchView('withdrawals')">💰 提现审核<span class="nav-badge" id="withdrawBadge"></span></div>
@@ -179,13 +184,14 @@ function enterApp() {
 }
 
 let _badgeTimer = null;
-const TITLES = { overview: '数据概览', notes: '笔记管理', users: '用户管理', orders: '会员订单', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
+const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', orders: '会员订单', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
 const BASE_CATEGORIES = ['资料', '课程', '金手指'];
 function switchView(v) {
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === v));
   document.getElementById('viewTitle').textContent = TITLES[v];
   if (v === 'overview') renderOverview();
   if (v === 'notes') renderNotes();
+  if (v === 'goldFinger') renderGoldFinger();
   if (v === 'users') renderUsers();
   if (v === 'orders') renderPaymentOrders();
   if (v === 'withdrawals') renderWithdrawals();
@@ -308,7 +314,7 @@ function editNote(id) {
       <div class="field"><label>夸克网盘地址（选填）</label><input id="f_quark" value="${esc(quarkLink)}" placeholder="夸克网盘链接及提取码" /></div>
       <div class="hint">至少填写一个；前台只显示已填写的网盘。</div>
     </div>
-    <div class="field" id="goldHint"><div class="hint">金手指点击领取后展示企业微信二维码，无需填写获取地址。</div></div>
+    <div class="field" id="goldHint"><div class="hint">金手指笔记的主图和「点击领取」均进入会员专属金手指页面，无需填写网盘地址。</div></div>
     <div class="field"><label>图片</label>
       <div id="imgGrid" class="img-grid"></div>
       <div class="hint">支持多图上传；拖拽图片可调整顺序，第一张为封面</div>
@@ -767,6 +773,98 @@ function drawOperationLogs() {
     <table><thead><tr><th>序号</th><th>管理员</th><th>操作</th><th>结果</th><th>内容</th><th>IP</th><th>时间</th></tr></thead><tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:#999;padding:40px">暂无操作日志</td></tr>'}</tbody></table>`;
 }
 
+// 独立金手指每日数据
+let _goldFingerRecords = [];
+
+function chinaToday() {
+  return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+function renderGoldFinger() {
+  api('/api/admin/gold-finger').then((records) => {
+    _goldFingerRecords = records || [];
+    const rows = _goldFingerRecords.map((item, index) => `<tr>
+      <td>${index + 1}</td>
+      <td><strong>${esc(item.date)}</strong></td>
+      <td>${Number(item.yin)} / ${Number(item.yang)}</td>
+      <td><span class="tag ${item.finger === 'gold' ? 'gold' : ''}">${item.finger === 'gold' ? '金手指' : '银手指'}</span></td>
+      <td><span style="color:${item.trend === 'up' ? '#ff2442' : '#168c4b'};font-weight:700">${item.trend === 'up' ? '上涨' : '下跌'}</span></td>
+      <td>${Number(item.position)}%</td>
+      <td>${fmtDate(item.updatedAt)}</td>
+      <td><button class="btn-sm" onclick="editGoldFinger('${esc(item.date)}')">编辑</button><button class="btn-sm del" onclick="deleteGoldFinger('${esc(item.date)}')">删除</button></td>
+    </tr>`).join('');
+    document.getElementById('content').innerHTML = `
+      <div class="card" style="margin-bottom:20px">
+        <div class="toolbar"><div><h3>维护每日数据</h3><div class="hint">同一天重复保存会覆盖旧值，因此每天始终只有一条最新记录；法定节假日休市时无需新增。</div></div></div>
+        <div class="gold-form">
+          <div class="field"><label>日期</label><input id="goldDate" type="date" value="${chinaToday()}" /></div>
+          <div class="field"><label>阴谱（0-100）</label><input id="goldYin" type="number" min="0" max="100" step="1" value="50" oninput="syncGoldPair('yin')" /></div>
+          <div class="field"><label>阳谱（与阴谱合计100）</label><input id="goldYang" type="number" min="0" max="100" step="1" value="50" oninput="syncGoldPair('yang')" /></div>
+          <div class="field"><label>金银手指</label><select id="goldFingerValue"><option value="gold">金手指</option><option value="silver">银手指</option></select></div>
+          <div class="field"><label>趋势</label><select id="goldTrend"><option value="up">上涨</option><option value="down">下跌</option></select></div>
+          <div class="field"><label>仓位（0-100）</label><input id="goldPosition" type="number" min="0" max="100" step="1" value="50" /></div>
+          <div class="gold-form-actions"><button class="btn-primary" onclick="saveGoldFinger()">保存当天数据</button><button class="btn-sm" onclick="resetGoldFingerForm()">重置</button></div>
+        </div>
+      </div>
+      <div class="toolbar"><h3>历史记录</h3><div class="hint">前台会员页始终展示日期最新的一条记录</div></div>
+      <table><thead><tr><th>序号</th><th>日期</th><th>阴谱 / 阳谱</th><th>金银手指</th><th>趋势</th><th>仓位</th><th>更新时间</th><th>操作</th></tr></thead><tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:#999;padding:40px">暂无金手指数据</td></tr>'}</tbody></table>`;
+  }).catch((error) => alert(error.message));
+}
+
+function syncGoldPair(source) {
+  const yin = document.getElementById('goldYin');
+  const yang = document.getElementById('goldYang');
+  if (!yin || !yang) return;
+  const input = source === 'yin' ? yin : yang;
+  const other = source === 'yin' ? yang : yin;
+  const value = Math.max(0, Math.min(100, Number(input.value) || 0));
+  input.value = value;
+  other.value = 100 - value;
+}
+
+function resetGoldFingerForm() {
+  document.getElementById('goldDate').value = chinaToday();
+  document.getElementById('goldYin').value = 50;
+  document.getElementById('goldYang').value = 50;
+  document.getElementById('goldFingerValue').value = 'gold';
+  document.getElementById('goldTrend').value = 'up';
+  document.getElementById('goldPosition').value = 50;
+}
+
+function editGoldFinger(date) {
+  const item = _goldFingerRecords.find((record) => record.date === date);
+  if (!item) return;
+  document.getElementById('goldDate').value = item.date;
+  document.getElementById('goldYin').value = item.yin;
+  document.getElementById('goldYang').value = item.yang;
+  document.getElementById('goldFingerValue').value = item.finger;
+  document.getElementById('goldTrend').value = item.trend;
+  document.getElementById('goldPosition').value = item.position;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function saveGoldFinger() {
+  const date = document.getElementById('goldDate').value;
+  const body = {
+    yin: Number(document.getElementById('goldYin').value),
+    yang: Number(document.getElementById('goldYang').value),
+    finger: document.getElementById('goldFingerValue').value,
+    trend: document.getElementById('goldTrend').value,
+    position: Number(document.getElementById('goldPosition').value),
+  };
+  if (!date) return alert('请选择日期');
+  if (body.yin + body.yang !== 100) return alert('阴谱和阳谱相加必须等于100');
+  api('/api/admin/gold-finger/' + encodeURIComponent(date), { method: 'PUT', body: JSON.stringify(body) })
+    .then(() => { alert('金手指数据已保存'); renderGoldFinger(); })
+    .catch((error) => alert(error.message));
+}
+
+function deleteGoldFinger(date) {
+  if (!confirm(`确定删除 ${date} 的金手指数据吗？`)) return;
+  api('/api/admin/gold-finger/' + encodeURIComponent(date), { method: 'DELETE' })
+    .then(renderGoldFinger).catch((error) => alert(error.message));
+}
+
 // 分类
 function renderCategories() {
   Promise.all([api('/api/admin/categories'), api('/api/admin/notes')]).then(([cats, notes]) => {
@@ -824,7 +922,7 @@ function renderSettings() {
         <div class="field">
           <label>首页红色加号（金手指）打开的笔记</label>
           <select id="settingFeatured">${noteOptions}</select>
-          <div class="hint">这篇笔记点击「点击领取」时直接展示企业微信二维码，不播放广告。</div>
+          <div class="hint">这篇笔记的主图和「点击领取」均作为会员金手指功能入口；非会员展示9.9元月卡支付。</div>
         </div>
         <div class="field">
           <label>普通笔记激励广告</label>

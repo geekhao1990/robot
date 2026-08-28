@@ -120,6 +120,10 @@ function ensureContentTypes() {
     db.adminOperationLogs = [];
     changed = true;
   }
+  if (!Array.isArray(db.goldFingerRecords)) {
+    db.goldFingerRecords = [];
+    changed = true;
+  }
   return changed;
 }
 

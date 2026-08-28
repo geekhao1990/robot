@@ -3,9 +3,42 @@
   background: #f5f6f8;
 }
 
-.msgs {
+.agent-nav {
   position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: #fff;
+  border-bottom: 1rpx solid #eee;
+  box-sizing: content-box;
+}
+.agent-nav-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.agent-back {
+  position: absolute;
+  left: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68rpx;
+  height: 68rpx;
+  color: #222;
+  font-size: 58rpx;
+  font-weight: 300;
+}
+.agent-title {
+  color: #222;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.msgs {
+  position: fixed;
   left: 0;
   right: 0;
   /* 输入栏(约108rpx) + tabBar(120rpx) + 安全区 */

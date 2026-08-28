@@ -106,6 +106,69 @@ module.exports = function register(router, HttpError) {
     return pubSettings(d);
   });
 
+  // ---------- 独立金手指每日数据 ----------
+  const validGoldFingerDate = (value) => {
+    const date = String(value || '').trim();
+    const parsed = new Date(`${date}T00:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
+      throw new HttpError(400, '请选择有效日期');
+    }
+    return date;
+  };
+  const goldPercent = (value, label) => {
+    const number = Number(value);
+    if (!Number.isInteger(number) || number < 0 || number > 100) throw new HttpError(400, `${label}必须是0-100的整数`);
+    return number;
+  };
+
+  router.get('/api/admin/gold-finger', (ctx) => {
+    requireAuth(ctx);
+    return (db.get().goldFingerRecords || [])
+      .slice()
+      .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.updatedAt || 0) - (a.updatedAt || 0));
+  });
+
+  router.put('/api/admin/gold-finger/:date', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const b = ctx.body || {};
+    const date = validGoldFingerDate(ctx.params.date);
+    const yin = goldPercent(b.yin, '阴谱');
+    const yang = goldPercent(b.yang, '阳谱');
+    const position = goldPercent(b.position, '仓位');
+    if (yin + yang !== 100) throw new HttpError(400, '阴谱和阳谱相加必须等于100');
+    if (!['gold', 'silver'].includes(b.finger)) throw new HttpError(400, '请选择金手指或银手指');
+    if (!['up', 'down'].includes(b.trend)) throw new HttpError(400, '请选择上涨或下跌');
+    d.goldFingerRecords = Array.isArray(d.goldFingerRecords) ? d.goldFingerRecords : [];
+    const now = Date.now();
+    const record = {
+      id: `gf_${date.replace(/-/g, '')}`,
+      date,
+      yin,
+      yang,
+      finger: b.finger,
+      trend: b.trend,
+      position,
+      updatedAt: now,
+    };
+    const index = d.goldFingerRecords.findIndex((item) => item.date === date);
+    if (index >= 0) d.goldFingerRecords[index] = record;
+    else d.goldFingerRecords.push(record);
+    db.save();
+    return record;
+  });
+
+  router.delete('/api/admin/gold-finger/:date', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const date = validGoldFingerDate(ctx.params.date);
+    const before = (d.goldFingerRecords || []).length;
+    d.goldFingerRecords = (d.goldFingerRecords || []).filter((item) => item.date !== date);
+    if (d.goldFingerRecords.length === before) throw new HttpError(404, '记录不存在');
+    db.save();
+    return { ok: true };
+  });
+
   // ---------- 笔记 ----------
   router.get('/api/admin/notes', (ctx) => { requireAuth(ctx); return db.get().notes; });
 

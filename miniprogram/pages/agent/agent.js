@@ -9,6 +9,9 @@ const AUTO_MESSAGE_KEY = 'agent_auto_message';
 
 Page({
   data: {
+    statusBarHeight: 20,
+    navBarHeight: 44,
+    headerHeight: 64,
     messages: [],
     draft: '',
     loading: false,
@@ -23,8 +26,14 @@ Page({
   },
 
   onLoad() {
+    const app = getApp();
     const user = store.getUser();
-    if (user && user.name) this.setData({ meInitial: user.name.slice(0, 1) });
+    this.setData({
+      statusBarHeight: app.globalData.statusBarHeight,
+      navBarHeight: app.globalData.navBarHeight,
+      headerHeight: app.globalData.statusBarHeight + app.globalData.navBarHeight,
+      meInitial: user && user.name ? user.name.slice(0, 1) : '我',
+    });
   },
 
   onShow() {
@@ -105,6 +114,18 @@ Page({
   previewQr(e) {
     const url = e.currentTarget.dataset.url;
     if (url) wx.previewImage({ urls: [url], current: url });
+  },
+
+  goBack() {
+    const target = wx.getStorageSync('agent_return_target');
+    wx.removeStorageSync('agent_return_target');
+    if (target && target.path && Date.now() - Number(target.createdAt || 0) < 10 * 60 * 1000) {
+      return wx.navigateTo({
+        url: target.path,
+        fail: () => wx.switchTab({ url: '/pages/index/index' }),
+      });
+    }
+    wx.switchTab({ url: '/pages/index/index' });
   },
 
   scrollToBottom() {

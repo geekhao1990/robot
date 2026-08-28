@@ -69,13 +69,26 @@ module.exports = function register(router, HttpError) {
     return pubNote(n);
   });
 
+  // 独立金手指功能：始终要求有效会员，不能被普通内容的 VIP 开关绕过。
+  router.get('/api/gold-finger/latest', (ctx) => {
+    const reader = requireReader(ctx);
+    if (!vipActive(reader)) throw new HttpError(403, '开通VIP后可查看金手指');
+    const records = (db.get().goldFingerRecords || [])
+      .slice()
+      .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.updatedAt || 0) - (a.updatedAt || 0));
+    return {
+      record: records[0] || null,
+      notice: '法定节假日休市，以后台最新交易日数据为准。',
+    };
+  });
+
   // 激励广告完成后由小程序单独请求。
   router.get('/api/notes/:id/resource', (ctx) => {
     const reader = requireReader(ctx);
     const data = db.get();
     const note = data.notes.find((n) => n.id === ctx.params.id);
     if (!note) throw new HttpError(404, 'not found');
-    if (note.type === 'gold') throw new HttpError(400, '金手指内容请通过企业微信领取');
+    if (note.type === 'gold') throw new HttpError(400, '金手指内容请进入会员专属页面查看');
     if (data.settings && data.settings.vipEnabled === true && !vipActive(reader)) {
       throw new HttpError(403, '开通VIP后可领取该资源');
     }

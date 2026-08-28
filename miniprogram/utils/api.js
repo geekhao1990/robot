@@ -130,6 +130,10 @@ function getResource(id) {
   return request('GET', '/api/notes/' + id + '/resource', { auth: true });
 }
 
+function getGoldFinger() {
+  return request('GET', '/api/gold-finger/latest', { auth: true });
+}
+
 function getCategories() {
   if (remote()) return http('/api/categories');
   return delay(data.categories, 0);
@@ -416,6 +420,7 @@ module.exports = {
   getFeed,
   getNoteById,
   getResource,
+  getGoldFinger,
   getCategories,
   getHotSearch,
   getAppSettings,

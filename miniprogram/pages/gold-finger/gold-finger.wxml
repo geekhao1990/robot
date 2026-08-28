@@ -1,0 +1,69 @@
+<view class="page">
+  <view class="nav" style="padding-top: {{statusBarHeight}}px; height: {{navBarHeight}}px;">
+    <view class="nav-inner" style="height: {{navBarHeight}}px;">
+      <view class="back" bindtap="goBack">‹</view>
+      <view class="nav-title">金手指</view>
+      <view class="nav-vip">VIP</view>
+    </view>
+  </view>
+
+  <scroll-view class="body" scroll-y style="padding-top: {{headerHeight}}px;">
+    <view wx:if="{{loading}}" class="state-box">
+      <view class="loading-dot"></view>
+      <view>正在加载会员数据...</view>
+    </view>
+
+    <view wx:elif="{{!record}}" class="state-box empty">
+      <view class="empty-icon">—</view>
+      <view class="empty-title">今日数据正在更新</view>
+      <view class="empty-sub">请稍后再来查看</view>
+    </view>
+
+    <block wx:else>
+      <view class="hero">
+        <view class="hero-top">
+          <view>
+            <view class="eyebrow">最新交易日</view>
+            <view class="date">{{dateText}}</view>
+          </view>
+          <view class="updated">已更新</view>
+        </view>
+        <view class="finger {{record.finger}}">{{fingerText}}</view>
+        <view class="finger-caption">当日金银手指信号</view>
+      </view>
+
+      <view class="spectrum-card">
+        <view class="section-title">阴阳谱</view>
+        <view class="spectrum-values">
+          <view class="spectrum-value yin"><text class="value">{{record.yin}}</text><text class="unit">阴谱</text></view>
+          <view class="sum-mark">合计 100</view>
+          <view class="spectrum-value yang"><text class="value">{{record.yang}}</text><text class="unit">阳谱</text></view>
+        </view>
+        <view class="spectrum-bar">
+          <view class="yin-bar" style="width: {{record.yin}}%;"></view>
+          <view class="yang-bar" style="width: {{record.yang}}%;"></view>
+        </view>
+      </view>
+
+      <view class="signal-row">
+        <view class="signal-card">
+          <view class="signal-label">趋势</view>
+          <view class="trend {{record.trend}}"><text class="trend-icon">{{record.trend === 'up' ? '↗' : '↘'}}</text>{{trendText}}</view>
+        </view>
+        <view class="signal-card">
+          <view class="signal-label">建议仓位</view>
+          <view class="position"><text>{{record.position}}</text>%</view>
+        </view>
+      </view>
+
+      <view class="position-card">
+        <view class="position-head"><text>仓位参考</text><text>{{record.position}} / 100</text></view>
+        <view class="position-track"><view class="position-fill" style="width: {{record.position}}%;"></view></view>
+        <view class="position-labels"><text>谨慎</text><text>均衡</text><text>积极</text></view>
+      </view>
+
+      <view class="notice">{{notice}}</view>
+      <view class="disclaimer">数据仅供会员参考，不构成任何投资建议</view>
+    </block>
+  </scroll-view>
+</view>
