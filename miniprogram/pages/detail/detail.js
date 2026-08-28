@@ -224,8 +224,16 @@ Page({
     if (!store.isLogin()) return this.requireLogin();
     this._checkingGoldFeature = true;
     wx.showLoading({ title: '请稍后...', mask: true });
-    return store.syncMe()
+    return Promise.resolve(this.settingsPromise)
+      .then(() => {
+        if (!this.data.vipEnabled) {
+          wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
+          return null;
+        }
+        return store.syncMe();
+      })
       .then((user) => {
+        if (!this.data.vipEnabled) return;
         if (!this.isVipActive(user)) return this.showVipOffer();
         wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
       })

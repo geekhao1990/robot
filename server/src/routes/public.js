@@ -69,11 +69,14 @@ module.exports = function register(router, HttpError) {
     return pubNote(n);
   });
 
-  // 独立金手指功能：始终要求有效会员，不能被普通内容的 VIP 开关绕过。
+  // 独立金手指功能：VIP 开启时要求有效会员，关闭时登录用户可直接查看。
   router.get('/api/gold-finger/latest', (ctx) => {
     const reader = requireReader(ctx);
-    if (!vipActive(reader)) throw new HttpError(403, '开通VIP后可查看金手指');
-    const records = (db.get().goldFingerRecords || [])
+    const data = db.get();
+    if (data.settings && data.settings.vipEnabled === true && !vipActive(reader)) {
+      throw new HttpError(403, '开通VIP后可查看金手指');
+    }
+    const records = (data.goldFingerRecords || [])
       .slice()
       .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.updatedAt || 0) - (a.updatedAt || 0));
     return {
