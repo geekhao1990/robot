@@ -530,7 +530,7 @@ function editUser(id) {
     const req = id ? api('/api/admin/users/' + id, { method: 'PUT', body: JSON.stringify(body) })
                    : api('/api/admin/users', { method: 'POST', body: JSON.stringify(body) });
     req.then(() => { closeModal(); renderUsers(); });
-  });
+  }, false);
   renderUserAvatarPicker();
 }
 
@@ -1034,9 +1034,10 @@ function saveSettings() {
 }
 
 // 弹窗
-function openModal(title, html, onOk) {
+function openModal(title, html, onOk, closeOnMask = true) {
+  const maskAction = closeOnMask ? 'if(event.target===this)closeModal()' : '';
   document.getElementById('modalRoot').innerHTML = `
-    <div class="modal-mask" onclick="if(event.target===this)closeModal()">
+    <div class="modal-mask" onclick="${maskAction}">
       <div class="modal">
         <h3>${esc(title)}</h3>
         ${html}

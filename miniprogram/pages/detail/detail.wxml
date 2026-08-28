@@ -30,6 +30,7 @@
       <view class="meta">{{timeText}}</view>
     </view>
     <view class="divider"></view>
+    <view class="detail-bottom-spacer"></view>
   </scroll-view>
 
   <view class="actionbar {{note.type === 'ad' ? 'ad-mode' : ''}}">
@@ -49,6 +50,8 @@
   </view>
 </view>
 <view wx:else class="placeholder"></view>
+
+<persistent-tab-bar />
 
 <view wx:if="{{resourceModalVisible}}" class="resource-mask" catchtap="closeResourceModal">
   <view class="resource-panel" catchtap="noop">

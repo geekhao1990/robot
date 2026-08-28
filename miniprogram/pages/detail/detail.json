@@ -1,4 +1,6 @@
 {
   "navigationStyle": "custom",
-  "usingComponents": {}
+  "usingComponents": {
+    "persistent-tab-bar": "/custom-tab-bar/index"
+  }
 }
