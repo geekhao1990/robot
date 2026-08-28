@@ -801,13 +801,13 @@ function renderGoldFinger() {
           <div class="field"><label>阴谱（0-100）</label><input id="goldYin" type="number" min="0" max="100" step="1" value="50" oninput="syncGoldPair('yin')" /></div>
           <div class="field"><label>阳谱（与阴谱合计100）</label><input id="goldYang" type="number" min="0" max="100" step="1" value="50" oninput="syncGoldPair('yang')" /></div>
           <div class="field"><label>金银手指</label><select id="goldFingerValue"><option value="gold">金手指</option><option value="silver">银手指</option></select></div>
-          <div class="field"><label>趋势</label><select id="goldTrend"><option value="up">上涨</option><option value="down">下跌</option></select></div>
+          <div class="field"><label>中期趋势</label><select id="goldTrend"><option value="up">上涨</option><option value="down">下跌</option></select></div>
           <div class="field"><label>仓位（0-100）</label><input id="goldPosition" type="number" min="0" max="100" step="1" value="50" /></div>
           <div class="gold-form-actions"><button class="btn-primary" onclick="saveGoldFinger()">保存当天数据</button><button class="btn-sm" onclick="resetGoldFingerForm()">重置</button></div>
         </div>
       </div>
       <div class="toolbar"><h3>历史记录</h3><div class="hint">前台会员页始终展示日期最新的一条记录</div></div>
-      <table><thead><tr><th>序号</th><th>日期</th><th>阴谱 / 阳谱</th><th>金银手指</th><th>趋势</th><th>仓位</th><th>更新时间</th><th>操作</th></tr></thead><tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:#999;padding:40px">暂无金手指数据</td></tr>'}</tbody></table>`;
+      <table><thead><tr><th>序号</th><th>日期</th><th>阴谱 / 阳谱</th><th>金银手指</th><th>中期趋势</th><th>仓位</th><th>更新时间</th><th>操作</th></tr></thead><tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:#999;padding:40px">暂无金手指数据</td></tr>'}</tbody></table>`;
   }).catch((error) => alert(error.message));
 }
 

@@ -47,7 +47,7 @@
 
       <view class="signal-row">
         <view class="signal-card">
-          <view class="signal-label">趋势</view>
+          <view class="signal-label">中期趋势</view>
           <view class="trend {{record.trend}}"><text class="trend-icon">{{record.trend === 'up' ? '↗' : '↘'}}</text>{{trendText}}</view>
         </view>
         <view class="signal-card">
@@ -60,6 +60,27 @@
         <view class="position-head"><text>仓位参考</text><text>{{record.position}} / 100</text></view>
         <view class="position-track"><view class="position-fill" style="width: {{record.position}}%;"></view></view>
         <view class="position-labels"><text>谨慎</text><text>均衡</text><text>积极</text></view>
+      </view>
+
+      <view class="history-card">
+        <view class="history-title">金手指历史</view>
+        <view class="history-head history-grid">
+          <text>日期</text><text>阳谱</text><text>阴谱</text><text>手指</text><text>中期趋势</text><text>仓位</text>
+        </view>
+        <view wx:for="{{records}}" wx:key="date" class="history-row history-grid">
+          <text class="history-date">{{item.date}}</text>
+          <text class="history-yang">{{item.yang}}%</text>
+          <text class="history-yin">{{item.yin}}%</text>
+          <text class="history-finger {{item.finger}}">{{item.fingerText}}</text>
+          <text class="history-trend {{item.trend}}">{{item.trendText}}</text>
+          <text>{{item.position}}%</text>
+        </view>
+        <view wx:if="{{hasMoreHistory || historyExpanded}}" class="history-more">
+          <view wx:if="{{historyLoading}}">加载中...</view>
+          <view wx:elif="{{!historyExpanded}}" bindtap="loadMoreHistory">查看更多历史</view>
+          <view wx:elif="{{hasMoreHistory}}" bindtap="loadMoreHistory">加载上一个月</view>
+          <view wx:else class="history-end">已显示全部历史</view>
+        </view>
       </view>
 
       <view class="notice">{{notice}}</view>

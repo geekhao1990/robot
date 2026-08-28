@@ -134,6 +134,10 @@ function getGoldFinger() {
   return request('GET', '/api/gold-finger/latest', { auth: true });
 }
 
+function getGoldFingerHistory(month) {
+  return request('GET', '/api/gold-finger/history', { auth: true, data: { month } });
+}
+
 function getCategories() {
   if (remote()) return http('/api/categories');
   return delay(data.categories, 0);
@@ -421,6 +425,7 @@ module.exports = {
   getNoteById,
   getResource,
   getGoldFinger,
+  getGoldFingerHistory,
   getCategories,
   getHotSearch,
   getAppSettings,

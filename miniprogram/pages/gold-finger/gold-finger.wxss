@@ -46,5 +46,25 @@
 .position-track { height: 16rpx; margin-top: 24rpx; overflow: hidden; background: #eee8df; border-radius: 999rpx; }
 .position-fill { height: 100%; background: linear-gradient(90deg,#dcbf78,#a57424); border-radius: 999rpx; }
 .position-labels { margin-top: 12rpx; color: #b0a493; font-size: 19rpx; }
+.history-card { margin-top: 24rpx; padding: 30rpx 22rpx 12rpx; background: #fff; border: 1rpx solid rgba(96,68,32,.06); border-radius: 24rpx; box-shadow: 0 8rpx 26rpx rgba(80,58,32,.05); }
+.history-title { padding-left: 16rpx; color: #30251b; font-size: 31rpx; font-weight: 850; border-left: 7rpx solid #ff2442; }
+.history-grid { display: flex; align-items: center; width: 100%; }
+.history-grid text { flex: .78 1 0; min-width: 0; text-align: center; }
+.history-grid text:first-child { flex: 1.55 1 0; text-align: left; }
+.history-grid text:nth-child(4),.history-grid text:nth-child(5) { flex: 1.08 1 0; }
+.history-head { margin-top: 25rpx; padding: 19rpx 0; color: #9b9187; font-size: 20rpx; border-bottom: 1rpx solid #eee9e2; }
+.history-row { min-height: 88rpx; color: #3b332b; font-size: 22rpx; border-bottom: 1rpx solid #f1ede7; }
+.history-date { font-size: 21rpx; font-variant-numeric: tabular-nums; }
+.history-yang { color: #d34936; font-weight: 750; }
+.history-yin { color: #38445d; font-weight: 750; }
+.history-finger { font-size: 20rpx; font-weight: 750; }
+.history-finger.gold { color: #a57424; }
+.history-finger.silver { color: #697384; }
+.history-trend { font-weight: 750; }
+.history-trend.up { color: #d34936; }
+.history-trend.down { color: #168c62; }
+.history-more { display: flex; align-items: center; justify-content: center; min-height: 92rpx; color: #8d8277; font-size: 25rpx; }
+.history-more view { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 92rpx; }
+.history-end { color: #bbb3aa; }
 .notice { margin-top: 26rpx; padding: 20rpx 24rpx; color: #7a6955; font-size: 23rpx; line-height: 1.6; background: #eee7dc; border-radius: 16rpx; }
 .disclaimer { padding: 24rpx 0 50rpx; color: #aaa095; font-size: 20rpx; text-align: center; }

@@ -133,12 +133,14 @@ module.exports = function register(router, HttpError) {
     const d = db.get();
     const b = ctx.body || {};
     const date = validGoldFingerDate(ctx.params.date);
+    const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
+    if (weekday === 0 || weekday === 6) throw new HttpError(400, '周末休市，无需维护金手指数据');
     const yin = goldPercent(b.yin, '阴谱');
     const yang = goldPercent(b.yang, '阳谱');
     const position = goldPercent(b.position, '仓位');
     if (yin + yang !== 100) throw new HttpError(400, '阴谱和阳谱相加必须等于100');
     if (!['gold', 'silver'].includes(b.finger)) throw new HttpError(400, '请选择金手指或银手指');
-    if (!['up', 'down'].includes(b.trend)) throw new HttpError(400, '请选择上涨或下跌');
+    if (!['up', 'down'].includes(b.trend)) throw new HttpError(400, '请选择中期趋势（上涨或下跌）');
     d.goldFingerRecords = Array.isArray(d.goldFingerRecords) ? d.goldFingerRecords : [];
     const now = Date.now();
     const record = {

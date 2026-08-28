@@ -12,6 +12,11 @@ Page({
     fingerText: '',
     trendText: '',
     dateText: '',
+    records: [],
+    historyExpanded: false,
+    historyLoading: false,
+    nextHistoryMonth: '',
+    hasMoreHistory: false,
   },
 
   onLoad() {
@@ -29,6 +34,7 @@ Page({
     this.setData({ loading: true });
     api.getGoldFinger().then((result) => {
       const record = result && result.record;
+      const records = ((result && result.records) || (record ? [record] : [])).map((item) => this.decorateRecord(item));
       this.setData({
         loading: false,
         record: record || null,
@@ -36,6 +42,10 @@ Page({
         fingerText: record && record.finger === 'silver' ? '银手指' : '金手指',
         trendText: record && record.trend === 'down' ? '下跌' : '上涨',
         dateText: record ? this.formatDate(record.date) : '',
+        records,
+        historyExpanded: false,
+        nextHistoryMonth: (result && result.historyMonth) || '',
+        hasMoreHistory: result && result.hasMoreHistory === true,
       });
     }).catch((error) => {
       this.setData({ loading: false });
@@ -53,6 +63,34 @@ Page({
     const parts = String(value || '').split('-');
     if (parts.length !== 3) return value || '';
     return `${parts[0]}年${Number(parts[1])}月${Number(parts[2])}日`;
+  },
+
+  decorateRecord(record) {
+    return {
+      ...record,
+      fingerText: record.finger === 'silver' ? '银手指' : '金手指',
+      trendText: record.trend === 'down' ? '下跌' : '上涨',
+    };
+  },
+
+  loadMoreHistory() {
+    if (this.data.historyLoading || !this.data.nextHistoryMonth) return;
+    this.setData({ historyExpanded: true, historyLoading: true });
+    api.getGoldFingerHistory(this.data.nextHistoryMonth).then((result) => {
+      const map = {};
+      this.data.records.forEach((item) => { map[item.date] = item; });
+      ((result && result.records) || []).forEach((item) => { map[item.date] = this.decorateRecord(item); });
+      const records = Object.keys(map).map((date) => map[date]).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      this.setData({
+        records,
+        historyLoading: false,
+        hasMoreHistory: result && result.hasMore === true,
+        nextHistoryMonth: (result && result.previousMonth) || '',
+      });
+    }).catch(() => {
+      this.setData({ historyLoading: false });
+      wx.showToast({ title: '历史数据加载失败', icon: 'none' });
+    });
   },
 
   goBack() {

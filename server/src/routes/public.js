@@ -13,6 +13,26 @@ module.exports = function register(router, HttpError) {
     if (!user) throw new HttpError(401, '用户不存在');
     return user;
   };
+  const requireGoldAccess = (ctx) => {
+    const reader = requireReader(ctx);
+    const data = db.get();
+    if (data.settings && data.settings.vipEnabled === true && !vipActive(reader)) {
+      throw new HttpError(403, '开通VIP后可查看金手指');
+    }
+    return data;
+  };
+  const sortedGoldRecords = (data) => (data.goldFingerRecords || [])
+    .filter((item) => {
+      const day = new Date(`${item.date}T00:00:00Z`).getUTCDay();
+      return day !== 0 && day !== 6;
+    })
+    .slice()
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.updatedAt || 0) - (a.updatedAt || 0));
+  const previousMonth = (month) => {
+    const [year, monthNumber] = month.split('-').map(Number);
+    const date = new Date(Date.UTC(year, monthNumber - 2, 1));
+    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+  };
 
   // 小程序公共功能设置（广告开关、首页加号入口）。
   router.get('/api/settings', () => pubSettings(db.get()));
@@ -71,17 +91,31 @@ module.exports = function register(router, HttpError) {
 
   // 独立金手指功能：VIP 开启时要求有效会员，关闭时登录用户可直接查看。
   router.get('/api/gold-finger/latest', (ctx) => {
-    const reader = requireReader(ctx);
-    const data = db.get();
-    if (data.settings && data.settings.vipEnabled === true && !vipActive(reader)) {
-      throw new HttpError(403, '开通VIP后可查看金手指');
-    }
-    const records = (data.goldFingerRecords || [])
-      .slice()
-      .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.updatedAt || 0) - (a.updatedAt || 0));
+    const data = requireGoldAccess(ctx);
+    const records = sortedGoldRecords(data);
+    const latestFive = records.slice(0, 5);
     return {
       record: records[0] || null,
+      records: latestFive,
+      historyMonth: latestFive.length ? latestFive[latestFive.length - 1].date.slice(0, 7) : '',
+      hasMoreHistory: records.length > latestFive.length,
       notice: '法定节假日休市，以后台最新交易日数据为准。',
+    };
+  });
+
+  // 历史按自然月分页；没有后台记录的非交易日不会出现在结果中。
+  router.get('/api/gold-finger/history', (ctx) => {
+    const data = requireGoldAccess(ctx);
+    const month = String(ctx.query.month || '').trim();
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new HttpError(400, '请选择有效月份');
+    const records = sortedGoldRecords(data);
+    const monthRecords = records.filter((item) => String(item.date || '').slice(0, 7) === month);
+    const hasMore = records.some((item) => String(item.date || '') < `${month}-01`);
+    return {
+      month,
+      records: monthRecords,
+      hasMore,
+      previousMonth: hasMore ? previousMonth(month) : '',
     };
   });
 
