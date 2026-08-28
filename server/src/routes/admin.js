@@ -174,6 +174,31 @@ module.exports = function register(router, HttpError) {
     return { ok: true };
   });
 
+  router.get('/api/admin/gold-finger-banners', (ctx) => {
+    requireAuth(ctx);
+    return db.get().goldFingerBanners || [];
+  });
+
+  router.put('/api/admin/gold-finger-banners', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const items = (ctx.body || {}).banners;
+    if (!Array.isArray(items) || items.length > 10) throw new HttpError(400, '轮播图最多10张');
+    const seen = new Set();
+    d.goldFingerBanners = items.map((item, index) => {
+      const image = String(item && item.image || '').trim();
+      const noteId = String(item && item.noteId || '').trim();
+      if (!image || !/^(https?:\/\/|\/uploads\/)/i.test(image)) throw new HttpError(400, `第${index + 1}张轮播图图片无效`);
+      if (!d.notes.some((note) => note.id === noteId)) throw new HttpError(400, `第${index + 1}张轮播图请选择有效笔记`);
+      let id = String(item.id || '').trim();
+      if (!id || seen.has(id)) id = 'gfb_' + Date.now() + '_' + index + '_' + crypto.randomBytes(2).toString('hex');
+      seen.add(id);
+      return { id, image, noteId };
+    });
+    db.save();
+    return d.goldFingerBanners;
+  });
+
   // ---------- 笔记 ----------
   router.get('/api/admin/notes', (ctx) => { requireAuth(ctx); return db.get().notes; });
 
@@ -252,6 +277,9 @@ module.exports = function register(router, HttpError) {
   router.delete('/api/admin/notes/:id', (ctx) => {
     requireAuth(ctx);
     const d = db.get();
+    if ((d.goldFingerBanners || []).some((item) => item.noteId === ctx.params.id)) {
+      throw new HttpError(400, '该笔记正在被金手指Banner使用，请先修改或删除对应Banner');
+    }
     if (d.settings && d.settings.featuredNoteId === ctx.params.id) {
       const nextGold = d.notes.find((n) => n.id !== ctx.params.id && n.type === 'gold');
       if (!nextGold) throw new HttpError(400, '请先新增另一篇金手指内容再删除');

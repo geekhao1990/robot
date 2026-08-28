@@ -124,6 +124,10 @@ function ensureContentTypes() {
     db.goldFingerRecords = [];
     changed = true;
   }
+  if (!Array.isArray(db.goldFingerBanners)) {
+    db.goldFingerBanners = [];
+    changed = true;
+  }
   return changed;
 }
 

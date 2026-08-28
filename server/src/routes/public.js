@@ -101,9 +101,13 @@ module.exports = function register(router, HttpError) {
     return {
       record: records[0] || null,
       records: latestFive,
+      banners: (data.goldFingerBanners || []).map((item) => ({
+        id: item.id,
+        image: item.image,
+        noteId: item.noteId,
+      })),
       historyMonth: latestFive.length ? latestFive[latestFive.length - 1].date.slice(0, 7) : '',
       hasMoreHistory: records.length > latestFive.length,
-      notice: '法定节假日休市，以后台最新交易日数据为准。',
     };
   });
 

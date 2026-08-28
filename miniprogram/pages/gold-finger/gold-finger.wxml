@@ -23,13 +23,15 @@
       <view class="history-card">
         <view class="history-title">点金历史</view>
         <view class="history-head history-grid">
-          <text>日期</text><text>阳谱</text><text>阴谱</text><text>点金</text>
+          <text>日期</text><text>阳谱</text><text>阴谱</text><text>点金</text><text>中期趋势</text><text>仓位</text>
         </view>
         <view wx:for="{{records}}" wx:key="date" class="history-row history-grid">
           <text class="history-date">{{item.date}}</text>
           <text class="history-yang {{item.yangClass}}">{{item.yang}}%</text>
           <text class="history-yin {{item.yinClass}}">{{item.yin}}%</text>
           <text class="history-finger {{item.finger}}">{{item.fingerIcon}}</text>
+          <text class="history-trend {{item.trend}}">{{item.trendText}}</text>
+          <text class="history-position">{{item.position}}%</text>
         </view>
         <view wx:if="{{hasMoreHistory || historyExpanded}}" class="history-more">
           <view wx:if="{{historyLoading}}">加载中...</view>
@@ -39,7 +41,11 @@
         </view>
       </view>
 
-      <view class="notice">{{notice}}</view>
+      <swiper wx:if="{{banners.length}}" class="banner-swiper" indicator-dots="{{banners.length > 1}}" autoplay="{{banners.length > 1}}" interval="4000" duration="450" circular="{{banners.length > 1}}">
+        <swiper-item wx:for="{{banners}}" wx:key="id">
+          <image class="banner-image" src="{{item.image}}" mode="aspectFill" data-id="{{item.noteId}}" bindtap="goBannerNote" />
+        </swiper-item>
+      </swiper>
       <view class="disclaimer">数据仅供会员参考，不构成任何投资建议</view>
     </block>
   </scroll-view>

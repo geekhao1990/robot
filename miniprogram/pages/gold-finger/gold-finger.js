@@ -8,8 +8,8 @@ Page({
     headerHeight: 64,
     loading: true,
     record: null,
-    notice: '',
     records: [],
+    banners: [],
     historyExpanded: false,
     historyLoading: false,
     nextHistoryMonth: '',
@@ -35,8 +35,8 @@ Page({
       this.setData({
         loading: false,
         record: record || null,
-        notice: (result && result.notice) || '法定节假日休市，以最新交易日数据为准。',
         records,
+        banners: (result && result.banners) || [],
         historyExpanded: false,
         nextHistoryMonth: (result && result.historyMonth) || '',
         hasMoreHistory: result && result.hasMoreHistory === true,
@@ -61,6 +61,7 @@ Page({
       yang,
       yin,
       fingerIcon: record.finger === 'silver' ? '👇' : '☝️',
+      trendText: record.trend === 'down' ? '下跌' : '上涨',
       yangClass: yang > 50 ? 'strong' : '',
       yinClass: yin > 50 ? 'strong' : '',
     };
@@ -84,6 +85,11 @@ Page({
       this.setData({ historyLoading: false });
       wx.showToast({ title: '历史数据加载失败', icon: 'none' });
     });
+  },
+
+  goBannerNote(e) {
+    const id = e.currentTarget.dataset.id;
+    if (id) wx.navigateTo({ url: `/pages/detail/detail?id=${encodeURIComponent(id)}` });
   },
 
   goBack() {
