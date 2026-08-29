@@ -139,7 +139,7 @@ Page({
       if (!this.data.vipEnabled) return this.handleGetResource(true);
       return store.syncMe().then((user) => {
         if (!this.isVipActive(user)) return this.showVipOffer();
-        return this.handleGetResource();
+        return this.handleGetResource(true);
       });
     });
   },
