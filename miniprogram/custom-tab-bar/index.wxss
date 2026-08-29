@@ -31,19 +31,19 @@
   font-weight: 700;
 }
 
-/* 中间「+」按钮 */
-.plus-item {
+/* 中间 AI 按钮 */
+.ai-item {
   flex: 1;
 }
-.plus-btn {
+.ai-btn {
   width: 96rpx;
   height: 64rpx;
   background: #ff2442;
   color: #fff;
   border-radius: 20rpx;
-  font-size: 56rpx;
-  font-weight: 300;
-  line-height: 60rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+  line-height: 64rpx;
   text-align: center;
   box-shadow: 0 6rpx 16rpx rgba(255, 36, 66, .35);
 }
