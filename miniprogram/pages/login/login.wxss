@@ -5,15 +5,7 @@
 }
 .logo-wrap {
   text-align: center;
-  padding: 72rpx 0 40rpx;
-}
-.logo-image {
-  display: block;
-  width: 180rpx;
-  height: 180rpx;
-  margin: 0 auto 18rpx;
-  border-radius: 50%;
-  object-fit: cover;
+  padding: 120rpx 0 60rpx;
 }
 .logo {
   font-size: 60rpx;
@@ -30,18 +22,14 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 24rpx;
-  margin-bottom: 52rpx;
+  margin-top: 40rpx;
+  margin-bottom: 70rpx;
 }
 .wx-icon {
   width: 150rpx;
   height: 150rpx;
   border-radius: 50%;
-  background: #f3f3f3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 70rpx;
+  object-fit: cover;
 }
 .wx-tip {
   font-size: 26rpx;
