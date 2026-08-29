@@ -96,7 +96,7 @@
         </view>
         <view class="vip-benefit-item">
           <view class="vip-benefit-icon">暗</view>
-          <view class="vip-benefit-copy"><text>暗盘软件一个月</text><text>开通后按指引领取使用权限</text></view>
+          <view class="vip-benefit-copy"><text>暗盘软件一个月</text><text>添加企业微信获取</text></view>
         </view>
       </view>
       <button class="vip-pay" bindtap="onBuyVip" loading="{{paymentPending}}" disabled="{{paymentPending}}">立即开通 · ¥9.9</button>
