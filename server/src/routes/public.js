@@ -16,7 +16,7 @@ module.exports = function register(router, HttpError) {
   const requireGoldAccess = (ctx) => {
     const reader = requireReader(ctx);
     const data = db.get();
-    if (data.settings && data.settings.vipEnabled === true && !reader.official && !vipActive(reader)) {
+    if (data.settings && data.settings.vipEnabled === true && !vipActive(reader)) {
       throw new HttpError(403, '开通VIP后可查看金手指');
     }
     return data;
@@ -138,7 +138,7 @@ module.exports = function register(router, HttpError) {
     const note = data.notes.find((n) => n.id === ctx.params.id);
     if (!note) throw new HttpError(404, 'not found');
     if (note.type === 'gold') throw new HttpError(400, '金手指内容请进入会员专属页面查看');
-    if (data.settings && data.settings.vipEnabled === true && !reader.official && !vipActive(reader)) {
+    if (data.settings && data.settings.vipEnabled === true && !vipActive(reader)) {
       throw new HttpError(403, '开通VIP后可领取该资源');
     }
     const resources = resourceList(note);

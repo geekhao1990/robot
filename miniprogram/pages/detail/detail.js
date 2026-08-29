@@ -136,7 +136,7 @@ Page({
     if (!store.isLogin()) return this.requireLogin();
     if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
     return Promise.resolve(this.settingsPromise).then(() => {
-      if (!this.data.vipEnabled) return this.handleGetResource();
+      if (!this.data.vipEnabled) return this.handleGetResource(true);
       return store.syncMe().then((user) => {
         if (!this.isVipActive(user)) return this.showVipOffer();
         return this.handleGetResource();
@@ -144,7 +144,7 @@ Page({
     });
   },
   isVipActive(user) {
-    return !!(user && (user.official || user.vipActive || (user.vip && (user.vipPermanent || (user.vipExpire && user.vipExpire > Date.now())))));
+    return !!(user && (user.vipActive || (user.vip && (user.vipPermanent || (user.vipExpire && user.vipExpire > Date.now())))));
   },
   showVipOffer() {
     this.setData({ vipModalVisible: true });
@@ -204,12 +204,10 @@ Page({
   paymentErrorText(error) {
     return (error && (error.errMsg || (error.data && error.data.error) || error.message)) || '请稍后重试';
   },
-  handleGetResource() {
+  handleGetResource(skipAd = false) {
     const note = this.data.note;
     if (!note.hasResource) return toast('管理员尚未配置获取地址');
-    const user = store.getUser();
-    if (user && user.official) return this.showResource();
-    if (!this.data.rewardedAdEnabled) return this.showResource();
+    if (skipAd || !this.data.rewardedAdEnabled) return this.showResource();
     const adUnitId = config.rewardedVideoAdUnitId;
     if (!adUnitId || /x{4,}/i.test(adUnitId)) {
       return wx.showModal({
