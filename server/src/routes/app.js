@@ -186,6 +186,19 @@ function previewLoginAllowed(ctx) {
 }
 
 module.exports = function register(router, HttpError) {
+  const validGoldFingerDate = (value) => {
+    const date = String(value || '').trim();
+    const parsed = new Date(`${date}T00:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
+      throw new HttpError(400, '请选择有效日期');
+    }
+    return date;
+  };
+  const goldPercent = (value, label) => {
+    const number = Number(value);
+    if (!Number.isInteger(number) || number < 0 || number > 100) throw new HttpError(400, `${label}必须是0-100的整数`);
+    return number;
+  };
   const currentUser = (ctx) => {
     const uid = auth.userIdFor(ctx.headers.authorization);
     if (!uid) throw new HttpError(401, '未登录');
@@ -193,6 +206,60 @@ module.exports = function register(router, HttpError) {
     if (!u) throw new HttpError(401, '用户不存在');
     return u;
   };
+  const requireOfficial = (ctx) => {
+    const user = currentUser(ctx);
+    if (user.official !== true) throw new HttpError(403, '仅官方账号可管理金手指数据');
+    return user;
+  };
+
+  // 官方账号可在小程序中维护每日金手指数据；每个交易日仅保留一条最新记录。
+  router.get('/api/official/gold-finger', (ctx) => {
+    requireOfficial(ctx);
+    return (db.get().goldFingerRecords || []).map((item) => {
+      const yang = Math.max(0, Math.min(100, Number(item.yang) || 0));
+      return { ...item, yang, yin: 100 - yang };
+    }).sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.updatedAt || 0) - (a.updatedAt || 0));
+  });
+
+  router.put('/api/official/gold-finger/:date', (ctx) => {
+    requireOfficial(ctx);
+    const d = db.get();
+    const body = ctx.body || {};
+    const date = validGoldFingerDate(ctx.params.date);
+    const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
+    if (weekday === 0 || weekday === 6) throw new HttpError(400, '周末休市，无需维护金手指数据');
+    const yang = goldPercent(body.yang, '阳谱');
+    const position = goldPercent(body.position, '仓位');
+    if (!['gold', 'silver'].includes(body.finger)) throw new HttpError(400, '请选择金手指或银手指');
+    if (!['up', 'down'].includes(body.trend)) throw new HttpError(400, '请选择中期趋势（上涨或下跌）');
+    d.goldFingerRecords = Array.isArray(d.goldFingerRecords) ? d.goldFingerRecords : [];
+    const record = {
+      id: `gf_${date.replace(/-/g, '')}`,
+      date,
+      yang,
+      yin: 100 - yang,
+      finger: body.finger,
+      trend: body.trend,
+      position,
+      updatedAt: Date.now(),
+    };
+    const index = d.goldFingerRecords.findIndex((item) => item.date === date);
+    if (index >= 0) d.goldFingerRecords[index] = record;
+    else d.goldFingerRecords.push(record);
+    db.save();
+    return record;
+  });
+
+  router.delete('/api/official/gold-finger/:date', (ctx) => {
+    requireOfficial(ctx);
+    const d = db.get();
+    const date = validGoldFingerDate(ctx.params.date);
+    const before = (d.goldFingerRecords || []).length;
+    d.goldFingerRecords = (d.goldFingerRecords || []).filter((item) => item.date !== date);
+    if (d.goldFingerRecords.length === before) throw new HttpError(404, '记录不存在');
+    db.save();
+    return { ok: true };
+  });
   // 微信登录：后端用 code 换取 openid，再发放业务 token。
   router.post('/api/login', async (ctx) => {
     const d = db.get();
@@ -399,7 +466,7 @@ module.exports = function register(router, HttpError) {
     const u = currentUser(ctx);
     const s = getState(u.id);
     const note = db.get().notes.find((n) => n.id === ctx.params.id);
-    if (!note) throw new HttpError(404, 'not found');
+    if (!note || note.visible === false) throw new HttpError(404, 'not found');
     const liked = !s.likes[ctx.params.id];
     if (liked) { s.likes[ctx.params.id] = Date.now(); note.likes += 1; }
     else { delete s.likes[ctx.params.id]; note.likes = Math.max(0, note.likes - 1); }
@@ -412,7 +479,7 @@ module.exports = function register(router, HttpError) {
     const u = currentUser(ctx);
     const s = getState(u.id);
     const note = db.get().notes.find((n) => n.id === ctx.params.id);
-    if (!note) throw new HttpError(404, 'not found');
+    if (!note || note.visible === false) throw new HttpError(404, 'not found');
     const collected = !s.collects[ctx.params.id];
     if (collected) { s.collects[ctx.params.id] = Date.now(); note.collects += 1; }
     else { delete s.collects[ctx.params.id]; note.collects = Math.max(0, note.collects - 1); }
@@ -466,20 +533,20 @@ module.exports = function register(router, HttpError) {
     const s = getState(u.id);
     const map = {};
     db.get().notes.forEach((n) => (map[n.id] = n));
-    return Object.keys(s.likes).sort((a, b) => s.likes[b] - s.likes[a]).map((id) => map[id]).filter(Boolean).map(pubNote);
+    return Object.keys(s.likes).sort((a, b) => s.likes[b] - s.likes[a]).map((id) => map[id]).filter((note) => note && note.visible !== false).map(pubNote);
   });
   router.get('/api/me/collects', (ctx) => {
     const u = currentUser(ctx);
     const s = getState(u.id);
     const map = {};
     db.get().notes.forEach((n) => (map[n.id] = n));
-    return Object.keys(s.collects).sort((a, b) => s.collects[b] - s.collects[a]).map((id) => map[id]).filter(Boolean).map(pubNote);
+    return Object.keys(s.collects).sort((a, b) => s.collects[b] - s.collects[a]).map((id) => map[id]).filter((note) => note && note.visible !== false).map(pubNote);
   });
 
   // 我发布的笔记
   router.get('/api/me/notes', (ctx) => {
     const u = currentUser(ctx);
-    return db.get().notes.filter((n) => n.authorId === u.id).map(pubNote);
+    return db.get().notes.filter((n) => n.authorId === u.id && n.visible !== false).map(pubNote);
   });
 
 };

@@ -48,6 +48,10 @@ function ensureContentTypes() {
     changed = true;
   }
   db.notes.forEach((note) => {
+    if (typeof note.visible !== 'boolean') {
+      note.visible = true;
+      changed = true;
+    }
     const category = String(note.category || '').trim();
     const nextCategory = categories.includes(category) ? category : typeLabel(note.type);
     const nextType = typeForCategory(nextCategory);

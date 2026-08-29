@@ -1,11 +1,12 @@
 <view class="tab-bar">
   <block wx:for="{{list}}" wx:key="text">
     <view
-      class="tab-item {{item.ai ? 'ai-item' : ''}}"
+      class="tab-item {{item.ai ? 'ai-item' : ''}} {{item.plus ? 'plus-item' : ''}}"
       data-index="{{index}}"
       bindtap="switchTab"
     >
-      <view wx:if="{{item.ai}}" class="ai-btn">AI</view>
+      <view wx:if="{{item.plus}}" class="plus-btn">+</view>
+      <view wx:elif="{{item.ai}}" class="ai-btn">AI</view>
       <view wx:else class="tab-text {{selected === index ? 'active' : ''}}">
         {{item.text}}
       </view>

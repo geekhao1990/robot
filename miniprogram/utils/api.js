@@ -143,6 +143,18 @@ function getGoldFingerHistory(month) {
   return request('GET', '/api/gold-finger/history', { auth: true, data: { month } });
 }
 
+function getOfficialGoldFinger() {
+  return request('GET', '/api/official/gold-finger', { auth: true });
+}
+
+function saveOfficialGoldFinger(date, payload) {
+  return request('PUT', '/api/official/gold-finger/' + encodeURIComponent(date), { auth: true, data: payload });
+}
+
+function deleteOfficialGoldFinger(date) {
+  return request('DELETE', '/api/official/gold-finger/' + encodeURIComponent(date), { auth: true });
+}
+
 function getCategories() {
   if (remote()) return request('GET', '/api/categories');
   return delay(data.categories, 0);
@@ -431,6 +443,9 @@ module.exports = {
   getResource,
   getGoldFinger,
   getGoldFingerHistory,
+  getOfficialGoldFinger,
+  saveOfficialGoldFinger,
+  deleteOfficialGoldFinger,
   getCategories,
   getHotSearch,
   getAppSettings,

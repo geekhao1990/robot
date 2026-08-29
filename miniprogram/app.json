@@ -3,6 +3,7 @@
     "pages/index/index",
     "pages/detail/detail",
     "pages/gold-finger/gold-finger",
+    "pages/gold-finger-manage/gold-finger-manage",
     "pages/search/search",
     "pages/agent/agent",
     "pages/profile/profile",

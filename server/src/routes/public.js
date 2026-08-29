@@ -45,7 +45,7 @@ module.exports = function register(router, HttpError) {
   router.get('/api/feed', (ctx) => {
     const { tab = 'discover', page = 1, size = 10 } = ctx.query;
     const d = db.get();
-    let list = d.notes.slice();
+    let list = d.notes.filter((note) => note.visible !== false);
     if (tab === 'following') {
       const reader = requireReader(ctx);
       const state = (d.userState && d.userState[reader.id]) || {};
@@ -79,18 +79,19 @@ module.exports = function register(router, HttpError) {
     if (!kw) return [];
     const contains = (value) => String(value || '').toLowerCase().includes(kw);
     return db.get().notes.filter(
-      (n) =>
+      (n) => n.visible !== false && (
         contains(n.title) ||
         contains(n.content) ||
         contains(n.category) ||
         contains(typeLabel(n.type)) ||
         (n.tags || []).some(contains) ||
         contains(n.author && n.author.name)
+      )
     ).map(pubNote);
   });
 
   router.get('/api/notes/:id', (ctx) => {
-    const n = db.get().notes.find((x) => x.id === ctx.params.id);
+    const n = db.get().notes.find((x) => x.id === ctx.params.id && x.visible !== false);
     if (!n) { const e = new Error('not found'); e.status = 404; throw e; }
     return pubNote(n);
   });
@@ -104,7 +105,7 @@ module.exports = function register(router, HttpError) {
       record: records[0] || null,
       records: latestFive,
       banners: (data.goldFingerBanners || [])
-        .filter((item) => data.notes.some((note) => note.id === item.noteId && note.type === 'ad'))
+        .filter((item) => data.notes.some((note) => note.id === item.noteId && note.type === 'ad' && note.visible !== false))
         .map((item) => ({
         id: item.id,
         image: item.image,
@@ -135,7 +136,7 @@ module.exports = function register(router, HttpError) {
   router.get('/api/notes/:id/resource', (ctx) => {
     const reader = requireReader(ctx);
     const data = db.get();
-    const note = data.notes.find((n) => n.id === ctx.params.id);
+    const note = data.notes.find((n) => n.id === ctx.params.id && n.visible !== false);
     if (!note) throw new HttpError(404, 'not found');
     if (note.type === 'gold') throw new HttpError(400, '金手指内容请进入会员专属页面查看');
     if (data.settings && data.settings.vipEnabled === true && !vipActive(reader)) {
@@ -155,6 +156,6 @@ module.exports = function register(router, HttpError) {
 
   router.get('/api/users/:id/notes', (ctx) => {
     requireReader(ctx);
-    return db.get().notes.filter((n) => n.authorId === ctx.params.id).map(pubNote);
+    return db.get().notes.filter((n) => n.authorId === ctx.params.id && n.visible !== false).map(pubNote);
   });
 };

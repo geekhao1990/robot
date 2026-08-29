@@ -1,0 +1,29 @@
+.page { min-height: 100vh; color: #282018; background: #f6f3ee; }
+.nav { position: fixed; top: 0; left: 0; right: 0; z-index: 10; box-sizing: content-box; background: rgba(255,255,255,.97); border-bottom: 1rpx solid #eee8df; }
+.nav-inner { position: relative; display: flex; align-items: center; justify-content: center; }
+.back { position: absolute; left: 24rpx; width: 64rpx; height: 64rpx; color: #222; font-size: 58rpx; font-weight: 300; line-height: 58rpx; text-align: center; }
+.nav-title { font-size: 32rpx; font-weight: 800; }
+.body { padding: 28rpx; padding-bottom: calc(60rpx + env(safe-area-inset-bottom)); box-sizing: border-box; }
+.form-card { overflow: hidden; background: #fff; border-radius: 24rpx; box-shadow: 0 8rpx 26rpx rgba(80,58,32,.06); }
+.card-title { padding: 28rpx 28rpx 14rpx; color: #4a392a; font-size: 30rpx; font-weight: 800; }
+.field-row { display: flex; align-items: center; min-height: 90rpx; margin: 0 28rpx; border-bottom: 1rpx solid #f1ede7; }
+.field-row.no-border { border-bottom: 0; }
+.field-label { width: 142rpx; color: #6a5b4b; font-size: 27rpx; }
+.picker-value { min-width: 260rpx; color: #2f251b; font-size: 27rpx; text-align: right; }
+.picker-value text { margin-left: 10rpx; color: #b5aa9c; font-size: 34rpx; }
+.number-input { flex: 1; height: 64rpx; color: #2f251b; font-size: 27rpx; text-align: right; }
+.unit { margin-left: 10rpx; color: #9d9081; font-size: 25rpx; }
+.actions { display: flex; gap: 18rpx; padding: 24rpx 28rpx 28rpx; }
+.actions button { flex: 1; margin: 0; border-radius: 999rpx; font-size: 28rpx; font-weight: 700; }
+.reset-btn { color: #745930; background: #f7edd8; }
+.save-btn { color: #fff; background: #ff2442; }
+.list-title { margin: 40rpx 0 18rpx; color: #4a392a; font-size: 31rpx; font-weight: 800; }
+.state { padding: 64rpx 0; color: #9f958a; font-size: 26rpx; text-align: center; }
+.record-list { overflow: hidden; background: #fff; border-radius: 24rpx; }
+.record { display: flex; align-items: center; justify-content: space-between; padding: 24rpx 28rpx; border-bottom: 1rpx solid #f2eee9; }
+.record:last-child { border-bottom: 0; }
+.record-main { min-width: 0; }
+.record-date { color: #2d241b; font-size: 29rpx; font-weight: 750; }
+.record-meta { margin-top: 8rpx; color: #998d80; font-size: 23rpx; }
+.record-actions { display: flex; flex-direction: column; gap: 18rpx; margin-left: 20rpx; color: #9a6b2a; font-size: 25rpx; text-align: right; }
+.record-actions .delete { color: #c77368; }

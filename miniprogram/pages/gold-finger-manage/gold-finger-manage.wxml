@@ -1,0 +1,47 @@
+<view class="page">
+  <view class="nav" style="padding-top: {{statusBarHeight}}px; height: {{navBarHeight}}px;">
+    <view class="nav-inner" style="height: {{navBarHeight}}px;">
+      <view class="back" bindtap="goBack">‹</view>
+      <view class="nav-title">金手指数据管理</view>
+    </view>
+  </view>
+
+  <view class="body" style="padding-top: {{headerHeight}}px;">
+    <view class="form-card">
+      <view class="card-title">维护每日数据</view>
+      <view class="field-row">
+        <text class="field-label">日期</text>
+        <picker mode="date" value="{{form.date}}" bindchange="onDateChange"><view class="picker-value">{{form.date}} <text>›</text></view></picker>
+      </view>
+      <view class="field-row">
+        <text class="field-label">阳谱</text>
+        <input class="number-input" type="number" value="{{form.yang}}" bindinput="onYangInput" maxlength="3" placeholder="0-100" />
+        <text class="unit">%</text>
+      </view>
+      <view class="field-row">
+        <text class="field-label">点金</text>
+        <picker range="{{fingerOptions}}" value="{{form.fingerIndex}}" bindchange="onFingerChange"><view class="picker-value">{{form.fingerText}} <text>›</text></view></picker>
+      </view>
+      <view class="field-row">
+        <text class="field-label">中期趋势</text>
+        <picker range="{{trendOptions}}" value="{{form.trendIndex}}" bindchange="onTrendChange"><view class="picker-value">{{form.trendText}} <text>›</text></view></picker>
+      </view>
+      <view class="field-row no-border">
+        <text class="field-label">仓位</text>
+        <input class="number-input" type="number" value="{{form.position}}" bindinput="onPositionInput" maxlength="3" placeholder="0-100" />
+        <text class="unit">%</text>
+      </view>
+      <view class="actions"><button class="reset-btn" bindtap="reset">新建</button><button class="save-btn" loading="{{saving}}" bindtap="save">保存数据</button></view>
+    </view>
+
+    <view class="list-title">已维护的数据</view>
+    <view wx:if="{{loading}}" class="state">加载中...</view>
+    <view wx:elif="{{!records.length}}" class="state">暂无数据</view>
+    <view wx:else class="record-list">
+      <view wx:for="{{records}}" wx:key="date" class="record">
+        <view class="record-main"><view class="record-date">{{item.date}}</view><view class="record-meta">阳谱 {{item.yang}}% · 阴谱 {{item.yin}}% · {{item.fingerText}}</view><view class="record-meta">{{item.trendText}} · 仓位 {{item.position}}%</view></view>
+        <view class="record-actions"><text data-record="{{item}}" bindtap="edit">编辑</text><text class="delete" data-date="{{item.date}}" bindtap="remove">删除</text></view>
+      </view>
+    </view>
+  </view>
+</view>

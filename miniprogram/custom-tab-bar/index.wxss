@@ -47,6 +47,19 @@
   text-align: center;
   box-shadow: 0 6rpx 16rpx rgba(255, 36, 66, .35);
 }
+.plus-item { flex: 1; }
+.plus-btn {
+  width: 96rpx;
+  height: 64rpx;
+  background: #ff2442;
+  color: #fff;
+  border-radius: 20rpx;
+  font-size: 54rpx;
+  font-weight: 300;
+  line-height: 58rpx;
+  text-align: center;
+  box-shadow: 0 6rpx 16rpx rgba(255, 36, 66, .35);
+}
 
 /* 角标：绝对定位，不占布局 */
 .badge {

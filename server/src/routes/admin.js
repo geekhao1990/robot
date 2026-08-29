@@ -234,6 +234,7 @@ module.exports = function register(router, HttpError) {
       collects: b.collects || 0,
       comments: b.comments || 0,
       riskDisclaimerEnabled: b.riskDisclaimerEnabled !== false,
+      visible: b.visible !== false,
       video: false,
       time: Date.now(),
       commentList: [],
@@ -258,6 +259,11 @@ module.exports = function register(router, HttpError) {
     note.category = resolved.category;
     if (Object.prototype.hasOwnProperty.call(b, 'riskDisclaimerEnabled')) {
       note.riskDisclaimerEnabled = b.riskDisclaimerEnabled === true;
+    }
+    if (Object.prototype.hasOwnProperty.call(b, 'visible')) {
+      note.visible = b.visible !== false;
+    } else if (typeof note.visible !== 'boolean') {
+      note.visible = true;
     }
     const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
