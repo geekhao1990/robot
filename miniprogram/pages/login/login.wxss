@@ -47,11 +47,6 @@
   font-size: 32rpx;
 }
 .wx-login-btn::after { border: none; }
-.wx-logo {
-  margin-right: 12rpx;
-  font-size: 36rpx;
-}
-
 .quick {
   text-align: center;
   color: #ff2442;
