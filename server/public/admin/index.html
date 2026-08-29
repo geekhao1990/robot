@@ -323,7 +323,7 @@ function editNote(id) {
     <div id="resourceField">
       <div class="field"><label>百度网盘地址（选填）</label><input id="f_baidu" value="${esc(baiduLink)}" placeholder="百度网盘链接及提取码" /></div>
       <div class="field"><label>夸克网盘地址（选填）</label><input id="f_quark" value="${esc(quarkLink)}" placeholder="夸克网盘链接及提取码" /></div>
-      <div class="hint">至少填写一个；前台只显示已填写的网盘。</div>
+      <div class="hint">均为选填；前台始终显示「点击领取」，领取弹窗只展示已填写的网盘。</div>
     </div>
     <div class="field" id="goldHint"><div class="hint">金手指笔记的主图和「点击领取」均进入会员专属金手指页面，无需填写网盘地址。</div></div>
     <div class="field" id="adHint"><div class="hint">广告笔记作为Banner跳转页面，无需填写网盘地址。</div></div>
@@ -341,7 +341,6 @@ function editNote(id) {
     const quarkUrl = document.getElementById('f_quark').value.trim();
     const category = document.getElementById('f_category').value;
     const type = category === '金手指' ? 'gold' : (category === '课程' ? 'course' : (category === '广告' ? 'ad' : 'material'));
-    if (!baiduUrl && !quarkUrl && type !== 'gold' && type !== 'ad') return alert('请至少填写一个网盘地址');
     const body = {
       title: document.getElementById('f_title').value,
       content: document.getElementById('f_content').value,

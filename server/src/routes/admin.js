@@ -217,7 +217,6 @@ module.exports = function register(router, HttpError) {
     const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
     const links = normalizeResourceLinks(b, type, !hasProviderFields);
-    if (type !== 'gold' && type !== 'ad' && !links.baiduUrl && !links.quarkUrl) throw new HttpError(400, '请至少填写一个网盘地址');
     const note = {
       id: 'n' + Date.now(),
       authorId: author.id,
@@ -263,7 +262,6 @@ module.exports = function register(router, HttpError) {
     const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
     Object.assign(note, normalizeResourceLinks(note, note.type, !hasProviderFields));
-    if (note.type !== 'gold' && note.type !== 'ad' && !note.baiduUrl && !note.quarkUrl) throw new HttpError(400, '请至少填写一个网盘地址');
     if (d.settings && d.settings.featuredNoteId === note.id && note.type !== 'gold') {
       throw new HttpError(400, '加号入口笔记必须保持为金手指类型');
     }
