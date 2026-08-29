@@ -25,25 +25,23 @@
     </view>
     <view class="article">
       <view class="title">{{note.title}}</view>
-      <view class="text">{{note.content}}</view>
+      <view class="text">{{note.displayContent}}</view>
       <view class="tags"><text wx:for="{{note.tags}}" wx:key="*this" class="tag">#{{item}}</text></view>
-      <view wx:if="{{note.riskDisclaimerEnabled}}" class="risk-disclaimer">数据来自交易所和互联网公开数据，由本人整理发布，不构成投资建议</view>
       <view class="meta">{{timeText}}</view>
-    </view>
-    <view class="divider"></view>
-    <view class="actionbar {{note.type === 'ad' ? 'ad-mode' : ''}}">
-      <view wx:if="{{note.type !== 'ad'}}" class="course-btn" bindtap="onGetResource">{{resourceLabel}}</view>
-      <view class="action" bindtap="onLike">
-        <view class="ic heart {{note.liked ? 'active' : ''}}"></view><text class="num">{{likeText}}</text>
-      </view>
-      <view class="action" bindtap="onCollect">
-        <view class="ic star {{note.collected ? 'active' : ''}}"></view><text class="num">{{collectText}}</text>
-      </view>
-    <button class="action share-action" open-type="share">
-        <view class="ic share"></view><text class="num">分享</text>
-      </button>
-      <view class="action" bindtap="goService">
-        <view class="ic chat"></view><text class="num">客服</text>
+      <view class="actionbar">
+        <view class="course-btn" bindtap="onGetResource">{{resourceLabel}}</view>
+        <view class="action" bindtap="onLike">
+          <view class="ic heart {{note.liked ? 'active' : ''}}"></view><text class="num">{{likeText}}</text>
+        </view>
+        <view class="action" bindtap="onCollect">
+          <view class="ic star {{note.collected ? 'active' : ''}}"></view><text class="num">{{collectText}}</text>
+        </view>
+        <button class="action share-action" open-type="share">
+          <view class="ic share"></view><text class="num">分享</text>
+        </button>
+        <view class="action" bindtap="goService">
+          <view class="ic chat"></view><text class="num">客服</text>
+        </view>
       </view>
     </view>
     <view class="detail-bottom-spacer"></view>

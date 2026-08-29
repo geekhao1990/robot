@@ -2,6 +2,7 @@ const api = require('../../utils/api');
 const store = require('../../utils/store');
 const config = require('../../utils/config');
 const { formatCount, fromNow, toast } = require('../../utils/util');
+const RISK_DISCLAIMER = '数据来自交易所和互联网公开数据，由本人整理发布，不构成投资建议';
 
 Page({
   data: {
@@ -77,6 +78,10 @@ Page({
     api.getNoteById(this.noteId).then((note) => {
       this._loadingNote = false;
       if (!note) return toast('笔记不存在');
+      const content = String(note.content || '').replace(/\s+$/, '');
+      note.displayContent = note.riskDisclaimerEnabled
+        ? `${content}${content ? '\n\n' : ''}${RISK_DISCLAIMER}`
+        : content;
       this.setData({
         note,
         swiperHeight: Math.min(750 * (note.coverRatio || 1.3), 1000),
