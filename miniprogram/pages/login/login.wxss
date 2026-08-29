@@ -5,10 +5,18 @@
 }
 .logo-wrap {
   text-align: center;
-  padding: 120rpx 0 60rpx;
+  padding: 72rpx 0 40rpx;
+}
+.logo-image {
+  display: block;
+  width: 180rpx;
+  height: 180rpx;
+  margin: 0 auto 18rpx;
+  border-radius: 50%;
+  object-fit: cover;
 }
 .logo {
-  font-size: 72rpx;
+  font-size: 60rpx;
   font-weight: 800;
   color: #ff2442;
 }
@@ -22,8 +30,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 40rpx;
-  margin-bottom: 70rpx;
+  margin-top: 24rpx;
+  margin-bottom: 52rpx;
 }
 .wx-icon {
   width: 150rpx;

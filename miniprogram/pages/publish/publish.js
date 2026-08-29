@@ -226,7 +226,7 @@ Page({
       finish(note);
     };
 
-    // 没有图片时，按标题/内容生成一张纯色文字封面（小红书同款效果）
+    // 没有图片时，按标题/内容生成一张纯色文字封面
     const ensureImages = () => {
       if (images.length) return Promise.resolve(images);
       const coverText = title.trim() || content.trim().slice(0, 24) || '新笔记';
