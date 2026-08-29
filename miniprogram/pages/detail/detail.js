@@ -144,7 +144,7 @@ Page({
     });
   },
   isVipActive(user) {
-    return !!(user && (user.vipActive || (user.vip && (user.vipPermanent || (user.vipExpire && user.vipExpire > Date.now())))));
+    return !!(user && (user.official || user.vipActive || (user.vip && (user.vipPermanent || (user.vipExpire && user.vipExpire > Date.now())))));
   },
   showVipOffer() {
     this.setData({ vipModalVisible: true });
@@ -207,6 +207,8 @@ Page({
   handleGetResource() {
     const note = this.data.note;
     if (!note.hasResource) return toast('管理员尚未配置获取地址');
+    const user = store.getUser();
+    if (user && user.official) return this.showResource();
     if (!this.data.rewardedAdEnabled) return this.showResource();
     const adUnitId = config.rewardedVideoAdUnitId;
     if (!adUnitId || /x{4,}/i.test(adUnitId)) {
