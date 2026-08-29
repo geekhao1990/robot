@@ -70,14 +70,40 @@
 
 <view wx:if="{{vipModalVisible}}" class="vip-mask" catchtap="closeVipOffer">
   <view class="vip-panel" catchtap="noop">
-    <view class="vip-badge">VIP</view>
-    <view class="vip-title">9.9元开通月卡</view>
-    <view class="vip-subtitle">微信支付 · 支付成功立即生效</view>
-    <view class="vip-benefit">
-      <view class="vip-benefit-item"><text>✓</text> 30天会员领取权限</view>
-      <view class="vip-benefit-item"><text>✓</text> 支付成功后添加企业微信再送一个月</view>
+    <view class="vip-dismiss" bindtap="closeVipOffer">×</view>
+    <view class="vip-hero">
+      <view class="vip-topline">
+        <view class="vip-badge">牛来 VIP</view>
+        <view class="vip-gift-tag">买1个月 · 可得2个月</view>
+      </view>
+      <view class="vip-plan-name">月卡会员</view>
+      <view class="vip-price-row">
+        <text class="vip-currency">¥</text>
+        <text class="vip-price">9.9</text>
+        <text class="vip-cycle">/ 30天</text>
+      </view>
+      <view class="vip-subtitle">微信支付 · 支付成功立即生效</view>
     </view>
-    <button class="vip-pay" bindtap="onBuyVip" loading="{{paymentPending}}" disabled="{{paymentPending}}">微信支付 ¥9.9</button>
-    <view class="vip-close" bindtap="closeVipOffer">暂不开通</view>
+    <view class="vip-body">
+      <view class="vip-section-title">月卡权益</view>
+      <view class="vip-benefit">
+        <view class="vip-benefit-item">
+          <view class="vip-benefit-icon">资</view>
+          <view class="vip-benefit-copy"><text>课程资料领取</text><text>解锁网盘资源领取资格</text></view>
+        </view>
+        <view class="vip-benefit-item">
+          <view class="vip-benefit-icon">金</view>
+          <view class="vip-benefit-copy"><text>金手指数据</text><text>查看会员专属数据页面</text></view>
+        </view>
+        <view class="vip-benefit-item">
+          <view class="vip-benefit-icon">赠</view>
+          <view class="vip-benefit-copy"><text>添加企业微信再送30天</text><text>提供订单号人工核销，每个账号限一次</text></view>
+        </view>
+      </view>
+      <view class="vip-gift-note"><text>买一送一</text><text>完成核销后，月卡有效期最长可达60天</text></view>
+      <button class="vip-pay" bindtap="onBuyVip" loading="{{paymentPending}}" disabled="{{paymentPending}}">立即开通 · ¥9.9</button>
+      <view class="vip-safe">微信安全支付</view>
+      <view class="vip-close" bindtap="closeVipOffer">暂不开通</view>
+    </view>
   </view>
 </view>
