@@ -52,8 +52,12 @@ module.exports = function register(router, HttpError) {
       const follows = state.follows || {};
       list = list.filter((n) => !!follows[n.authorId]).sort((a, b) => b.time - a.time);
     } else if (tab === 'discover' || tab === 'home') {
-      // 首页：全部笔记，按时间倒序
-      list.sort((a, b) => b.time - a.time);
+      // 首页：最新金手指、最新广告固定前两位，其余按时间倒序。
+      const sorted = list.slice().sort((a, b) => (Number(b.time) || 0) - (Number(a.time) || 0));
+      const latestGold = sorted.find((note) => note.type === 'gold');
+      const latestAd = sorted.find((note) => note.type === 'ad');
+      const pinnedIds = new Set([latestGold && latestGold.id, latestAd && latestAd.id].filter(Boolean));
+      list = [latestGold, latestAd].filter(Boolean).concat(sorted.filter((note) => !pinnedIds.has(note.id)));
     } else if (tab === 'material') {
       list = list.filter((n) => !n.type || n.type === 'normal' || n.type === 'material').sort((a, b) => b.time - a.time);
     } else if (tab === 'course') {

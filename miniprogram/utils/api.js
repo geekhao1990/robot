@@ -67,6 +67,7 @@ function decorate(note) {
   const bump = remote() ? 0 : 1;
   return {
     ...note,
+    riskDisclaimerEnabled: note.riskDisclaimerEnabled !== false,
     hasResource: !!(note.hasResource || resourceOptionsOf(note).length),
     liked,
     collected,
@@ -96,7 +97,11 @@ function mockFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
     const followed = new Set(store.followedIds());
     list = list.filter((n) => followed.has(n.authorId)).sort((a, b) => b.time - a.time);
   } else if (tab === 'discover' || tab === 'home') {
-    list = list.slice().sort((a, b) => b.time - a.time);
+    const sorted = list.slice().sort((a, b) => (Number(b.time) || 0) - (Number(a.time) || 0));
+    const latestGold = sorted.find((note) => note.type === 'gold');
+    const latestAd = sorted.find((note) => note.type === 'ad');
+    const pinnedIds = new Set([latestGold && latestGold.id, latestAd && latestAd.id].filter(Boolean));
+    list = [latestGold, latestAd].filter(Boolean).concat(sorted.filter((note) => !pinnedIds.has(note.id)));
   } else if (tab === 'course') {
     list = list.filter((n) => n.type === 'course').sort((a, b) => b.time - a.time);
   } else if (tab === 'material') {

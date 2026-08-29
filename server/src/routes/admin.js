@@ -233,7 +233,7 @@ module.exports = function register(router, HttpError) {
       likes: b.likes || 0,
       collects: b.collects || 0,
       comments: b.comments || 0,
-      riskDisclaimerEnabled: b.riskDisclaimerEnabled === true,
+      riskDisclaimerEnabled: b.riskDisclaimerEnabled !== false,
       video: false,
       time: Date.now(),
       commentList: [],

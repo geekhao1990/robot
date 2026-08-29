@@ -23,7 +23,11 @@ function pubUser(user, includePrivate = false) {
 function pubNote(note) {
   if (!note) return note;
   const { courseUrl, baiduUrl, quarkUrl, ...safe } = note;
-  return { ...safe, hasResource: resourceList(note).length > 0 };
+  return {
+    ...safe,
+    riskDisclaimerEnabled: note.riskDisclaimerEnabled !== false,
+    hasResource: resourceList(note).length > 0,
+  };
 }
 
 function pubSettings(data) {
