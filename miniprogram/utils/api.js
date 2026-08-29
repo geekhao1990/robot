@@ -83,8 +83,8 @@ function allNotes() {
 // 首页 feed：discover 发现 | following 关注
 function getFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
   if (remote()) {
-    // 带上登录态，「关注」流需按当前用户的关注关系过滤
-    return request('GET', '/api/feed', { data: { tab, page, size }, auth: true })
+    // 发现流允许游客访问；关注流才需要登录态。
+    return request('GET', '/api/feed', { data: { tab, page, size }, auth: tab === 'following' })
       .then((r) => ({ list: (r.list || []).map(decorate), hasMore: r.hasMore, total: r.total }));
   }
   return mockFeed({ tab, page, size });
@@ -115,7 +115,7 @@ function mockFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
 
 function getNoteById(id) {
   if (remote()) {
-    return http('/api/notes/' + id).then((n) => decorate(n));
+    return request('GET', '/api/notes/' + id).then((n) => decorate(n));
   }
   const note = allNotes().find((n) => n.id === id);
   return delay(decorate(note), 0);
@@ -139,12 +139,12 @@ function getGoldFingerHistory(month) {
 }
 
 function getCategories() {
-  if (remote()) return http('/api/categories');
+  if (remote()) return request('GET', '/api/categories');
   return delay(data.categories, 0);
 }
 
 function getHotSearch() {
-  if (remote()) return http('/api/hotSearch');
+  if (remote()) return request('GET', '/api/hotSearch');
   return delay(data.hotSearch, 0);
 }
 
@@ -170,7 +170,7 @@ function search(keyword) {
   const kw = (keyword || '').trim();
   if (!kw) return delay([]);
   if (remote()) {
-    return http('/api/search', { kw })
+    return request('GET', '/api/search', { data: { kw } })
       .then((list) => (list || []).map(decorate));
   }
   return mockSearch(kw);

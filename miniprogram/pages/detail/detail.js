@@ -40,8 +40,8 @@ Page({
   },
 
   onShow() {
-    if (this.noteId && !this.data.note && store.isLogin()) {
-      this._loginRedirected = false;
+    this._loginRedirected = false;
+    if (this.noteId && !this.data.note) {
       this.loadNote();
     }
   },
@@ -72,7 +72,6 @@ Page({
   },
 
   loadNote() {
-    if (!store.isLogin()) return this.requireLogin();
     if (this._loadingNote) return;
     this._loadingNote = true;
     api.getNoteById(this.noteId).then((note) => {
@@ -106,12 +105,14 @@ Page({
     wx.previewImage({ current: e.currentTarget.dataset.url, urls: this.data.note.images });
   },
   onLike() {
+    if (!store.isLogin()) return this.requireLogin();
     const note = this.data.note;
     const liked = store.toggleLike(note.id);
     const likes = note.likes + (liked ? 1 : -1);
     this.setData({ 'note.liked': liked, 'note.likes': likes, likeText: formatCount(likes) });
   },
   onCollect() {
+    if (!store.isLogin()) return this.requireLogin();
     const note = this.data.note;
     const collected = store.toggleCollect(note.id);
     const collects = note.collects + (collected ? 1 : -1);
@@ -119,6 +120,7 @@ Page({
     toast(collected ? '已收藏' : '已取消收藏');
   },
   onFollow() {
+    if (!store.isLogin()) return this.requireLogin();
     const note = this.data.note;
     const authorId = note.authorId || note.author.id;
     const followed = store.toggleFollow(authorId);
@@ -126,6 +128,7 @@ Page({
     toast(followed ? '已关注' : '已取消关注');
   },
   onGetResource() {
+    if (!store.isLogin()) return this.requireLogin();
     if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
     return Promise.resolve(this.settingsPromise).then(() => {
       if (!this.data.vipEnabled) return this.handleGetResource();

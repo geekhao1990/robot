@@ -36,6 +36,10 @@ Component({
     },
 
     onLike() {
+      if (!store.isLogin()) {
+        wx.navigateTo({ url: '/pages/login/login' });
+        return;
+      }
       const note = this.data.note;
       const liked = store.toggleLike(note.id);
       const likes = this.likeBase + (liked ? 1 : 0);

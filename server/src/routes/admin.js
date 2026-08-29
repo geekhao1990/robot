@@ -234,6 +234,7 @@ module.exports = function register(router, HttpError) {
       likes: b.likes || 0,
       collects: b.collects || 0,
       comments: b.comments || 0,
+      riskDisclaimerEnabled: b.riskDisclaimerEnabled === true,
       video: false,
       time: Date.now(),
       commentList: [],
@@ -256,6 +257,9 @@ module.exports = function register(router, HttpError) {
     const resolved = resolveCategory(d, requestedCategory, note.type);
     note.type = resolved.type;
     note.category = resolved.category;
+    if (Object.prototype.hasOwnProperty.call(b, 'riskDisclaimerEnabled')) {
+      note.riskDisclaimerEnabled = b.riskDisclaimerEnabled === true;
+    }
     const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
     Object.assign(note, normalizeResourceLinks(note, note.type, !hasProviderFields));

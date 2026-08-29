@@ -1,5 +1,4 @@
 const api = require('../../utils/api');
-const store = require('../../utils/store');
 
 const HISTORY_KEY = 'xhs_search_history';
 
@@ -30,14 +29,6 @@ Page({
   },
 
   onShow() {
-    if (!store.isLogin()) {
-      if (!this._loginRedirected) {
-        this._loginRedirected = true;
-        wx.navigateTo({ url: '/pages/login/login' });
-      }
-      return;
-    }
-    this._loginRedirected = false;
     if (this._hotLoaded) return;
     this._hotLoaded = true;
     api.getHotSearch()
@@ -45,10 +36,6 @@ Page({
       .catch((err) => {
         this._hotLoaded = false;
         this.setData({ hot: [] });
-        if (err && err.statusCode === 401 && !this._loginRedirected) {
-          this._loginRedirected = true;
-          wx.navigateTo({ url: '/pages/login/login' });
-        }
       });
   },
 
@@ -91,17 +78,7 @@ Page({
     }).catch((err) => {
       if (requestId !== this._searchRequestId) return;
       this.setData({ results: [], left: [], right: [], loading: false });
-      if (err && err.statusCode === 401) {
-        this._loginRedirected = true;
-        wx.showModal({
-          title: '登录已失效',
-          content: '请重新登录后搜索。',
-          showCancel: false,
-          success: () => wx.navigateTo({ url: '/pages/login/login' }),
-        });
-      } else {
-        wx.showToast({ title: '搜索失败，请稍后重试', icon: 'none' });
-      }
+      wx.showToast({ title: '搜索失败，请稍后重试', icon: 'none' });
     });
   },
 

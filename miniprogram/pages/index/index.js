@@ -33,14 +33,16 @@ Page({
       headerHeight: statusBarHeight + navBarHeight + this.data.searchBarHeight,
     });
 
-    if (!this.ensureAccess()) return;
     this.loadFeed(true);
   },
 
   onShow() {
     refreshTabBar(this, 0);
-    if (!this.ensureAccess()) return;
     if (this.data.tab === 'following') {
+      if (!store.isLogin()) {
+        this.setData({ tab: 'discover' });
+        return this.loadFeed(true);
+      }
       this.setData({ page: 1, hasMore: true });
       this.loadFeed(true);
     } else {
@@ -110,6 +112,10 @@ Page({
   onTabChange(e) {
     const tab = e.currentTarget.dataset.tab;
     if (tab === this.data.tab) return;
+    if (tab === 'following' && !store.isLogin()) {
+      wx.navigateTo({ url: '/pages/login/login' });
+      return;
+    }
     this.setData({ tab, page: 1, hasMore: true });
     this.loadFeed(true);
   },

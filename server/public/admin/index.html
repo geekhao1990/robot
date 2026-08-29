@@ -327,6 +327,10 @@ function editNote(id) {
     </div>
     <div class="field" id="goldHint"><div class="hint">金手指笔记的主图和「点击领取」均进入会员专属金手指页面，无需填写网盘地址。</div></div>
     <div class="field" id="adHint"><div class="hint">广告笔记作为Banner跳转页面，无需填写网盘地址。</div></div>
+    <div class="field"><label>风险提示（狗头保命）</label><select id="f_risk_disclaimer">
+      <option value="false" ${n.riskDisclaimerEnabled ? '' : 'selected'}>关闭</option>
+      <option value="true" ${n.riskDisclaimerEnabled ? 'selected' : ''}>开启，自动添加风险提示</option>
+    </select><div class="hint">开启后，笔记详情自动显示：数据来自交易所和互联网公开数据，由本人整理发布，不构成投资建议</div></div>
     <div class="field"><label>图片</label>
       <div id="imgGrid" class="img-grid"></div>
       <div class="hint">支持多图上传；拖拽图片可调整顺序，第一张为封面</div>
@@ -346,6 +350,7 @@ function editNote(id) {
       category,
       baiduUrl,
       quarkUrl,
+      riskDisclaimerEnabled: document.getElementById('f_risk_disclaimer').value === 'true',
       images: _modalImages,
     };
     const req = id ? api('/api/admin/notes/' + id, { method: 'PUT', body: JSON.stringify(body) })
