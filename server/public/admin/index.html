@@ -862,13 +862,13 @@ function renderGoldFinger() {
     </tr>`).join('');
     document.getElementById('content').innerHTML = `
       <div class="card" style="margin-bottom:20px">
-        <div class="toolbar"><div><h3>金手指页面 Banner</h3><div class="hint">上传轮播图片并选择广告类型笔记；前台点击图片后进入对应广告笔记。</div></div><button class="btn-primary" onclick="editGoldBanner(-1)">+ 新增Banner</button></div>
-        <div class="banner-admin-list">${bannerCards || '<div class="hint">暂未配置轮播图</div>'}</div>
-      </div>
-      <div class="card" style="margin-bottom:20px">
         <div class="toolbar"><div><h3>注入 JSON 数据</h3><div class="hint">粘贴数组。历史日期仅在系统没有数据时补入；数组最后一项（如示例下标14）视为最新交易日，可覆盖更新。阳/阴谱自动取整且保持合计100；“-”会继承前一个交易日的金/银手指。</div></div></div>
         <textarea id="goldJsonImport" style="width:100%;min-height:240px;box-sizing:border-box;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.55" placeholder='粘贴 JSON 数组，例如：[ { "date": "2026-09-01", "finger": "金", "position": 60, "trend": "上涨", "yang": 73.5, "yin": 26.5 } ]'></textarea>
         <div class="gold-form-actions" style="margin-top:12px"><button class="btn-primary" onclick="importGoldFingerJson()">注入 JSON</button></div>
+      </div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="toolbar"><div><h3>金手指页面 Banner</h3><div class="hint">上传轮播图片并选择广告类型笔记；前台点击图片后进入对应广告笔记。</div></div><button class="btn-primary" onclick="editGoldBanner(-1)">+ 新增Banner</button></div>
+        <div class="banner-admin-list">${bannerCards || '<div class="hint">暂未配置轮播图</div>'}</div>
       </div>
       <div class="card" style="margin-bottom:20px">
         <div class="toolbar"><div><h3>维护每日数据</h3><div class="hint">同一天重复保存会覆盖旧值，因此每天始终只有一条最新记录。</div></div></div>
