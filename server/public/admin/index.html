@@ -298,7 +298,7 @@ function drawNotes() {
       <td><img src="${esc(n.cover)}" /></td>
       <td>${esc(n.title)}</td>
       <td>${esc(n.author && n.author.name)}</td>
-      <td><span class="tag ${n.type === 'gold' ? 'gold' : (n.type === 'course' ? 'course' : (n.type === 'ad' ? 'ad' : ''))}">${esc(n.category || '资料')}</span>${n.visible === false ? ' <span class="hint">已隐藏</span>' : ''}</td>
+      <td><span class="tag ${n.type === 'gold' ? 'gold' : (n.type === 'course' ? 'course' : (n.type === 'ad' ? 'ad' : ''))}">${esc(n.category || '资料')}</span>${n.free === true ? ' <span class="hint">免费</span>' : ' <span class="hint">会员</span>'}${n.visible === false ? ' <span class="hint">不显示</span>' : ''}</td>
       <td>赞 ${n.likes} · 藏 ${n.collects} · 评 ${n.comments}</td>
       <td>
         <button class="btn-sm" onclick='editNote("${n.id}")'>编辑</button>
@@ -330,6 +330,7 @@ function editNote(id) {
   const selectedCategory = n.category || (n.type === 'gold' ? '金手指' : (n.type === 'course' ? '课程' : (n.type === 'ad' ? '广告' : '资料')));
   const riskDisclaimerEnabled = n.riskDisclaimerEnabled !== false;
   const visible = n.visible !== false;
+  const free = n.free === true;
   const categoryOpts = _categories.map((category) => `<option value="${esc(category)}" ${selectedCategory === category ? 'selected' : ''}>${esc(category)}</option>`).join('');
   if (!userOpts) return alert('请先在用户管理中创建并标记官方账号');
   _modalImages = (n.images || []).slice();
@@ -349,10 +350,14 @@ function editNote(id) {
       <option value="false" ${riskDisclaimerEnabled ? '' : 'selected'}>关闭</option>
       <option value="true" ${riskDisclaimerEnabled ? 'selected' : ''}>开启，自动添加风险提示</option>
     </select><div class="hint">开启后，笔记详情自动显示：数据来自交易所和互联网公开数据，由本人整理发布，不构成投资建议</div></div>
-    <div class="field"><label>是否可见</label><select id="f_visible">
-      <option value="true" ${visible ? 'selected' : ''}>可见</option>
-      <option value="false" ${visible ? '' : 'selected'}>隐藏</option>
-    </select><div class="hint">隐藏后，笔记不会出现在小程序首页、搜索、个人笔记或详情页。</div></div>
+    <div class="field"><label>是否显示</label><select id="f_visible">
+      <option value="true" ${visible ? 'selected' : ''}>显示</option>
+      <option value="false" ${visible ? '' : 'selected'}>不显示</option>
+    </select><div class="hint">设为不显示后，笔记不会出现在小程序首页、搜索、个人笔记或详情页。</div></div>
+    <div class="field"><label>是否免费</label><select id="f_free">
+      <option value="false" ${free ? '' : 'selected'}>不免费（会员专享）</option>
+      <option value="true" ${free ? 'selected' : ''}>免费（看广告领取）</option>
+    </select><div class="hint">不免费笔记：仅有效会员可直接领取且免广告；免费笔记：登录后观看激励广告领取。</div></div>
     <div class="field"><label>图片</label>
       <div id="imgGrid" class="img-grid"></div>
       <div class="hint">支持多图上传；拖拽图片可调整顺序，第一张为封面</div>
@@ -373,6 +378,7 @@ function editNote(id) {
       quarkUrl,
       riskDisclaimerEnabled: document.getElementById('f_risk_disclaimer').value === 'true',
       visible: document.getElementById('f_visible').value === 'true',
+      free: document.getElementById('f_free').value === 'true',
       images: _modalImages,
     };
     const req = id ? api('/api/admin/notes/' + id, { method: 'PUT', body: JSON.stringify(body) })
@@ -1043,7 +1049,7 @@ function renderSettings() {
             <option value="false" ${settings.vipEnabled ? '' : 'selected'}>关闭</option>
             <option value="true" ${settings.vipEnabled ? 'selected' : ''}>开启</option>
           </select>
-          <div class="hint">开启后仅有效VIP可进入广告领取，非VIP展示9.9元微信支付入口；关闭后所有登录用户按广告设置领取。</div>
+          <div class="hint">开启后仅有效VIP可进入金手指数据；课程、资料等领取权限按每篇笔记的「是否免费」设置执行。</div>
         </div>
         <button class="btn-primary" onclick="saveSettings()">保存设置</button>
       </div>`;

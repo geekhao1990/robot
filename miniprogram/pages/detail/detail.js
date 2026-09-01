@@ -136,7 +136,8 @@ Page({
     if (!store.isLogin()) return this.requireLogin();
     if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
     return Promise.resolve(this.settingsPromise).then(() => {
-      if (!this.data.vipEnabled) return this.handleGetResource(true);
+      // 免费笔记：登录后按广告设置领取；会员专享笔记：有效会员直接领取且免广告。
+      if (this.data.note && this.data.note.free === true) return this.handleGetResource(false);
       return store.syncMe().then((user) => {
         if (!this.isVipActive(user)) return this.showVipOffer();
         return this.handleGetResource(true);

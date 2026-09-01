@@ -52,6 +52,11 @@ function ensureContentTypes() {
       note.visible = true;
       changed = true;
     }
+    if (typeof note.free !== 'boolean') {
+      // 默认会员专享；管理员可逐篇改为“免费（看广告领取）”。
+      note.free = false;
+      changed = true;
+    }
     const category = String(note.category || '').trim();
     const nextCategory = categories.includes(category) ? category : typeLabel(note.type);
     const nextType = typeForCategory(nextCategory);

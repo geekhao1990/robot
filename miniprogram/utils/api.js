@@ -68,6 +68,7 @@ function decorate(note) {
   return {
     ...note,
     riskDisclaimerEnabled: note.riskDisclaimerEnabled !== false,
+    free: note.free === true,
     hasResource: !!(note.hasResource || resourceOptionsOf(note).length),
     liked,
     collected,
