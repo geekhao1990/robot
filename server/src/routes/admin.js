@@ -121,6 +121,85 @@ module.exports = function register(router, HttpError) {
     if (!Number.isInteger(number) || number < 0 || number > 100) throw new HttpError(400, `${label}必须是0-100的整数`);
     return number;
   };
+  const importedPercent = (value, label) => {
+    const number = Number(value);
+    if (!Number.isFinite(number) || number < 0 || number > 100) throw new HttpError(400, `${label}必须是0-100的数字`);
+    return Math.round(number);
+  };
+  const importedTrend = (value) => {
+    const trend = String(value || '').trim();
+    if (trend === '上涨' || trend === 'up') return 'up';
+    if (trend === '下跌' || trend === 'down') return 'down';
+    throw new HttpError(400, '中期趋势仅支持“上涨”或“下跌”');
+  };
+  const importedFinger = (value) => {
+    const finger = String(value || '').trim();
+    if (finger === '-' || finger === '—') return '';
+    if (finger === '金' || finger === '金手指' || finger === 'gold') return 'gold';
+    if (finger === '银' || finger === '银手指' || finger === 'silver') return 'silver';
+    throw new HttpError(400, '金银手指仅支持“金”、“银”或“-”');
+  };
+  const stripJsonLineComments = (source) => {
+    let output = '';
+    let quote = '';
+    let escaped = false;
+    for (let index = 0; index < source.length; index += 1) {
+      const char = source[index];
+      const next = source[index + 1];
+      if (quote) {
+        output += char;
+        if (escaped) escaped = false;
+        else if (char === '\\') escaped = true;
+        else if (char === quote) quote = '';
+        continue;
+      }
+      if (char === '"' || char === "'") {
+        quote = char;
+        output += char;
+      } else if (char === '/' && next === '/') {
+        while (index < source.length && source[index] !== '\n') index += 1;
+        output += '\n';
+      } else {
+        output += char;
+      }
+    }
+    return output;
+  };
+  const parseGoldFingerImport = (raw) => {
+    let items;
+    try {
+      items = JSON.parse(stripJsonLineComments(String(raw || '').trim()));
+    } catch (error) {
+      throw new HttpError(400, 'JSON格式不正确，请粘贴数组格式的数据');
+    }
+    if (!Array.isArray(items) || !items.length) throw new HttpError(400, '请提供至少一条金手指数组数据');
+    if (items.length > 500) throw new HttpError(400, '单次最多导入500条数据');
+    const dates = new Set();
+    return items.map((item, sourceIndex) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) throw new HttpError(400, `第${sourceIndex + 1}条不是有效对象`);
+      const date = validGoldFingerDate(item.date);
+      const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
+      if (weekday === 0 || weekday === 6) throw new HttpError(400, `第${sourceIndex + 1}条为周末日期，无需导入`);
+      if (dates.has(date)) throw new HttpError(400, `日期${date}重复，请保留一条`);
+      dates.add(date);
+      const rawYang = Number(item.yang);
+      const rawYin = Number(item.yin);
+      if (!Number.isFinite(rawYang) || !Number.isFinite(rawYin) || rawYang < 0 || rawYang > 100 || rawYin < 0 || rawYin > 100 || Math.abs(rawYang + rawYin - 100) > 0.2) {
+        throw new HttpError(400, `第${sourceIndex + 1}条阳谱和阴谱必须相加为100`);
+      }
+      // 直接以阳谱四舍五入，阴谱由100减阳谱得出；.5 时即阳谱+1、阴谱-1。
+      const yang = importedPercent(rawYang, '阳谱');
+      return {
+        sourceIndex,
+        date,
+        yang,
+        yin: 100 - yang,
+        finger: importedFinger(item.finger),
+        trend: importedTrend(item.trend),
+        position: importedPercent(item.position, '仓位'),
+      };
+    });
+  };
 
   router.get('/api/admin/gold-finger', (ctx) => {
     requireAuth(ctx);
@@ -173,6 +252,71 @@ module.exports = function register(router, HttpError) {
     if (d.goldFingerRecords.length === before) throw new HttpError(404, '记录不存在');
     db.save();
     return { ok: true };
+  });
+
+  // 批量注入：历史日期只补缺不覆盖，数组最后一项视为最新交易日，始终允许更新。
+  router.post('/api/admin/gold-finger/import', (ctx) => {
+    requireAuth(ctx);
+    const imported = parseGoldFingerImport((ctx.body || {}).jsonText);
+    const d = db.get();
+    d.goldFingerRecords = Array.isArray(d.goldFingerRecords) ? d.goldFingerRecords : [];
+    const recordsByDate = new Map(d.goldFingerRecords.map((item) => [item.date, item]));
+    const orderedImported = imported.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    const inheritedFingerFor = (date) => {
+      const previous = Array.from(recordsByDate.values())
+        .filter((item) => String(item.date) < date && ['gold', 'silver'].includes(item.finger))
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+      return previous && previous.finger;
+    };
+    const nextImportedFingerFor = (date) => {
+      const next = orderedImported.find((item) => String(item.date) > date && item.finger);
+      return next && next.finger;
+    };
+    const latestSourceIndex = imported.length - 1;
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+    let initialFingerInferred = 0;
+    orderedImported.forEach((item) => {
+      const existing = recordsByDate.get(item.date);
+      // 只有原数组末项会更新已有记录；其它历史记录已有值时保持不变。
+      if (existing && item.sourceIndex !== latestSourceIndex) {
+        skipped += 1;
+        return;
+      }
+      const inherited = inheritedFingerFor(item.date);
+      const finger = item.finger || inherited || nextImportedFingerFor(item.date);
+      if (!finger) throw new HttpError(400, `${item.date}使用“-”时需要存在前一个交易日或后续首个金/银手指数据`);
+      if (!item.finger && !inherited) initialFingerInferred += 1;
+      const record = {
+        id: `gf_${item.date.replace(/-/g, '')}`,
+        date: item.date,
+        yang: item.yang,
+        yin: item.yin,
+        finger,
+        trend: item.trend,
+        position: item.position,
+        updatedAt: Date.now(),
+      };
+      if (existing) {
+        const index = d.goldFingerRecords.findIndex((entry) => entry.date === item.date);
+        d.goldFingerRecords[index] = record;
+        updated += 1;
+      } else {
+        d.goldFingerRecords.push(record);
+        created += 1;
+      }
+      recordsByDate.set(item.date, record);
+    });
+    db.save();
+    return {
+      created,
+      updated,
+      skipped,
+      initialFingerInferred,
+      latestDate: imported[latestSourceIndex].date,
+      total: d.goldFingerRecords.length,
+    };
   });
 
   router.get('/api/admin/gold-finger-banners', (ctx) => {
