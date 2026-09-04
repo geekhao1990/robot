@@ -17,6 +17,7 @@ Page({
     timeText: '',
     resourceLabel: '点击领取',
     followed: false,
+    isOwnNote: false,
     inviteCode: '',
     resourceModalVisible: false,
     resourceOptions: [],
@@ -44,7 +45,21 @@ Page({
     this._loginRedirected = false;
     if (this.noteId && !this.data.note) {
       this.loadNote();
+    } else {
+      this.syncAuthorAction();
     }
+  },
+
+  syncAuthorAction() {
+    const note = this.data.note;
+    if (!note) return;
+    const authorId = note.authorId || (note.author && note.author.id);
+    const user = store.getUser();
+    const isOwnNote = !!(user && authorId && user.id === authorId);
+    this.setData({
+      isOwnNote,
+      followed: !isOwnNote && store.isFollowed(authorId),
+    });
   },
 
   loadSettings() {
@@ -82,13 +97,17 @@ Page({
       note.displayContent = note.riskDisclaimerEnabled
         ? `${content}${content ? '\n\n' : ''}${RISK_DISCLAIMER}`
         : content;
+      const authorId = note.authorId || (note.author && note.author.id);
+      const user = store.getUser();
+      const isOwnNote = !!(user && authorId && user.id === authorId);
       this.setData({
         note,
         swiperHeight: Math.min(750 * (note.coverRatio || 1.3), 1000),
         likeText: formatCount(note.likes),
         collectText: formatCount(note.collects),
         timeText: fromNow(note.time),
-        followed: store.isFollowed(note.authorId || note.author.id),
+        isOwnNote,
+        followed: !isOwnNote && store.isFollowed(authorId),
       });
     }).catch((err) => {
       this._loadingNote = false;
@@ -125,6 +144,7 @@ Page({
     toast(collected ? '已收藏' : '已取消收藏');
   },
   onFollow() {
+    if (this.data.isOwnNote) return;
     if (!store.isLogin()) return this.requireLogin();
     const note = this.data.note;
     const authorId = note.authorId || note.author.id;

@@ -5,7 +5,7 @@
       <view class="nav-author flex">
         <image class="nav-avatar" src="{{note.author.avatar}}" mode="aspectFill" />
         <text class="nav-name">{{note.author.name}}</text>
-        <view class="follow-btn {{followed ? 'followed' : ''}}" bindtap="onFollow">
+        <view wx:if="{{!isOwnNote}}" class="follow-btn {{followed ? 'followed' : ''}}" bindtap="onFollow">
           {{followed ? '已关注' : '+ 关注'}}
         </view>
       </view>
