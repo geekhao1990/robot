@@ -168,11 +168,13 @@ module.exports = function register(router, HttpError) {
   const parseGoldFingerImport = (raw) => {
     let items;
     try {
-      items = JSON.parse(stripJsonLineComments(String(raw || '').trim()));
+      const parsed = JSON.parse(stripJsonLineComments(String(raw || '').trim()));
+      // 支持直接数组，也支持上游接口常见的 { list: [...] } 返回结构。
+      items = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.list) ? parsed.list : null);
     } catch (error) {
-      throw new HttpError(400, 'JSON格式不正确，请粘贴数组格式的数据');
+      throw new HttpError(400, 'JSON格式不正确，请粘贴数据后重试');
     }
-    if (!Array.isArray(items) || !items.length) throw new HttpError(400, '请提供至少一条金手指数组数据');
+    if (!Array.isArray(items) || !items.length) throw new HttpError(400, '未找到金手指数据，请使用数组或包含list数组的数据');
     if (items.length > 500) throw new HttpError(400, '单次最多导入500条数据');
     const dates = new Set();
     return items.map((item, sourceIndex) => {

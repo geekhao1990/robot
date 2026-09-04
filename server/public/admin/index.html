@@ -888,8 +888,11 @@ function renderGoldFinger(page = _goldFingerPage) {
     </tr>`).join('');
     document.getElementById('content').innerHTML = `
       <div class="card" style="margin-bottom:20px">
-        <div class="toolbar"><div><h3>注入 JSON 数据</h3><div class="hint">${_goldFingerImportInitialized ? '增量模式：历史已有日期不覆盖，数组最后一项可更新。' : '首次初始化模式：本次会覆盖这批日期的已有数据，完成后自动转为增量模式。'} 阳/阴谱自动取整且保持合计100；“-”会继承前一个交易日的金/银手指。</div></div></div>
-        <textarea id="goldJsonImport" style="width:100%;min-height:240px;box-sizing:border-box;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.55" placeholder='粘贴 JSON 数组，例如：[ { "date": "2026-09-01", "finger": "金", "position": 60, "trend": "上涨", "yang": 73.5, "yin": 26.5 } ]'></textarea>
+        <div class="toolbar"><div><h3>维护每日数据</h3><div class="hint">选择已有交易日后，在弹窗中维护阳谱、金银手指、中期趋势和仓位；新增数据请使用下方 JSON 注入。</div></div><button class="btn-primary" onclick="openGoldDailyPicker()">选择日期维护</button></div>
+      </div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="toolbar"><div><h3>注入 JSON 数据</h3><div class="hint">${_goldFingerImportInitialized ? '增量模式：历史已有日期不覆盖，数组最后一项可更新。' : '首次初始化模式：本次会覆盖这批日期的已有数据，完成后自动转为增量模式。'} 支持直接数组或 { "list": [...] } 格式；阳/阴谱自动取整且保持合计100；“-”会继承前一个交易日的金/银手指。</div></div></div>
+        <textarea id="goldJsonImport" style="width:100%;min-height:240px;box-sizing:border-box;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.55" placeholder='粘贴 JSON：可直接粘贴 [ ... ]，也可粘贴 { "list": [ ... ] }'></textarea>
         <div class="gold-form-actions" style="margin-top:12px"><button class="btn-primary" onclick="importGoldFingerJson()">注入 JSON</button></div>
       </div>
       <div class="card" style="margin-bottom:20px">
@@ -903,6 +906,24 @@ function renderGoldFinger(page = _goldFingerPage) {
 }
 
 function gotoGoldFingerPage(page) { renderGoldFinger(page); }
+
+function openGoldDailyPicker() {
+  api('/api/admin/gold-finger').then((records) => {
+    const ordered = (records || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    if (!ordered.length) return showAdminToast('暂无每日数据，请先在下方注入 JSON', 'error');
+    const options = ordered.map((item) => `<option value="${esc(item.date)}">${esc(item.date)} · ${item.finger === 'gold' ? '金手指' : '银手指'}</option>`).join('');
+    openModal('维护每日数据', `
+      <div class="field"><label>选择交易日</label><select id="goldDailyDate">${options}</select></div>
+      <div class="hint">新数据请使用 JSON 注入；此处仅维护已有交易日。</div>
+    `, () => {
+      const date = document.getElementById('goldDailyDate').value;
+      const item = ordered.find((record) => record.date === date);
+      closeModal();
+      openGoldFingerEditor(item);
+    });
+    document.getElementById('modalOk').textContent = '开始维护';
+  }).catch((error) => showAdminToast(error.message || '数据读取失败', 'error'));
+}
 
 function saveGoldBanners(banners) {
   return api('/api/admin/gold-finger-banners', { method: 'PUT', body: JSON.stringify({ banners: banners || _goldFingerBanners }) });
@@ -963,6 +984,11 @@ function deleteGoldBanner(index) {
 function editGoldFinger(date) {
   const item = _goldFingerRecords.find((record) => record.date === date);
   if (!item) return;
+  openGoldFingerEditor(item);
+}
+
+function openGoldFingerEditor(item) {
+  if (!item) return;
   openModal(`维护每日数据 · ${esc(item.date)}`, `
     <div class="field"><label>日期</label><input value="${esc(item.date)}" disabled /></div>
     <div class="field"><label>阳谱（0-100，阴谱自动计算）</label><input id="goldModalYang" type="number" min="0" max="100" step="1" value="${Number(item.yang)}" /></div>
@@ -985,7 +1011,7 @@ function editGoldFinger(date) {
 function importGoldFingerJson() {
   const input = document.getElementById('goldJsonImport');
   const jsonText = input && input.value.trim();
-  if (!jsonText) return showAdminToast('请先粘贴 JSON 数组', 'error');
+  if (!jsonText) return showAdminToast('请先粘贴 JSON 数据', 'error');
   const confirmText = _goldFingerImportInitialized
     ? '确认增量注入吗？历史已有日期不会覆盖，只有数组最后一项会更新。'
     : '确认首次初始化吗？本次会覆盖这批日期的已有数据；完成后以后的导入不再覆盖历史数据。';
