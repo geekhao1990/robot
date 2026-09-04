@@ -214,12 +214,10 @@ Page({
         cover: finalImages[0],
         likes: editing ? old.likes || 0 : 0,
         collects: editing ? old.collects || 0 : 0,
-        comments: editing ? old.comments || 0 : 0,
         liked: editing ? !!old.liked : false,
         collected: editing ? !!old.collected : false,
         video: false,
         time: editing ? old.time || Date.now() : Date.now(),
-        commentList: editing ? old.commentList || [] : [],
       };
       if (editing) store.updateMyNote(note);
       else store.addMyNote(note);

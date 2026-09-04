@@ -13,6 +13,98 @@ let db = null;
 let pool = null;
 let saveChain = Promise.resolve();
 
+const LIFESTYLE_NOTE_UPDATES = Object.freeze({
+  n1: {
+    title: '周末慢早餐｜给自己半小时的仪式感',
+    content: '周末不用赶时间，给自己做一份慢早餐。热一杯牛奶、煎个鸡蛋，再把窗帘拉开，普通的一天也会变得很柔软。',
+    tags: ['慢早餐', '生活记录', '周末'], likes: 58, collects: 26, imageSeeds: ['slow-breakfast', 'weekend-coffee'],
+  },
+  n2: {
+    title: '十分钟收纳桌面，工作心情都变好了',
+    content: '不需要买很多收纳工具：把每天都要用的东西留在手边，其他物品收进抽屉。下班前花十分钟整理，第二天打开电脑会轻松很多。',
+    tags: ['桌面收纳', '居家办公', '生活小技巧'], likes: 43, collects: 31, imageSeeds: ['tidy-desk'],
+  },
+  n4: {
+    title: '通勤包里一直带着的五样小物',
+    content: '一把折叠伞、一支润唇膏、耳机、小水杯和纸巾。都是不贵的小东西，但每天出门时都能带来一点踏实感。',
+    tags: ['通勤日常', '好物分享', '生活方式'], likes: 67, collects: 38, imageSeeds: ['commute-bag', 'daily-essentials'],
+  },
+  n5: {
+    title: '下班后的热汤面，简单但很治愈',
+    content: '冰箱里常备鸡蛋和青菜，十分钟煮一碗热汤面。认真吃完晚饭，再慢慢收拾厨房，就是我的下班仪式。',
+    tags: ['一人食', '下班日常', '简单料理'], likes: 52, collects: 29, imageSeeds: ['noodle-soup', 'home-dinner'],
+  },
+  n6: {
+    title: '耳机用了三个月，通勤体验分享',
+    content: '通勤路上最离不开的就是耳机。降噪够用、佩戴轻松，地铁里听播客也很清楚。适合想提升通勤幸福感的人。',
+    tags: ['通勤好物', '数码日常', '耳机'], likes: 34, collects: 22, imageSeeds: ['commute-headphones'],
+  },
+  n7: {
+    title: '手机拍照构图入门课｜日常也能拍得更好看',
+    content: '从光线、角度到画面留白，整理了几种日常最常用的手机拍照方法。通勤、吃饭和旅行时都能马上用上。',
+    tags: ['手机摄影', '拍照技巧', '课程'], likes: 76, collects: 47, imageSeeds: ['phone-photography'],
+  },
+  n8: {
+    title: '周末在家做一份巴斯克蛋糕',
+    content: '不追求完美的裂纹，刚出炉时的焦香就已经很满足。配一杯咖啡，周末下午会变得特别慢。',
+    tags: ['烘焙日常', '甜品', '周末生活'], likes: 61, collects: 42, imageSeeds: ['basque-cake', 'afternoon-coffee'],
+  },
+});
+
+function applyLifestyleNotesMigration() {
+  db.contentMigrations = db.contentMigrations || {};
+  if (db.contentMigrations.lifestyleNotesV1 === true) return false;
+  let changed = false;
+  (db.notes || []).forEach((note) => {
+    // 隐藏的金手指入口保留内容，仅重置互动初始值。
+    if (note.type === 'gold' && note.visible === false) {
+      note.likes = 42;
+      note.collects = 28;
+      delete note.comments;
+      delete note.commentList;
+      changed = true;
+      return;
+    }
+    const update = LIFESTYLE_NOTE_UPDATES[note.id];
+    if (!update) return;
+    const ratio = Number(note.coverRatio) || 1.25;
+    Object.assign(note, {
+      title: update.title,
+      content: update.content,
+      tags: update.tags,
+      likes: update.likes,
+      collects: update.collects,
+      riskDisclaimerEnabled: false,
+      images: update.imageSeeds.map((seed) => `https://picsum.photos/seed/${seed}/800/${Math.round(800 * ratio)}`),
+      cover: `https://picsum.photos/seed/${update.imageSeeds[0]}/400/${Math.round(400 * ratio)}`,
+    });
+    delete note.comments;
+    delete note.commentList;
+    changed = true;
+  });
+  (db.notes || []).forEach((note) => {
+    if (Object.prototype.hasOwnProperty.call(note, 'comments')) {
+      delete note.comments;
+      changed = true;
+    }
+    if (Object.prototype.hasOwnProperty.call(note, 'commentList')) {
+      delete note.commentList;
+      changed = true;
+    }
+  });
+  const lifestyleAuthor = (db.users || []).find((user) => user.id === 'u4');
+  if (lifestyleAuthor && lifestyleAuthor.name === '金融小课堂') {
+    lifestyleAuthor.name = '日常小课堂';
+    lifestyleAuthor.desc = '记录实用的生活灵感';
+    (db.notes || []).filter((note) => note.authorId === lifestyleAuthor.id).forEach((note) => {
+      note.author = { id: lifestyleAuthor.id, name: lifestyleAuthor.name, avatar: lifestyleAuthor.avatar };
+    });
+    changed = true;
+  }
+  db.contentMigrations.lifestyleNotesV1 = true;
+  return true;
+}
+
 function mysqlEnabled() {
   return !!String(process.env.MYSQL_DATABASE || '').trim();
 }
@@ -208,9 +300,10 @@ async function load() {
   }
   const contentChanged = ensureContentTypes();
   const settingsChanged = ensureSettings();
+  const lifestyleChanged = applyLifestyleNotesMigration();
   if (mysqlEnabled()) {
     await save();
-  } else if (contentChanged || settingsChanged || !fs.existsSync(FILE)) {
+  } else if (contentChanged || settingsChanged || lifestyleChanged || !fs.existsSync(FILE)) {
     save();
   }
   return db;

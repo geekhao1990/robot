@@ -22,13 +22,6 @@
         </view>
         <text class="entry-label">新增关注</text>
       </view>
-      <view class="entry" data-type="comment" bindtap="goNotify">
-        <view class="entry-icon" style="background:#fff6e6;">
-          <text>💬</text>
-          <view wx:if="{{commentCount}}" class="badge">{{commentCount}}</view>
-        </view>
-        <text class="entry-label">评论和@</text>
-      </view>
     </view>
 
     <view class="section-title">私信</view>

@@ -5,7 +5,6 @@ const { fromNow } = require('../../utils/util');
 const ACTION = {
   like: '赞了你的笔记',
   collect: '收藏了你的笔记',
-  comment: '',
   follow: '关注了你',
 };
 
@@ -13,7 +12,6 @@ Page({
   data: {
     tabs: [
       { key: 'like', label: '赞和收藏' },
-      { key: 'comment', label: '评论和@' },
       { key: 'follow', label: '新增关注' },
     ],
     type: 'like',
@@ -42,7 +40,7 @@ Page({
       else list = all.filter((n) => n.type === type);
       list = list.map((n) => ({
         ...n,
-        actionText: n.type === 'comment' ? n.text : ACTION[n.type],
+        actionText: ACTION[n.type],
         timeText: fromNow(Date.now() - n.time * 3600 * 1000),
       }));
       this.setData({ list });

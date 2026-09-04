@@ -389,15 +389,13 @@ module.exports = function register(router, HttpError) {
       cover: (b.images && b.images[0]) || b.cover || '',
       coverRatio: b.coverRatio || 1.25,
       tags: b.tags || [],
-      likes: b.likes || 0,
-      collects: b.collects || 0,
-      comments: b.comments || 0,
+      likes: Number.isFinite(Number(b.likes)) ? Math.max(0, Math.round(Number(b.likes))) : crypto.randomInt(5, 101),
+      collects: Number.isFinite(Number(b.collects)) ? Math.max(0, Math.round(Number(b.collects))) : crypto.randomInt(5, 101),
       riskDisclaimerEnabled: b.riskDisclaimerEnabled !== false,
       visible: b.visible !== false,
       free: b.free === true,
       video: false,
       time: Date.now(),
-      commentList: [],
     };
     d.notes.unshift(note);
     db.save();
@@ -433,6 +431,8 @@ module.exports = function register(router, HttpError) {
     const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
     Object.assign(note, normalizeResourceLinks(note, note.type, !hasProviderFields));
+    delete note.comments;
+    delete note.commentList;
     if (d.settings && d.settings.featuredNoteId === note.id && note.type !== 'gold') {
       throw new HttpError(400, '加号入口笔记必须保持为金手指类型');
     }
