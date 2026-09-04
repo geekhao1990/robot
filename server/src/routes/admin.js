@@ -203,13 +203,23 @@ module.exports = function register(router, HttpError) {
 
   router.get('/api/admin/gold-finger', (ctx) => {
     requireAuth(ctx);
-    return (db.get().goldFingerRecords || [])
+    const records = (db.get().goldFingerRecords || [])
       .map((item) => {
         const yang = Math.max(0, Math.min(100, Number(item.yang) || 0));
         return { ...item, yang, yin: 100 - yang };
       })
       .slice()
       .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.updatedAt || 0) - (a.updatedAt || 0));
+    if (!Object.prototype.hasOwnProperty.call(ctx.query || {}, 'page')) return records;
+    const page = Math.max(1, Number(ctx.query.page) || 1);
+    const size = Math.max(1, Math.min(100, Number(ctx.query.size) || 20));
+    const start = (page - 1) * size;
+    return { list: records.slice(start, start + size), page, size, total: records.length, pages: Math.max(1, Math.ceil(records.length / size)) };
+  });
+
+  router.get('/api/admin/gold-finger/import-status', (ctx) => {
+    requireAuth(ctx);
+    return { initialized: db.get().goldFingerImportInitialized === true };
   });
 
   router.put('/api/admin/gold-finger/:date', (ctx) => {
@@ -254,7 +264,7 @@ module.exports = function register(router, HttpError) {
     return { ok: true };
   });
 
-  // 批量注入：历史日期只补缺不覆盖，数组最后一项视为最新交易日，始终允许更新。
+  // 批量注入：首次初始化覆盖本批数据；完成后历史日期只补缺，数组最后一项始终允许更新。
   router.post('/api/admin/gold-finger/import', (ctx) => {
     requireAuth(ctx);
     const imported = parseGoldFingerImport((ctx.body || {}).jsonText);
@@ -273,14 +283,15 @@ module.exports = function register(router, HttpError) {
       return next && next.finger;
     };
     const latestSourceIndex = imported.length - 1;
+    const initializing = d.goldFingerImportInitialized !== true;
     let created = 0;
     let updated = 0;
     let skipped = 0;
     let initialFingerInferred = 0;
     orderedImported.forEach((item) => {
       const existing = recordsByDate.get(item.date);
-      // 只有原数组末项会更新已有记录；其它历史记录已有值时保持不变。
-      if (existing && item.sourceIndex !== latestSourceIndex) {
+      // 首次初始化覆盖整批数据；之后只有原数组末项会更新已有记录。
+      if (existing && !initializing && item.sourceIndex !== latestSourceIndex) {
         skipped += 1;
         return;
       }
@@ -308,8 +319,10 @@ module.exports = function register(router, HttpError) {
       }
       recordsByDate.set(item.date, record);
     });
+    d.goldFingerImportInitialized = true;
     db.save();
     return {
+      initializing,
       created,
       updated,
       skipped,

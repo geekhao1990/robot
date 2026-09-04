@@ -137,6 +137,10 @@ function ensureContentTypes() {
     db.goldFingerBanners = [];
     changed = true;
   }
+  if (typeof db.goldFingerImportInitialized !== 'boolean') {
+    db.goldFingerImportInitialized = false;
+    changed = true;
+  }
   return changed;
 }
 

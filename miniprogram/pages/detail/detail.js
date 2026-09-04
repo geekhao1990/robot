@@ -208,7 +208,11 @@ Page({
   handleGetResource(skipAd = false) {
     const note = this.data.note;
     if (!note.hasResource) return toast('管理员尚未配置获取地址');
-    if (skipAd || !this.data.rewardedAdEnabled) return this.showResource();
+    if (skipAd) return this.showResource();
+    return this.showRewardedAd(() => this.showResource());
+  },
+  showRewardedAd(onComplete) {
+    if (!this.data.rewardedAdEnabled) return onComplete();
     const adUnitId = config.rewardedVideoAdUnitId;
     if (!adUnitId || /x{4,}/i.test(adUnitId)) {
       return wx.showModal({
@@ -221,11 +225,17 @@ Page({
     if (!this.rewardAd) {
       this.rewardAd = wx.createRewardedVideoAd({ adUnitId });
       this.rewardAd.onClose((res) => {
-        if (res && res.isEnded) this.showResource();
+        const complete = this._rewardedAdComplete;
+        this._rewardedAdComplete = null;
+        if ((!res || res.isEnded) && complete) complete();
         else toast('看完广告后才能获取内容');
       });
-      this.rewardAd.onError(() => toast('广告加载失败，请稍后再试'));
+      this.rewardAd.onError(() => {
+        this._rewardedAdComplete = null;
+        toast('广告加载失败，请稍后再试');
+      });
     }
+    this._rewardedAdComplete = onComplete;
     this.rewardAd.show().catch(() => this.rewardAd.load().then(() => this.rewardAd.show()).catch(() => {}));
   },
   openGoldFeature() {
@@ -235,20 +245,13 @@ Page({
     wx.showLoading({ title: '请稍后...', mask: true });
     return Promise.resolve(this.settingsPromise)
       .then(() => {
-        if (!this.data.vipEnabled) {
-          wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
-          return null;
-        }
-        return store.syncMe();
-      })
-      .then((user) => {
-        if (!this.data.vipEnabled) return;
-        if (!this.isVipActive(user)) return this.showVipOffer();
-        wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
+        wx.hideLoading();
+        this._checkingGoldFeature = false;
+        return this.showRewardedAd(() => wx.navigateTo({ url: '/pages/gold-finger/gold-finger' }));
       })
       .catch((error) => {
         if (error && error.statusCode === 401) return this.requireLogin();
-        toast('会员状态读取失败，请稍后重试');
+        toast('金手指功能暂时不可用，请稍后重试');
       })
       .finally(() => {
         wx.hideLoading();

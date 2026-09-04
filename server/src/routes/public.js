@@ -14,12 +14,8 @@ module.exports = function register(router, HttpError) {
     return user;
   };
   const requireGoldAccess = (ctx) => {
-    const reader = requireReader(ctx);
-    const data = db.get();
-    if (data.settings && data.settings.vipEnabled === true && !vipActive(reader)) {
-      throw new HttpError(403, '开通VIP后可查看金手指');
-    }
-    return data;
+    requireReader(ctx);
+    return db.get();
   };
   const sortedGoldRecords = (data) => (data.goldFingerRecords || [])
     .filter((item) => {
@@ -96,7 +92,7 @@ module.exports = function register(router, HttpError) {
     return pubNote(n);
   });
 
-  // 独立金手指功能：VIP 开启时要求有效会员，关闭时登录用户可直接查看。
+  // 独立金手指功能：所有登录用户均可查看；前端按激励广告开关完成广告后进入。
   router.get('/api/gold-finger/latest', (ctx) => {
     const data = requireGoldAccess(ctx);
     const records = sortedGoldRecords(data);

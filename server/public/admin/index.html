@@ -59,6 +59,13 @@
   .tag.pending { background: #fff6db; color: #9b6a00; }
   .tag.rejected { background: #f1f1f1; color: #888; }
   .tag.approved { background: #eaf3ff; color: #2877c7; }
+  .switch { position: relative; display: inline-block; width: 42px; height: 24px; vertical-align: middle; }
+  .switch input { width: 0; height: 0; opacity: 0; }
+  .switch-slider { position: absolute; inset: 0; cursor: pointer; background: #c9cdd4; border-radius: 999px; transition: .18s ease; }
+  .switch-slider::before { position: absolute; bottom: 3px; left: 3px; width: 18px; height: 18px; content: ''; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: .18s ease; }
+  .switch input:checked + .switch-slider { background: var(--primary); }
+  .switch input:checked + .switch-slider::before { transform: translateX(18px); }
+  .switch-cell { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
   /* 弹窗 */
   .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 20; }
   .modal { background: #fff; border-radius: 12px; width: 520px; max-height: 86vh; overflow: auto; padding: 24px; }
@@ -298,7 +305,9 @@ function drawNotes() {
       <td><img src="${esc(n.cover)}" /></td>
       <td>${esc(n.title)}</td>
       <td>${esc(n.author && n.author.name)}</td>
-      <td><span class="tag ${n.type === 'gold' ? 'gold' : (n.type === 'course' ? 'course' : (n.type === 'ad' ? 'ad' : ''))}">${esc(n.category || '资料')}</span>${n.free === true ? ' <span class="hint">免费</span>' : ' <span class="hint">会员</span>'}${n.visible === false ? ' <span class="hint">不显示</span>' : ''}</td>
+      <td><span class="tag ${n.type === 'gold' ? 'gold' : (n.type === 'course' ? 'course' : (n.type === 'ad' ? 'ad' : ''))}">${esc(n.category || '资料')}</span></td>
+      <td><div class="switch-cell"><label class="switch" title="是否显示"><input type="checkbox" ${n.visible !== false ? 'checked' : ''} onchange="toggleNoteFlag('${n.id}','visible',this.checked)" /><span class="switch-slider"></span></label><span>${n.visible !== false ? '显示' : '隐藏'}</span></div></td>
+      <td><div class="switch-cell"><label class="switch" title="是否免费"><input type="checkbox" ${n.free === true ? 'checked' : ''} onchange="toggleNoteFlag('${n.id}','free',this.checked)" /><span class="switch-slider"></span></label><span>${n.free === true ? '免费' : '会员'}</span></div></td>
       <td>赞 ${n.likes} · 藏 ${n.collects} · 评 ${n.comments}</td>
       <td>
         <button class="btn-sm" onclick='editNote("${n.id}")'>编辑</button>
@@ -314,9 +323,24 @@ function drawNotes() {
       </div>
       <button class="btn-primary" onclick="editNote()">+ 新增笔记</button>
     </div>
-    <table><thead><tr><th>序号</th><th>封面</th><th>标题</th><th>作者</th><th>分类</th><th>互动数据</th><th>操作</th></tr></thead>
+    <table><thead><tr><th>序号</th><th>封面</th><th>标题</th><th>作者</th><th>分类</th><th>是否显示</th><th>是否免费</th><th>互动数据</th><th>操作</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${pagerHtml(_notePage, pages, total, 'gotoNotePage')}`;
+}
+
+function toggleNoteFlag(id, field, checked) {
+  const label = field === 'visible' ? '显示状态' : '免费状态';
+  api('/api/admin/notes/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ [field]: checked === true }) })
+    .then((updated) => {
+      const note = _notes.find((item) => item.id === id);
+      if (note) note[field] = updated[field];
+      showAdminToast(`${label}已更新`);
+      drawNotes();
+    })
+    .catch((error) => {
+      showAdminToast(error.message || `${label}更新失败`, 'error');
+      renderNotes();
+    });
 }
 
 let _modalImages = [];
@@ -329,8 +353,6 @@ function editNote(id) {
   const userOpts = officialAuthors.map((u) => `<option value="${u.id}" ${n.authorId === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
   const selectedCategory = n.category || (n.type === 'gold' ? '金手指' : (n.type === 'course' ? '课程' : (n.type === 'ad' ? '广告' : '资料')));
   const riskDisclaimerEnabled = n.riskDisclaimerEnabled !== false;
-  const visible = n.visible !== false;
-  const free = n.free === true;
   const categoryOpts = _categories.map((category) => `<option value="${esc(category)}" ${selectedCategory === category ? 'selected' : ''}>${esc(category)}</option>`).join('');
   if (!userOpts) return alert('请先在用户管理中创建并标记官方账号');
   _modalImages = (n.images || []).slice();
@@ -350,14 +372,6 @@ function editNote(id) {
       <option value="false" ${riskDisclaimerEnabled ? '' : 'selected'}>关闭</option>
       <option value="true" ${riskDisclaimerEnabled ? 'selected' : ''}>开启，自动添加风险提示</option>
     </select><div class="hint">开启后，笔记详情自动显示：数据来自交易所和互联网公开数据，由本人整理发布，不构成投资建议</div></div>
-    <div class="field"><label>是否显示</label><select id="f_visible">
-      <option value="true" ${visible ? 'selected' : ''}>显示</option>
-      <option value="false" ${visible ? '' : 'selected'}>不显示</option>
-    </select><div class="hint">设为不显示后，笔记不会出现在小程序首页、搜索、个人笔记或详情页。</div></div>
-    <div class="field"><label>是否免费</label><select id="f_free">
-      <option value="false" ${free ? '' : 'selected'}>不免费（会员专享）</option>
-      <option value="true" ${free ? 'selected' : ''}>免费（看广告领取）</option>
-    </select><div class="hint">不免费笔记：仅有效会员可直接领取且免广告；免费笔记：登录后观看激励广告领取。</div></div>
     <div class="field"><label>图片</label>
       <div id="imgGrid" class="img-grid"></div>
       <div class="hint">支持多图上传；拖拽图片可调整顺序，第一张为封面</div>
@@ -377,8 +391,6 @@ function editNote(id) {
       baiduUrl,
       quarkUrl,
       riskDisclaimerEnabled: document.getElementById('f_risk_disclaimer').value === 'true',
-      visible: document.getElementById('f_visible').value === 'true',
-      free: document.getElementById('f_free').value === 'true',
       images: _modalImages,
     };
     const req = id ? api('/api/admin/notes/' + id, { method: 'PUT', body: JSON.stringify(body) })
@@ -826,16 +838,30 @@ let _goldFingerRecords = [];
 let _goldFingerBanners = [];
 let _goldFingerNotes = [];
 let _bannerModalImage = '';
+let _goldFingerPage = 1;
+let _goldFingerImportInitialized = false;
+const GOLD_FINGER_PAGE_SIZE = 10;
 
 function chinaToday() {
   return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
-function renderGoldFinger() {
-  Promise.all([api('/api/admin/gold-finger'), api('/api/admin/gold-finger-banners'), api('/api/admin/notes')]).then(([records, banners, notes]) => {
-    _goldFingerRecords = records || [];
+function renderGoldFinger(page = _goldFingerPage) {
+  _goldFingerPage = Math.max(1, Number(page) || 1);
+  Promise.all([
+    api(`/api/admin/gold-finger?page=${_goldFingerPage}&size=${GOLD_FINGER_PAGE_SIZE}`),
+    api('/api/admin/gold-finger-banners'),
+    api('/api/admin/notes'),
+    api('/api/admin/gold-finger/import-status'),
+  ]).then(([recordPage, banners, notes, importStatus]) => {
+    const records = recordPage && recordPage.list ? recordPage.list : [];
+    const pages = Math.max(1, Number(recordPage && recordPage.pages) || 1);
+    const total = Number(recordPage && recordPage.total) || 0;
+    if (_goldFingerPage > pages) return renderGoldFinger(pages);
+    _goldFingerRecords = records;
     _goldFingerBanners = banners || [];
     _goldFingerNotes = (notes || []).filter((note) => note.type === 'ad');
+    _goldFingerImportInitialized = !!(importStatus && importStatus.initialized);
     const noteMap = {};
     _goldFingerNotes.forEach((note) => { noteMap[note.id] = note; });
     const bannerCards = _goldFingerBanners.map((item, index) => `<div class="banner-admin-card">
@@ -851,7 +877,7 @@ function renderGoldFinger() {
       </div>
     </div>`).join('');
     const rows = _goldFingerRecords.map((item, index) => `<tr>
-      <td>${index + 1}</td>
+      <td>${(_goldFingerPage - 1) * GOLD_FINGER_PAGE_SIZE + index + 1}</td>
       <td><strong>${esc(item.date)}</strong></td>
       <td>${Number(item.yang)} / ${100 - Number(item.yang)}</td>
       <td><span class="tag ${item.finger === 'gold' ? 'gold' : ''}">${item.finger === 'gold' ? '金手指' : '银手指'}</span></td>
@@ -862,7 +888,7 @@ function renderGoldFinger() {
     </tr>`).join('');
     document.getElementById('content').innerHTML = `
       <div class="card" style="margin-bottom:20px">
-        <div class="toolbar"><div><h3>注入 JSON 数据</h3><div class="hint">粘贴数组。历史日期仅在系统没有数据时补入；数组最后一项（如示例下标14）视为最新交易日，可覆盖更新。阳/阴谱自动取整且保持合计100；“-”会继承前一个交易日的金/银手指。</div></div></div>
+        <div class="toolbar"><div><h3>注入 JSON 数据</h3><div class="hint">${_goldFingerImportInitialized ? '增量模式：历史已有日期不覆盖，数组最后一项可更新。' : '首次初始化模式：本次会覆盖这批日期的已有数据，完成后自动转为增量模式。'} 阳/阴谱自动取整且保持合计100；“-”会继承前一个交易日的金/银手指。</div></div></div>
         <textarea id="goldJsonImport" style="width:100%;min-height:240px;box-sizing:border-box;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.55" placeholder='粘贴 JSON 数组，例如：[ { "date": "2026-09-01", "finger": "金", "position": 60, "trend": "上涨", "yang": 73.5, "yin": 26.5 } ]'></textarea>
         <div class="gold-form-actions" style="margin-top:12px"><button class="btn-primary" onclick="importGoldFingerJson()">注入 JSON</button></div>
       </div>
@@ -870,21 +896,13 @@ function renderGoldFinger() {
         <div class="toolbar"><div><h3>金手指页面 Banner</h3><div class="hint">上传轮播图片并选择广告类型笔记；前台点击图片后进入对应广告笔记。</div></div><button class="btn-primary" onclick="editGoldBanner(-1)">+ 新增Banner</button></div>
         <div class="banner-admin-list">${bannerCards || '<div class="hint">暂未配置轮播图</div>'}</div>
       </div>
-      <div class="card" style="margin-bottom:20px">
-        <div class="toolbar"><div><h3>维护每日数据</h3><div class="hint">同一天重复保存会覆盖旧值，因此每天始终只有一条最新记录。</div></div></div>
-        <div class="gold-form">
-          <div class="field"><label>日期</label><input id="goldDate" type="date" value="${chinaToday()}" /></div>
-          <div class="field"><label>阳谱（0-100，阴谱自动计算）</label><input id="goldYang" type="number" min="0" max="100" step="1" value="50" /></div>
-          <div class="field"><label>金银手指</label><select id="goldFingerValue"><option value="gold">金手指</option><option value="silver">银手指</option></select></div>
-          <div class="field"><label>中期趋势</label><select id="goldTrend"><option value="up">上涨</option><option value="down">下跌</option></select></div>
-          <div class="field"><label>仓位（0-100）</label><input id="goldPosition" type="number" min="0" max="100" step="1" value="50" /></div>
-          <div class="gold-form-actions"><button class="btn-primary" onclick="saveGoldFinger()">保存当天数据</button><button class="btn-sm" onclick="resetGoldFingerForm()">重置</button></div>
-        </div>
-      </div>
-      <div class="toolbar"><h3>历史记录</h3><div class="hint">前台默认展示最近5个交易日，更多历史按自然月分页加载</div></div>
+      <div class="toolbar"><h3>历史记录</h3><div class="hint">共${total}条；点击“编辑”在弹窗中维护既有日期，新增数据请使用 JSON 注入</div></div>
       <table><thead><tr><th>序号</th><th>日期</th><th>阳谱 / 阴谱</th><th>金银手指</th><th>中期趋势</th><th>仓位</th><th>更新时间</th><th>操作</th></tr></thead><tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:#999;padding:40px">暂无金手指数据</td></tr>'}</tbody></table>`;
+    document.getElementById('content').innerHTML += pagerHtml(_goldFingerPage, pages, total, 'gotoGoldFingerPage');
   }).catch((error) => alert(error.message));
 }
+
+function gotoGoldFingerPage(page) { renderGoldFinger(page); }
 
 function saveGoldBanners(banners) {
   return api('/api/admin/gold-finger-banners', { method: 'PUT', body: JSON.stringify({ banners: banners || _goldFingerBanners }) });
@@ -942,49 +960,41 @@ function deleteGoldBanner(index) {
   saveGoldBanners(banners).then(renderGoldFinger).catch((error) => alert(error.message));
 }
 
-function resetGoldFingerForm() {
-  document.getElementById('goldDate').value = chinaToday();
-  document.getElementById('goldYang').value = 50;
-  document.getElementById('goldFingerValue').value = 'gold';
-  document.getElementById('goldTrend').value = 'up';
-  document.getElementById('goldPosition').value = 50;
-}
-
 function editGoldFinger(date) {
   const item = _goldFingerRecords.find((record) => record.date === date);
   if (!item) return;
-  document.getElementById('goldDate').value = item.date;
-  document.getElementById('goldYang').value = item.yang;
-  document.getElementById('goldFingerValue').value = item.finger;
-  document.getElementById('goldTrend').value = item.trend;
-  document.getElementById('goldPosition').value = item.position;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function saveGoldFinger() {
-  const date = document.getElementById('goldDate').value;
-  const body = {
-    yang: Number(document.getElementById('goldYang').value),
-    finger: document.getElementById('goldFingerValue').value,
-    trend: document.getElementById('goldTrend').value,
-    position: Number(document.getElementById('goldPosition').value),
-  };
-  if (!date) return alert('请选择日期');
-  api('/api/admin/gold-finger/' + encodeURIComponent(date), { method: 'PUT', body: JSON.stringify(body) })
-    .then(() => { alert('金手指数据已保存'); renderGoldFinger(); })
-    .catch((error) => alert(error.message));
+  openModal(`维护每日数据 · ${esc(item.date)}`, `
+    <div class="field"><label>日期</label><input value="${esc(item.date)}" disabled /></div>
+    <div class="field"><label>阳谱（0-100，阴谱自动计算）</label><input id="goldModalYang" type="number" min="0" max="100" step="1" value="${Number(item.yang)}" /></div>
+    <div class="field"><label>金银手指</label><select id="goldModalFinger"><option value="gold" ${item.finger === 'gold' ? 'selected' : ''}>金手指</option><option value="silver" ${item.finger === 'silver' ? 'selected' : ''}>银手指</option></select></div>
+    <div class="field"><label>中期趋势</label><select id="goldModalTrend"><option value="up" ${item.trend === 'up' ? 'selected' : ''}>上涨</option><option value="down" ${item.trend === 'down' ? 'selected' : ''}>下跌</option></select></div>
+    <div class="field"><label>仓位（0-100）</label><input id="goldModalPosition" type="number" min="0" max="100" step="1" value="${Number(item.position)}" /></div>
+  `, () => {
+    const body = {
+      yang: Number(document.getElementById('goldModalYang').value),
+      finger: document.getElementById('goldModalFinger').value,
+      trend: document.getElementById('goldModalTrend').value,
+      position: Number(document.getElementById('goldModalPosition').value),
+    };
+    api('/api/admin/gold-finger/' + encodeURIComponent(item.date), { method: 'PUT', body: JSON.stringify(body) })
+      .then(() => { closeModal(); showAdminToast('金手指数据已更新'); renderGoldFinger(); })
+      .catch((error) => showAdminToast(error.message || '更新失败', 'error'));
+  });
 }
 
 function importGoldFingerJson() {
   const input = document.getElementById('goldJsonImport');
   const jsonText = input && input.value.trim();
   if (!jsonText) return showAdminToast('请先粘贴 JSON 数组', 'error');
-  if (!confirm('确认注入这批金手指数据吗？历史已有数据不会覆盖，只有数组最后一项会更新。')) return;
+  const confirmText = _goldFingerImportInitialized
+    ? '确认增量注入吗？历史已有日期不会覆盖，只有数组最后一项会更新。'
+    : '确认首次初始化吗？本次会覆盖这批日期的已有数据；完成后以后的导入不再覆盖历史数据。';
+  if (!confirm(confirmText)) return;
   api('/api/admin/gold-finger/import', { method: 'POST', body: JSON.stringify({ jsonText }) })
     .then((result) => {
       const inferred = result.initialFingerInferred ? `，首段补齐${result.initialFingerInferred}条` : '';
-      showAdminToast(`注入完成：新增${result.created}条，更新${result.updated}条，保留${result.skipped}条${inferred}`);
-      renderGoldFinger();
+      showAdminToast(`${result.initializing ? '首次初始化完成' : '增量注入完成'}：新增${result.created}条，更新${result.updated}条，保留${result.skipped}条${inferred}`);
+      renderGoldFinger(1);
     })
     .catch((error) => showAdminToast(error.message || 'JSON 注入失败', 'error'));
 }
