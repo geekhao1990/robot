@@ -613,7 +613,8 @@
   margin: 0;
   padding: 0;
 }
-.share-action {
+.share-action,
+.contact-action {
   box-sizing: border-box;
   min-height: 0;
   margin: 0;
@@ -623,10 +624,12 @@
   background: transparent;
   border-radius: 0;
 }
-.share-action::after {
+.share-action::after,
+.contact-action::after {
   border: 0;
 }
-.share-action[disabled] {
+.share-action[disabled],
+.contact-action[disabled] {
   opacity: .45;
 }
 .ic {

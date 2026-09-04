@@ -39,9 +39,9 @@
         <button class="action share-action" open-type="share">
           <view class="ic share"></view><text class="num">分享有礼</text>
         </button>
-        <view class="action" bindtap="goService">
+        <button class="action contact-action" open-type="contact">
           <view class="ic chat"></view><text class="num">客服</text>
-        </view>
+        </button>
       </view>
     </view>
     <view class="detail-bottom-spacer"></view>
