@@ -5,7 +5,7 @@
       data-index="{{index}}"
       bindtap="switchTab"
     >
-      <view wx:if="{{item.finger}}" class="finger-btn"><image src="{{item.icon}}" mode="aspectFit" /></view>
+      <view wx:if="{{item.finger}}" class="finger-btn"><image src="{{selected === index ? item.activeIcon : item.icon}}" mode="aspectFit" /></view>
       <view wx:elif="{{item.spacer}}" class="tab-spacer"></view>
       <view wx:else class="tab-text {{selected === index ? 'active' : ''}}">
         {{item.text}}
