@@ -191,6 +191,11 @@ Page({
     if (!store.isLogin()) return this.goLogin();
     wx.navigateTo({ url: '/pages/points/points' });
   },
+  goGoldManage() {
+    const user = store.getUser();
+    if (!user || user.official !== true) return;
+    wx.navigateTo({ url: '/pages/gold-finger-manage/gold-finger-manage' });
+  },
   onLogout() {
     wx.showModal({ title: '提示', content: '确定要退出登录吗？', success: (res) => { if (res.confirm) { store.logout(); this.onShow(); } } });
   },

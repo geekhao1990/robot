@@ -47,6 +47,11 @@
     <view class="points-copy"><view class="points-title">积分中心</view><view class="points-sub">看广告、邀请好友赚积分</view></view>
     <view class="points-arrow">›</view>
   </view>
+  <view wx:if="{{user && user.official}}" class="manage-entry" bindtap="goGoldManage">
+    <view class="manage-entry-icon">金</view>
+    <view class="gift-entry-copy"><view class="gift-entry-title">维护金手指</view><view class="gift-entry-sub">新增、修改或删除每日数据</view></view>
+    <view class="points-arrow">›</view>
+  </view>
   <view class="gift-entry" bindtap="openGiftModal">
     <view class="gift-entry-icon">礼</view>
     <view class="gift-entry-copy"><view class="gift-entry-title">礼品卡</view><view class="gift-entry-sub">兑换金手指年卡或月卡</view></view>

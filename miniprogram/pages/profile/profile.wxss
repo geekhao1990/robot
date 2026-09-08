@@ -215,8 +215,9 @@
   flex: 1;
   width: 0;
 }
-.gift-entry { display: flex; align-items: center; margin: 0 20rpx 24rpx; padding: 26rpx 28rpx; border-radius: 20rpx; background: #fff; box-shadow: 0 8rpx 24rpx rgba(0,0,0,.05); }
+.gift-entry, .manage-entry { display: flex; align-items: center; margin: 0 20rpx 24rpx; padding: 26rpx 28rpx; border-radius: 20rpx; background: #fff; box-shadow: 0 8rpx 24rpx rgba(0,0,0,.05); }
 .gift-entry-icon { width: 68rpx; height: 68rpx; color: #fff; font-size: 28rpx; font-weight: 700; line-height: 68rpx; text-align: center; background: #d6a543; border-radius: 50%; }
+.manage-entry-icon { width: 68rpx; height: 68rpx; color: #fff; font-size: 28rpx; font-weight: 700; line-height: 68rpx; text-align: center; background: #ff2442; border-radius: 50%; }
 .gift-entry-copy { flex: 1; min-width: 0; margin-left: 20rpx; }
 .gift-entry-title { color: #222; font-size: 30rpx; font-weight: 700; }
 .gift-entry-sub { margin-top: 6rpx; color: #999; font-size: 23rpx; }

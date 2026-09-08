@@ -1,12 +1,11 @@
 <view class="tab-bar">
   <block wx:for="{{list}}" wx:key="text">
     <view
-      class="tab-item {{item.plus ? 'plus-item' : ''}} {{item.finger ? 'finger-item' : ''}} {{item.spacer ? 'spacer-item' : ''}}"
+      class="tab-item {{item.finger ? 'finger-item' : ''}} {{item.spacer ? 'spacer-item' : ''}}"
       data-index="{{index}}"
       bindtap="switchTab"
     >
-      <view wx:if="{{item.plus}}" class="plus-btn">+</view>
-      <view wx:elif="{{item.finger}}" class="finger-btn"><image src="{{item.icon}}" mode="aspectFit" /></view>
+      <view wx:if="{{item.finger}}" class="finger-btn"><image src="{{item.icon}}" mode="aspectFit" /></view>
       <view wx:elif="{{item.spacer}}" class="tab-spacer"></view>
       <view wx:else class="tab-text {{selected === index ? 'active' : ''}}">
         {{item.text}}

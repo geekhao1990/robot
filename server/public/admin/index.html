@@ -1069,7 +1069,7 @@ function renderSettings() {
     document.getElementById('content').innerHTML = `
       <div class="card" style="max-width:640px">
         <div class="field">
-          <label>首页红色加号（金手指）打开的笔记</label>
+          <label>底部金手指入口打开的笔记</label>
           <select id="settingFeatured">${noteOptions}</select>
           <div class="hint">这篇笔记的主图和「点击领取」均作为会员金手指功能入口；非会员展示9.9元月卡支付。</div>
         </div>
@@ -1095,7 +1095,7 @@ function renderSettings() {
             <option value="false" ${settings.goldFingerEntryEnabled ? '' : 'selected'}>关闭</option>
             <option value="true" ${settings.goldFingerEntryEnabled ? 'selected' : ''}>开启</option>
           </select>
-          <div class="hint">开启后，已登录的普通账号在底部中间显示红色手指入口；关闭后中间留空。官方账号始终显示金手指数据管理加号。</div>
+          <div class="hint">开启后，所有用户的底部中间显示红色手指入口，点击进入上方指定的金手指笔记；关闭后中间留空。官方账号在小程序「我」页面维护金手指数据。</div>
         </div>
         <button class="btn-primary" onclick="saveSettings()">保存设置</button>
       </div>`;
