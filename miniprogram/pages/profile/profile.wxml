@@ -43,10 +43,10 @@
     </view>
   </view>
   <view class="quick-menu {{editingProfile ? 'after-editor' : ''}}">
-    <view class="quick-item" bindtap="goPoints"><view class="quick-icon points">积</view><view class="quick-title">积分中心</view></view>
-    <view wx:if="{{user && user.official}}" class="quick-item" bindtap="goGoldManage"><view class="quick-icon manage">金</view><view class="quick-title">维护手指</view></view>
-    <view class="quick-item" bindtap="openGiftModal"><view class="quick-icon gift">礼</view><view class="quick-title">礼品卡</view></view>
-    <view class="quick-item" bindtap="goMiniGame"><view class="quick-icon game">游</view><view class="quick-title">小游戏</view></view>
+    <view class="quick-item" bindtap="goPoints"><image class="quick-icon" src="/images/profile-points.png" mode="aspectFit" /><view class="quick-title">积分中心</view></view>
+    <view wx:if="{{user && user.official}}" class="quick-item" bindtap="goGoldManage"><image class="quick-icon" src="/images/profile-gold-manage.png" mode="aspectFit" /><view class="quick-title">维护手指</view></view>
+    <view class="quick-item" bindtap="openGiftModal"><image class="quick-icon" src="/images/profile-gift-card.png" mode="aspectFit" /><view class="quick-title">礼品卡</view></view>
+    <view class="quick-item" bindtap="goMiniGame"><image class="quick-icon" src="/images/profile-game.png" mode="aspectFit" /><view class="quick-title">小游戏</view></view>
   </view>
   <view wx:if="{{giftModalVisible}}" class="gift-mask" catchtap="closeGiftModal">
     <view class="gift-panel" catchtap="noop">
