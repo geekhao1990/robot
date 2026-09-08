@@ -1,6 +1,6 @@
 const api = require('../utils/api');
 
-const GOLD_FINGER_ICON = 'https://img.icons8.com/?size=100&id=fu6HjyEes37m&format=png&color=000000';
+const GOLD_FINGER_ICON = 'https://img.icons8.com/?size=100&id=47768&format=png&color=000000';
 
 function makeList(settings = {}) {
   const middle = settings.goldFingerEntryEnabled
