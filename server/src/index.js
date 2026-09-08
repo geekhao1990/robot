@@ -14,6 +14,7 @@ require('./routes/app')(router, HttpError);
 require('./routes/message')(router, HttpError);
 require('./routes/payment')(router, HttpError);
 require('./routes/admin')(router, HttpError);
+require('./routes/gift-cards')(router, HttpError);
 
 const STATIC_DIR = path.join(__dirname, '../public');
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' };

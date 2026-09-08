@@ -439,6 +439,7 @@ function getFriends() {
 }
 
 module.exports = {
+  redeemGiftCard: (code) => request('POST', '/api/gift-cards/redeem', { auth: true, data: { code } }),
   getFeed,
   getNoteById,
   getResource,

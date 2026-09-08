@@ -267,7 +267,11 @@ Page({
       .then(() => {
         wx.hideLoading();
         this._checkingGoldFeature = false;
-        return this.showRewardedAd(() => wx.navigateTo({ url: '/pages/gold-finger/gold-finger' }));
+        return store.syncMe().then((user) => {
+          const open = () => wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
+          if (user && Number(user.goldExpire) > Date.now()) return open();
+          return this.showRewardedAd(open);
+        });
       })
       .catch((error) => {
         if (error && error.statusCode === 401) return this.requireLogin();

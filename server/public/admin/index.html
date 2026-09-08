@@ -137,6 +137,7 @@
       <div class="nav-item" data-view="goldFinger" onclick="switchView('goldFinger')">☝️ 金手指数据</div>
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
       <div class="nav-item" data-view="orders" onclick="switchView('orders')">💳 会员订单</div>
+      <div class="nav-item" data-view="giftCards" onclick="switchView('giftCards')">🎁 礼品卡管理</div>
       <div class="nav-item" data-view="withdrawals" onclick="switchView('withdrawals')">💰 提现审核<span class="nav-badge" id="withdrawBadge"></span></div>
       <div class="nav-item" data-view="points" onclick="switchView('points')">🧾 积分记录<span class="nav-badge" id="anomalyBadge"></span></div>
       <div class="nav-item" data-view="logs" onclick="switchView('logs')">📋 操作日志</div>
@@ -187,6 +188,7 @@ function doLogin() {
 }
 
 function logout() {
+  _giftBatch = null;
   token = ''; me = '';
   localStorage.removeItem('admin_token'); localStorage.removeItem('admin_user');
   if (_badgeTimer) { clearInterval(_badgeTimer); _badgeTimer = null; }
@@ -219,6 +221,7 @@ function showAdminToast(message, type = 'success') {
 }
 const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', orders: '会员订单', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
 const BASE_CATEGORIES = ['资料', '课程', '金手指', '广告'];
+TITLES.giftCards = '礼品卡管理';
 function switchView(v) {
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === v));
   document.getElementById('viewTitle').textContent = TITLES[v];
@@ -227,6 +230,7 @@ function switchView(v) {
   if (v === 'goldFinger') renderGoldFinger();
   if (v === 'users') renderUsers();
   if (v === 'orders') renderPaymentOrders();
+  if (v === 'giftCards') renderGiftCards();
   if (v === 'withdrawals') renderWithdrawals();
   if (v === 'points') renderPointRecords();
   if (v === 'logs') renderOperationLogs();
@@ -1099,6 +1103,67 @@ function saveSettings() {
   api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(body) })
     .then(() => showAdminToast('设置已保存'))
     .catch((error) => showAdminToast(error.message || '保存失败，请稍后重试', 'error'));
+}
+
+// 礼品卡：生成结果仅展示一次，历史不返回完整卡密。
+let _giftGenerating = false;
+let _giftBatch = null;
+function renderGiftCards(page = 1) {
+  api('/api/admin/gift-cards?page=' + page).then((result) => {
+    if (document.getElementById('viewTitle').textContent !== TITLES.giftCards) return;
+    const rows = result.list.map((card) => `<tr><td>${esc(card.maskedCode)}</td><td>${card.type === 'gold' ? '金手指卡' : '月卡'}</td><td>${card.days}天</td><td>${card.status === 'redeemed' ? '已兑换' : '未兑换'}</td><td>${esc(card.redeemedBy || '—')}</td><td>${fmtDate(card.createdAt)}</td><td>${card.redeemedAt ? fmtDate(card.redeemedAt) : '—'}</td></tr>`).join('');
+    document.getElementById('content').innerHTML = `
+      <div class="card" style="margin-bottom:20px"><h3>生成礼品卡</h3>
+        <div class="hint">月卡增加30天会员；金手指卡单独增加金手指权益。同类权益从现有到期时间顺延，每张卡密仅可使用一次。</div>
+        <div class="toolbar" style="display:flex;flex-wrap:wrap;gap:16px;margin-top:16px">
+          <label>类型 <select id="giftType" onchange="updateGiftDays()"><option value="gold">金手指卡</option><option value="month">月卡</option></select></label>
+          <label>兑换后有效天数 <input id="giftDays" type="number" min="1" max="3650" value="30" style="width:90px" /></label>
+          <label>生成数量 <input id="giftCount" type="number" min="1" max="10" value="10" style="width:80px" /></label>
+          <button class="btn-primary" id="giftGenerate" onclick="generateGiftCards()">生成卡密</button>
+        </div>
+        <div id="giftResult"></div>
+      </div>
+      <h3>礼品卡记录</h3><table><thead><tr><th>卡密尾号</th><th>权益</th><th>有效天数</th><th>状态</th><th>兑换账号ID</th><th>生成时间</th><th>兑换时间</th></tr></thead><tbody>${rows || '<tr><td colspan="7">暂无礼品卡</td></tr>'}</tbody></table>
+      ${pagerHtml(result.page, result.pages, result.total, 'renderGiftCards')}`;
+    document.getElementById('giftGenerate').disabled = _giftGenerating;
+    renderGiftCodes();
+  }).catch((error) => showAdminToast(error.message, 'error'));
+}
+function renderGiftCodes() {
+  const target = document.getElementById('giftResult');
+  const result = _giftBatch;
+  if (!target || !result) return;
+  target.innerHTML = `<div style="margin-top:20px"><h3>已生成${result.codes.length}张${result.type === 'gold' ? '金手指卡' : '月卡'} · ${result.days}天</h3><div class="hint">请立即复制保存本批卡密；刷新、退出或生成下一批后，旧卡只能查看尾号与兑换状态。</div><textarea readonly id="giftCodes" style="width:100%;height:250px;margin-top:12px;font-family:monospace">${esc(result.codes.join('\n'))}</textarea><button class="btn-sm" onclick="copyGiftCodes()">复制本批卡密</button></div>`;
+}
+function updateGiftDays() {
+  const month = document.getElementById('giftType').value === 'month';
+  const input = document.getElementById('giftDays');
+  input.disabled = month;
+  if (month) input.value = '30';
+}
+function generateGiftCards() {
+  if (_giftGenerating) return;
+  const type = document.getElementById('giftType').value;
+  const count = Number(document.getElementById('giftCount').value);
+  const days = type === 'month' ? 30 : Number(document.getElementById('giftDays').value);
+  if (!Number.isInteger(count) || count < 1 || count > 10) return showAdminToast('一次生成1至10张', 'error');
+  if (!Number.isInteger(days) || days < 1 || days > 3650) return showAdminToast('有效天数须为1至3650的整数', 'error');
+  _giftGenerating = true;
+  const button = document.getElementById('giftGenerate');
+  button.disabled = true;
+  api('/api/admin/gift-cards', { method: 'POST', body: JSON.stringify({ type, count, days }) }).then((result) => {
+    if (!token) return;
+    _giftBatch = result;
+    renderGiftCodes();
+    renderGiftCards();
+    showAdminToast('卡密已生成，请复制保存');
+  }).catch((error) => showAdminToast(error.message, 'error')).finally(() => { _giftGenerating = false; button.disabled = false; });
+}
+function copyGiftCodes() {
+  const input = document.getElementById('giftCodes');
+  const fallback = () => { input.focus(); input.select(); showAdminToast('请选择卡密后按 Ctrl+C 复制'); };
+  if (!navigator.clipboard) return fallback();
+  navigator.clipboard.writeText(input.value).then(() => showAdminToast('卡密已复制')).catch(fallback);
 }
 
 // 弹窗

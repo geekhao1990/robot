@@ -47,6 +47,18 @@
     <view class="points-copy"><view class="points-title">积分中心</view><view class="points-sub">看广告、邀请好友赚积分</view></view>
     <view class="points-arrow">›</view>
   </view>
+  <view class="gift-card">
+    <view class="gift-title">礼品卡</view>
+    <view class="gift-description">输入卡密，兑换金手指或月卡权益</view>
+    <view class="gift-input-row">
+      <input class="gift-input" value="{{giftCode}}" bindinput="onGiftCodeInput" maxlength="80" placeholder="请输入礼品卡卡密" disabled="{{redeemingGift}}" />
+      <button class="gift-redeem" bindtap="redeemGift" loading="{{redeemingGift}}" disabled="{{redeemingGift}}">兑换</button>
+    </view>
+    <view wx:for="{{entitlements}}" wx:key="type" class="gift-entitlement">
+      <view class="gift-entitlement-copy"><view class="gift-name">{{item.name}} · {{item.active ? '有效' : '未生效'}}</view><view class="gift-expiry">{{item.expiry}}</view></view>
+      <button wx:if="{{item.type === 'gold' && item.active}}" class="gift-open" bindtap="openGiftGold">查看</button>
+    </view>
+  </view>
   <block wx:if="{{loggedIn}}">
     <view class="tabs"><view wx:for="{{tabs}}" wx:key="*this" class="tab {{tabIndex === index ? 'active' : ''}}" data-index="{{index}}" bindtap="onTab">{{item}}</view></view>
     <view class="list">

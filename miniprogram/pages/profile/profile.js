@@ -20,6 +20,9 @@ Page({
     bindingPhone: false,
     draftName: '',
     draftAvatar: '',
+    giftCode: '',
+    redeemingGift: false,
+    entitlements: [],
   },
   onLoad() {
     const app = getApp();
@@ -31,6 +34,7 @@ Page({
       const user = store.getUser();
       this.setData({
         user,
+        entitlements: this.entitlementRows(user),
         loggedIn: !!user,
         phoneText: this.phoneText(user && user.phone),
         accessText: user
@@ -47,6 +51,41 @@ Page({
     if (store.isLogin() && (config.useRemote || config.previewAuthRemote || config.wechatAuthRemote)) store.syncMe().then(proceed); else proceed();
   },
   onTab(e) { const index = Number(e.currentTarget.dataset.index); this.setData({ tabIndex: index }); this.loadTab(index); },
+  entitlementRows(user) {
+    if (!user) return [];
+    const dateText = (value) => {
+      if (!Number(value)) return '未开通';
+      const date = new Date(Number(value) + 8 * 3600000);
+      return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 16).replace('T', ' ') + ' 到期（北京时间）' : '未开通';
+    };
+    const now = Date.now();
+    return [
+      { type: 'month', name: '会员权限', active: !!(user.vip && (user.vipPermanent || Number(user.vipExpire) > now)), expiry: user.vipPermanent ? '永久有效' : dateText(user.vipExpire) },
+      { type: 'gold', name: '金手指礼品卡权限', active: Number(user.goldExpire) > now, expiry: user.goldExpire ? dateText(user.goldExpire) : '未开通' },
+    ].map((item) => ({ ...item, expiry: !item.active && item.expiry.includes('到期') ? '已过期 · ' + item.expiry : item.expiry }));
+  },
+  onGiftCodeInput(e) { this.setData({ giftCode: e.detail.value }); },
+  redeemGift() {
+    if (this.data.redeemingGift) return;
+    if (!store.isLogin()) return this.goLogin();
+    const code = this.data.giftCode.trim();
+    if (!code) return wx.showToast({ title: '请输入礼品卡卡密', icon: 'none' });
+    this.setData({ redeemingGift: true });
+    api.redeemGiftCard(code).then((result) => {
+      store.setUser(result.user);
+      this.setData({ user: result.user, giftCode: '', entitlements: this.entitlementRows(result.user) });
+      wx.showModal({ title: result.alreadyRedeemed ? '该卡已兑换' : '兑换成功', content: result.alreadyRedeemed ? '权益已在当前账号生效，请查看下方有效期。' : (result.type === 'gold' ? '金手指' : '会员') + '权益已增加' + result.days + '天，请查看下方有效期。', showCancel: false });
+    }).catch((error) => wx.showModal({ title: '兑换失败', content: this.errorText(error), showCancel: false }))
+      .finally(() => this.setData({ redeemingGift: false }));
+  },
+  openGiftGold() {
+    if (!store.isLogin()) return this.goLogin();
+    store.syncMe().then((user) => {
+      this.setData({ entitlements: this.entitlementRows(user) });
+      if (!user || Number(user.goldExpire) <= Date.now() || !user.goldExpire) return wx.showToast({ title: '金手指卡权益已到期', icon: 'none' });
+      wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
+    });
+  },
   loadTab(index) {
     const user = store.getUser();
     const requestId = (this._loadRequestId || 0) + 1;

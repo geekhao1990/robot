@@ -215,3 +215,15 @@
   flex: 1;
   width: 0;
 }
+.gift-card { margin: 20rpx 24rpx; padding: 28rpx; border-radius: 20rpx; background: #fff; }
+.gift-title { font-size: 30rpx; font-weight: 600; color: #333; }
+.gift-description { margin-top: 10rpx; font-size: 24rpx; color: #888; }
+.gift-input-row { display: flex; align-items: center; margin-top: 22rpx; }
+.gift-input { flex: 1; min-width: 0; height: 80rpx; padding: 0 18rpx; border-radius: 12rpx; background: #f6f6f6; font-size: 24rpx; }
+.gift-redeem { flex: 0 0 120rpx; margin: 0 0 0 16rpx; padding: 0; height: 80rpx; line-height: 80rpx; background: #ff2442; color: white; font-size: 26rpx; border-radius: 12rpx; }
+.gift-redeem::after, .gift-open::after { border: none; }
+.gift-entitlement { display: flex; align-items: center; margin-top: 24rpx; }
+.gift-entitlement-copy { flex: 1; min-width: 0; }
+.gift-name { font-size: 26rpx; color: #444; }
+.gift-expiry { margin-top: 8rpx; font-size: 22rpx; color: #888; }
+.gift-open { flex: 0 0 96rpx; padding: 0; margin: 0 0 12rpx; font-size: 24rpx; color: #ff2442; background: #fff3f5; }

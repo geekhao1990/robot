@@ -16,7 +16,7 @@ function pubUser(user, includePrivate = false) {
     safe.phoneCountryCode = phoneCountryCode || '';
     safe.phoneBoundAt = phoneBoundAt || 0;
   }
-  return { ...safe, vipActive: vipActive(user) };
+  return { ...safe, vipActive: vipActive(user), goldActive: Number(user.goldExpire) > Date.now() };
 }
 
 // 小程序内容接口不直接暴露网盘地址
