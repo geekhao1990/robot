@@ -42,20 +42,11 @@
       <button class="editor-button save" bindtap="saveProfile" loading="{{savingProfile}}" disabled="{{savingProfile}}">保存</button>
     </view>
   </view>
-  <view class="points-entry {{editingProfile ? 'after-editor' : ''}}" bindtap="goPoints">
-    <view class="points-icon">积</view>
-    <view class="points-copy"><view class="points-title">积分中心</view><view class="points-sub">看广告、邀请好友赚积分</view></view>
-    <view class="points-arrow">›</view>
-  </view>
-  <view wx:if="{{user && user.official}}" class="manage-entry" bindtap="goGoldManage">
-    <view class="manage-entry-icon">金</view>
-    <view class="gift-entry-copy"><view class="gift-entry-title">维护金手指</view><view class="gift-entry-sub">新增、修改或删除每日数据</view></view>
-    <view class="points-arrow">›</view>
-  </view>
-  <view class="gift-entry" bindtap="openGiftModal">
-    <view class="gift-entry-icon">礼</view>
-    <view class="gift-entry-copy"><view class="gift-entry-title">礼品卡</view><view class="gift-entry-sub">兑换金手指年卡或月卡</view></view>
-    <view class="points-arrow">›</view>
+  <view class="quick-menu {{editingProfile ? 'after-editor' : ''}}">
+    <view class="quick-item" bindtap="goPoints"><view class="quick-icon points">积</view><view class="quick-title">积分中心</view></view>
+    <view wx:if="{{user && user.official}}" class="quick-item" bindtap="goGoldManage"><view class="quick-icon manage">金</view><view class="quick-title">维护手指</view></view>
+    <view class="quick-item" bindtap="openGiftModal"><view class="quick-icon gift">礼</view><view class="quick-title">礼品卡</view></view>
+    <view class="quick-item" bindtap="goMiniGame"><view class="quick-icon game">游</view><view class="quick-title">小游戏</view></view>
   </view>
   <view wx:if="{{giftModalVisible}}" class="gift-mask" catchtap="closeGiftModal">
     <view class="gift-panel" catchtap="noop">

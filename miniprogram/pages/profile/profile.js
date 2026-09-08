@@ -196,6 +196,9 @@ Page({
     if (!user || user.official !== true) return;
     wx.navigateTo({ url: '/pages/gold-finger-manage/gold-finger-manage' });
   },
+  goMiniGame() {
+    wx.showToast({ title: '小游戏即将上线', icon: 'none' });
+  },
   onLogout() {
     wx.showModal({ title: '提示', content: '确定要退出登录吗？', success: (res) => { if (res.confirm) { store.logout(); this.onShow(); } } });
   },
