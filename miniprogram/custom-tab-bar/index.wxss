@@ -38,11 +38,8 @@
   justify-content: center;
   width: 96rpx;
   height: 64rpx;
-  background: #ff2442;
-  border-radius: 20rpx;
-  box-shadow: 0 6rpx 16rpx rgba(255, 36, 66, .35);
 }
-.finger-btn image { width: 46rpx; height: 46rpx; }
+.finger-btn image { width: 54rpx; height: 54rpx; }
 .tab-spacer { width: 96rpx; height: 64rpx; }
 
 /* 角标：绝对定位，不占布局 */

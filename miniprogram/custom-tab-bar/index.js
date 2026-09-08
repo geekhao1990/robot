@@ -1,6 +1,6 @@
 const api = require('../utils/api');
 
-const GOLD_FINGER_ICON = 'https://app.nankaitechschool.com/uploads/up_1787930384458_5f0008fd90bf8d07.png';
+const GOLD_FINGER_ICON = 'https://img.icons8.com/?size=100&id=fu6HjyEes37m&format=png&color=000000';
 
 function makeList(settings = {}) {
   const middle = settings.goldFingerEntryEnabled
