@@ -38,6 +38,7 @@ function pubSettings(data) {
   return {
     rewardedAdEnabled: raw.rewardedAdEnabled === true,
     vipEnabled: raw.vipEnabled === true,
+    goldFingerEntryEnabled: raw.goldFingerEntryEnabled === true,
     featuredNoteId: featured ? featured.id : '',
   };
 }

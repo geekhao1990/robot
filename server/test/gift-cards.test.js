@@ -31,6 +31,8 @@ test('only admin can generate 1-10 unique codes; history does not leak secrets',
   const history = await call('GET', '/api/admin/gift-cards');
   assert.equal(history.total, 10);
   assert(history.list.every((item) => !item.code && !item.codeHash));
+  const annual = await call('POST', '/api/admin/gift-cards', { type: 'gold', count: 1 });
+  assert.equal(annual.days, 360);
 });
 
 test('gold redemption extends only gold, survives restart, and concurrent reuse grants once', async () => {
@@ -81,6 +83,6 @@ test('expired rights restart from redemption, invalid codes and failed writes gr
   db.save = async () => {};
   const before = Date.now();
   const redeemed = await call('POST', '/api/gift-cards/redeem', { code: codes[0] }, 'a');
-  assert(redeemed.user.goldExpire >= before + 30 * 86400000);
+  assert(redeemed.user.goldExpire >= before + 360 * 86400000);
   assert.equal(redeemed.user.goldActive, true);
 });

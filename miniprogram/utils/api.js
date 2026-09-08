@@ -171,12 +171,14 @@ function getAppSettings() {
   const fallback = {
     rewardedAdEnabled: config.rewardedAdEnabled === true,
     vipEnabled: false,
+    goldFingerEntryEnabled: false,
     featuredNoteId: config.featuredNoteId || 'n3',
   };
   return request('GET', '/api/settings', { timeout: 3000 })
     .then((settings) => ({
       rewardedAdEnabled: settings && settings.rewardedAdEnabled === true,
       vipEnabled: settings && settings.vipEnabled === true,
+      goldFingerEntryEnabled: settings && settings.goldFingerEntryEnabled === true,
       featuredNoteId: settings && typeof settings.featuredNoteId === 'string'
         ? settings.featuredNoteId
         : fallback.featuredNoteId,

@@ -22,6 +22,7 @@ Page({
     draftAvatar: '',
     giftCode: '',
     redeemingGift: false,
+    giftModalVisible: false,
     entitlements: [],
   },
   onLoad() {
@@ -61,9 +62,17 @@ Page({
     const now = Date.now();
     return [
       { type: 'month', name: '会员权限', active: !!(user.vip && (user.vipPermanent || Number(user.vipExpire) > now)), expiry: user.vipPermanent ? '永久有效' : dateText(user.vipExpire) },
-      { type: 'gold', name: '金手指礼品卡权限', active: Number(user.goldExpire) > now, expiry: user.goldExpire ? dateText(user.goldExpire) : '未开通' },
-    ].map((item) => ({ ...item, expiry: !item.active && item.expiry.includes('到期') ? '已过期 · ' + item.expiry : item.expiry }));
+      { type: 'gold', name: '金手指年卡权限', active: Number(user.goldExpire) > now, expiry: user.goldExpire ? dateText(user.goldExpire) : '未开通' },
+    ].map((item) => {
+      const expiry = !item.active && item.expiry.includes('到期') ? '已过期 · ' + item.expiry : item.expiry;
+      return { ...item, expiry, state: item.active ? '有效' : (expiry.startsWith('已过期') ? '已过期' : '未开通') };
+    });
   },
+  openGiftModal() { this.setData({ giftModalVisible: true }); },
+  closeGiftModal() {
+    if (!this.data.redeemingGift) this.setData({ giftModalVisible: false });
+  },
+  noop() {},
   onGiftCodeInput(e) { this.setData({ giftCode: e.detail.value }); },
   redeemGift() {
     if (this.data.redeemingGift) return;
@@ -83,6 +92,7 @@ Page({
     store.syncMe().then((user) => {
       this.setData({ entitlements: this.entitlementRows(user) });
       if (!user || Number(user.goldExpire) <= Date.now() || !user.goldExpire) return wx.showToast({ title: '金手指卡权益已到期', icon: 'none' });
+      this.setData({ giftModalVisible: false });
       wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
     });
   },

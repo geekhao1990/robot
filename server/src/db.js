@@ -251,6 +251,10 @@ function ensureSettings() {
     db.settings.vipEnabled = false;
     changed = true;
   }
+  if (typeof db.settings.goldFingerEntryEnabled !== 'boolean') {
+    db.settings.goldFingerEntryEnabled = false;
+    changed = true;
+  }
   const configured = notes.find((n) => n.id === db.settings.featuredNoteId);
   let goldNote = configured && configured.type === 'gold'
     ? configured

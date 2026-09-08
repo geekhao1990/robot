@@ -1089,6 +1089,14 @@ function renderSettings() {
           </select>
           <div class="hint">开启后仅有效VIP可进入金手指数据；课程、资料等领取权限按每篇笔记的「是否免费」设置执行。</div>
         </div>
+        <div class="field">
+          <label>底部金手指入口</label>
+          <select id="settingGoldEntry">
+            <option value="false" ${settings.goldFingerEntryEnabled ? '' : 'selected'}>关闭</option>
+            <option value="true" ${settings.goldFingerEntryEnabled ? 'selected' : ''}>开启</option>
+          </select>
+          <div class="hint">开启后，已登录的普通账号在底部中间显示红色手指入口；关闭后中间留空。官方账号始终显示金手指数据管理加号。</div>
+        </div>
         <button class="btn-primary" onclick="saveSettings()">保存设置</button>
       </div>`;
   });
@@ -1099,6 +1107,7 @@ function saveSettings() {
     featuredNoteId: document.getElementById('settingFeatured').value,
     rewardedAdEnabled: document.getElementById('settingAd').value === 'true',
     vipEnabled: document.getElementById('settingVip').value === 'true',
+    goldFingerEntryEnabled: document.getElementById('settingGoldEntry').value === 'true',
   };
   api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(body) })
     .then(() => showAdminToast('设置已保存'))
@@ -1111,13 +1120,13 @@ let _giftBatch = null;
 function renderGiftCards(page = 1) {
   api('/api/admin/gift-cards?page=' + page).then((result) => {
     if (document.getElementById('viewTitle').textContent !== TITLES.giftCards) return;
-    const rows = result.list.map((card) => `<tr><td>${esc(card.maskedCode)}</td><td>${card.type === 'gold' ? '金手指卡' : '月卡'}</td><td>${card.days}天</td><td>${card.status === 'redeemed' ? '已兑换' : '未兑换'}</td><td>${esc(card.redeemedBy || '—')}</td><td>${fmtDate(card.createdAt)}</td><td>${card.redeemedAt ? fmtDate(card.redeemedAt) : '—'}</td></tr>`).join('');
+    const rows = result.list.map((card) => `<tr><td>${esc(card.maskedCode)}</td><td>${card.type === 'gold' ? '金手指年卡' : '月卡'}</td><td>${card.days}天</td><td>${card.status === 'redeemed' ? '已兑换' : '未兑换'}</td><td>${esc(card.redeemedBy || '—')}</td><td>${fmtDate(card.createdAt)}</td><td>${card.redeemedAt ? fmtDate(card.redeemedAt) : '—'}</td></tr>`).join('');
     document.getElementById('content').innerHTML = `
       <div class="card" style="margin-bottom:20px"><h3>生成礼品卡</h3>
-        <div class="hint">月卡增加30天会员；金手指卡单独增加金手指权益。同类权益从现有到期时间顺延，每张卡密仅可使用一次。</div>
+        <div class="hint">月卡增加30天会员；金手指年卡单独增加金手指权益，默认360天。同类权益从现有到期时间顺延，每张卡密仅可使用一次。</div>
         <div class="toolbar" style="display:flex;flex-wrap:wrap;gap:16px;margin-top:16px">
-          <label>类型 <select id="giftType" onchange="updateGiftDays()"><option value="gold">金手指卡</option><option value="month">月卡</option></select></label>
-          <label>兑换后有效天数 <input id="giftDays" type="number" min="1" max="3650" value="30" style="width:90px" /></label>
+          <label>类型 <select id="giftType" onchange="updateGiftDays()"><option value="gold">金手指年卡</option><option value="month">月卡</option></select></label>
+          <label>兑换后有效天数 <input id="giftDays" type="number" min="1" max="3650" value="360" style="width:90px" /></label>
           <label>生成数量 <input id="giftCount" type="number" min="1" max="10" value="10" style="width:80px" /></label>
           <button class="btn-primary" id="giftGenerate" onclick="generateGiftCards()">生成卡密</button>
         </div>
@@ -1133,13 +1142,13 @@ function renderGiftCodes() {
   const target = document.getElementById('giftResult');
   const result = _giftBatch;
   if (!target || !result) return;
-  target.innerHTML = `<div style="margin-top:20px"><h3>已生成${result.codes.length}张${result.type === 'gold' ? '金手指卡' : '月卡'} · ${result.days}天</h3><div class="hint">请立即复制保存本批卡密；刷新、退出或生成下一批后，旧卡只能查看尾号与兑换状态。</div><textarea readonly id="giftCodes" style="width:100%;height:250px;margin-top:12px;font-family:monospace">${esc(result.codes.join('\n'))}</textarea><button class="btn-sm" onclick="copyGiftCodes()">复制本批卡密</button></div>`;
+  target.innerHTML = `<div style="margin-top:20px"><h3>已生成${result.codes.length}张${result.type === 'gold' ? '金手指年卡' : '月卡'} · ${result.days}天</h3><div class="hint">请立即复制保存本批卡密；刷新、退出或生成下一批后，旧卡只能查看尾号与兑换状态。</div><textarea readonly id="giftCodes" style="width:100%;height:250px;margin-top:12px;font-family:monospace">${esc(result.codes.join('\n'))}</textarea><button class="btn-sm" onclick="copyGiftCodes()">复制本批卡密</button></div>`;
 }
 function updateGiftDays() {
   const month = document.getElementById('giftType').value === 'month';
   const input = document.getElementById('giftDays');
   input.disabled = month;
-  if (month) input.value = '30';
+  input.value = month ? '30' : '360';
 }
 function generateGiftCards() {
   if (_giftGenerating) return;

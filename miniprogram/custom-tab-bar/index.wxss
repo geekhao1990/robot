@@ -31,22 +31,6 @@
   font-weight: 700;
 }
 
-/* 中间 AI 按钮 */
-.ai-item {
-  flex: 1;
-}
-.ai-btn {
-  width: 96rpx;
-  height: 64rpx;
-  background: #ff2442;
-  color: #fff;
-  border-radius: 20rpx;
-  font-size: 30rpx;
-  font-weight: 700;
-  line-height: 64rpx;
-  text-align: center;
-  box-shadow: 0 6rpx 16rpx rgba(255, 36, 66, .35);
-}
 .plus-item { flex: 1; }
 .plus-btn {
   width: 96rpx;
@@ -60,6 +44,19 @@
   text-align: center;
   box-shadow: 0 6rpx 16rpx rgba(255, 36, 66, .35);
 }
+.finger-item, .spacer-item { flex: 1; }
+.finger-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96rpx;
+  height: 64rpx;
+  background: #ff2442;
+  border-radius: 20rpx;
+  box-shadow: 0 6rpx 16rpx rgba(255, 36, 66, .35);
+}
+.finger-btn image { width: 46rpx; height: 46rpx; }
+.tab-spacer { width: 96rpx; height: 64rpx; }
 
 /* 角标：绝对定位，不占布局 */
 .badge {

@@ -39,7 +39,7 @@ module.exports = function register(router, HttpError) {
     const body = ctx.body || {};
     const type = body.type;
     const count = body.count === undefined ? 10 : Number(body.count);
-    const days = type === 'month' ? 30 : Number(body.days === undefined ? 30 : body.days);
+    const days = type === 'month' ? 30 : Number(body.days === undefined ? 360 : body.days);
     if (!['gold', 'month'].includes(type)) throw new HttpError(400, '请选择金手指卡或月卡');
     if (!Number.isInteger(count) || count < 1 || count > 10) throw new HttpError(400, '一次可生成1至10张礼品卡');
     if (!Number.isInteger(days) || days < 1 || days > 3650) throw new HttpError(400, '有效天数须为1至3650的整数');

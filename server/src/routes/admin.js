@@ -95,12 +95,16 @@ module.exports = function register(router, HttpError) {
     if (typeof b.vipEnabled !== 'boolean') {
       throw new HttpError(400, 'VIP开关必须为布尔值');
     }
+    if (typeof b.goldFingerEntryEnabled !== 'boolean') {
+      throw new HttpError(400, '金手指入口开关必须为布尔值');
+    }
     if (!d.notes.some((n) => n.id === b.featuredNoteId && n.type === 'gold')) {
       throw new HttpError(400, '请选择金手指类型的入口笔记');
     }
     d.settings = {
       rewardedAdEnabled: b.rewardedAdEnabled,
       vipEnabled: b.vipEnabled,
+      goldFingerEntryEnabled: b.goldFingerEntryEnabled,
       featuredNoteId: b.featuredNoteId,
     };
     db.save();
