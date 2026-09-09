@@ -166,24 +166,41 @@ function getHotSearch() {
   return delay(data.hotSearch, 0);
 }
 
-// 全局功能设置。生产环境读取后端，开发模式失败时才回退本地默认值。
-function getAppSettings() {
-  const fallback = {
+const APP_SETTINGS_CACHE_KEY = 'niulai_app_settings';
+function baseAppSettings() {
+  return {
     rewardedAdEnabled: config.rewardedAdEnabled === true,
     vipEnabled: false,
     goldFingerEntryEnabled: false,
     featuredNoteId: config.featuredNoteId || 'n3',
   };
+}
+function normalizeAppSettings(settings, fallback = baseAppSettings()) {
+  return {
+    rewardedAdEnabled: settings && typeof settings.rewardedAdEnabled === 'boolean' ? settings.rewardedAdEnabled : fallback.rewardedAdEnabled,
+    vipEnabled: settings && typeof settings.vipEnabled === 'boolean' ? settings.vipEnabled : fallback.vipEnabled,
+    goldFingerEntryEnabled: settings && typeof settings.goldFingerEntryEnabled === 'boolean' ? settings.goldFingerEntryEnabled : fallback.goldFingerEntryEnabled,
+    featuredNoteId: settings && typeof settings.featuredNoteId === 'string' ? settings.featuredNoteId : fallback.featuredNoteId,
+  };
+}
+function getCachedAppSettings() {
+  try {
+    return normalizeAppSettings(wx.getStorageSync(APP_SETTINGS_CACHE_KEY), baseAppSettings());
+  } catch (error) {
+    return baseAppSettings();
+  }
+}
+
+// 全局功能设置。先使用成功请求的本地缓存，再用后端刷新；失败时保留缓存。
+function getAppSettings() {
+  const fallback = getCachedAppSettings();
   return request('GET', '/api/settings', { timeout: 3000 })
-    .then((settings) => ({
-      rewardedAdEnabled: settings && settings.rewardedAdEnabled === true,
-      vipEnabled: settings && settings.vipEnabled === true,
-      goldFingerEntryEnabled: settings && settings.goldFingerEntryEnabled === true,
-      featuredNoteId: settings && typeof settings.featuredNoteId === 'string'
-        ? settings.featuredNoteId
-        : fallback.featuredNoteId,
-    }))
-    .catch(() => fallback);
+    .then((settings) => {
+      const normalized = normalizeAppSettings(settings, fallback);
+      try { wx.setStorageSync(APP_SETTINGS_CACHE_KEY, normalized); } catch (error) {}
+      return normalized;
+    })
+    .catch(() => ({ ...fallback, _remoteFailed: true }));
 }
 
 function search(keyword) {
@@ -452,6 +469,7 @@ module.exports = {
   deleteOfficialGoldFinger,
   getCategories,
   getHotSearch,
+  getCachedAppSettings,
   getAppSettings,
   search,
   getUserById,

@@ -38,6 +38,7 @@
   justify-content: center;
   width: 96rpx;
   height: 64rpx;
+  transform: translateY(8px);
 }
 .finger-btn image { width: 54rpx; height: 54rpx; }
 .tab-spacer { width: 96rpx; height: 64rpx; }

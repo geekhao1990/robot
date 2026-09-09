@@ -28,6 +28,8 @@ Page({
   },
 
   onLoad(options) {
+    this._goldTabEntryLoading = options.from === 'goldTab';
+    if (this._goldTabEntryLoading) wx.showLoading({ title: '请稍后...', mask: true });
     store.captureInvite(options);
     const app = getApp();
     this.setData({
@@ -92,7 +94,10 @@ Page({
     this._loadingNote = true;
     api.getNoteById(this.noteId).then((note) => {
       this._loadingNote = false;
-      if (!note) return toast('笔记不存在');
+      if (!note) {
+        this.finishGoldTabLoading();
+        return toast('笔记不存在');
+      }
       const content = String(note.content || '').replace(/\s+$/, '');
       note.displayContent = note.riskDisclaimerEnabled
         ? `${content}${content ? '\n\n' : ''}${RISK_DISCLAIMER}`
@@ -108,9 +113,10 @@ Page({
         timeText: fromNow(note.time),
         isOwnNote,
         followed: !isOwnNote && store.isFollowed(authorId),
-      });
+      }, () => this.finishGoldTabLoading());
     }).catch((err) => {
       this._loadingNote = false;
+      this.finishGoldTabLoading();
       const code = err && err.statusCode;
       wx.showModal({
         title: code === 401 ? '请先登录' : '加载失败',
@@ -163,6 +169,12 @@ Page({
         return this.handleGetResource(true);
       });
     });
+  },
+
+  finishGoldTabLoading() {
+    if (!this._goldTabEntryLoading) return;
+    this._goldTabEntryLoading = false;
+    wx.hideLoading();
   },
   isVipActive(user) {
     return !!(user && (user.vipActive || (user.vip && (user.vipPermanent || (user.vipExpire && user.vipExpire > Date.now())))));
