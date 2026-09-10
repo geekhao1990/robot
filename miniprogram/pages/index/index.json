@@ -1,7 +1,6 @@
 {
   "navigationStyle": "custom",
-  "enablePullDownRefresh": true,
-  "backgroundTextStyle": "dark",
+  "disableScroll": true,
   "usingComponents": {
     "note-card": "/components/note-card/note-card"
   }

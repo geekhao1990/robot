@@ -20,6 +20,8 @@ Page({
     page: 1,
     hasMore: true,
     loading: false,
+    refreshing: false,
+    refreshReady: false,
     emptyText: '这里还没有内容～',
   },
 
@@ -84,8 +86,14 @@ Page({
   },
 
   loadFeed(reset = false) {
-    if (this.data.loading) return;
-    if (!reset && !this.data.hasMore) return;
+    if (this.data.loading) {
+      this.finishRefresh();
+      return;
+    }
+    if (!reset && !this.data.hasMore) {
+      this.finishRefresh();
+      return;
+    }
     this.setData({ loading: true });
     const page = reset ? 1 : this.data.page;
 
@@ -101,12 +109,17 @@ Page({
         loading: false,
         emptyText: this.data.tab === 'following' ? '还没有关注内容' : '这里还没有内容～',
       });
-      wx.stopPullDownRefresh();
+      this.finishRefresh();
     }).catch((err) => {
       this.setData({ loading: false, emptyText: '加载失败，请稍后重试' });
-      wx.stopPullDownRefresh();
+      this.finishRefresh();
       if (err && err.statusCode === 401) this.ensureAccess();
     });
+  },
+
+  finishRefresh() {
+    if (!this.data.refreshing && !this.data.refreshReady) return;
+    this.setData({ refreshing: false, refreshReady: false });
   },
 
   onTabChange(e) {
@@ -136,12 +149,27 @@ Page({
     this.setData({ left: update(this.data.left), right: update(this.data.right) });
   },
 
-  onPullDownRefresh() {
-    this.setData({ page: 1, hasMore: true });
+  onRefresherPulling(e) {
+    if (this.data.refreshing) return;
+    const refreshReady = Number(e.detail && e.detail.dy) >= 64;
+    if (refreshReady !== this.data.refreshReady) this.setData({ refreshReady });
+  },
+
+  onRefresherRefresh() {
+    if (this.data.refreshing) return;
+    this.setData({ refreshing: true, refreshReady: false, page: 1, hasMore: true });
     this.loadFeed(true);
   },
 
-  onReachBottom() {
+  onRefresherRestore() {
+    if (this.data.refreshReady) this.setData({ refreshReady: false });
+  },
+
+  onRefresherAbort() {
+    if (this.data.refreshReady) this.setData({ refreshReady: false });
+  },
+
+  onScrollToLower() {
     this.loadFeed(false);
   },
 });

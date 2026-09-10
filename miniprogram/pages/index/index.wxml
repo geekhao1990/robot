@@ -21,34 +21,58 @@
   </view>
 
   <!-- 内容区 -->
-  <view class="content" style="padding-top: {{headerHeight}}px;">
-    <view wx:if="{{loading && !left.length && !right.length}}" class="placeholder">加载中...</view>
-
-    <view wx:elif="{{!left.length && !right.length}}" class="placeholder">{{emptyText}}</view>
-
-    <view wx:else class="waterfall">
-      <view class="column">
-        <note-card
-          wx:for="{{left}}"
-          wx:key="id"
-          note="{{item}}"
-          bindtap="goDetail"
-          bindlike="onCardLike"
-        />
-      </view>
-      <view class="column">
-        <note-card
-          wx:for="{{right}}"
-          wx:key="id"
-          note="{{item}}"
-          bindtap="goDetail"
-          bindlike="onCardLike"
-        />
-      </view>
+  <scroll-view
+    class="feed-scroll"
+    style="top: {{headerHeight}}px;"
+    scroll-y
+    enhanced
+    lower-threshold="120"
+    refresher-enabled
+    refresher-threshold="64"
+    refresher-default-style="none"
+    refresher-background="#f5f5f5"
+    refresher-triggered="{{refreshing}}"
+    bindscrolltolower="onScrollToLower"
+    bindrefresherpulling="onRefresherPulling"
+    bindrefresherrefresh="onRefresherRefresh"
+    bindrefresherrestore="onRefresherRestore"
+    bindrefresherabort="onRefresherAbort"
+  >
+    <view slot="refresher" class="refresh-indicator">
+      <view wx:if="{{refreshing}}" class="refresh-loading"></view>
+      <view wx:else class="refresh-arrow {{refreshReady ? 'is-ready' : ''}}">↓</view>
+      <text>{{refreshing ? '刷新中' : (refreshReady ? '松开刷新' : '下拉刷新')}}</text>
     </view>
 
-    <view wx:if="{{!loading && (left.length || right.length)}}" class="loadmore">
-      {{hasMore ? '上拉加载更多' : '没有更多了～'}}
+    <view class="content">
+      <view wx:if="{{loading && !left.length && !right.length}}" class="placeholder">加载中...</view>
+
+      <view wx:elif="{{!left.length && !right.length}}" class="placeholder">{{emptyText}}</view>
+
+      <view wx:else class="waterfall">
+        <view class="column">
+          <note-card
+            wx:for="{{left}}"
+            wx:key="id"
+            note="{{item}}"
+            bindtap="goDetail"
+            bindlike="onCardLike"
+          />
+        </view>
+        <view class="column">
+          <note-card
+            wx:for="{{right}}"
+            wx:key="id"
+            note="{{item}}"
+            bindtap="goDetail"
+            bindlike="onCardLike"
+          />
+        </view>
+      </view>
+
+      <view wx:if="{{!loading && (left.length || right.length)}}" class="loadmore">
+        {{hasMore ? '上拉加载更多' : '没有更多了～'}}
+      </view>
     </view>
-  </view>
+  </scroll-view>
 </view>
