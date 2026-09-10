@@ -4,7 +4,12 @@
     <view class="profile" style="margin-top: {{navBarHeight}}px;">
       <view wx:if="{{user}}" class="row">
         <image class="avatar" src="{{user.avatar}}" mode="aspectFill" />
-        <view class="meta"><view class="name">{{user.name}}</view><view class="uid">{{accessText}}</view></view>
+        <view class="meta">
+          <view class="name">{{user.name}}</view>
+          <view wx:if="{{entitlements.length}}" class="profile-rights">
+            <view wx:for="{{entitlements}}" wx:key="type" class="profile-right">{{item.name}} · {{item.expiry}}</view>
+          </view>
+        </view>
       </view>
       <view wx:if="{{user}}" class="desc">{{user.desc || '暂无简介'}}</view>
       <view wx:if="{{user}}" class="profile-actions">
@@ -55,13 +60,6 @@
         <input class="gift-input" value="{{giftCode}}" bindinput="onGiftCodeInput" maxlength="80" placeholder="请输入礼品卡卡密" disabled="{{redeemingGift}}" />
         <button class="gift-redeem" bindtap="redeemGift" loading="{{redeemingGift}}" disabled="{{redeemingGift}}">兑换</button>
       </view>
-      <view wx:if="{{loggedIn && entitlements.length}}" class="gift-rights">
-        <view wx:for="{{entitlements}}" wx:key="type" class="gift-entitlement">
-          <view class="gift-entitlement-copy"><view class="gift-name">{{item.name}} · {{item.state}}</view><view class="gift-expiry">{{item.expiry}}</view></view>
-          <button wx:if="{{item.type === 'gold' && item.active}}" class="gift-open" bindtap="openGiftGold">查看</button>
-        </view>
-      </view>
-      <view wx:else class="gift-login-hint">登录后可兑换并查看权益有效期</view>
     </view>
   </view>
   <block wx:if="{{loggedIn}}">

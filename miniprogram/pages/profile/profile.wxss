@@ -36,6 +36,18 @@
   opacity: .85;
   margin-top: 10rpx;
 }
+.profile-rights {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6rpx;
+  margin-top: 10rpx;
+}
+.profile-right {
+  font-size: 22rpx;
+  line-height: 1.35;
+  opacity: .9;
+}
 .desc {
   font-size: 26rpx;
   margin-top: 24rpx;
@@ -222,11 +234,4 @@
 .gift-input-row { display: flex; align-items: center; margin-top: 22rpx; }
 .gift-input { flex: 1; min-width: 0; height: 80rpx; padding: 0 18rpx; border-radius: 12rpx; background: #f6f6f6; font-size: 24rpx; }
 .gift-redeem { flex: 0 0 120rpx; margin: 0 0 0 16rpx; padding: 0; height: 80rpx; line-height: 80rpx; background: #ff2442; color: white; font-size: 26rpx; border-radius: 12rpx; }
-.gift-redeem::after, .gift-open::after { border: none; }
-.gift-rights { margin-top: 24rpx; padding-top: 2rpx; border-top: 1rpx solid #f0f0f0; }
-.gift-entitlement { display: flex; align-items: center; margin-top: 24rpx; }
-.gift-entitlement-copy { flex: 1; min-width: 0; }
-.gift-name { font-size: 26rpx; color: #444; }
-.gift-expiry { margin-top: 8rpx; font-size: 22rpx; color: #888; }
-.gift-open { flex: 0 0 96rpx; padding: 0; margin: 0 0 12rpx; font-size: 24rpx; color: #ff2442; background: #fff3f5; }
-.gift-login-hint { margin-top: 26rpx; color: #aaa; font-size: 24rpx; text-align: center; }
+.gift-redeem::after { border: none; }
