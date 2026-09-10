@@ -567,7 +567,7 @@ module.exports = function register(router, HttpError) {
     return { ok: true };
   });
 
-  // 开通/取消 VIP（plan: month | year | none）。在原有有效期上叠加续费。
+  // 管理员开通/取消 VIP（月卡只通过订单和赠送流程开通）。
   router.put('/api/admin/users/:id/vip', (ctx) => {
     requireAuth(ctx);
     const d = db.get();
@@ -576,10 +576,31 @@ module.exports = function register(router, HttpError) {
     const plan = (ctx.body || {}).plan;
     if (plan === 'none') {
       user.vip = false; user.vipPlan = ''; user.vipExpire = 0; user.vipPermanent = false;
-    } else if (getPlan(plan)) {
+    } else if (['year', 'lifetime'].includes(plan) && getPlan(plan)) {
       activateMembership(user, plan);
     } else {
-      throw new HttpError(400, 'plan 须为 month/year/lifetime/none');
+      throw new HttpError(400, 'plan 须为 year/lifetime/none');
+    }
+    db.save();
+    return user;
+  });
+
+  // 金手指权益固定开通一年（360天）；已开通时不可重复开通，未开通时不可取消。
+  router.put('/api/admin/users/:id/gold', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const user = d.users.find((u) => u.id === ctx.params.id);
+    if (!user) throw new HttpError(404, '用户不存在');
+    const action = (ctx.body || {}).action;
+    const active = Number(user.goldExpire) > Date.now();
+    if (action === 'open') {
+      if (active) throw new HttpError(409, '该用户已开通金手指');
+      user.goldExpire = Date.now() + 360 * 24 * 3600 * 1000;
+    } else if (action === 'cancel') {
+      if (!active) throw new HttpError(409, '该用户未开通金手指');
+      user.goldExpire = 0;
+    } else {
+      throw new HttpError(400, 'action 须为 open/cancel');
     }
     db.save();
     return user;

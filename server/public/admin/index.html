@@ -511,13 +511,16 @@ function drawUsers() {
   const pageItems = all.slice(start, start + PAGE_SIZE);
   const rows = pageItems.map((u, i) => {
     const active = vipActive(u);
+    const goldActive = Number(u.goldExpire) > Date.now();
     const status = active
       ? (u.vipPermanent ? '<span class="tag vip">永久会员</span>' : `<span class="tag vip">${u.vipPlan === 'year' ? '年卡' : '月卡'} · 至 ${fmtDate(u.vipExpire)}</span>`)
       : (u.vipExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
+    const goldStatus = goldActive
+      ? `<span class="tag vip">金手指 · 至 ${fmtDate(u.goldExpire)}</span>`
+      : (u.goldExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
     return `
       <tr>
         <td>${start + i + 1}</td>
-        <td><img src="${esc(u.avatar)}" /></td>
         <td>${esc(u.name)}</td>
         <td>${esc(u.phone || '未绑定')}</td>
         <td>
@@ -527,11 +530,13 @@ function drawUsers() {
         </td>
         <td>${u.official ? '<span class="tag course">官方账号</span>' : '<span class="tag">普通用户</span>'}</td>
         <td>${status}</td>
+        <td>${goldStatus}</td>
         <td>
-          <button class="btn-sm" onclick='setVip("${u.id}","month")'>开通一个月</button>
           <button class="btn-sm" onclick='setVip("${u.id}","year")'>开通年卡</button>
           <button class="btn-sm" onclick='setVip("${u.id}","lifetime")'>开通永久卡</button>
           <button class="btn-sm del" ${active ? '' : 'disabled'} onclick='setVip("${u.id}","none")'>取消VIP</button>
+          <button class="btn-sm" ${goldActive ? 'disabled' : ''} onclick='setGold("${u.id}","open")'>开通金手指</button>
+          <button class="btn-sm del" ${goldActive ? '' : 'disabled'} onclick='setGold("${u.id}","cancel")'>取消金手指</button>
           <button class="btn-sm" onclick='editUser("${u.id}")'>编辑</button>
         </td>
       </tr>`;
@@ -545,15 +550,22 @@ function drawUsers() {
       </div>
       <button class="btn-primary" onclick="editUser()">+ 新增用户</button>
     </div>
-    <table><thead><tr><th>序号</th><th>头像</th><th>昵称</th><th>手机号</th><th>注册信息</th><th>账号类型</th><th>VIP 状态</th><th>操作</th></tr></thead>
+    <table><thead><tr><th>序号</th><th>昵称</th><th>手机号</th><th>注册信息</th><th>账号类型</th><th>VIP 状态</th><th>金手指状态</th><th>操作</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${pagerHtml(_userPage, pages, total, 'gotoUserPage')}`;
 }
 
 function setVip(id, plan) {
-  const label = { month: '开通一个月会员', year: '开通一年会员', lifetime: '开通永久会员', none: '取消VIP' }[plan];
+  const label = { year: '开通一年会员', lifetime: '开通永久会员', none: '取消VIP' }[plan];
   if (!confirm(`确定为该用户「${label}」吗？`)) return;
   api('/api/admin/users/' + id + '/vip', { method: 'PUT', body: JSON.stringify({ plan }) }).then(renderUsers);
+}
+function setGold(id, action) {
+  const label = action === 'open' ? '开通一年金手指' : '取消金手指';
+  if (!confirm(`确定为该用户「${label}」吗？`)) return;
+  api('/api/admin/users/' + id + '/gold', { method: 'PUT', body: JSON.stringify({ action }) })
+    .then(() => { showAdminToast(action === 'open' ? '金手指已开通' : '金手指已取消'); renderUsers(); })
+    .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
 }
 function editUser(id) {
   const u = id ? _users.find((x) => x.id === id) : {};
@@ -567,7 +579,7 @@ function editUser(id) {
       <option value="false" ${u.official ? '' : 'selected'}>普通用户（不可发布笔记）</option>
       <option value="true" ${u.official ? 'selected' : ''}>官方账号（可作为笔记作者）</option>
     </select></div>
-    <div class="hint">VIP 开通/取消请用列表中的「开通月卡 / 年卡 / 取消VIP」按钮</div>
+    <div class="hint">VIP 和金手指权益请使用列表中的对应操作按钮</div>
   `, () => {
     const body = {
       name: document.getElementById('u_name').value,
