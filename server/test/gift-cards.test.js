@@ -16,7 +16,10 @@ function setup(data = { users: [{ id: 'a' }, { id: 'b' }] }) {
   });
   const router = createRouter();
   mod.exports(router, HttpError);
-  const call = (method, url, body = {}, user = 'admin', query = {}) => Promise.resolve().then(() => router.match(method, url).handler({ body, headers: { authorization: user }, query }));
+  const call = (method, url, body = {}, user = 'admin', query = {}) => Promise.resolve().then(() => {
+    const match = router.match(method, url);
+    return match.handler({ body, headers: { authorization: user }, query, params: match.params });
+  });
   return { data, db, call };
 }
 
@@ -32,6 +35,17 @@ test('only admin can generate 1-10 unique codes; admin history can copy codes', 
   assert(history.list.every((item) => item.code && !item.codeHash));
   const annual = await call('POST', '/api/admin/gift-cards', { type: 'gold', count: 1 });
   assert.equal(annual.days, 360);
+});
+
+test('admin can delete a gift card and deleted code can no longer be redeemed', async () => {
+  const { call } = setup();
+  const batch = await call('POST', '/api/admin/gift-cards', { type: 'gold', count: 1 });
+  const history = await call('GET', '/api/admin/gift-cards');
+  await assert.rejects(call('DELETE', `/api/admin/gift-cards/${history.list[0].id}`, {}, 'a'), { status: 401 });
+  const removed = await call('DELETE', `/api/admin/gift-cards/${history.list[0].id}`);
+  assert.equal(removed.ok, true);
+  await assert.rejects(call('POST', '/api/gift-cards/redeem', { code: batch.codes[0] }, 'a'), { status: 400 });
+  await assert.rejects(call('DELETE', `/api/admin/gift-cards/${history.list[0].id}`), { status: 404 });
 });
 
 test('gold redemption extends only gold, survives restart, and concurrent reuse grants once', async () => {

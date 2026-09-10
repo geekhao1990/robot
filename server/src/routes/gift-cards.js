@@ -62,6 +62,19 @@ module.exports = function register(router, HttpError) {
       return { batchId, type, days, codes };
     });
   });
+  router.delete('/api/admin/gift-cards/:id', (ctx) => {
+    admin(ctx);
+    const id = String(ctx.params.id || '');
+    return serialize(async () => {
+      const data = db.get();
+      const previous = data.giftCards || [];
+      const card = previous.find((item) => item.id === id);
+      if (!card) throw new HttpError(404, '礼品卡不存在');
+      data.giftCards = previous.filter((item) => item.id !== id);
+      try { await db.save(); } catch (error) { data.giftCards = previous; throw error; }
+      return { ok: true };
+    });
+  });
   router.post('/api/gift-cards/redeem', (ctx) => {
     const userId = reader(ctx).id;
     const code = normalizeCode((ctx.body || {}).code);

@@ -1126,7 +1126,8 @@ function renderGiftCards(page = 1) {
     const rows = result.list.map((card) => {
       const code = card.code || '';
       const copyButton = code ? `<button class="btn-sm" onclick='copyGiftCode(${JSON.stringify(code)})'>复制卡密</button>` : '<span class="hint">历史卡密不可复制</span>';
-      return `<tr><td style="font-family:monospace">${esc(code || '—')}</td><td>${card.type === 'gold' ? '金手指年卡' : '月卡'}</td><td>${card.status === 'redeemed' ? '已兑换' : '未兑换'}</td><td>${esc(card.redeemedBy || '—')}</td><td>${fmtDate(card.createdAt)}</td><td>${card.redeemedAt ? fmtDate(card.redeemedAt) : '—'}</td><td>${copyButton}</td></tr>`;
+      const label = code || (card.type === 'gold' ? '金手指年卡' : '月卡');
+      return `<tr><td style="font-family:monospace">${esc(code || '—')}</td><td>${card.type === 'gold' ? '金手指年卡' : '月卡'}</td><td>${card.status === 'redeemed' ? '已兑换' : '未兑换'}</td><td>${esc(card.redeemedBy || '—')}</td><td>${fmtDate(card.createdAt)}</td><td>${card.redeemedAt ? fmtDate(card.redeemedAt) : '—'}</td><td>${copyButton}<button class="btn-sm del" onclick='deleteGiftCard(${JSON.stringify(card.id)},${JSON.stringify(label)})'>删除</button></td></tr>`;
     }).join('');
     document.getElementById('content').innerHTML = `
       <div class="card" style="margin-bottom:20px"><h3>生成礼品卡</h3>
@@ -1159,6 +1160,12 @@ function generateGiftCards() {
 function copyGiftCode(code) {
   if (!navigator.clipboard) return showAdminToast('当前浏览器不支持复制', 'error');
   navigator.clipboard.writeText(code).then(() => showAdminToast('卡密已复制')).catch(() => showAdminToast('复制失败', 'error'));
+}
+function deleteGiftCard(id, label) {
+  if (!confirm(`确定删除礼品卡「${label}」吗？删除后该卡密将无法兑换。`)) return;
+  api('/api/admin/gift-cards/' + encodeURIComponent(id), { method: 'DELETE' })
+    .then(() => { showAdminToast('礼品卡已删除'); renderGiftCards(); })
+    .catch((error) => showAdminToast(error.message || '删除失败', 'error'));
 }
 
 // 弹窗
