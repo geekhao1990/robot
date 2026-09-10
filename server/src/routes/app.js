@@ -291,6 +291,9 @@ module.exports = function register(router, HttpError) {
         official: false,
         darkFundEnabled: false,
         darkFundRemaining: 0,
+        darkFundManualRemaining: 0,
+        darkFundVipRemaining: 0,
+        darkFundVipMonth: '',
         createdAt: Date.now(),
         tags: ['new'],
       };

@@ -7,6 +7,7 @@ const path = require('path');
 const mysql = require('mysql2/promise');
 const { CONTENT_TYPES, TYPE_LABELS, typeLabel, typeForCategory } = require('./content-types');
 const { normalizeResourceLinks } = require('./resource-links');
+const { chinaMonthKey, vipActiveAt, refreshDarkFundQuota } = require('./membership');
 
 const FILE = path.join(__dirname, '../data/db.json');
 let db = null;
@@ -188,6 +189,9 @@ function ensureContentTypes() {
       official: true,
       darkFundEnabled: false,
       darkFundRemaining: 0,
+      darkFundManualRemaining: 0,
+      darkFundVipRemaining: 0,
+      darkFundVipMonth: '',
       createdAt: 0,
       tags: [],
     };
@@ -198,6 +202,7 @@ function ensureContentTypes() {
     if (darkFundAuthor.official !== true) { darkFundAuthor.official = true; changed = true; }
   }
   const existingAuthors = new Set(db.notes.map((note) => note.authorId).filter(Boolean));
+  const quotaMigrationMonth = chinaMonthKey();
   db.users.forEach((user) => {
     if (typeof user.official !== 'boolean') {
       user.official = !user.wxOpenId && existingAuthors.has(user.id);
@@ -219,13 +224,19 @@ function ensureContentTypes() {
       user.darkFundEnabled = false;
       changed = true;
     }
-    if (!Number.isFinite(Number(user.darkFundRemaining))) {
-      user.darkFundRemaining = 0;
-      changed = true;
-    } else if (user.darkFundRemaining !== Math.max(0, Math.floor(Number(user.darkFundRemaining)))) {
-      user.darkFundRemaining = Math.max(0, Math.floor(Number(user.darkFundRemaining)));
+    const legacyRemaining = Math.max(0, Math.floor(Number(user.darkFundRemaining) || 0));
+    const hasSplitQuota = Number.isFinite(Number(user.darkFundManualRemaining))
+      && Number.isFinite(Number(user.darkFundVipRemaining))
+      && typeof user.darkFundVipMonth === 'string';
+    if (!hasSplitQuota) {
+      // 首次升级时保留旧总次数：有效VIP最多10次视为当月额度，其余视为后台永久额度。
+      const vipRemaining = vipActiveAt(user) ? Math.min(10, legacyRemaining) : 0;
+      user.darkFundVipRemaining = vipRemaining;
+      user.darkFundManualRemaining = legacyRemaining - vipRemaining;
+      user.darkFundVipMonth = quotaMigrationMonth;
       changed = true;
     }
+    if (refreshDarkFundQuota(user).changed) changed = true;
   });
   if (!Array.isArray(db.paymentOrders)) {
     db.paymentOrders = [];

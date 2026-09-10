@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const db = require('../db');
 const auth = require('../auth');
-const { getPlan, activateMembership } = require('../membership');
+const { getPlan, activateMembership, refreshDarkFundQuota, consumeDarkFundQuota } = require('../membership');
 const wechatPay = require('../wechat-pay');
 const { pubUser } = require('../util');
 const { latestTradingDate, compactDate } = require('../trading-date');
@@ -45,6 +45,9 @@ function ensureDarkFundAuthor(d) {
       official: true,
       darkFundEnabled: false,
       darkFundRemaining: 0,
+      darkFundManualRemaining: 0,
+      darkFundVipRemaining: 0,
+      darkFundVipMonth: '',
       createdAt: Date.now(),
       tags: [],
     };
@@ -187,11 +190,13 @@ module.exports = function register(router, HttpError) {
   router.get('/api/dark-funds/trade-date', (ctx) => {
     const user = currentUser(ctx);
     if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
+    const quota = refreshDarkFundQuota(user);
+    if (quota.changed) db.save();
     const tradeDate = latestTradingDate();
     return {
       tradeDate,
       compactTradeDate: compactDate(tradeDate),
-      remaining: Math.max(0, Number(user.darkFundRemaining) || 0),
+      remaining: quota.total,
     };
   });
 
@@ -200,8 +205,8 @@ module.exports = function register(router, HttpError) {
     const stockCode = String((ctx.body || {}).stockCode || '').trim();
     if (!/^\d{6}$/.test(stockCode)) throw new HttpError(400, '请输入6位股票代码');
     if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
-    const remaining = Math.max(0, Number(user.darkFundRemaining) || 0);
-    if (remaining < 1) throw new HttpError(403, '暗盘资金查询次数已用完');
+    const consumed = consumeDarkFundQuota(user);
+    if (!consumed) throw new HttpError(403, '暗盘资金查询次数已用完');
     const d = db.get();
     d.darkFundOrders = Array.isArray(d.darkFundOrders) ? d.darkFundOrders : [];
     const tradeDate = latestTradingDate();
@@ -212,13 +217,13 @@ module.exports = function register(router, HttpError) {
       stockCode,
       tradeDate,
       amount: 0,
+      quotaSource: consumed.source,
       status: 'CREATED',
       createdAt: Date.now(),
     };
     d.darkFundOrders.push(order);
-    user.darkFundRemaining = remaining - 1;
     activateDarkFundOrder(d, order, 'ENTITLEMENT');
-    return { ...publicDarkFundOrder(order), orderId: order.id, remaining: user.darkFundRemaining };
+    return { ...publicDarkFundOrder(order), orderId: order.id, remaining: consumed.total };
   });
 
   router.get('/api/dark-funds/orders', (ctx) => {

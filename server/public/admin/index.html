@@ -522,7 +522,7 @@ function drawUsers() {
       ? `<span class="tag vip">金手指 · 至 ${fmtDate(u.goldExpire)}</span>`
       : (u.goldExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
     const darkFundStatus = darkFundActive
-      ? `<span class="tag vip">已开通 · 剩余 ${Math.max(0, Number(u.darkFundRemaining) || 0)} 次</span>`
+      ? `<span class="tag vip">已开通 · 剩余 ${Math.max(0, Number(u.darkFundRemaining) || 0)} 次</span><div class="hint">VIP ${Math.max(0, Number(u.darkFundVipRemaining) || 0)} · 后台 ${Math.max(0, Number(u.darkFundManualRemaining) || 0)}</div>`
       : '<span class="tag">未开通</span>';
     return `
       <tr>
@@ -589,8 +589,8 @@ function setDarkFundQuota(id) {
   if (!user) return;
   openModal('设置暗盘资金查询次数', `
     <div class="field"><label>用户</label><input value="${esc(user.name)}（${esc(user.id)}）" disabled /></div>
-    <div class="field"><label>剩余查询次数</label><input id="darkFundQuota" type="number" min="0" max="100000" step="1" value="${Math.max(0, Number(user.darkFundRemaining) || 0)}" /></div>
-    <div class="hint">请输入0到100000之间的整数，保存后立即生效。</div>
+    <div class="field"><label>后台永久次数</label><input id="darkFundQuota" type="number" min="0" max="100000" step="1" value="${Math.max(0, Number(user.darkFundManualRemaining) || 0)}" /></div>
+    <div class="hint">后台次数不会过期；VIP每个自然月另有10次且不结转，查询时优先使用VIP次数。</div>
   `, () => {
     const value = Number(document.getElementById('darkFundQuota').value);
     if (!Number.isInteger(value) || value < 0 || value > 100000) return showAdminToast('请输入0到100000之间的整数', 'error');

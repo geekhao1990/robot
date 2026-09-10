@@ -3,7 +3,7 @@ const db = require('../db');
 const auth = require('../auth');
 const { pubSettings } = require('../util');
 const { TYPE_LABELS, normalizeType, typeLabel, typeForCategory } = require('../content-types');
-const { getPlan, activateMembership } = require('../membership');
+const { getPlan, activateMembership, refreshDarkFundQuota, setManualDarkFundQuota } = require('../membership');
 const { normalizeResourceLinks } = require('../resource-links');
 const crypto = require('crypto');
 
@@ -486,7 +486,11 @@ module.exports = function register(router, HttpError) {
   // ---------- 用户 ----------
   router.get('/api/admin/users', (ctx) => {
     requireAuth(ctx);
-    return db.get().users.slice().sort((a, b) => {
+    const d = db.get();
+    let changed = false;
+    d.users.forEach((user) => { if (refreshDarkFundQuota(user).changed) changed = true; });
+    if (changed) db.save();
+    return d.users.slice().sort((a, b) => {
       const aNew = Array.isArray(a.tags) && a.tags.includes('new') ? 1 : 0;
       const bNew = Array.isArray(b.tags) && b.tags.includes('new') ? 1 : 0;
       return bNew - aNew || (b.createdAt || 0) - (a.createdAt || 0);
@@ -525,6 +529,9 @@ module.exports = function register(router, HttpError) {
       official: b.official === true,
       darkFundEnabled: false,
       darkFundRemaining: 0,
+      darkFundManualRemaining: 0,
+      darkFundVipRemaining: 0,
+      darkFundVipMonth: '',
       createdAt: Date.now(),
       tags: b.official === true ? [] : ['new'],
     };
@@ -578,6 +585,7 @@ module.exports = function register(router, HttpError) {
     const plan = (ctx.body || {}).plan;
     if (plan === 'none') {
       user.vip = false; user.vipPlan = ''; user.vipExpire = 0; user.vipPermanent = false;
+      refreshDarkFundQuota(user);
     } else if (['year', 'lifetime'].includes(plan) && getPlan(plan)) {
       activateMembership(user, plan);
     } else {
@@ -608,7 +616,7 @@ module.exports = function register(router, HttpError) {
     return user;
   });
 
-  // 暗盘资金入口由后台人工开通；首次开通同时赠送10次，关闭后入口立即隐藏。
+  // 暗盘资金入口由后台人工开通；首次开通附加10次永久后台次数，关闭后入口立即隐藏。
   router.put('/api/admin/users/:id/dark-funds', (ctx) => {
     requireAuth(ctx);
     const d = db.get();
@@ -616,10 +624,11 @@ module.exports = function register(router, HttpError) {
     if (!user) throw new HttpError(404, '用户不存在');
     const action = (ctx.body || {}).action;
     const active = user.darkFundEnabled === true;
+    const quota = refreshDarkFundQuota(user);
     if (action === 'open') {
       if (active) throw new HttpError(409, '该用户已开通暗盘资金入口');
       user.darkFundEnabled = true;
-      if (Math.max(0, Number(user.darkFundRemaining) || 0) < 1) user.darkFundRemaining = 10;
+      if (quota.total < 1) setManualDarkFundQuota(user, 10);
     } else if (action === 'cancel') {
       if (!active) throw new HttpError(409, '该用户未开通暗盘资金入口');
       user.darkFundEnabled = false;
@@ -639,7 +648,7 @@ module.exports = function register(router, HttpError) {
     if (!Number.isInteger(remaining) || remaining < 0 || remaining > 100000) {
       throw new HttpError(400, '查询次数必须是0到100000之间的整数');
     }
-    user.darkFundRemaining = remaining;
+    setManualDarkFundQuota(user, remaining);
     db.save();
     return user;
   });

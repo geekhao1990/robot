@@ -1,6 +1,7 @@
 // server/src/util.js —— 公共辅助
 
 const { resourceList } = require('./resource-links');
+const { refreshDarkFundQuota } = require('./membership');
 
 // VIP 是否在有效期内
 function vipActive(user) {
@@ -10,6 +11,7 @@ function vipActive(user) {
 // 对外输出的用户对象（附带 vipActive）
 function pubUser(user, includePrivate = false) {
   if (!user) return user;
+  const darkFundQuota = refreshDarkFundQuota(user);
   const { wxOpenId, phone, phoneCountryCode, phoneBoundAt, ...safe } = user;
   if (includePrivate) {
     safe.phone = phone || '';
@@ -21,7 +23,10 @@ function pubUser(user, includePrivate = false) {
     vipActive: vipActive(user),
     goldActive: Number(user.goldExpire) > Date.now(),
     darkFundEnabled: user.darkFundEnabled === true,
-    darkFundRemaining: Math.max(0, Number(user.darkFundRemaining) || 0),
+    darkFundRemaining: darkFundQuota.total,
+    darkFundVipRemaining: darkFundQuota.vip,
+    darkFundManualRemaining: darkFundQuota.manual,
+    darkFundVipExpireAt: darkFundQuota.vipExpireAt,
   };
 }
 
