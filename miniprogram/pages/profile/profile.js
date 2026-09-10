@@ -178,6 +178,9 @@ Page({
   goMiniGame() {
     wx.showToast({ title: '小游戏即将上线', icon: 'none' });
   },
+  goDarkFunds() {
+    wx.showToast({ title: '暗盘资金即将上线', icon: 'none' });
+  },
   onLogout() {
     wx.showModal({ title: '提示', content: '确定要退出登录吗？', success: (res) => { if (res.confirm) { store.logout(); this.onShow(); } } });
   },
