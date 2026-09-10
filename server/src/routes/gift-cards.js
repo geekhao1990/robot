@@ -39,10 +39,9 @@ module.exports = function register(router, HttpError) {
     const body = ctx.body || {};
     const type = body.type;
     const count = body.count === undefined ? 10 : Number(body.count);
-    const days = type === 'month' ? 30 : Number(body.days === undefined ? 360 : body.days);
+    const days = type === 'month' ? 30 : 360;
     if (!['gold', 'month'].includes(type)) throw new HttpError(400, '请选择金手指卡或月卡');
     if (!Number.isInteger(count) || count < 1 || count > 10) throw new HttpError(400, '一次可生成1至10张礼品卡');
-    if (!Number.isInteger(days) || days < 1 || days > 3650) throw new HttpError(400, '有效天数须为1至3650的整数');
     return serialize(async () => {
       const data = db.get();
       const previous = data.giftCards || [];
@@ -54,12 +53,12 @@ module.exports = function register(router, HttpError) {
         let code;
         do { code = crypto.randomBytes(16).toString('hex').toUpperCase(); } while (known.has(digest(code)));
         known.add(digest(code));
-        codes.push(code.match(/.{4}/g).join('-'));
-        cards.push({ id: crypto.randomUUID(), batchId, type, days, codeHash: digest(code), maskedCode: '****-' + code.slice(-4), createdAt: Date.now(), status: 'unused' });
+        const formattedCode = code.match(/.{4}/g).join('-');
+        codes.push(formattedCode);
+        cards.push({ id: crypto.randomUUID(), batchId, type, days, code: formattedCode, codeHash: digest(code), createdAt: Date.now(), status: 'unused' });
       }
       data.giftCards = previous.concat(cards);
       try { await db.save(); } catch (error) { data.giftCards = previous; throw error; }
-      // Full secrets are returned only at creation, never in the history list.
       return { batchId, type, days, codes };
     });
   });

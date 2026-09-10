@@ -20,17 +20,16 @@ function setup(data = { users: [{ id: 'a' }, { id: 'b' }] }) {
   return { data, db, call };
 }
 
-test('only admin can generate 1-10 unique codes; history does not leak secrets', async () => {
+test('only admin can generate 1-10 unique codes; admin history can copy codes', async () => {
   const { call, data } = setup();
   await assert.rejects(call('POST', '/api/admin/gift-cards', { type: 'gold' }, 'a'), { status: 401 });
   await assert.rejects(call('POST', '/api/admin/gift-cards', { type: 'gold', count: 11 }), { status: 400 });
-  await assert.rejects(call('POST', '/api/admin/gift-cards', { type: 'gold', days: 0 }), { status: 400 });
   const batch = await call('POST', '/api/admin/gift-cards', { type: 'gold', days: 30 });
   assert.equal(new Set(batch.codes).size, 10);
-  assert(!JSON.stringify(data).includes(batch.codes[0]));
+  assert(JSON.stringify(data).includes(batch.codes[0]));
   const history = await call('GET', '/api/admin/gift-cards');
   assert.equal(history.total, 10);
-  assert(history.list.every((item) => !item.code && !item.codeHash));
+  assert(history.list.every((item) => item.code && !item.codeHash));
   const annual = await call('POST', '/api/admin/gift-cards', { type: 'gold', count: 1 });
   assert.equal(annual.days, 360);
 });
@@ -46,12 +45,12 @@ test('gold redemption extends only gold, survives restart, and concurrent reuse 
     call('POST', '/api/gift-cards/redeem', body, 'b'),
   ]);
   assert.equal(results.filter((item) => item.status === 'fulfilled').length, 1);
-  assert.equal(data.users[0].goldExpire, future + 7 * 86400000);
+  assert.equal(data.users[0].goldExpire, future + 360 * 86400000);
   assert.equal(data.users[0].vip, undefined);
   const restarted = setup(JSON.parse(JSON.stringify(data)));
   const retry = await restarted.call('POST', '/api/gift-cards/redeem', body, 'a');
   assert.equal(retry.alreadyRedeemed, true);
-  assert.equal(retry.user.goldExpire, future + 7 * 86400000);
+  assert.equal(retry.user.goldExpire, future + 360 * 86400000);
   await assert.rejects(restarted.call('POST', '/api/gift-cards/redeem', body, 'b'), { status: 409 });
 });
 
