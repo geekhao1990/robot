@@ -280,6 +280,10 @@ function getPoints() {
   return request('GET', '/api/points', { auth: true });
 }
 
+function getPointTransactions(page = 1) {
+  return request('GET', '/api/points/transactions', { auth: true, data: { page } });
+}
+
 function getWithdrawals() {
   return request('GET', '/api/withdrawals', { auth: true });
 }
@@ -493,6 +497,7 @@ module.exports = {
   createVipOrder,
   getVipOrder,
   getPoints,
+  getPointTransactions,
   getWithdrawals,
   createWithdrawal,
   createAdRewardTicket,

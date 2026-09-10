@@ -349,6 +349,24 @@ module.exports = function register(router, HttpError) {
     return pointSummary(getPointAccount(user.id));
   });
 
+  router.get('/api/points/transactions', (ctx) => {
+    const user = currentUser(ctx);
+    const account = getPointAccount(user.id);
+    const pageSize = 10;
+    const page = Math.max(1, Math.floor(Number(ctx.query.page) || 1));
+    const total = account.transactions.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const currentPage = Math.min(page, totalPages);
+    const start = (currentPage - 1) * pageSize;
+    return {
+      list: account.transactions.slice(start, start + pageSize),
+      page: currentPage,
+      pageSize,
+      total,
+      totalPages,
+    };
+  });
+
   router.get('/api/withdrawals', (ctx) => {
     const user = currentUser(ctx);
     const d = db.get();

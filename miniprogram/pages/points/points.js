@@ -20,16 +20,16 @@ Page({
     completionBonus: 200,
     pointsPerYuan: 200,
     transactions: [],
+    transactionModalVisible: false,
+    transactionLoading: false,
+    transactionPage: 1,
+    transactionTotal: 0,
+    transactionTotalPages: 1,
     inviteCode: '',
     inviteLink: '',
     invitedCount: 0,
     invitePoints: 0,
-    inviteRank: 0,
-    inviteRankText: '未上榜',
-    inviteMonth: '',
-    nextUpdateDate: '',
     perInvite: 200,
-    ranking: [],
   },
 
   onLoad(options) {
@@ -82,12 +82,7 @@ Page({
           inviteLink: result.inviteLink || `/pages/points/points?invite=${result.inviteCode || ''}`,
           invitedCount: Number(result.invitedCount) || 0,
           invitePoints: Number(result.invitePoints) || 0,
-          inviteRank: Number(result.rank) || 0,
-          inviteRankText: Number(result.rank) ? `第${Number(result.rank)}名` : '未上榜',
-          inviteMonth: result.month || '',
-          nextUpdateDate: result.nextUpdateDate || '',
           perInvite: Number(result.perInvite) || 200,
-          ranking: result.ranking || [],
         });
       })
       .catch(() => wx.showToast({ title: '邀请数据加载失败', icon: 'none' }));
@@ -97,11 +92,6 @@ Page({
     const rules = summary.rules || {};
     const dailyLimit = Number(rules.dailyLimit) || 40;
     const todayViews = Number(summary.todayViews) || 0;
-    const transactions = (summary.transactions || []).map((item) => ({
-      ...item,
-      timeText: this.formatTime(item.time),
-      deltaText: `${Number(item.delta) >= 0 ? '+' : ''}${item.delta}`,
-    }));
     this.setData({
       balance: Number(summary.balance) || 0,
       cashValue: Number(summary.cashValue || 0).toFixed(2),
@@ -115,7 +105,6 @@ Page({
       perAd: Number(rules.perAd) || 5,
       completionBonus: Number(rules.completionBonus) || 200,
       pointsPerYuan: Number(rules.pointsPerYuan) || 200,
-      transactions,
     });
   },
 
@@ -203,9 +192,45 @@ Page({
     wx.navigateTo({ url: '/pages/withdraw/withdraw' });
   },
 
-  copyInviteLink() {
-    if (this.data.inviteLink) wx.setClipboardData({ data: this.data.inviteLink });
+  openTransactionModal() {
+    this.setData({ transactionModalVisible: true });
+    this.loadTransactions(1);
   },
+
+  closeTransactionModal() {
+    if (!this.data.transactionLoading) this.setData({ transactionModalVisible: false });
+  },
+
+  loadTransactions(page) {
+    if (this.data.transactionLoading) return;
+    this.setData({ transactionLoading: true });
+    api.getPointTransactions(page)
+      .then((result) => {
+        const transactions = (result.list || []).map((item) => ({
+          ...item,
+          timeText: this.formatTime(item.time),
+          deltaText: `${Number(item.delta) >= 0 ? '+' : ''}${item.delta}`,
+        }));
+        this.setData({
+          transactions,
+          transactionPage: Number(result.page) || 1,
+          transactionTotal: Number(result.total) || 0,
+          transactionTotalPages: Number(result.totalPages) || 1,
+        });
+      })
+      .catch(() => wx.showToast({ title: '积分明细加载失败', icon: 'none' }))
+      .finally(() => this.setData({ transactionLoading: false }));
+  },
+
+  previousTransactionPage() {
+    if (this.data.transactionPage > 1) this.loadTransactions(this.data.transactionPage - 1);
+  },
+
+  nextTransactionPage() {
+    if (this.data.transactionPage < this.data.transactionTotalPages) this.loadTransactions(this.data.transactionPage + 1);
+  },
+
+  noop() {},
 
   onShareAppMessage() {
     return {

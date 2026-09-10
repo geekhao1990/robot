@@ -1097,6 +1097,11 @@ function renderSettings() {
           </select>
           <div class="hint">开启后，所有用户的底部中间显示红色手指入口，点击进入上方指定的金手指笔记；关闭后中间留空。官方账号在小程序「我」页面维护金手指数据。</div>
         </div>
+        <div class="field">
+          <label>热门搜索</label>
+          <textarea id="settingHotSearch" placeholder="每行填写一个热门搜索词">${esc((settings.hotSearch || []).join('\n'))}</textarea>
+          <div class="hint">每行一个，最多20项；保存后展示在小程序搜索页。</div>
+        </div>
         <button class="btn-primary" onclick="saveSettings()">保存设置</button>
       </div>`;
   });
@@ -1108,6 +1113,7 @@ function saveSettings() {
     rewardedAdEnabled: document.getElementById('settingAd').value === 'true',
     vipEnabled: document.getElementById('settingVip').value === 'true',
     goldFingerEntryEnabled: document.getElementById('settingGoldEntry').value === 'true',
+    hotSearch: Array.from(new Set(document.getElementById('settingHotSearch').value.split(/[\n,，]/).map((item) => item.trim()).filter(Boolean))),
   };
   api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(body) })
     .then(() => showAdminToast('设置已保存'))

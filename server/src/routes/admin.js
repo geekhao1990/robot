@@ -82,7 +82,11 @@ module.exports = function register(router, HttpError) {
   // ---------- 功能设置 ----------
   router.get('/api/admin/settings', (ctx) => {
     requireAuth(ctx);
-    return pubSettings(db.get());
+    const d = db.get();
+    return {
+      ...pubSettings(d),
+      hotSearch: Array.isArray(d.hotSearch) ? d.hotSearch : [],
+    };
   });
 
   router.put('/api/admin/settings', (ctx) => {
@@ -98,6 +102,13 @@ module.exports = function register(router, HttpError) {
     if (typeof b.goldFingerEntryEnabled !== 'boolean') {
       throw new HttpError(400, '金手指入口开关必须为布尔值');
     }
+    if (!Array.isArray(b.hotSearch)) {
+      throw new HttpError(400, '热门搜索格式不正确');
+    }
+    const hotSearch = Array.from(new Set(b.hotSearch.map((item) => String(item || '').trim()).filter(Boolean)));
+    if (hotSearch.length > 20 || hotSearch.some((item) => item.length > 20)) {
+      throw new HttpError(400, '热门搜索最多20项，每项不超过20个字');
+    }
     if (!d.notes.some((n) => n.id === b.featuredNoteId && n.type === 'gold')) {
       throw new HttpError(400, '请选择金手指类型的入口笔记');
     }
@@ -107,8 +118,9 @@ module.exports = function register(router, HttpError) {
       goldFingerEntryEnabled: b.goldFingerEntryEnabled,
       featuredNoteId: b.featuredNoteId,
     };
+    d.hotSearch = hotSearch;
     db.save();
-    return pubSettings(d);
+    return { ...pubSettings(d), hotSearch };
   });
 
   // ---------- 独立金手指每日数据 ----------
