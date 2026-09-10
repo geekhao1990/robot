@@ -50,15 +50,10 @@ Page({
   onTab(e) { const index = Number(e.currentTarget.dataset.index); this.setData({ tabIndex: index }); this.loadTab(index); },
   entitlementRows(user) {
     if (!user) return [];
-    const dateText = (value) => {
-      if (!Number(value)) return '';
-      const date = new Date(Number(value) + 8 * 3600000);
-      return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 16).replace('T', ' ') + ' 到期' : '';
-    };
     const now = Date.now();
     return [
-      { type: 'month', name: '月卡会员', active: !!(user.vip && (user.vipPermanent || Number(user.vipExpire) > now)), expiry: user.vipPermanent ? '永久有效' : dateText(user.vipExpire) },
-      { type: 'gold', name: '金手指年卡', active: Number(user.goldExpire) > now, expiry: dateText(user.goldExpire) },
+      { type: 'vip', name: 'VIP', active: !!(user.vip && (user.vipPermanent || Number(user.vipExpire) > now)) },
+      { type: 'gold', name: '金手指', active: Number(user.goldExpire) > now },
     ].filter((item) => item.active);
   },
   openGiftModal() { this.setData({ giftModalVisible: true }); },

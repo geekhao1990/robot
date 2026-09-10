@@ -7,7 +7,7 @@
         <view class="meta">
           <view class="name">{{user.name}}</view>
           <view wx:if="{{entitlements.length}}" class="profile-rights">
-            <view wx:for="{{entitlements}}" wx:key="type" class="profile-right">{{item.name}} · {{item.expiry}}</view>
+            <view wx:for="{{entitlements}}" wx:key="type" class="profile-right {{item.type}}">{{item.name}}</view>
           </view>
         </view>
       </view>

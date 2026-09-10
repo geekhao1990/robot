@@ -38,15 +38,31 @@
 }
 .profile-rights {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6rpx;
-  margin-top: 10rpx;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 14rpx;
 }
 .profile-right {
-  font-size: 22rpx;
-  line-height: 1.35;
-  opacity: .9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64rpx;
+  height: 36rpx;
+  padding: 0 16rpx;
+  box-sizing: border-box;
+  color: #69430a;
+  font-size: 20rpx;
+  font-weight: 800;
+  line-height: 36rpx;
+  letter-spacing: 1rpx;
+  background: linear-gradient(135deg, #fff1bd 0%, #edc66a 55%, #d9a93d 100%);
+  border: 1rpx solid rgba(255,243,190,.86);
+  border-radius: 999rpx;
+  box-shadow: 0 4rpx 10rpx rgba(105,67,10,.15);
+}
+.profile-right.gold {
+  color: #5b3908;
+  background: linear-gradient(135deg, #ffeaaa 0%, #e8b94f 100%);
 }
 .desc {
   font-size: 26rpx;
