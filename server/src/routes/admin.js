@@ -627,6 +627,18 @@ module.exports = function register(router, HttpError) {
     });
   });
 
+  router.get('/api/admin/dark-fund-orders', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    return (d.darkFundOrders || []).slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map((order) => {
+      const user = d.users.find((item) => item.id === order.userId);
+      return {
+        ...order,
+        user: user ? { id: user.id, name: user.name, phone: user.phone || '' } : null,
+      };
+    });
+  });
+
   router.put('/api/admin/payment-orders/:id/wechat-gift', (ctx) => {
     requireAuth(ctx);
     const d = db.get();

@@ -9,7 +9,7 @@ function setup() {
   const data = {
     users: [{ id: 'u1', name: '测试用户', goldExpire: 0 }],
     admins: [], notes: [], categories: [], userState: {}, withdrawals: [],
-    pointAnomalies: [], paymentOrders: [], giftCards: [], adminOperationLogs: [],
+    pointAnomalies: [], paymentOrders: [], darkFundOrders: [], giftCards: [], adminOperationLogs: [],
   };
   const db = { get: () => data, save: () => {} };
   const mod = { exports: {} };
@@ -51,4 +51,13 @@ test('admin gold entitlement enforces open and cancel states', async () => {
 test('admin user endpoint no longer allows opening a monthly VIP directly', async () => {
   const { call } = setup();
   await assert.rejects(call('PUT', '/api/admin/users/u1/vip', { plan: 'month' }), { status: 400 });
+});
+
+test('only admin can inspect private dark fund note snapshots', async () => {
+  const { data, call } = setup();
+  data.darkFundOrders.push({ id: 'DF1', userId: 'u1', status: 'SUCCESS', snapshot: { note: { title: '私有快照' } }, createdAt: 1 });
+  await assert.rejects(call('GET', '/api/admin/dark-fund-orders', {}, ''), { status: 401 });
+  const rows = await call('GET', '/api/admin/dark-fund-orders');
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].snapshot.note.title, '私有快照');
 });

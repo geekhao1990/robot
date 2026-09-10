@@ -193,6 +193,10 @@ function ensureContentTypes() {
     db.paymentOrders = [];
     changed = true;
   }
+  if (!Array.isArray(db.darkFundOrders)) {
+    db.darkFundOrders = [];
+    changed = true;
+  }
   if (!Array.isArray(db.invites)) {
     db.invites = [];
     changed = true;

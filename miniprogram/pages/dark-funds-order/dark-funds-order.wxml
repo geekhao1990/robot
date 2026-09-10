@@ -1,0 +1,18 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="empty">正在加载...</view>
+  <view wx:elif="{{!order}}" class="empty">订单不存在</view>
+  <view wx:else class="note">
+    <view class="author-row">
+      <view class="author-avatar">N</view>
+      <view><view class="author-name">{{order.note.author.name}}</view><view class="publish-time">{{order.paidAtText}}</view></view>
+    </view>
+    <view class="note-title">{{order.note.title}}</view>
+    <image wx:for="{{order.note.images}}" wx:key="*this" class="snapshot-image" src="{{item}}" mode="widthFix" />
+    <view class="note-content">{{order.note.content}}</view>
+    <view class="note-meta">
+      <view>支付金额：¥{{order.amountText}}</view>
+      <view>订单编号：{{order.id}}</view>
+    </view>
+    <view class="disclaimer">数据来自交易所和互联网公开数据，由本人整理发布，不构成投资建议</view>
+  </view>
+</view>

@@ -67,7 +67,7 @@ const settings = { rewardedAdEnabled: false, vipEnabled: false, goldFingerEntryE
 module.exports = function seed() {
   return {
     users, notes, categories, hotSearch, admins, userState, messageData, settings,
-    paymentOrders: [], withdrawals: [], pointAnomalies: [],
+    paymentOrders: [], darkFundOrders: [], withdrawals: [], pointAnomalies: [],
     sessions: { app: {}, admin: {} }, adminOperationLogs: [],
   };
 };

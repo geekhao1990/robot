@@ -276,6 +276,22 @@ function getVipOrder(orderId) {
   return request('GET', '/api/payments/orders/' + encodeURIComponent(orderId), { auth: true });
 }
 
+function getDarkFundTradeDate() {
+  return request('GET', '/api/dark-funds/trade-date', { auth: true });
+}
+
+function createDarkFundOrder(stockCode) {
+  return request('POST', '/api/dark-funds/orders', { auth: true, data: { stockCode } });
+}
+
+function getDarkFundOrders() {
+  return request('GET', '/api/dark-funds/orders', { auth: true });
+}
+
+function getDarkFundOrder(orderId) {
+  return request('GET', '/api/dark-funds/orders/' + encodeURIComponent(orderId), { auth: true });
+}
+
 function getPoints() {
   return request('GET', '/api/points', { auth: true });
 }
@@ -496,6 +512,10 @@ module.exports = {
   bindWechatPhone,
   createVipOrder,
   getVipOrder,
+  getDarkFundTradeDate,
+  createDarkFundOrder,
+  getDarkFundOrders,
+  getDarkFundOrder,
   getPoints,
   getPointTransactions,
   getWithdrawals,

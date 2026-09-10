@@ -137,6 +137,7 @@
       <div class="nav-item" data-view="goldFinger" onclick="switchView('goldFinger')">☝️ 金手指数据</div>
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
       <div class="nav-item" data-view="orders" onclick="switchView('orders')">💳 会员订单</div>
+      <div class="nav-item" data-view="darkFundOrders" onclick="switchView('darkFundOrders')">📈 暗盘订单</div>
       <div class="nav-item" data-view="giftCards" onclick="switchView('giftCards')">🎁 礼品卡管理</div>
       <div class="nav-item" data-view="withdrawals" onclick="switchView('withdrawals')">💰 提现审核<span class="nav-badge" id="withdrawBadge"></span></div>
       <div class="nav-item" data-view="points" onclick="switchView('points')">🧾 积分记录<span class="nav-badge" id="anomalyBadge"></span></div>
@@ -218,7 +219,7 @@ function showAdminToast(message, type = 'success') {
     _adminToastTimer = null;
   }, 3000);
 }
-const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', orders: '会员订单', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
+const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', orders: '会员订单', darkFundOrders: '暗盘订单', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
 const BASE_CATEGORIES = ['资料', '课程', '金手指', '广告'];
 TITLES.giftCards = '礼品卡管理';
 function switchView(v) {
@@ -229,6 +230,7 @@ function switchView(v) {
   if (v === 'goldFinger') renderGoldFinger();
   if (v === 'users') renderUsers();
   if (v === 'orders') renderPaymentOrders();
+  if (v === 'darkFundOrders') renderDarkFundOrders();
   if (v === 'giftCards') renderGiftCards();
   if (v === 'withdrawals') renderWithdrawals();
   if (v === 'points') renderPointRecords();
@@ -569,11 +571,9 @@ function setGold(id, action) {
 }
 function editUser(id) {
   const u = id ? _users.find((x) => x.id === id) : {};
-  _modalAvatar = u.avatar || '';
   openModal(`${id ? '编辑' : '新增'}用户`, `
     <div class="field"><label>昵称</label><input id="u_name" value="${esc(u.name)}" /></div>
     ${id ? `<div class="field"><label>手机号</label><input value="${esc(u.phone || '未绑定')}" disabled /><div class="hint">手机号只能由用户在小程序内通过微信授权绑定</div></div>` : ''}
-    <div class="field"><label>头像</label><div id="userAvatarPicker" class="avatar-picker"></div><div class="hint">支持 JPG、PNG、GIF、WebP，上限5MB</div></div>
     <div class="field"><label>简介</label><input id="u_desc" value="${esc(u.desc)}" /></div>
     <div class="field"><label>账号类型</label><select id="u_official">
       <option value="false" ${u.official ? '' : 'selected'}>普通用户（不可发布笔记）</option>
@@ -583,7 +583,6 @@ function editUser(id) {
   `, () => {
     const body = {
       name: document.getElementById('u_name').value,
-      avatar: _modalAvatar,
       desc: document.getElementById('u_desc').value,
       official: document.getElementById('u_official').value === 'true',
     };
@@ -591,7 +590,6 @@ function editUser(id) {
                    : api('/api/admin/users', { method: 'POST', body: JSON.stringify(body) });
     req.then(() => { closeModal(); renderUsers(); });
   });
-  renderUserAvatarPicker();
 }
 
 function setBadge(id, count) {
@@ -608,25 +606,6 @@ function refreshAdminBadges() {
     setBadge('anomalyBadge', summary.pointAnomalies);
     setBadge('withdrawBadge', Number(summary.pendingWithdrawals) + Number(summary.approvedWithdrawals));
   }).catch(() => {});
-}
-
-let _modalAvatar = '';
-function renderUserAvatarPicker() {
-  const picker = document.getElementById('userAvatarPicker');
-  if (!picker) return;
-  picker.innerHTML = `
-    ${_modalAvatar ? `<img class="avatar-preview" src="${esc(_modalAvatar)}" />` : '<div class="avatar-preview"></div>'}
-    <label class="avatar-upload-btn">${_modalAvatar ? '更换头像' : '上传头像'}<input type="file" accept="image/*" style="display:none" onchange="onPickUserAvatar(event)" /></label>`;
-}
-function onPickUserAvatar(event) {
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
-  const picker = document.getElementById('userAvatarPicker');
-  if (picker) picker.style.opacity = '.5';
-  uploadAdminImage(file)
-    .then((url) => { _modalAvatar = url; renderUserAvatarPicker(); })
-    .catch(() => alert('头像上传失败'))
-    .then(() => { if (picker) picker.style.opacity = '1'; });
 }
 
 // 会员订单
@@ -705,6 +684,62 @@ function redeemWechatGift(orderId) {
   api('/api/admin/payment-orders/' + encodeURIComponent(orderId) + '/wechat-gift', { method: 'PUT', body: '{}' })
     .then(() => { alert('核销成功，已续期30天'); renderPaymentOrders(); })
     .catch((error) => alert(error.message));
+}
+
+// 暗盘资金私有订单：快照仅订单用户与后台管理员可见
+let _darkFundOrders = [];
+let _darkFundOrderPage = 1;
+
+function renderDarkFundOrders() {
+  api('/api/admin/dark-fund-orders').then((orders) => {
+    _darkFundOrders = orders || [];
+    _darkFundOrderPage = 1;
+    drawDarkFundOrders();
+  });
+}
+
+function gotoDarkFundOrderPage(page) { _darkFundOrderPage = page; drawDarkFundOrders(); }
+
+function drawDarkFundOrders() {
+  const total = _darkFundOrders.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (_darkFundOrderPage > pages) _darkFundOrderPage = pages;
+  const start = (_darkFundOrderPage - 1) * PAGE_SIZE;
+  const rows = _darkFundOrders.slice(start, start + PAGE_SIZE).map((order, index) => {
+    const user = order.user || {};
+    return `<tr>
+      <td>${start + index + 1}</td>
+      <td><strong>${esc(order.stockCode)}</strong><div class="hint">${esc(String(order.tradeDate || '').replaceAll('-', '').slice(2))} 暗盘数据</div></td>
+      <td>${esc(user.name || '用户不存在')}<div class="hint">${esc(user.id || order.userId || '')}</div><div class="hint">${esc(user.phone || '')}</div></td>
+      <td>¥${((Number(order.amount) || 0) / 100).toFixed(2)}</td>
+      <td>${paymentStatus(order)}</td>
+      <td>${order.createdAt ? fmtDate(order.createdAt) : '—'}<div class="hint">${order.paidAt ? '支付于 ' + fmtDate(order.paidAt) : ''}</div></td>
+      <td><button class="btn-sm" ${order.snapshot ? '' : 'disabled'} onclick='openDarkFundSnapshot("${order.id}")'>查看私有笔记</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('content').innerHTML = `
+    <div class="toolbar"><div><h3>暗盘资金订单</h3><div class="hint">快照不会进入公开笔记、首页或搜索，仅所属用户和管理员可见。</div></div></div>
+    <table><thead><tr><th>序号</th><th>股票/日期</th><th>用户</th><th>金额</th><th>支付状态</th><th>时间</th><th>操作</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:#999;padding:40px">暂无暗盘订单</td></tr>'}</tbody></table>
+    ${pagerHtml(_darkFundOrderPage, pages, total, 'gotoDarkFundOrderPage')}`;
+}
+
+function openDarkFundSnapshot(orderId) {
+  const order = _darkFundOrders.find((item) => item.id === orderId);
+  const note = order && order.snapshot && order.snapshot.note;
+  if (!note) return;
+  const images = (note.images || []).map((src) => `<img src="${esc(src)}" style="display:block;width:100%;margin:16px 0;border-radius:10px" />`).join('');
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="modal-mask">
+      <div class="modal">
+        <div class="hint">私有快照 · ${esc(order.user && order.user.name || order.userId)}</div>
+        <h2 style="margin:10px 0 16px">${esc(note.title)}</h2>
+        ${images}
+        <div style="white-space:pre-line;line-height:1.8;color:#333">${esc(note.content)}</div>
+        <div class="hint" style="margin-top:20px">订单 ${esc(order.id)} · ${order.paidAt ? fmtDate(order.paidAt) : ''}</div>
+        <div class="modal-actions"><button class="btn-primary" onclick="closeModal()">关闭</button></div>
+      </div>
+    </div>`;
 }
 
 // 提现审核

@@ -1,0 +1,45 @@
+<view class="page">
+  <view class="tabs">
+    <view class="tab {{tab === 'query' ? 'active' : ''}}" data-tab="query" bindtap="switchTab">六位神奇数字</view>
+    <view class="tab {{tab === 'history' ? 'active' : ''}}" data-tab="history" bindtap="switchTab">历史订单</view>
+  </view>
+
+  <view wx:if="{{tab === 'query'}}" class="query-page">
+    <view class="query-card">
+      <view class="eyebrow">暗盘资金查询</view>
+      <view class="query-title">六位神奇数字</view>
+      <view class="query-subtitle">输入六位股票代码，查询指定交易日数据</view>
+      <view class="code-box">
+        <input class="code-input" type="number" maxlength="6" value="{{stockCode}}" bindinput="onCodeInput" placeholder="请输入六位股票代码" focus />
+      </view>
+      <view class="trade-date">查询日期：{{compactTradeDate || '获取中...'}}</view>
+      <button class="query-button" bindtap="prepareQuery" disabled="{{dateLoading}}">立即查询</button>
+      <view class="price-tip">测试价格 ¥1.00 / 次</view>
+    </view>
+  </view>
+
+  <view wx:if="{{tab === 'history'}}" class="history-page">
+    <view wx:if="{{historyLoading}}" class="empty">正在加载...</view>
+    <view wx:elif="{{!orders.length}}" class="empty">暂无历史订单</view>
+    <view wx:else class="order-list">
+      <view wx:for="{{orders}}" wx:key="id" class="order-card" data-id="{{item.id}}" bindtap="openOrder">
+        <view class="order-main">
+          <view class="order-code">{{item.stockCode}}</view>
+          <view class="order-date">{{item.compactTradeDate}} 暗盘数据</view>
+        </view>
+        <view class="order-side"><text>¥{{item.amountText}}</text><text class="arrow">›</text></view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{paymentVisible}}" class="mask" catchtap="closePayment">
+    <view class="payment-card" catchtap="noop">
+      <view class="payment-title">付款信息</view>
+      <view class="payment-row"><text>查询代码</text><text>{{pendingCode}}</text></view>
+      <view class="payment-row"><text>数据日期</text><text>{{compactTradeDate}}</text></view>
+      <view class="payment-row total"><text>应付金额</text><text>¥1.00</text></view>
+      <button class="pay-button" bindtap="pay" loading="{{paymentPending}}" disabled="{{paymentPending}}">微信支付 ¥1.00</button>
+      <view class="payment-cancel" bindtap="closePayment">暂不支付</view>
+    </view>
+  </view>
+</view>

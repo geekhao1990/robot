@@ -51,7 +51,7 @@
   <view class="quick-menu {{editingProfile ? 'after-editor' : ''}}">
     <view class="quick-item" bindtap="goPoints"><image class="quick-icon" src="/images/profile-points.png" mode="aspectFit" /><view class="quick-title">积分中心</view></view>
     <view class="quick-item" bindtap="openGiftModal"><image class="quick-icon" src="/images/profile-gift-card.png" mode="aspectFit" /><view class="quick-title">礼品卡</view></view>
-    <view class="quick-item" bindtap="goMiniGame"><image class="quick-icon" src="/images/profile-game.png" mode="aspectFit" /><view class="quick-title">小游戏</view></view>
+    <view class="quick-item" bindtap="goMiniGame"><image class="quick-icon" src="/images/profile-game.png" mode="aspectFit" /><view class="quick-title">游戏赚米</view></view>
     <view class="quick-item" bindtap="goDarkFunds"><image class="quick-icon" src="/images/profile-dark-funds.png" mode="aspectFit" /><view class="quick-title">暗盘资金</view></view>
   </view>
   <view wx:if="{{giftModalVisible}}" class="gift-mask" catchtap="closeGiftModal">
