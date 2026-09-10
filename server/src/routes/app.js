@@ -289,6 +289,8 @@ module.exports = function register(router, HttpError) {
         vipExpire: 0,
         vipPermanent: false,
         official: false,
+        darkFundEnabled: false,
+        darkFundRemaining: 0,
         createdAt: Date.now(),
         tags: ['new'],
       };

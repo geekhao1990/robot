@@ -53,11 +53,26 @@ test('admin user endpoint no longer allows opening a monthly VIP directly', asyn
   await assert.rejects(call('PUT', '/api/admin/users/u1/vip', { plan: 'month' }), { status: 400 });
 });
 
-test('only admin can inspect private dark fund note snapshots', async () => {
+test('only admin can inspect dark fund query records', async () => {
   const { data, call } = setup();
   data.darkFundOrders.push({ id: 'DF1', userId: 'u1', status: 'SUCCESS', snapshot: { note: { title: '私有快照' } }, createdAt: 1 });
   await assert.rejects(call('GET', '/api/admin/dark-fund-orders', {}, ''), { status: 401 });
   const rows = await call('GET', '/api/admin/dark-fund-orders');
   assert.equal(rows.length, 1);
   assert.equal(rows[0].snapshot.note.title, '私有快照');
+});
+
+test('admin controls dark fund entry and can set exact remaining quota', async () => {
+  const { data, call } = setup();
+  await assert.rejects(call('PUT', '/api/admin/users/u1/dark-funds', { action: 'open' }, ''), { status: 401 });
+  const opened = await call('PUT', '/api/admin/users/u1/dark-funds', { action: 'open' });
+  assert.equal(opened.darkFundEnabled, true);
+  assert.equal(opened.darkFundRemaining, 10);
+  await assert.rejects(call('PUT', '/api/admin/users/u1/dark-funds', { action: 'open' }), { status: 409 });
+  const quota = await call('PUT', '/api/admin/users/u1/dark-funds/quota', { remaining: 23 });
+  assert.equal(quota.darkFundRemaining, 23);
+  assert.equal(data.users[0].darkFundRemaining, 23);
+  await assert.rejects(call('PUT', '/api/admin/users/u1/dark-funds/quota', { remaining: -1 }), { status: 400 });
+  const closed = await call('PUT', '/api/admin/users/u1/dark-funds', { action: 'cancel' });
+  assert.equal(closed.darkFundEnabled, false);
 });

@@ -137,7 +137,7 @@
       <div class="nav-item" data-view="goldFinger" onclick="switchView('goldFinger')">☝️ 金手指数据</div>
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
       <div class="nav-item" data-view="orders" onclick="switchView('orders')">💳 会员订单</div>
-      <div class="nav-item" data-view="darkFundOrders" onclick="switchView('darkFundOrders')">📈 暗盘订单</div>
+      <div class="nav-item" data-view="darkFundOrders" onclick="switchView('darkFundOrders')">📈 暗盘查询</div>
       <div class="nav-item" data-view="giftCards" onclick="switchView('giftCards')">🎁 礼品卡管理</div>
       <div class="nav-item" data-view="withdrawals" onclick="switchView('withdrawals')">💰 提现审核<span class="nav-badge" id="withdrawBadge"></span></div>
       <div class="nav-item" data-view="points" onclick="switchView('points')">🧾 积分记录<span class="nav-badge" id="anomalyBadge"></span></div>
@@ -219,7 +219,7 @@ function showAdminToast(message, type = 'success') {
     _adminToastTimer = null;
   }, 3000);
 }
-const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', orders: '会员订单', darkFundOrders: '暗盘订单', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
+const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', orders: '会员订单', darkFundOrders: '暗盘查询', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
 const BASE_CATEGORIES = ['资料', '课程', '金手指', '广告'];
 TITLES.giftCards = '礼品卡管理';
 function switchView(v) {
@@ -514,12 +514,16 @@ function drawUsers() {
   const rows = pageItems.map((u, i) => {
     const active = vipActive(u);
     const goldActive = Number(u.goldExpire) > Date.now();
+    const darkFundActive = u.darkFundEnabled === true;
     const status = active
       ? (u.vipPermanent ? '<span class="tag vip">永久会员</span>' : `<span class="tag vip">${u.vipPlan === 'year' ? '年卡' : '月卡'} · 至 ${fmtDate(u.vipExpire)}</span>`)
       : (u.vipExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
     const goldStatus = goldActive
       ? `<span class="tag vip">金手指 · 至 ${fmtDate(u.goldExpire)}</span>`
       : (u.goldExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
+    const darkFundStatus = darkFundActive
+      ? `<span class="tag vip">已开通 · 剩余 ${Math.max(0, Number(u.darkFundRemaining) || 0)} 次</span>`
+      : '<span class="tag">未开通</span>';
     return `
       <tr>
         <td>${start + i + 1}</td>
@@ -533,12 +537,16 @@ function drawUsers() {
         <td>${u.official ? '<span class="tag course">官方账号</span>' : '<span class="tag">普通用户</span>'}</td>
         <td>${status}</td>
         <td>${goldStatus}</td>
+        <td>${darkFundStatus}</td>
         <td>
           <button class="btn-sm" onclick='setVip("${u.id}","year")'>开通年卡</button>
           <button class="btn-sm" onclick='setVip("${u.id}","lifetime")'>开通永久卡</button>
           <button class="btn-sm del" ${active ? '' : 'disabled'} onclick='setVip("${u.id}","none")'>取消VIP</button>
           <button class="btn-sm" ${goldActive ? 'disabled' : ''} onclick='setGold("${u.id}","open")'>开通金手指</button>
           <button class="btn-sm del" ${goldActive ? '' : 'disabled'} onclick='setGold("${u.id}","cancel")'>取消金手指</button>
+          <button class="btn-sm" ${darkFundActive ? 'disabled' : ''} onclick='setDarkFunds("${u.id}","open")'>开通暗盘资金</button>
+          <button class="btn-sm del" ${darkFundActive ? '' : 'disabled'} onclick='setDarkFunds("${u.id}","cancel")'>关闭暗盘资金</button>
+          <button class="btn-sm" onclick='setDarkFundQuota("${u.id}")'>设置查询次数</button>
           <button class="btn-sm" onclick='editUser("${u.id}")'>编辑</button>
         </td>
       </tr>`;
@@ -552,7 +560,7 @@ function drawUsers() {
       </div>
       <button class="btn-primary" onclick="editUser()">+ 新增用户</button>
     </div>
-    <table><thead><tr><th>序号</th><th>昵称</th><th>手机号</th><th>注册信息</th><th>账号类型</th><th>VIP 状态</th><th>金手指状态</th><th>操作</th></tr></thead>
+    <table><thead><tr><th>序号</th><th>昵称</th><th>手机号</th><th>注册信息</th><th>账号类型</th><th>VIP 状态</th><th>金手指状态</th><th>暗盘资金</th><th>操作</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${pagerHtml(_userPage, pages, total, 'gotoUserPage')}`;
 }
@@ -569,6 +577,28 @@ function setGold(id, action) {
     .then(() => { showAdminToast(action === 'open' ? '金手指已开通' : '金手指已取消'); renderUsers(); })
     .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
 }
+function setDarkFunds(id, action) {
+  const label = action === 'open' ? '开通暗盘资金入口' : '关闭暗盘资金入口';
+  if (!confirm(`确定为该用户「${label}」吗？`)) return;
+  api('/api/admin/users/' + id + '/dark-funds', { method: 'PUT', body: JSON.stringify({ action }) })
+    .then(() => { showAdminToast(action === 'open' ? '暗盘资金已开通' : '暗盘资金已关闭'); renderUsers(); })
+    .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
+}
+function setDarkFundQuota(id) {
+  const user = _users.find((item) => item.id === id);
+  if (!user) return;
+  openModal('设置暗盘资金查询次数', `
+    <div class="field"><label>用户</label><input value="${esc(user.name)}（${esc(user.id)}）" disabled /></div>
+    <div class="field"><label>剩余查询次数</label><input id="darkFundQuota" type="number" min="0" max="100000" step="1" value="${Math.max(0, Number(user.darkFundRemaining) || 0)}" /></div>
+    <div class="hint">请输入0到100000之间的整数，保存后立即生效。</div>
+  `, () => {
+    const value = Number(document.getElementById('darkFundQuota').value);
+    if (!Number.isInteger(value) || value < 0 || value > 100000) return showAdminToast('请输入0到100000之间的整数', 'error');
+    api('/api/admin/users/' + id + '/dark-funds/quota', { method: 'PUT', body: JSON.stringify({ remaining: value }) })
+      .then(() => { closeModal(); showAdminToast('查询次数已更新'); renderUsers(); })
+      .catch((error) => showAdminToast(error.message || '保存失败', 'error'));
+  });
+}
 function editUser(id) {
   const u = id ? _users.find((x) => x.id === id) : {};
   openModal(`${id ? '编辑' : '新增'}用户`, `
@@ -579,7 +609,7 @@ function editUser(id) {
       <option value="false" ${u.official ? '' : 'selected'}>普通用户（不可发布笔记）</option>
       <option value="true" ${u.official ? 'selected' : ''}>官方账号（可作为笔记作者）</option>
     </select></div>
-    <div class="hint">VIP 和金手指权益请使用列表中的对应操作按钮</div>
+    <div class="hint">VIP、金手指和暗盘资金权限请使用列表中的对应操作按钮</div>
   `, () => {
     const body = {
       name: document.getElementById('u_name').value,
@@ -686,7 +716,7 @@ function redeemWechatGift(orderId) {
     .catch((error) => alert(error.message));
 }
 
-// 暗盘资金私有订单：快照仅订单用户与后台管理员可见
+// 暗盘资金查询记录：生成公开笔记，作者固定为“暗盘”。
 let _darkFundOrders = [];
 let _darkFundOrderPage = 1;
 
@@ -711,16 +741,15 @@ function drawDarkFundOrders() {
       <td>${start + index + 1}</td>
       <td><strong>${esc(order.stockCode)}</strong><div class="hint">${esc(String(order.tradeDate || '').replaceAll('-', '').slice(2))} 暗盘数据</div></td>
       <td>${esc(user.name || '用户不存在')}<div class="hint">${esc(user.id || order.userId || '')}</div><div class="hint">${esc(user.phone || '')}</div></td>
-      <td>¥${((Number(order.amount) || 0) / 100).toFixed(2)}</td>
-      <td>${paymentStatus(order)}</td>
-      <td>${order.createdAt ? fmtDate(order.createdAt) : '—'}<div class="hint">${order.paidAt ? '支付于 ' + fmtDate(order.paidAt) : ''}</div></td>
-      <td><button class="btn-sm" ${order.snapshot ? '' : 'disabled'} onclick='openDarkFundSnapshot("${order.id}")'>查看私有笔记</button></td>
+      <td>${order.status === 'SUCCESS' ? '<span class="tag paid">查询成功</span>' : paymentStatus(order)}</td>
+      <td>${order.createdAt ? fmtDate(order.createdAt) : '—'}</td>
+      <td><button class="btn-sm" ${order.snapshot ? '' : 'disabled'} onclick='openDarkFundSnapshot("${order.id}")'>查看公开笔记</button></td>
     </tr>`;
   }).join('');
   document.getElementById('content').innerHTML = `
-    <div class="toolbar"><div><h3>暗盘资金订单</h3><div class="hint">快照不会进入公开笔记、首页或搜索，仅所属用户和管理员可见。</div></div></div>
-    <table><thead><tr><th>序号</th><th>股票/日期</th><th>用户</th><th>金额</th><th>支付状态</th><th>时间</th><th>操作</th></tr></thead>
-    <tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:#999;padding:40px">暂无暗盘订单</td></tr>'}</tbody></table>
+    <div class="toolbar"><div><h3>暗盘资金查询记录</h3><div class="hint">每次查询会生成一篇公开笔记，发帖账号固定为“暗盘”。</div></div></div>
+    <table><thead><tr><th>序号</th><th>股票/日期</th><th>查询用户</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#999;padding:40px">暂无查询记录</td></tr>'}</tbody></table>
     ${pagerHtml(_darkFundOrderPage, pages, total, 'gotoDarkFundOrderPage')}`;
 }
 
@@ -732,11 +761,11 @@ function openDarkFundSnapshot(orderId) {
   document.getElementById('modalRoot').innerHTML = `
     <div class="modal-mask">
       <div class="modal">
-        <div class="hint">私有快照 · ${esc(order.user && order.user.name || order.userId)}</div>
+        <div class="hint">公开笔记 · 查询用户 ${esc(order.user && order.user.name || order.userId)}</div>
         <h2 style="margin:10px 0 16px">${esc(note.title)}</h2>
         ${images}
         <div style="white-space:pre-line;line-height:1.8;color:#333">${esc(note.content)}</div>
-        <div class="hint" style="margin-top:20px">订单 ${esc(order.id)} · ${order.paidAt ? fmtDate(order.paidAt) : ''}</div>
+        <div class="hint" style="margin-top:20px">查询记录 ${esc(order.id)} · ${order.paidAt ? fmtDate(order.paidAt) : ''}</div>
         <div class="modal-actions"><button class="btn-primary" onclick="closeModal()">关闭</button></div>
       </div>
     </div>`;

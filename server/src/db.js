@@ -170,6 +170,33 @@ function ensureContentTypes() {
     db.users = [];
     changed = true;
   }
+  const darkFundAuthorId = 'u1787979756047';
+  let darkFundAuthor = db.users.find((user) => user.id === darkFundAuthorId);
+  if (!darkFundAuthor) {
+    darkFundAuthor = {
+      id: darkFundAuthorId,
+      name: '暗盘',
+      avatar: '/images/profile-dark-funds.png',
+      desc: '暗盘资金数据',
+      fans: 0,
+      follows: 0,
+      likes: 0,
+      vip: false,
+      vipPlan: '',
+      vipExpire: 0,
+      vipPermanent: false,
+      official: true,
+      darkFundEnabled: false,
+      darkFundRemaining: 0,
+      createdAt: 0,
+      tags: [],
+    };
+    db.users.push(darkFundAuthor);
+    changed = true;
+  } else {
+    if (darkFundAuthor.name !== '暗盘') { darkFundAuthor.name = '暗盘'; changed = true; }
+    if (darkFundAuthor.official !== true) { darkFundAuthor.official = true; changed = true; }
+  }
   const existingAuthors = new Set(db.notes.map((note) => note.authorId).filter(Boolean));
   db.users.forEach((user) => {
     if (typeof user.official !== 'boolean') {
@@ -186,6 +213,17 @@ function ensureContentTypes() {
     }
     if (typeof user.vipPermanent !== 'boolean') {
       user.vipPermanent = user.vipPlan === 'lifetime';
+      changed = true;
+    }
+    if (typeof user.darkFundEnabled !== 'boolean') {
+      user.darkFundEnabled = false;
+      changed = true;
+    }
+    if (!Number.isFinite(Number(user.darkFundRemaining))) {
+      user.darkFundRemaining = 0;
+      changed = true;
+    } else if (user.darkFundRemaining !== Math.max(0, Math.floor(Number(user.darkFundRemaining)))) {
+      user.darkFundRemaining = Math.max(0, Math.floor(Number(user.darkFundRemaining)));
       changed = true;
     }
   });

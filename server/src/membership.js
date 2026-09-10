@@ -22,6 +22,10 @@ function activateMembership(user, planId, now = Date.now()) {
     user.vipExpire = base + plan.days * 24 * 3600 * 1000;
   }
   user.tags = (user.tags || []).filter((tag) => tag !== 'new');
+  // 月卡附赠 10 次暗盘资金查询；入口仍由后台单独人工开通。
+  if (plan.id === 'month') {
+    user.darkFundRemaining = Math.max(0, Number(user.darkFundRemaining) || 0) + 10;
+  }
   return user;
 }
 

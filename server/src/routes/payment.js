@@ -25,31 +25,78 @@ function activateOrder(d, order, transactionId) {
   db.save();
 }
 
-function activateDarkFundOrder(order, transactionId) {
+const DARK_FUND_AUTHOR_ID = 'u1787979756047';
+
+function ensureDarkFundAuthor(d) {
+  let author = d.users.find((item) => item.id === DARK_FUND_AUTHOR_ID);
+  if (!author) {
+    author = {
+      id: DARK_FUND_AUTHOR_ID,
+      name: '暗盘',
+      avatar: '/images/profile-dark-funds.png',
+      desc: '暗盘资金数据',
+      fans: 0,
+      follows: 0,
+      likes: 0,
+      vip: false,
+      vipPlan: '',
+      vipExpire: 0,
+      vipPermanent: false,
+      official: true,
+      darkFundEnabled: false,
+      darkFundRemaining: 0,
+      createdAt: Date.now(),
+      tags: [],
+    };
+    d.users.push(author);
+  }
+  author.name = '暗盘';
+  author.official = true;
+  return author;
+}
+
+function activateDarkFundOrder(d, order, transactionId) {
   if (order.status === 'SUCCESS') return;
   const paidAt = Date.now();
   const shortDate = compactDate(order.tradeDate);
+  const author = ensureDarkFundAuthor(d);
   order.status = 'SUCCESS';
   order.paidAt = paidAt;
   order.transactionId = transactionId || order.transactionId || '';
-  order.snapshot = Object.freeze({
+  const images = Array.isArray(order.snapshotImages) ? order.snapshotImages.slice() : [];
+  const note = {
+    id: `dark_${order.id}`,
+    visibility: 'public',
+    title: `${order.stockCode}｜${shortDate}暗盘数据`,
+    content: order.snapshotText || `股票代码：${order.stockCode}\n数据日期：${shortDate}\n以下为本次查询的暗盘资金数据。`,
+    images,
+    cover: images[0] || '',
+    coverRatio: 1.25,
+    authorId: author.id,
+    author: { id: author.id, name: '暗盘', avatar: author.avatar || '' },
+    category: '资料',
+    type: 'material',
+    tags: ['暗盘资金', order.stockCode],
+    likes: crypto.randomInt(5, 101),
+    collects: crypto.randomInt(5, 101),
+    riskDisclaimerEnabled: true,
+    visible: true,
+    free: false,
+    video: false,
+    time: paidAt,
+  };
+  order.noteId = note.id;
+  order.snapshot = {
     version: 1,
     product: '六位神奇数字',
     stockCode: order.stockCode,
     tradeDate: order.tradeDate,
     compactTradeDate: shortDate,
     generatedAt: paidAt,
-    note: {
-      id: `dark_${order.id}`,
-      visibility: 'private',
-      ownerId: order.userId,
-      title: `${order.stockCode}｜${shortDate}暗盘数据`,
-      content: order.snapshotText || `股票代码：${order.stockCode}\n数据日期：${shortDate}\n以下为本次查询的暗盘资金数据。`,
-      images: Array.isArray(order.snapshotImages) ? order.snapshotImages.slice() : [],
-      author: { id: 'niulai', name: 'NiuLai' },
-      time: paidAt,
-    },
-  });
+    note,
+  };
+  d.notes = Array.isArray(d.notes) ? d.notes : [];
+  if (!d.notes.some((item) => item.id === note.id)) d.notes.unshift(note);
   db.save();
 }
 
@@ -63,6 +110,7 @@ function publicDarkFundOrder(order) {
     status: order.status,
     createdAt: order.createdAt,
     paidAt: order.paidAt || 0,
+    noteId: order.noteId || (order.snapshot && order.snapshot.note && order.snapshot.note.id) || '',
     snapshot: order.snapshot || null,
   };
 }
@@ -137,19 +185,23 @@ module.exports = function register(router, HttpError) {
   });
 
   router.get('/api/dark-funds/trade-date', (ctx) => {
-    currentUser(ctx);
+    const user = currentUser(ctx);
+    if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
     const tradeDate = latestTradingDate();
-    return { tradeDate, compactTradeDate: compactDate(tradeDate) };
+    return {
+      tradeDate,
+      compactTradeDate: compactDate(tradeDate),
+      remaining: Math.max(0, Number(user.darkFundRemaining) || 0),
+    };
   });
 
-  router.post('/api/dark-funds/orders', async (ctx) => {
+  router.post('/api/dark-funds/orders', (ctx) => {
     const user = currentUser(ctx);
     const stockCode = String((ctx.body || {}).stockCode || '').trim();
     if (!/^\d{6}$/.test(stockCode)) throw new HttpError(400, '请输入6位股票代码');
-    if (!user.wxOpenId || user.wxOpenId === 'local-preview-user') {
-      throw new HttpError(503, '微信支付需完成真实微信登录后使用');
-    }
-    wechatPay.requireConfig();
+    if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
+    const remaining = Math.max(0, Number(user.darkFundRemaining) || 0);
+    if (remaining < 1) throw new HttpError(403, '暗盘资金查询次数已用完');
     const d = db.get();
     d.darkFundOrders = Array.isArray(d.darkFundOrders) ? d.darkFundOrders : [];
     const tradeDate = latestTradingDate();
@@ -159,29 +211,14 @@ module.exports = function register(router, HttpError) {
       product: 'dark-funds',
       stockCode,
       tradeDate,
-      amount: 100,
+      amount: 0,
       status: 'CREATED',
       createdAt: Date.now(),
     };
     d.darkFundOrders.push(order);
-    db.save();
-    try {
-      const result = await wechatPay.createJsapiPayment({
-        outTradeNo: order.id,
-        description: `六位神奇数字-${stockCode}-${compactDate(tradeDate)}`,
-        amount: order.amount,
-        openid: user.wxOpenId,
-      });
-      order.status = 'NOTPAY';
-      order.prepayId = result.prepayId;
-      db.save();
-      return { orderId: order.id, amount: order.amount, stockCode, tradeDate, compactTradeDate: compactDate(tradeDate), payment: result.payment };
-    } catch (err) {
-      order.status = 'FAILED';
-      order.error = err.message;
-      db.save();
-      throw err;
-    }
+    user.darkFundRemaining = remaining - 1;
+    activateDarkFundOrder(d, order, 'ENTITLEMENT');
+    return { ...publicDarkFundOrder(order), orderId: order.id, remaining: user.darkFundRemaining };
   });
 
   router.get('/api/dark-funds/orders', (ctx) => {
@@ -205,7 +242,7 @@ module.exports = function register(router, HttpError) {
             result.out_trade_no !== order.id || amount.total !== order.amount || amount.currency !== 'CNY') {
           throw new HttpError(400, '微信支付订单信息不匹配');
         }
-        activateDarkFundOrder(order, result.transaction_id);
+        activateDarkFundOrder(d, order, result.transaction_id);
       } else order.status = result.trade_state || order.status;
       db.save();
     }
@@ -230,7 +267,7 @@ module.exports = function register(router, HttpError) {
     if (transaction.trade_state !== 'SUCCESS' || paidAmount.total !== order.amount || paidAmount.currency !== 'CNY') {
       throw new HttpError(400, '支付回调订单信息不匹配');
     }
-    if (kind === 'dark-funds') activateDarkFundOrder(order, transaction.transaction_id);
+    if (kind === 'dark-funds') activateDarkFundOrder(d, order, transaction.transaction_id);
     else activateOrder(d, order, transaction.transaction_id);
     return { code: 'SUCCESS', message: '成功' };
   });

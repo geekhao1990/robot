@@ -523,6 +523,8 @@ module.exports = function register(router, HttpError) {
       vip: !!b.vip,
       vipPermanent: false,
       official: b.official === true,
+      darkFundEnabled: false,
+      darkFundRemaining: 0,
       createdAt: Date.now(),
       tags: b.official === true ? [] : ['new'],
     };
@@ -602,6 +604,42 @@ module.exports = function register(router, HttpError) {
     } else {
       throw new HttpError(400, 'action 须为 open/cancel');
     }
+    db.save();
+    return user;
+  });
+
+  // 暗盘资金入口由后台人工开通；首次开通同时赠送10次，关闭后入口立即隐藏。
+  router.put('/api/admin/users/:id/dark-funds', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const user = d.users.find((u) => u.id === ctx.params.id);
+    if (!user) throw new HttpError(404, '用户不存在');
+    const action = (ctx.body || {}).action;
+    const active = user.darkFundEnabled === true;
+    if (action === 'open') {
+      if (active) throw new HttpError(409, '该用户已开通暗盘资金入口');
+      user.darkFundEnabled = true;
+      if (Math.max(0, Number(user.darkFundRemaining) || 0) < 1) user.darkFundRemaining = 10;
+    } else if (action === 'cancel') {
+      if (!active) throw new HttpError(409, '该用户未开通暗盘资金入口');
+      user.darkFundEnabled = false;
+    } else {
+      throw new HttpError(400, 'action 须为 open/cancel');
+    }
+    db.save();
+    return user;
+  });
+
+  router.put('/api/admin/users/:id/dark-funds/quota', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const user = d.users.find((u) => u.id === ctx.params.id);
+    if (!user) throw new HttpError(404, '用户不存在');
+    const remaining = Number((ctx.body || {}).remaining);
+    if (!Number.isInteger(remaining) || remaining < 0 || remaining > 100000) {
+      throw new HttpError(400, '查询次数必须是0到100000之间的整数');
+    }
+    user.darkFundRemaining = remaining;
     db.save();
     return user;
   });

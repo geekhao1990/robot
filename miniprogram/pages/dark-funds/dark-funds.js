@@ -7,15 +7,19 @@ Page({
     stockCode: '',
     tradeDate: '',
     compactTradeDate: '',
+    remaining: 0,
     dateLoading: true,
     historyLoading: false,
     orders: [],
-    paymentVisible: false,
-    paymentPending: false,
-    pendingCode: '',
+    querying: false,
   },
   onLoad(options) {
     if (!store.isLogin()) return wx.redirectTo({ url: '/pages/login/login' });
+    const user = store.getUser();
+    if (!user || user.darkFundEnabled !== true) {
+      wx.showModal({ title: '暂不可用', content: '暗盘资金入口尚未开通', showCancel: false, complete: () => wx.navigateBack() });
+      return;
+    }
     const tab = options && options.tab === 'history' ? 'history' : 'query';
     this.setData({ tab });
     this.loadTradeDate();
@@ -30,7 +34,7 @@ Page({
   loadTradeDate() {
     this.setData({ dateLoading: true });
     api.getDarkFundTradeDate()
-      .then((result) => this.setData({ tradeDate: result.tradeDate, compactTradeDate: result.compactTradeDate }))
+      .then((result) => this.setData({ tradeDate: result.tradeDate, compactTradeDate: result.compactTradeDate, remaining: Number(result.remaining) || 0 }))
       .catch(() => wx.showToast({ title: '交易日获取失败', icon: 'none' }))
       .finally(() => this.setData({ dateLoading: false }));
   },
@@ -46,65 +50,38 @@ Page({
       content: `是否查询${stockCode}的${this.data.compactTradeDate}的暗盘数据`,
       confirmText: '确定',
       success: (result) => {
-        if (result.confirm) this.setData({ paymentVisible: true, pendingCode: stockCode });
+        if (result.confirm) this.query(stockCode);
       },
     });
   },
-  closePayment() {
-    if (!this.data.paymentPending) this.setData({ paymentVisible: false });
-  },
-  noop() {},
-  pay() {
-    if (this.data.paymentPending) return;
-    this.setData({ paymentPending: true });
-    wx.showLoading({ title: '创建订单', mask: true });
-    api.createDarkFundOrder(this.data.pendingCode)
+  query(stockCode) {
+    if (this.data.querying) return;
+    this.setData({ querying: true });
+    wx.showLoading({ title: '查询中', mask: true });
+    api.createDarkFundOrder(stockCode)
       .then((order) => {
         wx.hideLoading();
-        if (!order || !order.orderId || !order.payment) throw new Error('支付订单创建失败');
-        return this.requestPayment(order.payment).then(() => this.confirmPayment(order.orderId, 5));
+        if (!order || !order.noteId) throw new Error('查询结果生成失败');
+        this.setData({ remaining: Number(order.remaining) || 0 });
+        wx.navigateTo({ url: `/pages/detail/detail?id=${encodeURIComponent(order.noteId)}` });
       })
       .catch((error) => {
         wx.hideLoading();
-        const message = this.errorText(error);
-        if (/cancel/i.test(message)) wx.showToast({ title: '已取消支付', icon: 'none' });
-        else wx.showModal({ title: '支付失败', content: message, showCancel: false });
+        wx.showModal({ title: '查询失败', content: this.errorText(error), showCancel: false });
       })
-      .finally(() => this.setData({ paymentPending: false }));
-  },
-  requestPayment(payment) {
-    return new Promise((resolve, reject) => wx.requestPayment({
-      timeStamp: payment.timeStamp,
-      nonceStr: payment.nonceStr,
-      package: payment.package,
-      signType: payment.signType || 'RSA',
-      paySign: payment.paySign,
-      success: resolve,
-      fail: reject,
-    }));
-  },
-  confirmPayment(orderId, retries) {
-    wx.showLoading({ title: '确认支付', mask: true });
-    return api.getDarkFundOrder(orderId).then((order) => {
-      if (order && order.status === 'SUCCESS') {
-        wx.hideLoading();
-        this.setData({ paymentVisible: false });
-        wx.navigateTo({ url: `/pages/dark-funds-order/dark-funds-order?id=${encodeURIComponent(orderId)}` });
-        return order;
-      }
-      if (retries > 0) return new Promise((resolve) => setTimeout(resolve, 1000)).then(() => this.confirmPayment(orderId, retries - 1));
-      throw new Error('支付结果确认中，请稍后在历史订单中查看');
-    });
+      .finally(() => this.setData({ querying: false }));
   },
   loadOrders() {
     this.setData({ historyLoading: true });
     api.getDarkFundOrders()
-      .then((orders) => this.setData({ orders: (orders || []).map((item) => ({ ...item, amountText: (Number(item.amount || 0) / 100).toFixed(2) })) }))
+      .then((orders) => this.setData({ orders: orders || [] }))
       .catch(() => wx.showToast({ title: '订单加载失败', icon: 'none' }))
       .finally(() => this.setData({ historyLoading: false }));
   },
   openOrder(e) {
-    wx.navigateTo({ url: `/pages/dark-funds-order/dark-funds-order?id=${encodeURIComponent(e.currentTarget.dataset.id)}` });
+    const order = this.data.orders.find((item) => item.id === e.currentTarget.dataset.id);
+    if (!order || !order.noteId) return wx.showToast({ title: '笔记不存在', icon: 'none' });
+    wx.navigateTo({ url: `/pages/detail/detail?id=${encodeURIComponent(order.noteId)}` });
   },
   errorText(error) {
     return (error && (error.errMsg || (error.data && error.data.error) || error.message)) || '请稍后重试';

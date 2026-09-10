@@ -79,9 +79,11 @@ test('month cards always add 30 days, extend membership, preserve lifetime, and 
   assert.equal(result.user.vipExpire, future + 30 * 86400000);
   assert.equal(result.user.vipActive, true);
   assert.equal(result.user.goldActive, false);
+  assert.equal(result.user.darkFundRemaining, 10);
   await call('POST', '/api/gift-cards/redeem', { code: codes[1] }, 'b');
   assert.equal(data.users[1].vipPermanent, true);
   assert.equal(data.users[1].vipExpire, 0);
+  assert.equal(data.users[1].darkFundRemaining, 10);
 });
 
 test('expired rights restart from redemption, invalid codes and failed writes grant nothing', async () => {

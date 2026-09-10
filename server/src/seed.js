@@ -6,7 +6,7 @@ const avatar = (n) => `https://i.pravatar.cc/150?img=${n}`;
 const { normalizeType, typeLabel } = require('./content-types');
 
 const YEAR = 365 * 24 * 3600 * 1000;
-const u = (o) => ({ vip: false, vipPlan: '', vipExpire: 0, vipPermanent: false, official: true, createdAt: 0, tags: [], ...o });
+const u = (o) => ({ vip: false, vipPlan: '', vipExpire: 0, vipPermanent: false, official: true, darkFundEnabled: false, darkFundRemaining: 0, createdAt: 0, tags: [], ...o });
 const users = [
   u({ id: 'u1', name: '旅行的猫', avatar: avatar(11), desc: '世界那么大，我想去看看 🌍', fans: 12800, follows: 231, likes: 98000 }),
   u({ id: 'u2', name: '美食研究所', avatar: avatar(12), desc: '一个爱做饭的程序员', fans: 45600, follows: 88, likes: 320000, vip: true, vipPlan: 'year', vipExpire: Date.now() + YEAR }),
@@ -14,6 +14,7 @@ const users = [
   u({ id: 'u4', name: '日常小课堂', avatar: avatar(15), desc: '记录实用的生活灵感', fans: 23400, follows: 56, likes: 145000, vip: true, vipPlan: 'month', vipExpire: Date.now() + 30 * 24 * 3600 * 1000 }),
   u({ id: 'u5', name: '家居灵感', avatar: avatar(20), desc: '把日子过成诗', fans: 67200, follows: 120, likes: 480000 }),
   u({ id: 'u6', name: '数码控小李', avatar: avatar(33), desc: '只聊真实体验', fans: 34500, follows: 67, likes: 210000 }),
+  u({ id: 'u1787979756047', name: '暗盘', avatar: '/images/profile-dark-funds.png', desc: '暗盘资金数据', fans: 0, follows: 0, likes: 0 }),
 ];
 
 function note(o) {
