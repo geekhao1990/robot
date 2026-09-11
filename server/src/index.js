@@ -56,6 +56,8 @@ const server = http.createServer((req, res) => {
   if (pathname === '/admin' || pathname.startsWith('/admin/')) return serveFile(res, 'admin', pathname.replace(/^\/admin/, ''));
   // 上传的图片
   if (pathname.startsWith('/uploads/')) return serveFile(res, 'uploads', pathname.replace(/^\/uploads/, ''));
+  // 管理后台与小程序公用图片
+  if (pathname.startsWith('/assets/')) return serveFile(res, 'assets', pathname.replace(/^\/assets/, ''));
   // 图片上传（multipart，需单独读取原始字节）
   if (pathname === '/api/upload' && req.method === 'POST') return handleUpload(req, res, sendJson);
 
