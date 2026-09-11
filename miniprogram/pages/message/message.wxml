@@ -1,3 +1,22 @@
+<scroll-view
+  class="message-scroll"
+  scroll-y
+  enhanced
+  refresher-enabled
+  refresher-threshold="64"
+  refresher-default-style="none"
+  refresher-background="#f5f5f5"
+  refresher-triggered="{{refreshing}}"
+  bindrefresherpulling="onRefresherPulling"
+  bindrefresherrefresh="onRefresherRefresh"
+  bindrefresherrestore="onRefresherRestore"
+  bindrefresherabort="onRefresherAbort"
+>
+  <view slot="refresher" class="refresh-indicator">
+    <view wx:if="{{refreshing}}" class="refresh-loading"></view>
+    <view wx:else class="refresh-arrow {{refreshReady ? 'is-ready' : ''}}">↓</view>
+    <text>{{refreshing ? '刷新中' : (refreshReady ? '松开刷新' : '下拉刷新')}}</text>
+  </view>
 <view class="page">
   <!-- 未登录 -->
   <view wx:if="{{!user}}" class="login-tip">
@@ -51,3 +70,4 @@
     </view>
   </block>
 </view>
+</scroll-view>

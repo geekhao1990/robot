@@ -1,3 +1,22 @@
+<scroll-view
+  class="profile-scroll"
+  scroll-y
+  enhanced
+  refresher-enabled
+  refresher-threshold="64"
+  refresher-default-style="none"
+  refresher-background="#f5f5f5"
+  refresher-triggered="{{refreshing}}"
+  bindrefresherpulling="onRefresherPulling"
+  bindrefresherrefresh="onRefresherRefresh"
+  bindrefresherrestore="onRefresherRestore"
+  bindrefresherabort="onRefresherAbort"
+>
+  <view slot="refresher" class="refresh-indicator">
+    <view wx:if="{{refreshing}}" class="refresh-loading"></view>
+    <view wx:else class="refresh-arrow {{refreshReady ? 'is-ready' : ''}}">↓</view>
+    <text>{{refreshing ? '刷新中' : (refreshReady ? '松开刷新' : '下拉刷新')}}</text>
+  </view>
 <view class="page">
   <view class="hero" style="padding-top: {{statusBarHeight}}px;">
     <view class="hero-mask"></view>
@@ -54,15 +73,6 @@
     <view class="quick-item" bindtap="goMiniGame"><image class="quick-icon" src="/images/profile-game.png" mode="aspectFit" /><view class="quick-title">游戏赚米</view></view>
     <view wx:if="{{user && user.darkFundEnabled}}" class="quick-item" bindtap="goDarkFunds"><image class="quick-icon" src="/images/profile-dark-funds.png" mode="aspectFit" /><view class="quick-title">暗盘资金</view></view>
   </view>
-  <view wx:if="{{giftModalVisible}}" class="gift-mask" catchtap="closeGiftModal">
-    <view class="gift-panel" catchtap="noop">
-      <view class="gift-panel-head"><view><view class="gift-title">礼品卡</view><view class="gift-description">输入卡密兑换对应权益</view></view><view class="gift-close" catchtap="closeGiftModal">×</view></view>
-      <view class="gift-input-row">
-        <input class="gift-input" value="{{giftCode}}" bindinput="onGiftCodeInput" maxlength="80" placeholder="请输入礼品卡卡密" disabled="{{redeemingGift}}" />
-        <button class="gift-redeem" bindtap="redeemGift" loading="{{redeemingGift}}" disabled="{{redeemingGift}}">兑换</button>
-      </view>
-    </view>
-  </view>
   <block wx:if="{{loggedIn}}">
     <view class="tabs"><view wx:for="{{tabs}}" wx:key="*this" class="tab {{tabIndex === index ? 'active' : ''}}" data-index="{{index}}" bindtap="onTab">{{item}}</view></view>
     <view class="list">
@@ -73,4 +83,14 @@
       <view wx:else class="placeholder">{{emptyText}}</view>
     </view>
   </block>
+</view>
+</scroll-view>
+<view wx:if="{{giftModalVisible}}" class="gift-mask" catchtap="closeGiftModal">
+  <view class="gift-panel" catchtap="noop">
+    <view class="gift-panel-head"><view><view class="gift-title">礼品卡</view><view class="gift-description">输入卡密兑换对应权益</view></view><view class="gift-close" catchtap="closeGiftModal">×</view></view>
+    <view class="gift-input-row">
+      <input class="gift-input" value="{{giftCode}}" bindinput="onGiftCodeInput" maxlength="80" placeholder="请输入礼品卡卡密" disabled="{{redeemingGift}}" />
+      <button class="gift-redeem" bindtap="redeemGift" loading="{{redeemingGift}}" disabled="{{redeemingGift}}">兑换</button>
+    </view>
+  </view>
 </view>

@@ -23,6 +23,8 @@ Page({
     redeemingGift: false,
     giftModalVisible: false,
     entitlements: [],
+    refreshing: false,
+    refreshReady: false,
   },
   onLoad() {
     const app = getApp();
@@ -30,6 +32,9 @@ Page({
   },
   onShow() {
     refreshTabBar(this, 2);
+    this.refreshProfile();
+  },
+  refreshProfile() {
     const proceed = () => {
       const user = store.getUser();
       this.setData({
@@ -39,13 +44,17 @@ Page({
         phoneText: this.phoneText(user && user.phone),
       });
       if (user) {
-        this.loadTab(this.data.tabIndex);
+        return this.loadTab(this.data.tabIndex);
       } else {
         this._loadRequestId = (this._loadRequestId || 0) + 1;
         this.setData({ currentNotes: [], left: [], right: [], emptyText: '登录后查看' });
+        return Promise.resolve();
       }
     };
-    if (store.isLogin() && (config.useRemote || config.previewAuthRemote || config.wechatAuthRemote)) store.syncMe().then(proceed); else proceed();
+    const request = store.isLogin() && (config.useRemote || config.previewAuthRemote || config.wechatAuthRemote)
+      ? store.syncMe().then(proceed)
+      : proceed();
+    return Promise.resolve(request).finally(() => this.finishRefresh());
   },
   onTab(e) { const index = Number(e.currentTarget.dataset.index); this.setData({ tabIndex: index }); this.loadTab(index); },
   entitlementRows(user) {
@@ -81,7 +90,7 @@ Page({
     this._loadRequestId = requestId;
     const promise = !user ? Promise.resolve([]) : (index === 0 ? api.getMyCollects() : api.getMyLikes());
     const emptyText = !user ? '登录后查看' : (index === 0 ? '还没有收藏的笔记' : '还没有赞过的笔记');
-    promise.then((notes) => {
+    return promise.then((notes) => {
       if (requestId !== this._loadRequestId || !store.isLogin()) return;
       const left = [], right = []; let lh = 0, rh = 0;
       notes.forEach((n) => { const h = n.coverRatio || 1.3; if (lh <= rh) { left.push(n); lh += h; } else { right.push(n); rh += h; } });
@@ -91,6 +100,25 @@ Page({
         this.setData({ currentNotes: [], left: [], right: [], emptyText: '暂无权限查看' });
       }
     });
+  },
+  finishRefresh() {
+    if (this.data.refreshing || this.data.refreshReady) this.setData({ refreshing: false, refreshReady: false });
+  },
+  onRefresherPulling(e) {
+    if (this.data.refreshing) return;
+    const refreshReady = Number(e.detail && e.detail.dy) >= 64;
+    if (refreshReady !== this.data.refreshReady) this.setData({ refreshReady });
+  },
+  onRefresherRefresh() {
+    if (this.data.refreshing) return;
+    this.setData({ refreshing: true, refreshReady: false });
+    this.refreshProfile();
+  },
+  onRefresherRestore() {
+    if (this.data.refreshReady) this.setData({ refreshReady: false });
+  },
+  onRefresherAbort() {
+    if (this.data.refreshReady) this.setData({ refreshReady: false });
   },
   phoneText(phone) {
     const value = String(phone || '');

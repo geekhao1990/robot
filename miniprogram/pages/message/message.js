@@ -9,6 +9,8 @@ Page({
     likeCount: 0,
     followCount: 0,
     commentCount: 0,
+    refreshing: false,
+    refreshReady: false,
   },
 
   onShow() {
@@ -19,10 +21,30 @@ Page({
     this.loadData();
   },
 
-  onPullDownRefresh() {
+  onRefresherPulling(e) {
+    if (this.data.refreshing) return;
+    const refreshReady = Number(e.detail && e.detail.dy) >= 64;
+    if (refreshReady !== this.data.refreshReady) this.setData({ refreshReady });
+  },
+
+  onRefresherRefresh() {
+    if (this.data.refreshing) return;
+    this.setData({ refreshing: true, refreshReady: false });
     refreshTabBar(this, 3);
-    if (store.getUser()) this.loadData();
-    wx.stopPullDownRefresh();
+    const request = store.getUser() ? this.loadData() : Promise.resolve();
+    Promise.resolve(request).finally(() => this.finishRefresh());
+  },
+
+  onRefresherRestore() {
+    if (this.data.refreshReady) this.setData({ refreshReady: false });
+  },
+
+  onRefresherAbort() {
+    if (this.data.refreshReady) this.setData({ refreshReady: false });
+  },
+
+  finishRefresh() {
+    if (this.data.refreshing || this.data.refreshReady) this.setData({ refreshing: false, refreshReady: false });
   },
 
   loadData() {
@@ -31,9 +53,9 @@ Page({
       this.setData({ likeCount: u.like, followCount: u.follow, commentCount: u.comment });
     };
     applyCounts();
-    store.refreshMessageSummary().then(applyCounts);
+    const summaryRequest = store.refreshMessageSummary().then(applyCounts);
 
-    api.getConversations().then((list) => {
+    const conversationsRequest = api.getConversations().then((list) => {
       this.setData({
         conversations: (list || []).map((c) => ({
           ...c,
@@ -42,6 +64,7 @@ Page({
         })),
       });
     });
+    return Promise.allSettled([summaryRequest, conversationsRequest]);
   },
 
   goNotify(e) {
