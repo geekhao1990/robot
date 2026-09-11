@@ -36,7 +36,10 @@ function setup() {
   const mod = { exports: {} };
   const dependencyMap = {
     '../db': db,
-    '../auth': { userIdFor: (token) => token === 'Bearer u2' ? 'u2' : (token === 'Bearer u1' ? 'u1' : '') },
+    '../auth': {
+      userIdFor: (token) => token === 'Bearer u2' ? 'u2' : (token === 'Bearer u1' ? 'u1' : ''),
+      isAdmin: (token) => token === 'admin',
+    },
     '../membership': require('../src/membership'),
     '../wechat-pay': wechatPay,
     '../util': require('../src/util'),
@@ -62,21 +65,39 @@ test('latest trading date skips the 2026 Mid-Autumn holiday and weekend', () => 
   assert.equal(latestTradingDate(holidaySaturday), '2026-09-24');
 });
 
-test('entitlement query consumes one use and creates a public note by the dark account', async () => {
+test('entitlement query creates a pending ticket, then admin completion notifies the user', async () => {
   const { data, call } = setup();
   await assert.rejects(call('POST', '/api/dark-funds/orders', { stockCode: '123' }), { status: 400 });
   const created = await call('POST', '/api/dark-funds/orders', { stockCode: '600105' });
   assert.equal(created.amount, 0);
-  assert.equal(created.status, 'SUCCESS');
+  assert.equal(created.status, 'PENDING');
+  assert.equal(created.ready, false);
   assert.equal(created.remaining, 1);
   assert.equal(created.stockCode, '600105');
-  assert.equal(created.snapshot.note.visibility, 'public');
-  assert.equal(created.snapshot.note.authorId, 'u1787979756047');
-  assert.equal(created.snapshot.note.author.name, '暗盘');
-  assert.equal(data.notes[0].id, created.noteId);
-  assert.equal(data.notes[0].visible, true);
+  assert.equal(created.snapshot, null);
+  assert.equal(data.notes.length, 0);
   assert.equal(data.users[0].darkFundRemaining, 1);
-  assert.equal((await call('GET', '/api/dark-funds/orders')).length, 1);
+  const pending = await call('GET', '/api/dark-funds/orders');
+  assert.equal(pending.length, 1);
+  assert.equal(pending[0].unread, false);
+  await assert.rejects(call('GET', `/api/dark-funds/orders/${created.orderId}`), { status: 409 });
+  await assert.rejects(call('PUT', `/api/admin/dark-fund-orders/${created.orderId}/complete`, { images: ['/uploads/result.png'] }, ''), { status: 401 });
+  const completed = await call('PUT', `/api/admin/dark-fund-orders/${created.orderId}/complete`, {
+    images: ['/uploads/result.png'],
+    content: '暗盘资金查询结果',
+  }, 'admin');
+  assert.equal(completed.status, 'READY');
+  assert.equal(completed.unread, true);
+  assert.equal(completed.snapshot.note.visibility, 'public');
+  assert.equal(completed.snapshot.note.authorId, 'u1787979756047');
+  assert.equal(completed.snapshot.note.author.name, '暗盘');
+  assert.equal(data.notes[0].id, completed.noteId);
+  assert.equal(data.notes[0].visible, true);
+  const ready = await call('GET', '/api/dark-funds/orders');
+  assert.equal(ready[0].unread, true);
+  const viewed = await call('GET', `/api/dark-funds/orders/${created.orderId}`);
+  assert.equal(viewed.unread, false);
+  assert.equal((await call('GET', '/api/dark-funds/orders'))[0].unread, false);
   await assert.rejects(call('GET', `/api/dark-funds/orders/${created.orderId}`, {}, 'Bearer u2'), { status: 404 });
 });
 

@@ -1,7 +1,9 @@
 <view class="page">
   <view class="tabs">
     <view class="tab {{tab === 'query' ? 'active' : ''}}" data-tab="query" bindtap="switchTab">六位神奇数字</view>
-    <view class="tab {{tab === 'history' ? 'active' : ''}}" data-tab="history" bindtap="switchTab">历史订单</view>
+    <view class="tab {{tab === 'history' ? 'active' : ''}}" data-tab="history" bindtap="switchTab">
+      <text>历史订单</text><text wx:if="{{historyBadge}}" class="history-badge">{{historyBadge}}</text>
+    </view>
   </view>
 
   <view wx:if="{{tab === 'query'}}" class="query-page">
@@ -15,6 +17,7 @@
         <button class="contact-button" open-type="contact">联系客服</button>
       </view>
       <view class="remaining-tip">剩余次数：{{remaining}}</view>
+      <view wx:if="{{waitingText}}" class="waiting-tip">{{waitingText}}</view>
     </view>
   </view>
 
@@ -27,7 +30,7 @@
           <view class="order-code">{{item.stockCode}}</view>
           <view class="order-date">{{item.compactTradeDate}} 暗盘数据</view>
         </view>
-        <view class="order-side"><text class="arrow">›</text></view>
+        <view class="order-side {{item.ready ? 'ready' : 'pending'}}"><text>{{item.statusText}}</text><text wx:if="{{item.ready}}" class="arrow">›</text></view>
       </view>
     </view>
   </view>

@@ -11,6 +11,8 @@ Page({
     dateLoading: true,
     historyLoading: false,
     orders: [],
+    historyBadge: 0,
+    waitingText: '',
     querying: false,
   },
   onLoad(options) {
@@ -23,7 +25,18 @@ Page({
     const tab = options && options.tab === 'history' ? 'history' : 'query';
     this.setData({ tab });
     this.loadTradeDate();
-    if (tab === 'history') this.loadOrders();
+  },
+  onShow() {
+    if (!store.isLogin()) return;
+    this.loadOrders(true);
+    this.stopOrderPolling();
+    this._orderPollingTimer = setInterval(() => this.loadOrders(true), 10000);
+  },
+  onHide() {
+    this.stopOrderPolling();
+  },
+  onUnload() {
+    this.stopOrderPolling();
   },
   switchTab(e) {
     const tab = e.currentTarget.dataset.tab;
@@ -57,13 +70,14 @@ Page({
   query(stockCode) {
     if (this.data.querying) return;
     this.setData({ querying: true });
-    wx.showLoading({ title: '查询中', mask: true });
+    wx.showLoading({ title: '提交中', mask: true });
     api.createDarkFundOrder(stockCode)
       .then((order) => {
         wx.hideLoading();
-        if (!order || !order.noteId) throw new Error('查询结果生成失败');
-        this.setData({ remaining: Number(order.remaining) || 0 });
-        wx.navigateTo({ url: `/pages/detail/detail?id=${encodeURIComponent(order.noteId)}` });
+        if (!order || !order.orderId) throw new Error('工单提交失败');
+        this.setData({ remaining: Number(order.remaining) || 0, waitingText: '等待查询价格' });
+        this.loadOrders(true);
+        wx.showModal({ title: '已提交', content: '等待查询价格', showCancel: false });
       })
       .catch((error) => {
         wx.hideLoading();
@@ -71,17 +85,42 @@ Page({
       })
       .finally(() => this.setData({ querying: false }));
   },
-  loadOrders() {
-    this.setData({ historyLoading: true });
-    api.getDarkFundOrders()
-      .then((orders) => this.setData({ orders: orders || [] }))
-      .catch(() => wx.showToast({ title: '订单加载失败', icon: 'none' }))
-      .finally(() => this.setData({ historyLoading: false }));
+  loadOrders(silent) {
+    if (this._ordersRequesting) return Promise.resolve();
+    this._ordersRequesting = true;
+    if (!silent) this.setData({ historyLoading: true });
+    return api.getDarkFundOrders()
+      .then((orders) => {
+        const normalized = (orders || []).map((item) => ({
+          ...item,
+          ready: item.ready === true || item.status === 'READY' || item.status === 'SUCCESS',
+          statusText: item.ready === true || item.status === 'READY' || item.status === 'SUCCESS' ? '查询就绪' : '等待查询价格',
+        }));
+        const unread = normalized.filter((item) => item.ready && item.unread).length;
+        this.setData({ orders: normalized, historyBadge: Math.min(99, unread) });
+      })
+      .catch(() => { if (!silent) wx.showToast({ title: '订单加载失败', icon: 'none' }); })
+      .finally(() => {
+        this._ordersRequesting = false;
+        if (!silent) this.setData({ historyLoading: false });
+      });
   },
   openOrder(e) {
     const order = this.data.orders.find((item) => item.id === e.currentTarget.dataset.id);
-    if (!order || !order.noteId) return wx.showToast({ title: '笔记不存在', icon: 'none' });
-    wx.navigateTo({ url: `/pages/detail/detail?id=${encodeURIComponent(order.noteId)}` });
+    if (!order || !order.ready) return wx.showToast({ title: '等待查询价格', icon: 'none' });
+    wx.showLoading({ title: '加载中', mask: true });
+    api.getDarkFundOrder(order.id)
+      .then((readyOrder) => {
+        if (!readyOrder || !readyOrder.noteId) throw new Error('查询结果不存在');
+        this.setData({ historyBadge: Math.max(0, this.data.historyBadge - (order.unread ? 1 : 0)) });
+        wx.navigateTo({ url: `/pages/detail/detail?id=${encodeURIComponent(readyOrder.noteId)}` });
+      })
+      .catch((error) => wx.showToast({ title: this.errorText(error), icon: 'none' }))
+      .finally(() => wx.hideLoading());
+  },
+  stopOrderPolling() {
+    if (this._orderPollingTimer) clearInterval(this._orderPollingTimer);
+    this._orderPollingTimer = null;
   },
   errorText(error) {
     return (error && (error.errMsg || (error.data && error.data.error) || error.message)) || '请稍后重试';

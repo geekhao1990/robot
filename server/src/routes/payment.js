@@ -59,12 +59,14 @@ function ensureDarkFundAuthor(d) {
 }
 
 function activateDarkFundOrder(d, order, transactionId) {
-  if (order.status === 'SUCCESS') return;
+  if (order.status === 'READY' || order.status === 'SUCCESS') return;
   const paidAt = Date.now();
   const shortDate = compactDate(order.tradeDate);
   const author = ensureDarkFundAuthor(d);
-  order.status = 'SUCCESS';
+  order.status = 'READY';
   order.paidAt = paidAt;
+  order.readyAt = paidAt;
+  order.viewedAt = 0;
   order.transactionId = transactionId || order.transactionId || '';
   const images = Array.isArray(order.snapshotImages) ? order.snapshotImages.slice() : [];
   const note = {
@@ -104,6 +106,7 @@ function activateDarkFundOrder(d, order, transactionId) {
 }
 
 function publicDarkFundOrder(order) {
+  const ready = order.status === 'READY' || order.status === 'SUCCESS';
   return {
     id: order.id,
     stockCode: order.stockCode,
@@ -111,8 +114,12 @@ function publicDarkFundOrder(order) {
     compactTradeDate: compactDate(order.tradeDate),
     amount: order.amount,
     status: order.status,
+    ready,
+    unread: order.status === 'READY' && !order.viewedAt,
     createdAt: order.createdAt,
     paidAt: order.paidAt || 0,
+    readyAt: order.readyAt || order.paidAt || 0,
+    viewedAt: order.viewedAt || 0,
     noteId: order.noteId || (order.snapshot && order.snapshot.note && order.snapshot.note.id) || '',
     snapshot: order.snapshot || null,
   };
@@ -218,39 +225,47 @@ module.exports = function register(router, HttpError) {
       tradeDate,
       amount: 0,
       quotaSource: consumed.source,
-      status: 'CREATED',
+      status: 'PENDING',
       createdAt: Date.now(),
     };
     d.darkFundOrders.push(order);
-    activateDarkFundOrder(d, order, 'ENTITLEMENT');
+    db.save();
     return { ...publicDarkFundOrder(order), orderId: order.id, remaining: consumed.total };
   });
 
   router.get('/api/dark-funds/orders', (ctx) => {
     const user = currentUser(ctx);
     return (db.get().darkFundOrders || [])
-      .filter((item) => item.userId === user.id && item.status === 'SUCCESS')
-      .sort((a, b) => (b.paidAt || b.createdAt) - (a.paidAt || a.createdAt))
+      .filter((item) => item.userId === user.id)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
       .map(publicDarkFundOrder);
   });
 
-  router.get('/api/dark-funds/orders/:id', async (ctx) => {
+  router.get('/api/dark-funds/orders/:id', (ctx) => {
     const user = currentUser(ctx);
     const d = db.get();
     const order = (d.darkFundOrders || []).find((item) => item.id === ctx.params.id && item.userId === user.id);
     if (!order) throw new HttpError(404, '订单不存在');
-    if (order.status !== 'SUCCESS') {
-      const result = await wechatPay.queryPayment(order.id);
-      if (result.trade_state === 'SUCCESS') {
-        const amount = result.amount || {};
-        if (result.appid !== process.env.WECHAT_APP_ID || result.mchid !== process.env.WECHAT_PAY_MCH_ID ||
-            result.out_trade_no !== order.id || amount.total !== order.amount || amount.currency !== 'CNY') {
-          throw new HttpError(400, '微信支付订单信息不匹配');
-        }
-        activateDarkFundOrder(d, order, result.transaction_id);
-      } else order.status = result.trade_state || order.status;
-      db.save();
-    }
+    if (order.status !== 'READY' && order.status !== 'SUCCESS') throw new HttpError(409, '查询结果尚未就绪');
+    if (!order.viewedAt) order.viewedAt = Date.now();
+    db.save();
+    return publicDarkFundOrder(order);
+  });
+
+  router.put('/api/admin/dark-fund-orders/:id/complete', (ctx) => {
+    if (!auth.isAdmin(ctx.headers.authorization)) throw new HttpError(401, '未登录或登录失效');
+    const d = db.get();
+    const order = (d.darkFundOrders || []).find((item) => item.id === ctx.params.id);
+    if (!order) throw new HttpError(404, '工单不存在');
+    if (order.status === 'READY' || order.status === 'SUCCESS') throw new HttpError(409, '该工单已完成');
+    const body = ctx.body || {};
+    const images = Array.isArray(body.images)
+      ? body.images.map((item) => String(item || '').trim()).filter((item) => /^(https?:\/\/|\/uploads\/)/i.test(item)).slice(0, 9)
+      : [];
+    if (!images.length) throw new HttpError(400, '请上传暗盘资金截图');
+    order.snapshotImages = images;
+    order.snapshotText = String(body.content || '').trim().slice(0, 5000) || `股票代码：${order.stockCode}\n数据日期：${compactDate(order.tradeDate)}\n以下为本次查询的暗盘资金数据。`;
+    activateDarkFundOrder(d, order, 'ADMIN');
     return publicDarkFundOrder(order);
   });
 

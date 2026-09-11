@@ -716,9 +716,10 @@ function redeemWechatGift(orderId) {
     .catch((error) => alert(error.message));
 }
 
-// 暗盘资金查询记录：生成公开笔记，作者固定为“暗盘”。
+// 暗盘资金查询工单：用户提交后等待，管理员录入结果后生成公开笔记。
 let _darkFundOrders = [];
 let _darkFundOrderPage = 1;
+let _darkFundResultImages = [];
 
 function renderDarkFundOrders() {
   api('/api/admin/dark-fund-orders').then((orders) => {
@@ -737,20 +738,74 @@ function drawDarkFundOrders() {
   const start = (_darkFundOrderPage - 1) * PAGE_SIZE;
   const rows = _darkFundOrders.slice(start, start + PAGE_SIZE).map((order, index) => {
     const user = order.user || {};
+    const ready = order.status === 'READY' || order.status === 'SUCCESS';
     return `<tr>
       <td>${start + index + 1}</td>
       <td><strong>${esc(order.stockCode)}</strong><div class="hint">${esc(String(order.tradeDate || '').replaceAll('-', '').slice(2))} 暗盘数据</div></td>
       <td>${esc(user.name || '用户不存在')}<div class="hint">${esc(user.id || order.userId || '')}</div><div class="hint">${esc(user.phone || '')}</div></td>
-      <td>${order.status === 'SUCCESS' ? '<span class="tag paid">查询成功</span>' : paymentStatus(order)}</td>
-      <td>${order.createdAt ? fmtDate(order.createdAt) : '—'}</td>
-      <td><button class="btn-sm" ${order.snapshot ? '' : 'disabled'} onclick='openDarkFundSnapshot("${order.id}")'>查看公开笔记</button></td>
+      <td>${ready ? '<span class="tag paid">查询就绪</span>' : '<span class="tag">等待查询价格</span>'}</td>
+      <td>${order.createdAt ? fmtDate(order.createdAt) : '—'}${order.readyAt ? `<div class="hint">就绪 ${fmtDate(order.readyAt)}</div>` : ''}</td>
+      <td>${ready
+        ? `<button class="btn-sm" onclick='openDarkFundSnapshot("${order.id}")'>查看笔记</button>`
+        : `<button class="btn-sm" onclick='completeDarkFundOrder("${order.id}")'>录入结果</button>`}</td>
     </tr>`;
   }).join('');
   document.getElementById('content').innerHTML = `
-    <div class="toolbar"><div><h3>暗盘资金查询记录</h3><div class="hint">每次查询会生成一篇公开笔记，发帖账号固定为“暗盘”。</div></div></div>
+    <div class="toolbar"><div><h3>暗盘资金查询工单</h3><div class="hint">用户提交后进入等待队列；录入查询截图后，用户的历史订单会显示通知气泡。</div></div></div>
     <table><thead><tr><th>序号</th><th>股票/日期</th><th>查询用户</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#999;padding:40px">暂无查询记录</td></tr>'}</tbody></table>
     ${pagerHtml(_darkFundOrderPage, pages, total, 'gotoDarkFundOrderPage')}`;
+}
+
+function renderDarkFundResultImages() {
+  const grid = document.getElementById('darkFundResultImages');
+  if (!grid) return;
+  grid.innerHTML = _darkFundResultImages.map((url, index) => `
+    <div class="img-cell">
+      <img src="${esc(url)}" />
+      <span class="img-del" onclick="removeDarkFundResultImage(${index})">×</span>
+    </div>`).join('') +
+    `<label class="img-add">＋<input type="file" accept="image/*" multiple style="display:none" onchange="pickDarkFundResultImages(event)" /></label>`;
+}
+
+function removeDarkFundResultImage(index) {
+  _darkFundResultImages.splice(index, 1);
+  renderDarkFundResultImages();
+}
+
+function pickDarkFundResultImages(event) {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+  Promise.all(files.map(uploadAdminImage))
+    .then((urls) => {
+      _darkFundResultImages = _darkFundResultImages.concat(urls.filter(Boolean)).slice(0, 9);
+      renderDarkFundResultImages();
+    })
+    .catch(() => showAdminToast('图片上传失败', 'error'));
+}
+
+function completeDarkFundOrder(orderId) {
+  const order = _darkFundOrders.find((item) => item.id === orderId);
+  if (!order) return;
+  _darkFundResultImages = [];
+  const date = String(order.tradeDate || '').replaceAll('-', '').slice(2);
+  const template = `股票代码：${order.stockCode}\n数据日期：${date}\n以下为本次查询的暗盘资金数据。`;
+  openModal(`录入查询结果 · ${esc(order.stockCode)}`, `
+    <div class="field"><label>结果文字</label><textarea id="darkFundResultText">${esc(template)}</textarea></div>
+    <div class="field"><label>暗盘资金截图</label><div id="darkFundResultImages" class="img-grid"></div><div class="hint">最多9张，第一张作为笔记封面。</div></div>
+  `, () => {
+    if (!_darkFundResultImages.length) return showAdminToast('请上传暗盘资金截图', 'error');
+    const content = document.getElementById('darkFundResultText').value.trim();
+    api('/api/admin/dark-fund-orders/' + encodeURIComponent(orderId) + '/complete', {
+      method: 'PUT',
+      body: JSON.stringify({ content, images: _darkFundResultImages }),
+    }).then(() => {
+      closeModal();
+      showAdminToast('查询结果已就绪，用户将收到通知');
+      renderDarkFundOrders();
+    }).catch((error) => showAdminToast(error.message || '工单完成失败', 'error'));
+  });
+  renderDarkFundResultImages();
 }
 
 function openDarkFundSnapshot(orderId) {

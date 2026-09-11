@@ -3,6 +3,7 @@
 .tab { position: relative; display: flex; flex: 1; align-items: center; justify-content: center; color: #777; font-size: 28rpx; }
 .tab.active { color: #222; font-weight: 700; }
 .tab.active::after { position: absolute; bottom: 0; left: 50%; width: 52rpx; height: 6rpx; content: ''; background: #ff2442; border-radius: 999rpx; transform: translateX(-50%); }
+.history-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 30rpx; height: 30rpx; margin-left: 8rpx; padding: 0 7rpx; color: #fff; font-size: 18rpx; font-weight: 700; line-height: 1; background: #ff2442; border-radius: 999rpx; box-sizing: border-box; }
 .query-page { padding: 30rpx 24rpx; }
 .query-card { padding: 48rpx 32rpx 38rpx; background: #fff; border-radius: 24rpx; box-shadow: 0 8rpx 24rpx rgba(0,0,0,.04); }
 .code-box { padding: 0 24rpx; background: #f7f7f7; border: 2rpx solid transparent; border-radius: 16rpx; }
@@ -15,6 +16,7 @@
 .query-button::after, .contact-button::after { border: none; }
 .query-button[disabled] { color: #fff; background: #ff9aaa; }
 .remaining-tip { margin-top: 20rpx; color: #777; font-size: 25rpx; text-align: center; }
+.waiting-tip { display: flex; align-items: center; justify-content: center; height: 64rpx; margin-top: 24rpx; color: #8a6111; font-size: 25rpx; font-weight: 700; background: #fff7df; border-radius: 14rpx; }
 .history-page { padding: 24rpx; }
 .empty { padding: 160rpx 0; color: #aaa; font-size: 26rpx; text-align: center; }
 .order-list { overflow: hidden; background: #fff; border-radius: 20rpx; }
@@ -24,4 +26,6 @@
 .order-code { color: #222; font-size: 31rpx; font-weight: 750; letter-spacing: 2rpx; }
 .order-date { margin-top: 8rpx; color: #999; font-size: 22rpx; }
 .order-side { display: flex; align-items: center; gap: 20rpx; color: #555; font-size: 25rpx; }
+.order-side.pending { color: #b07a12; }
+.order-side.ready { color: #ff2442; font-weight: 700; }
 .arrow { color: #bbb; font-size: 42rpx; font-weight: 300; }
