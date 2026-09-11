@@ -243,7 +243,7 @@
   width: 0;
 }
 .gift-mask { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1200; display: flex; align-items: flex-end; background: rgba(0,0,0,.45); }
-.gift-panel { width: 100%; margin-bottom: calc(120rpx + env(safe-area-inset-bottom)); padding: 34rpx 30rpx 10px; box-sizing: border-box; background: #fff; border-radius: 30rpx 30rpx 0 0; }
+.gift-panel { width: 100%; margin-bottom: 120rpx; padding: 34rpx 30rpx 10px; box-sizing: border-box; background: #fff; border-radius: 30rpx 30rpx 0 0; }
 .gift-panel-head { display: flex; align-items: flex-start; justify-content: space-between; }
 .gift-close { display: flex; align-items: center; justify-content: center; width: 56rpx; height: 56rpx; color: #999; font-size: 46rpx; line-height: 1; }
 .gift-title { font-size: 30rpx; font-weight: 600; color: #333; }
