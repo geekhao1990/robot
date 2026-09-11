@@ -11,9 +11,8 @@
 .field-label { width: 142rpx; color: #6a5b4b; font-size: 27rpx; }
 .picker-value { min-width: 260rpx; color: #2f251b; font-size: 27rpx; text-align: right; }
 .picker-value text { margin-left: 10rpx; color: #b5aa9c; font-size: 34rpx; }
-.trend-choice { font-size: 36rpx; font-weight: 800; }
-.trend-choice.up { color: #e53935; }
-.trend-choice.down { color: #11a52b; }
+.trend-choice { display: flex; align-items: center; justify-content: flex-end; }
+.trend-choice image { width: 42rpx; height: 42rpx; }
 .number-input { flex: 1; height: 64rpx; color: #2f251b; font-size: 27rpx; text-align: right; }
 .unit { margin-left: 10rpx; color: #9d9081; font-size: 25rpx; }
 .actions { display: flex; gap: 18rpx; padding: 24rpx 28rpx 28rpx; }
@@ -28,8 +27,7 @@
 .record-main { min-width: 0; }
 .record-date { color: #2d241b; font-size: 29rpx; font-weight: 750; }
 .record-meta { margin-top: 8rpx; color: #998d80; font-size: 23rpx; }
-.trend-symbol { font-weight: 800; }
-.trend-symbol.up { color: #e53935; }
-.trend-symbol.down { color: #11a52b; }
+.trend-meta { display: flex; align-items: center; gap: 8rpx; }
+.record-trend-icon { width: 32rpx; height: 32rpx; }
 .record-actions { display: flex; flex-direction: column; gap: 18rpx; margin-left: 20rpx; color: #9a6b2a; font-size: 25rpx; text-align: right; }
 .record-actions .delete { color: #c77368; }

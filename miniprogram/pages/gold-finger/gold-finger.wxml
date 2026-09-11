@@ -36,7 +36,7 @@
           <text class="history-yang {{item.yangClass}}">{{item.yang}}%</text>
           <text class="history-yin {{item.yinClass}}">{{item.yin}}%</text>
           <view class="history-finger-cell"><image class="history-finger" src="{{item.fingerIcon}}" mode="aspectFit" /></view>
-          <text class="history-trend {{item.trend}}">{{item.trendText}}</text>
+          <view class="history-trend"><image class="history-trend-icon" src="{{item.trendIcon}}" mode="aspectFit" /></view>
           <text class="history-position">{{item.position}}%</text>
         </view>
         <view wx:if="{{hasMoreHistory || historyExpanded}}" class="history-more">

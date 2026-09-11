@@ -247,7 +247,7 @@ module.exports = function register(router, HttpError) {
     const yin = 100 - yang;
     const position = goldPercent(b.position, '水位');
     if (!['gold', 'silver'].includes(b.finger)) throw new HttpError(400, '请选择金手指或银手指');
-    if (!['up', 'down'].includes(b.trend)) throw new HttpError(400, '请选择趋势（↑或↓）');
+    if (!['up', 'down'].includes(b.trend)) throw new HttpError(400, '请选择趋势（上涨或下跌）');
     d.goldFingerRecords = Array.isArray(d.goldFingerRecords) ? d.goldFingerRecords : [];
     const now = Date.now();
     const record = {

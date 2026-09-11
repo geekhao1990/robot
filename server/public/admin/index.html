@@ -960,7 +960,7 @@ function renderGoldFinger(page = _goldFingerPage) {
       <td><strong>${esc(item.date)}</strong></td>
       <td>${Number(item.yang)} / ${100 - Number(item.yang)}</td>
       <td><span class="tag ${item.finger === 'gold' ? 'gold' : ''}">${item.finger === 'gold' ? '金手指' : '银手指'}</span></td>
-      <td><span style="color:${item.trend === 'up' ? '#ff2442' : '#168c4b'};font-size:20px;font-weight:800">${item.trend === 'up' ? '↑' : '↓'}</span></td>
+      <td><img src="${item.trend === 'up' ? '/assets/trend-up.png' : '/assets/trend-down.png'}" alt="${item.trend === 'up' ? '上涨' : '下跌'}" style="display:block;width:28px;height:28px;object-fit:contain;margin:auto" /></td>
       <td>${Number(item.position)}%</td>
       <td>${fmtDate(item.updatedAt)}</td>
       <td><button class="btn-sm" onclick="editGoldFinger('${esc(item.date)}')">编辑</button><button class="btn-sm del" onclick="deleteGoldFinger('${esc(item.date)}')">删除</button></td>
@@ -1051,7 +1051,7 @@ function openGoldFingerEditor(item) {
     <div class="field"><label>日期</label><input value="${esc(item.date)}" disabled /></div>
     <div class="field"><label>阳谱（0-100，阴谱自动计算）</label><input id="goldModalYang" type="number" min="0" max="100" step="1" value="${Number(item.yang)}" /></div>
     <div class="field"><label>金银手指</label><select id="goldModalFinger"><option value="gold" ${item.finger === 'gold' ? 'selected' : ''}>金手指</option><option value="silver" ${item.finger === 'silver' ? 'selected' : ''}>银手指</option></select></div>
-    <div class="field"><label>趋势</label><select id="goldModalTrend"><option value="up" ${item.trend === 'up' ? 'selected' : ''}>↑</option><option value="down" ${item.trend === 'down' ? 'selected' : ''}>↓</option></select></div>
+    <div class="field"><label>趋势</label><select id="goldModalTrend"><option value="up" ${item.trend === 'up' ? 'selected' : ''}>上涨</option><option value="down" ${item.trend === 'down' ? 'selected' : ''}>下跌</option></select></div>
     <div class="field"><label>水位（0-100）</label><input id="goldModalPosition" type="number" min="0" max="100" step="1" value="${Number(item.position)}" /></div>
   `, () => {
     const body = {

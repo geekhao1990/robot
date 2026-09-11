@@ -1,5 +1,9 @@
 const api = require('../../utils/api');
 const store = require('../../utils/store');
+const TREND_ICONS = [
+  '/images/trend-up.png',
+  '/images/trend-down.png',
+];
 
 function today() {
   return new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -12,7 +16,7 @@ function displayRecord(record) {
     yang,
     yin: 100 - yang,
     fingerText: record.finger === 'silver' ? '银手指' : '金手指',
-    trendText: record.trend === 'down' ? '↓' : '↑',
+    trendIcon: record.trend === 'down' ? TREND_ICONS[1] : TREND_ICONS[0],
   };
 }
 
@@ -25,14 +29,15 @@ Page({
     saving: false,
     records: [],
     fingerOptions: ['金手指', '银手指'],
-    trendOptions: ['↑', '↓'],
+    trendOptions: ['上涨', '下跌'],
+    trendIcons: TREND_ICONS,
     form: {
       date: today(),
       yang: '50',
       fingerIndex: 0,
       fingerText: '金手指',
       trendIndex: 0,
-      trendText: '↑',
+      trendText: '上涨',
       position: '50',
     },
   },
@@ -117,7 +122,7 @@ Page({
         fingerIndex: record.finger === 'silver' ? 1 : 0,
         fingerText: record.finger === 'silver' ? '银手指' : '金手指',
         trendIndex: record.trend === 'down' ? 1 : 0,
-        trendText: record.trend === 'down' ? '↓' : '↑',
+        trendText: record.trend === 'down' ? '下跌' : '上涨',
         position: String(record.position),
       },
     });
@@ -143,7 +148,7 @@ Page({
   },
 
   reset() {
-    this.setData({ form: { date: today(), yang: '50', fingerIndex: 0, fingerText: '金手指', trendIndex: 0, trendText: '↑', position: '50' } });
+    this.setData({ form: { date: today(), yang: '50', fingerIndex: 0, fingerText: '金手指', trendIndex: 0, trendText: '上涨', position: '50' } });
   },
 
   goBack() {

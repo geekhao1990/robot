@@ -24,7 +24,7 @@
       </view>
       <view class="field-row">
         <text class="field-label">趋势</text>
-        <picker range="{{trendOptions}}" value="{{form.trendIndex}}" bindchange="onTrendChange"><view class="picker-value trend-choice {{form.trendIndex === 1 ? 'down' : 'up'}}">{{form.trendText}} <text>›</text></view></picker>
+        <picker range="{{trendOptions}}" value="{{form.trendIndex}}" bindchange="onTrendChange"><view class="picker-value trend-choice"><image src="{{trendIcons[form.trendIndex]}}" mode="aspectFit" /><text>›</text></view></picker>
       </view>
       <view class="field-row no-border">
         <text class="field-label">水位</text>
@@ -39,7 +39,7 @@
     <view wx:elif="{{!records.length}}" class="state">暂无数据</view>
     <view wx:else class="record-list">
       <view wx:for="{{records}}" wx:key="date" class="record">
-        <view class="record-main"><view class="record-date">{{item.date}}</view><view class="record-meta">阳谱 {{item.yang}}% · 阴谱 {{item.yin}}% · {{item.fingerText}}</view><view class="record-meta"><text class="trend-symbol {{item.trend}}">{{item.trendText}}</text> · 水位 {{item.position}}%</view></view>
+        <view class="record-main"><view class="record-date">{{item.date}}</view><view class="record-meta">阳谱 {{item.yang}}% · 阴谱 {{item.yin}}% · {{item.fingerText}}</view><view class="record-meta trend-meta"><image class="record-trend-icon" src="{{item.trendIcon}}" mode="aspectFit" /><text>· 水位 {{item.position}}%</text></view></view>
         <view class="record-actions"><text data-record="{{item}}" bindtap="edit">编辑</text><text class="delete" data-date="{{item.date}}" bindtap="remove">删除</text></view>
       </view>
     </view>

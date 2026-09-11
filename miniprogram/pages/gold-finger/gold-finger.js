@@ -2,6 +2,8 @@ const api = require('../../utils/api');
 
 const GOLD_FINGER_ICON = 'https://app.nankaitechschool.com/uploads/up_1787930384458_5f0008fd90bf8d07.png';
 const SILVER_FINGER_ICON = 'https://app.nankaitechschool.com/uploads/up_1787930384616_32050eca372a0969.png';
+const TREND_UP_ICON = '/images/trend-up.png';
+const TREND_DOWN_ICON = '/images/trend-down.png';
 const store = require('../../utils/store');
 
 Page({
@@ -66,7 +68,7 @@ Page({
       yang,
       yin,
       fingerIcon: record.finger === 'silver' ? SILVER_FINGER_ICON : GOLD_FINGER_ICON,
-      trendText: record.trend === 'down' ? '↓' : '↑',
+      trendIcon: record.trend === 'down' ? TREND_DOWN_ICON : TREND_UP_ICON,
       yangClass: yang > 50 ? 'strong' : '',
       yinClass: yin > 50 ? 'strong' : '',
     };

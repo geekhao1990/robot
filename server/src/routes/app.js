@@ -231,7 +231,7 @@ module.exports = function register(router, HttpError) {
     const yang = goldPercent(body.yang, '阳谱');
     const position = goldPercent(body.position, '水位');
     if (!['gold', 'silver'].includes(body.finger)) throw new HttpError(400, '请选择金手指或银手指');
-    if (!['up', 'down'].includes(body.trend)) throw new HttpError(400, '请选择趋势（↑或↓）');
+    if (!['up', 'down'].includes(body.trend)) throw new HttpError(400, '请选择趋势（上涨或下跌）');
     d.goldFingerRecords = Array.isArray(d.goldFingerRecords) ? d.goldFingerRecords : [];
     const record = {
       id: `gf_${date.replace(/-/g, '')}`,
