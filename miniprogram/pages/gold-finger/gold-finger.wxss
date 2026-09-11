@@ -50,7 +50,7 @@
 .history-title { padding-left: 22rpx; color: #242424; font-size: 36rpx; font-weight: 850; border-left: 9rpx solid #ff2442; }
 .history-grid { display: flex; align-items: center; width: 100%; }
 .history-grid text,.history-finger-cell { flex: .72 1 0; min-width: 0; text-align: center; }
-.history-grid .history-date-col,.history-grid .history-date { flex: 1.55 1 0; text-align: left; }
+.history-grid .history-date-col,.history-grid .history-date { flex: 1.55 1 0; text-align: center; }
 .history-grid .history-finger-col,.history-grid .history-finger-cell { flex: .68 1 0; }
 .history-grid .history-trend-col,.history-grid .history-trend { flex: 1.05 1 0; }
 .history-grid .history-position-col,.history-grid .history-position { flex: .65 1 0; }
@@ -68,7 +68,10 @@
 .history-position { color: #222; font-weight: 650; }
 .history-more { display: flex; align-items: center; justify-content: center; min-height: 104rpx; color: #999; font-size: 28rpx; }
 .history-more view { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 92rpx; }
-.history-end { color: #bbb3aa; }
+.history-more .history-pagination { justify-content: space-between; min-height: 104rpx; }
+.history-page-button { display: flex; align-items: center; justify-content: center; min-width: 112rpx; min-height: 64rpx; color: #555; }
+.history-page-button.disabled { color: #ccc; }
+.history-page-number { color: #999; font-size: 24rpx; }
 .banner-swiper { width: 100%; height: 250rpx; margin-top: 28rpx; margin-bottom: 8rpx; overflow: hidden; background: #eee; border-radius: 20rpx; }
 .banner-image { display: block; width: 100%; height: 100%; }
 .disclaimer { padding: 24rpx 0 50rpx; color: #aaa095; font-size: 20rpx; text-align: center; }

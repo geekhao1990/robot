@@ -15,8 +15,9 @@ Page({
     banners: [],
     historyExpanded: false,
     historyLoading: false,
-    nextHistoryMonth: '',
     hasMoreHistory: false,
+    historyPage: 1,
+    historyTotalPages: 1,
   },
 
   onLoad() {
@@ -41,8 +42,9 @@ Page({
         records,
         banners: (result && result.banners) || [],
         historyExpanded: false,
-        nextHistoryMonth: (result && result.historyMonth) || '',
         hasMoreHistory: result && result.hasMoreHistory === true,
+        historyPage: 1,
+        historyTotalPages: 1,
       });
     }).catch((error) => {
       this.setData({ loading: false });
@@ -71,18 +73,24 @@ Page({
   },
 
   loadMoreHistory() {
-    if (this.data.historyLoading || !this.data.nextHistoryMonth) return;
+    this.loadHistoryPage(1);
+  },
+
+  changeHistoryPage(e) {
+    this.loadHistoryPage(Number(e.currentTarget.dataset.page));
+  },
+
+  loadHistoryPage(page) {
+    if (this.data.historyLoading || !Number.isInteger(page) || page < 1) return;
+    if (this.data.historyExpanded && page > this.data.historyTotalPages) return;
     this.setData({ historyExpanded: true, historyLoading: true });
-    api.getGoldFingerHistory(this.data.nextHistoryMonth).then((result) => {
-      const map = {};
-      this.data.records.forEach((item) => { map[item.date] = item; });
-      ((result && result.records) || []).forEach((item) => { map[item.date] = this.decorateRecord(item); });
-      const records = Object.keys(map).map((date) => map[date]).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    api.getGoldFingerHistory(page).then((result) => {
+      const records = ((result && result.records) || []).map((item) => this.decorateRecord(item));
       this.setData({
         records,
         historyLoading: false,
-        hasMoreHistory: result && result.hasMore === true,
-        nextHistoryMonth: (result && result.previousMonth) || '',
+        historyPage: Number(result && result.page) || 1,
+        historyTotalPages: Number(result && result.totalPages) || 1,
       });
     }).catch(() => {
       this.setData({ historyLoading: false });

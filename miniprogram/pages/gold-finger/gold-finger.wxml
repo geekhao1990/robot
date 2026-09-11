@@ -42,8 +42,11 @@
         <view wx:if="{{hasMoreHistory || historyExpanded}}" class="history-more">
           <view wx:if="{{historyLoading}}">加载中...</view>
           <view wx:elif="{{!historyExpanded}}" bindtap="loadMoreHistory">查看更多历史</view>
-          <view wx:elif="{{hasMoreHistory}}" bindtap="loadMoreHistory">加载上一个月</view>
-          <view wx:else class="history-end">已显示全部历史</view>
+          <view wx:else class="history-pagination">
+            <text class="history-page-button {{historyPage <= 1 ? 'disabled' : ''}}" data-page="{{historyPage - 1}}" bindtap="changeHistoryPage">上一页</text>
+            <text class="history-page-number">第 {{historyPage}} / {{historyTotalPages}} 页</text>
+            <text class="history-page-button {{historyPage >= historyTotalPages ? 'disabled' : ''}}" data-page="{{historyPage + 1}}" bindtap="changeHistoryPage">下一页</text>
+          </view>
         </view>
       </view>
 

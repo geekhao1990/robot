@@ -140,8 +140,8 @@ function getGoldFinger() {
   return request('GET', '/api/gold-finger/latest', { auth: true });
 }
 
-function getGoldFingerHistory(month) {
-  return request('GET', '/api/gold-finger/history', { auth: true, data: { month } });
+function getGoldFingerHistory(page = 1) {
+  return request('GET', '/api/gold-finger/history', { auth: true, data: { page } });
 }
 
 function getOfficialGoldFinger() {

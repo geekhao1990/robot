@@ -28,12 +28,6 @@ module.exports = function register(router, HttpError) {
     })
     .slice()
     .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.updatedAt || 0) - (a.updatedAt || 0));
-  const previousMonth = (month) => {
-    const [year, monthNumber] = month.split('-').map(Number);
-    const date = new Date(Date.UTC(year, monthNumber - 2, 1));
-    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
-  };
-
   // 小程序公共功能设置（广告开关、首页加号入口）。
   router.get('/api/settings', () => pubSettings(db.get()));
 
@@ -112,19 +106,24 @@ module.exports = function register(router, HttpError) {
     };
   });
 
-  // 历史按自然月分页；没有后台记录的非交易日不会出现在结果中。
+  // 点金历史固定每页 10 条；没有后台记录的非交易日不会出现在结果中。
   router.get('/api/gold-finger/history', (ctx) => {
     const data = requireGoldAccess(ctx);
-    const month = String(ctx.query.month || '').trim();
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new HttpError(400, '请选择有效月份');
     const records = sortedGoldRecords(data);
-    const monthRecords = records.filter((item) => String(item.date || '').slice(0, 7) === month);
-    const hasMore = records.some((item) => String(item.date || '') < `${month}-01`);
+    const pageSize = 10;
+    const requestedPage = Math.max(1, Number.parseInt(ctx.query.page, 10) || 1);
+    const total = records.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const page = Math.min(requestedPage, totalPages);
+    const start = (page - 1) * pageSize;
     return {
-      month,
-      records: monthRecords,
-      hasMore,
-      previousMonth: hasMore ? previousMonth(month) : '',
+      records: records.slice(start, start + pageSize),
+      page,
+      pageSize,
+      total,
+      totalPages,
+      hasPrev: page > 1,
+      hasNext: page < totalPages,
     };
   });
 
