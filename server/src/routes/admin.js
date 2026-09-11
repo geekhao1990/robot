@@ -142,7 +142,7 @@ module.exports = function register(router, HttpError) {
     const trend = String(value || '').trim();
     if (trend === '上涨' || trend === 'up') return 'up';
     if (trend === '下跌' || trend === 'down') return 'down';
-    throw new HttpError(400, '中期趋势仅支持“上涨”或“下跌”');
+    throw new HttpError(400, '趋势仅支持“上涨”或“下跌”');
   };
   const importedFinger = (value) => {
     const finger = String(value || '').trim();
@@ -210,7 +210,7 @@ module.exports = function register(router, HttpError) {
         yin: 100 - yang,
         finger: importedFinger(item.finger),
         trend: importedTrend(item.trend),
-        position: importedPercent(item.position, '仓位'),
+        position: importedPercent(item.position, '水位'),
       };
     });
   };
@@ -245,9 +245,9 @@ module.exports = function register(router, HttpError) {
     if (weekday === 0 || weekday === 6) throw new HttpError(400, '周末休市，无需维护金手指数据');
     const yang = goldPercent(b.yang, '阳谱');
     const yin = 100 - yang;
-    const position = goldPercent(b.position, '仓位');
+    const position = goldPercent(b.position, '水位');
     if (!['gold', 'silver'].includes(b.finger)) throw new HttpError(400, '请选择金手指或银手指');
-    if (!['up', 'down'].includes(b.trend)) throw new HttpError(400, '请选择中期趋势（上涨或下跌）');
+    if (!['up', 'down'].includes(b.trend)) throw new HttpError(400, '请选择趋势（↑或↓）');
     d.goldFingerRecords = Array.isArray(d.goldFingerRecords) ? d.goldFingerRecords : [];
     const now = Date.now();
     const record = {

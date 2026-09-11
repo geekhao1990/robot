@@ -960,7 +960,7 @@ function renderGoldFinger(page = _goldFingerPage) {
       <td><strong>${esc(item.date)}</strong></td>
       <td>${Number(item.yang)} / ${100 - Number(item.yang)}</td>
       <td><span class="tag ${item.finger === 'gold' ? 'gold' : ''}">${item.finger === 'gold' ? '金手指' : '银手指'}</span></td>
-      <td><span style="color:${item.trend === 'up' ? '#ff2442' : '#168c4b'};font-weight:700">${item.trend === 'up' ? '上涨' : '下跌'}</span></td>
+      <td><span style="color:${item.trend === 'up' ? '#ff2442' : '#168c4b'};font-size:20px;font-weight:800">${item.trend === 'up' ? '↑' : '↓'}</span></td>
       <td>${Number(item.position)}%</td>
       <td>${fmtDate(item.updatedAt)}</td>
       <td><button class="btn-sm" onclick="editGoldFinger('${esc(item.date)}')">编辑</button><button class="btn-sm del" onclick="deleteGoldFinger('${esc(item.date)}')">删除</button></td>
@@ -976,7 +976,7 @@ function renderGoldFinger(page = _goldFingerPage) {
         <div class="banner-admin-list">${bannerCards || '<div class="hint">暂未配置轮播图</div>'}</div>
       </div>
       <div class="toolbar"><h3>历史记录</h3><div class="hint">共${total}条；点击“编辑”在弹窗中维护既有日期，新增数据请使用 JSON 注入</div></div>
-      <table><thead><tr><th>序号</th><th>日期</th><th>阳谱 / 阴谱</th><th>金银手指</th><th>中期趋势</th><th>仓位</th><th>更新时间</th><th>操作</th></tr></thead><tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:#999;padding:40px">暂无金手指数据</td></tr>'}</tbody></table>`;
+      <table><thead><tr><th>序号</th><th>日期</th><th>阳谱 / 阴谱</th><th>金银手指</th><th>趋势</th><th>水位</th><th>更新时间</th><th>操作</th></tr></thead><tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:#999;padding:40px">暂无金手指数据</td></tr>'}</tbody></table>`;
     document.getElementById('content').innerHTML += pagerHtml(_goldFingerPage, pages, total, 'gotoGoldFingerPage');
   }).catch((error) => alert(error.message));
 }
@@ -1051,8 +1051,8 @@ function openGoldFingerEditor(item) {
     <div class="field"><label>日期</label><input value="${esc(item.date)}" disabled /></div>
     <div class="field"><label>阳谱（0-100，阴谱自动计算）</label><input id="goldModalYang" type="number" min="0" max="100" step="1" value="${Number(item.yang)}" /></div>
     <div class="field"><label>金银手指</label><select id="goldModalFinger"><option value="gold" ${item.finger === 'gold' ? 'selected' : ''}>金手指</option><option value="silver" ${item.finger === 'silver' ? 'selected' : ''}>银手指</option></select></div>
-    <div class="field"><label>中期趋势</label><select id="goldModalTrend"><option value="up" ${item.trend === 'up' ? 'selected' : ''}>上涨</option><option value="down" ${item.trend === 'down' ? 'selected' : ''}>下跌</option></select></div>
-    <div class="field"><label>仓位（0-100）</label><input id="goldModalPosition" type="number" min="0" max="100" step="1" value="${Number(item.position)}" /></div>
+    <div class="field"><label>趋势</label><select id="goldModalTrend"><option value="up" ${item.trend === 'up' ? 'selected' : ''}>↑</option><option value="down" ${item.trend === 'down' ? 'selected' : ''}>↓</option></select></div>
+    <div class="field"><label>水位（0-100）</label><input id="goldModalPosition" type="number" min="0" max="100" step="1" value="${Number(item.position)}" /></div>
   `, () => {
     const body = {
       yang: Number(document.getElementById('goldModalYang').value),

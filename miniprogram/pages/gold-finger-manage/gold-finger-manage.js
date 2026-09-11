@@ -12,7 +12,7 @@ function displayRecord(record) {
     yang,
     yin: 100 - yang,
     fingerText: record.finger === 'silver' ? '银手指' : '金手指',
-    trendText: record.trend === 'down' ? '下跌' : '上涨',
+    trendText: record.trend === 'down' ? '↓' : '↑',
   };
 }
 
@@ -25,14 +25,14 @@ Page({
     saving: false,
     records: [],
     fingerOptions: ['金手指', '银手指'],
-    trendOptions: ['上涨', '下跌'],
+    trendOptions: ['↑', '↓'],
     form: {
       date: today(),
       yang: '50',
       fingerIndex: 0,
       fingerText: '金手指',
       trendIndex: 0,
-      trendText: '上涨',
+      trendText: '↑',
       position: '50',
     },
   },
@@ -89,7 +89,7 @@ Page({
     const yang = Number(form.yang);
     const position = Number(form.position);
     if (!Number.isInteger(yang) || yang < 0 || yang > 100 || !Number.isInteger(position) || position < 0 || position > 100) {
-      return wx.showToast({ title: '阳谱和仓位须为0-100整数', icon: 'none' });
+      return wx.showToast({ title: '阳谱和水位须为0-100整数', icon: 'none' });
     }
     this.setData({ saving: true });
     api.saveOfficialGoldFinger(form.date, {
@@ -117,7 +117,7 @@ Page({
         fingerIndex: record.finger === 'silver' ? 1 : 0,
         fingerText: record.finger === 'silver' ? '银手指' : '金手指',
         trendIndex: record.trend === 'down' ? 1 : 0,
-        trendText: record.trend === 'down' ? '下跌' : '上涨',
+        trendText: record.trend === 'down' ? '↓' : '↑',
         position: String(record.position),
       },
     });
@@ -143,7 +143,7 @@ Page({
   },
 
   reset() {
-    this.setData({ form: { date: today(), yang: '50', fingerIndex: 0, fingerText: '金手指', trendIndex: 0, trendText: '上涨', position: '50' } });
+    this.setData({ form: { date: today(), yang: '50', fingerIndex: 0, fingerText: '金手指', trendIndex: 0, trendText: '↑', position: '50' } });
   },
 
   goBack() {

@@ -229,9 +229,9 @@ module.exports = function register(router, HttpError) {
     const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
     if (weekday === 0 || weekday === 6) throw new HttpError(400, '周末休市，无需维护金手指数据');
     const yang = goldPercent(body.yang, '阳谱');
-    const position = goldPercent(body.position, '仓位');
+    const position = goldPercent(body.position, '水位');
     if (!['gold', 'silver'].includes(body.finger)) throw new HttpError(400, '请选择金手指或银手指');
-    if (!['up', 'down'].includes(body.trend)) throw new HttpError(400, '请选择中期趋势（上涨或下跌）');
+    if (!['up', 'down'].includes(body.trend)) throw new HttpError(400, '请选择趋势（↑或↓）');
     d.goldFingerRecords = Array.isArray(d.goldFingerRecords) ? d.goldFingerRecords : [];
     const record = {
       id: `gf_${date.replace(/-/g, '')}`,

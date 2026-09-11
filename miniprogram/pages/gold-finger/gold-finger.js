@@ -66,7 +66,7 @@ Page({
       yang,
       yin,
       fingerIcon: record.finger === 'silver' ? SILVER_FINGER_ICON : GOLD_FINGER_ICON,
-      trendText: record.trend === 'down' ? '下跌' : '上涨',
+      trendText: record.trend === 'down' ? '↓' : '↑',
       yangClass: yang > 50 ? 'strong' : '',
       yinClass: yin > 50 ? 'strong' : '',
     };
