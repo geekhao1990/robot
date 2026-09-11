@@ -288,6 +288,7 @@ module.exports = function register(router, HttpError) {
         vipPlan: '',
         vipExpire: 0,
         vipPermanent: false,
+        goldExpire: 0,
         official: false,
         darkFundEnabled: false,
         darkFundRemaining: 0,

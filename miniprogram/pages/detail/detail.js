@@ -162,6 +162,8 @@ Page({
     if (!store.isLogin()) return this.requireLogin();
     if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
     return Promise.resolve(this.settingsPromise).then(() => {
+      // VIP 总开关关闭时，普通笔记不做会员校验，仍按广告设置领取。
+      if (!this.data.vipEnabled) return this.handleGetResource(false);
       // 免费笔记：登录后按广告设置领取；会员专享笔记：有效会员直接领取且免广告。
       if (this.data.note && this.data.note.free === true) return this.handleGetResource(false);
       return store.syncMe().then((user) => {
@@ -281,8 +283,8 @@ Page({
         this._checkingGoldFeature = false;
         return store.syncMe().then((user) => {
           const open = () => wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
-          if (user && Number(user.goldExpire) > Date.now()) return open();
-          return this.showRewardedAd(open);
+          if (user && (user.goldAccess || Number(user.goldExpire) > Date.now() || this.isVipActive(user))) return open();
+          return this.showVipOffer();
         });
       })
       .catch((error) => {

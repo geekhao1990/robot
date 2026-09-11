@@ -1146,7 +1146,7 @@ function renderSettings() {
         <div class="field">
           <label>底部金手指入口打开的笔记</label>
           <select id="settingFeatured">${noteOptions}</select>
-          <div class="hint">这篇笔记的主图和「点击领取」均作为会员金手指功能入口；非会员展示9.9元月卡支付。</div>
+          <div class="hint">这篇笔记的主图和「点击领取」均作为金手指功能入口；仅金手指权益或VIP有效的用户能看到入口及金手指笔记。</div>
         </div>
         <div class="field">
           <label>普通笔记激励广告</label>
@@ -1162,15 +1162,7 @@ function renderSettings() {
             <option value="false" ${settings.vipEnabled ? '' : 'selected'}>关闭</option>
             <option value="true" ${settings.vipEnabled ? 'selected' : ''}>开启</option>
           </select>
-          <div class="hint">开启后仅有效VIP可进入金手指数据；课程、资料等领取权限按每篇笔记的「是否免费」设置执行。</div>
-        </div>
-        <div class="field">
-          <label>底部金手指入口</label>
-          <select id="settingGoldEntry">
-            <option value="false" ${settings.goldFingerEntryEnabled ? '' : 'selected'}>关闭</option>
-            <option value="true" ${settings.goldFingerEntryEnabled ? 'selected' : ''}>开启</option>
-          </select>
-          <div class="hint">开启后，所有用户的底部中间显示红色手指入口，点击进入上方指定的金手指笔记；关闭后中间留空。官方账号在小程序「我」页面维护金手指数据。</div>
+          <div class="hint">开启：非免费普通笔记校验VIP，有效VIP免广告领取，无效则提示开通月卡；关闭：普通笔记不校验VIP，按广告设置领取。金手指始终单独按「金手指权益或有效VIP」判断，不受此开关影响。</div>
         </div>
         <div class="field">
           <label>热门搜索</label>
@@ -1187,7 +1179,6 @@ function saveSettings() {
     featuredNoteId: document.getElementById('settingFeatured').value,
     rewardedAdEnabled: document.getElementById('settingAd').value === 'true',
     vipEnabled: document.getElementById('settingVip').value === 'true',
-    goldFingerEntryEnabled: document.getElementById('settingGoldEntry').value === 'true',
     hotSearch: Array.from(new Set(document.getElementById('settingHotSearch').value.split(/[\n,，]/).map((item) => item.trim()).filter(Boolean))),
   };
   api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(body) })

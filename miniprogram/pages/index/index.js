@@ -48,7 +48,9 @@ Page({
       this.setData({ page: 1, hasMore: true });
       this.loadFeed(true);
     } else {
-      this.syncLikes();
+      // 每次回到首页都重新按服务端权益取数，避免开通、到期或取消后仍残留金手指笔记。
+      this.setData({ page: 1, hasMore: true });
+      this.loadFeed(true);
     }
   },
 

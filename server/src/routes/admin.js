@@ -99,9 +99,6 @@ module.exports = function register(router, HttpError) {
     if (typeof b.vipEnabled !== 'boolean') {
       throw new HttpError(400, 'VIP开关必须为布尔值');
     }
-    if (typeof b.goldFingerEntryEnabled !== 'boolean') {
-      throw new HttpError(400, '金手指入口开关必须为布尔值');
-    }
     if (!Array.isArray(b.hotSearch)) {
       throw new HttpError(400, '热门搜索格式不正确');
     }
@@ -115,7 +112,6 @@ module.exports = function register(router, HttpError) {
     d.settings = {
       rewardedAdEnabled: b.rewardedAdEnabled,
       vipEnabled: b.vipEnabled,
-      goldFingerEntryEnabled: b.goldFingerEntryEnabled,
       featuredNoteId: b.featuredNoteId,
     };
     d.hotSearch = hotSearch;

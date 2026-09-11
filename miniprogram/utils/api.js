@@ -82,18 +82,28 @@ function allNotes() {
   return [...store.getMyNotes(), ...data.notes];
 }
 
+function localGoldAccess() {
+  const user = store.getUser();
+  return !!(user && (
+    user.goldAccess ||
+    Number(user.goldExpire) > Date.now() ||
+    user.vipActive ||
+    (user.vip && (user.vipPermanent || Number(user.vipExpire) > Date.now()))
+  ));
+}
+
 // 首页 feed：discover 发现 | following 关注
 function getFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
   if (remote()) {
     // 发现流允许游客访问；关注流才需要登录态。
-    return request('GET', '/api/feed', { data: { tab, page, size }, auth: tab === 'following' })
+    return request('GET', '/api/feed', { data: { tab, page, size }, auth: true })
       .then((r) => ({ list: (r.list || []).map(decorate), hasMore: r.hasMore, total: r.total }));
   }
   return mockFeed({ tab, page, size });
 }
 
 function mockFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
-  let list = allNotes();
+  let list = allNotes().filter((note) => note.visible !== false && (note.type !== 'gold' || localGoldAccess()));
   if (tab === 'following') {
     const followed = new Set(store.followedIds());
     list = list.filter((n) => followed.has(n.authorId)).sort((a, b) => b.time - a.time);
@@ -121,9 +131,9 @@ function mockFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
 
 function getNoteById(id) {
   if (remote()) {
-    return request('GET', '/api/notes/' + id).then((n) => decorate(n));
+    return request('GET', '/api/notes/' + id, { auth: true }).then((n) => decorate(n));
   }
-  const note = allNotes().find((n) => n.id === id);
+  const note = allNotes().find((n) => n.id === id && n.visible !== false && (n.type !== 'gold' || localGoldAccess()));
   return delay(decorate(note), 0);
 }
 
@@ -171,7 +181,7 @@ function baseAppSettings() {
   return {
     rewardedAdEnabled: config.rewardedAdEnabled === true,
     vipEnabled: false,
-    goldFingerEntryEnabled: false,
+    goldAccess: false,
     featuredNoteId: config.featuredNoteId || 'n3',
   };
 }
@@ -179,13 +189,13 @@ function normalizeAppSettings(settings, fallback = baseAppSettings()) {
   return {
     rewardedAdEnabled: settings && typeof settings.rewardedAdEnabled === 'boolean' ? settings.rewardedAdEnabled : fallback.rewardedAdEnabled,
     vipEnabled: settings && typeof settings.vipEnabled === 'boolean' ? settings.vipEnabled : fallback.vipEnabled,
-    goldFingerEntryEnabled: settings && typeof settings.goldFingerEntryEnabled === 'boolean' ? settings.goldFingerEntryEnabled : fallback.goldFingerEntryEnabled,
+    goldAccess: settings && settings.goldAccess === true,
     featuredNoteId: settings && typeof settings.featuredNoteId === 'string' ? settings.featuredNoteId : fallback.featuredNoteId,
   };
 }
 function getCachedAppSettings() {
   try {
-    return normalizeAppSettings(wx.getStorageSync(APP_SETTINGS_CACHE_KEY), baseAppSettings());
+    return { ...normalizeAppSettings(wx.getStorageSync(APP_SETTINGS_CACHE_KEY), baseAppSettings()), goldAccess: false, featuredNoteId: '' };
   } catch (error) {
     return baseAppSettings();
   }
@@ -194,7 +204,7 @@ function getCachedAppSettings() {
 // 全局功能设置。先使用成功请求的本地缓存，再用后端刷新；失败时保留缓存。
 function getAppSettings() {
   const fallback = getCachedAppSettings();
-  return request('GET', '/api/settings', { timeout: 3000 })
+  return request('GET', '/api/settings', { timeout: 3000, auth: true })
     .then((settings) => {
       const normalized = normalizeAppSettings(settings, fallback);
       try { wx.setStorageSync(APP_SETTINGS_CACHE_KEY, normalized); } catch (error) {}
@@ -207,7 +217,7 @@ function search(keyword) {
   const kw = (keyword || '').trim();
   if (!kw) return delay([]);
   if (remote()) {
-    return request('GET', '/api/search', { data: { kw } })
+    return request('GET', '/api/search', { data: { kw }, auth: true })
       .then((list) => (list || []).map(decorate));
   }
   return mockSearch(kw);
@@ -216,12 +226,13 @@ function search(keyword) {
 function mockSearch(kw) {
   const list = allNotes()
     .filter(
-      (n) =>
+      (n) => n.visible !== false && (n.type !== 'gold' || localGoldAccess()) && (
         n.title.includes(kw) ||
         n.content.includes(kw) ||
         (n.category || '').includes(kw) ||
         (n.tags || []).some((t) => t.includes(kw)) ||
         n.author.name.includes(kw)
+      )
     )
     .map(decorate);
   return delay(list);

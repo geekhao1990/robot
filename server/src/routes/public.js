@@ -1,6 +1,6 @@
 // server/src/routes/public.js —— 小程序只读接口
 const db = require('../db');
-const { vipActive, pubUser, pubNote, pubSettings } = require('../util');
+const { vipActive, goldAccess, pubUser, pubNote, pubSettings } = require('../util');
 const auth = require('../auth');
 const { typeLabel } = require('../content-types');
 const { resourceList } = require('../resource-links');
@@ -13,8 +13,13 @@ module.exports = function register(router, HttpError) {
     if (!user) throw new HttpError(401, '用户不存在');
     return user;
   };
+  const optionalReader = (ctx, data = db.get()) => {
+    const uid = auth.userIdFor(ctx.headers && ctx.headers.authorization);
+    return uid ? data.users.find((u) => u.id === uid) || null : null;
+  };
   const requireGoldAccess = (ctx) => {
-    requireReader(ctx);
+    const reader = requireReader(ctx);
+    if (!goldAccess(reader)) throw new HttpError(403, '金手指权益未开通或已过期');
     return db.get();
   };
   const sortedGoldRecords = (data) => (data.goldFingerRecords || [])
@@ -28,16 +33,26 @@ module.exports = function register(router, HttpError) {
     })
     .slice()
     .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.updatedAt || 0) - (a.updatedAt || 0));
-  // 小程序公共功能设置（广告开关、首页加号入口）。
-  router.get('/api/settings', () => pubSettings(db.get()));
+  // 小程序公共功能设置；金手指入口按当前用户权益返回，不再设全局开关。
+  router.get('/api/settings', (ctx) => {
+    const data = db.get();
+    const allowed = goldAccess(optionalReader(ctx, data));
+    const settings = pubSettings(data);
+    return {
+      ...settings,
+      goldAccess: allowed,
+      featuredNoteId: allowed ? settings.featuredNoteId : '',
+    };
+  });
 
   // 首页 feed
   router.get('/api/feed', (ctx) => {
     const { tab = 'discover', page = 1, size = 10 } = ctx.query;
     const d = db.get();
-    let list = d.notes.filter((note) => note.visible !== false);
+    let reader = optionalReader(ctx, d);
+    let list = d.notes.filter((note) => note.visible !== false && (note.type !== 'gold' || goldAccess(reader)));
     if (tab === 'following') {
-      const reader = requireReader(ctx);
+      reader = requireReader(ctx);
       const state = (d.userState && d.userState[reader.id]) || {};
       const follows = state.follows || {};
       list = list.filter((n) => !!follows[n.authorId]).sort((a, b) => b.time - a.time);
@@ -65,11 +80,13 @@ module.exports = function register(router, HttpError) {
   router.get('/api/hotSearch', () => db.get().hotSearch);
 
   router.get('/api/search', (ctx) => {
+    const data = db.get();
+    const reader = optionalReader(ctx, data);
     const kw = String(ctx.query.kw || '').trim().toLowerCase();
     if (!kw) return [];
     const contains = (value) => String(value || '').toLowerCase().includes(kw);
-    return db.get().notes.filter(
-      (n) => n.visible !== false && (
+    return data.notes.filter(
+      (n) => n.visible !== false && (n.type !== 'gold' || goldAccess(reader)) && (
         contains(n.title) ||
         contains(n.content) ||
         contains(n.category) ||
@@ -81,12 +98,14 @@ module.exports = function register(router, HttpError) {
   });
 
   router.get('/api/notes/:id', (ctx) => {
-    const n = db.get().notes.find((x) => x.id === ctx.params.id && x.visible !== false);
+    const data = db.get();
+    const reader = optionalReader(ctx, data);
+    const n = data.notes.find((x) => x.id === ctx.params.id && x.visible !== false && (x.type !== 'gold' || goldAccess(reader)));
     if (!n) { const e = new Error('not found'); e.status = 404; throw e; }
     return pubNote(n);
   });
 
-  // 独立金手指功能：所有登录用户均可查看；前端按激励广告开关完成广告后进入。
+  // 独立金手指功能：金手指卡或有效 VIP 用户可查看。
   router.get('/api/gold-finger/latest', (ctx) => {
     const data = requireGoldAccess(ctx);
     const records = sortedGoldRecords(data);
@@ -134,7 +153,7 @@ module.exports = function register(router, HttpError) {
     const note = data.notes.find((n) => n.id === ctx.params.id && n.visible !== false);
     if (!note) throw new HttpError(404, 'not found');
     if (note.type === 'gold') throw new HttpError(400, '金手指内容请进入会员专属页面查看');
-    if (note.free !== true && !vipActive(reader)) {
+    if (data.settings && data.settings.vipEnabled === true && note.free !== true && !vipActive(reader)) {
       throw new HttpError(403, '开通VIP后可领取该资源');
     }
     const resources = resourceList(note);
@@ -150,7 +169,7 @@ module.exports = function register(router, HttpError) {
   });
 
   router.get('/api/users/:id/notes', (ctx) => {
-    requireReader(ctx);
-    return db.get().notes.filter((n) => n.authorId === ctx.params.id && n.visible !== false).map(pubNote);
+    const reader = requireReader(ctx);
+    return db.get().notes.filter((n) => n.authorId === ctx.params.id && n.visible !== false && (n.type !== 'gold' || goldAccess(reader))).map(pubNote);
   });
 };

@@ -186,6 +186,7 @@ function ensureContentTypes() {
       vipPlan: '',
       vipExpire: 0,
       vipPermanent: false,
+      goldExpire: 0,
       official: true,
       darkFundEnabled: false,
       darkFundRemaining: 0,
@@ -218,6 +219,10 @@ function ensureContentTypes() {
     }
     if (typeof user.vipPermanent !== 'boolean') {
       user.vipPermanent = user.vipPlan === 'lifetime';
+      changed = true;
+    }
+    if (!Number.isFinite(Number(user.goldExpire))) {
+      user.goldExpire = 0;
       changed = true;
     }
     if (typeof user.darkFundEnabled !== 'boolean') {
@@ -304,8 +309,8 @@ function ensureSettings() {
     db.settings.vipEnabled = false;
     changed = true;
   }
-  if (typeof db.settings.goldFingerEntryEnabled !== 'boolean') {
-    db.settings.goldFingerEntryEnabled = false;
+  if (Object.prototype.hasOwnProperty.call(db.settings, 'goldFingerEntryEnabled')) {
+    delete db.settings.goldFingerEntryEnabled;
     changed = true;
   }
   const configured = notes.find((n) => n.id === db.settings.featuredNoteId);

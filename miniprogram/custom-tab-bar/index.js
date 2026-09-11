@@ -4,7 +4,7 @@ const GOLD_FINGER_ICON = '/images/gold-tab-default.png';
 const GOLD_FINGER_ACTIVE_ICON = '/images/gold-tab.png';
 
 function makeList(settings = {}) {
-  const middle = settings.goldFingerEntryEnabled
+  const middle = settings.goldAccess
     ? { action: 'goldNote', text: '金手指', finger: true, icon: GOLD_FINGER_ICON, activeIcon: GOLD_FINGER_ACTIVE_ICON, noteId: settings.featuredNoteId }
     : { spacer: true, text: '空白' };
   return [

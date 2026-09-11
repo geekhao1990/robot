@@ -8,6 +8,11 @@ function vipActive(user) {
   return !!(user && user.vip && (user.vipPermanent || (user.vipExpire && user.vipExpire > Date.now())));
 }
 
+// 金手指权限：单独开通的金手指权益或有效 VIP，任一有效即可使用。
+function goldAccess(user) {
+  return !!(user && (Number(user.goldExpire) > Date.now() || vipActive(user)));
+}
+
 // 对外输出的用户对象（附带 vipActive）
 function pubUser(user, includePrivate = false) {
   if (!user) return user;
@@ -22,6 +27,7 @@ function pubUser(user, includePrivate = false) {
     ...safe,
     vipActive: vipActive(user),
     goldActive: Number(user.goldExpire) > Date.now(),
+    goldAccess: goldAccess(user),
     darkFundEnabled: user.darkFundEnabled === true,
     darkFundRemaining: darkFundQuota.total,
     darkFundVipRemaining: darkFundQuota.vip,
@@ -49,9 +55,8 @@ function pubSettings(data) {
   return {
     rewardedAdEnabled: raw.rewardedAdEnabled === true,
     vipEnabled: raw.vipEnabled === true,
-    goldFingerEntryEnabled: raw.goldFingerEntryEnabled === true,
     featuredNoteId: featured ? featured.id : '',
   };
 }
 
-module.exports = { vipActive, pubUser, pubNote, pubSettings };
+module.exports = { vipActive, goldAccess, pubUser, pubNote, pubSettings };
