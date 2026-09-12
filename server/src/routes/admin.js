@@ -5,6 +5,8 @@ const { pubSettings } = require('../util');
 const { TYPE_LABELS, normalizeType, typeLabel, typeForCategory } = require('../content-types');
 const { getPlan, activateMembership, refreshDarkFundQuota, setManualDarkFundQuota } = require('../membership');
 const { normalizeResourceLinks } = require('../resource-links');
+const { analyzeDarkFundImage, attachOrderContext, buildDarkFundReport, normalizeAnalysis } = require('../deepseek-vision');
+const { notifyQuestionableOrder } = require('../voice-alert');
 const crypto = require('crypto');
 
 module.exports = function register(router, HttpError) {
@@ -89,19 +91,25 @@ module.exports = function register(router, HttpError) {
     };
   });
 
-  // DeepSeek 图片理解测试。图片必须先通过本站安全上传接口保存。
+  // 工单内 DeepSeek 图片识别。图片必须先通过本站安全上传接口保存。
   router.post('/api/admin/ai-image-test', async (ctx) => {
     requireAuth(ctx);
     const body = ctx.body || {};
     const order = (db.get().darkFundOrders || []).find((item) => item.id === String(body.orderId || ''));
-    if (!order) throw new HttpError(404, '请选择对应的暗盘查询工单');
-    const { analyzeDarkFundImage, attachOrderContext } = require('../deepseek-vision');
+    if (!order) throw new HttpError(404, '请选择对应的工单');
+    if (order.status === 'READY' || order.status === 'SUCCESS') throw new HttpError(409, '该工单已完成');
     const output = await analyzeDarkFundImage(body.imageUrl);
-    output.result = attachOrderContext(output.result, order);
-    order.aiAnalysis = output.result;
-    order.aiAnalyzedAt = Date.now();
-    db.save();
-    return output;
+    const saved = await saveAiWorkOrderResult(order, output.result, body.imageUrl);
+    return { model: output.model, ...saved };
+  });
+
+  router.post('/api/admin/dark-fund-orders/:id/ai-review', async (ctx) => {
+    requireAuth(ctx);
+    const body = ctx.body || {};
+    const order = (db.get().darkFundOrders || []).find((item) => item.id === ctx.params.id);
+    if (!order) throw new HttpError(404, '工单不存在');
+    if (order.status === 'READY' || order.status === 'SUCCESS') throw new HttpError(409, '该工单已完成');
+    return saveAiWorkOrderResult(order, normalizeAnalysis(body.analysis || {}), body.imageUrl);
   });
 
   router.put('/api/admin/settings', (ctx) => {
@@ -228,6 +236,25 @@ module.exports = function register(router, HttpError) {
         position: importedPercent(item.position, '水位'),
       };
     });
+  };
+
+  const saveAiWorkOrderResult = async (order, result, imageUrl) => {
+    const normalized = attachOrderContext(result, order);
+    const passed = normalized.validation && normalized.validation.passed === true;
+    const draftText = passed ? buildDarkFundReport(normalized) : '';
+    let voiceAlert = order.aiVoiceAlert || null;
+    if (!passed && (!voiceAlert || voiceAlert.sent !== true)) {
+      voiceAlert = await notifyQuestionableOrder(order.id);
+      voiceAlert.at = Date.now();
+    }
+    order.aiAnalysis = normalized;
+    order.aiDraftText = draftText;
+    order.aiImageUrl = String(imageUrl || order.aiImageUrl || '');
+    order.aiReviewedAt = Date.now();
+    order.aiReviewStatus = passed ? 'PASS' : 'QUESTIONABLE';
+    order.aiVoiceAlert = voiceAlert;
+    db.save();
+    return { result: normalized, draftText, voiceAlert };
   };
 
   router.get('/api/admin/gold-finger', (ctx) => {

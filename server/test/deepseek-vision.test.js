@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { attachOrderContext, classifyDailyFunds, normalizeAnalysis, uploadedImagePath } = require('../src/deepseek-vision');
+const { attachOrderContext, buildDarkFundReport, classifyDailyFunds, normalizeAnalysis, uploadedImagePath } = require('../src/deepseek-vision');
 
 test('normalizes a valid same-direction outflow result', () => {
   const result = normalizeAnalysis({
@@ -58,6 +58,22 @@ test('rejects an inconsistent result', () => {
   });
   assert.equal(result.validation.fundSumPassed, false);
   assert.equal(result.validation.passed, false);
+  assert.ok(result.validation.issues.includes('明盘与暗盘加总存在误差'));
+});
+
+test('builds a complete intraday report only after every field passes validation', () => {
+  const result = attachOrderContext(normalizeAnalysis({
+    stockName: '华胜天成', capturedAt: '11:24', quoteType: '盘中', price: 20.48,
+    pctChange: -9.98, turnoverAmount: 8.16, turnoverAmountUnit: '万元', turnoverRate: 5.25,
+    unit: '亿元', mainNet: -16.98, visibleNet: -9.73, darkNet: -7.25, retailNet: 16.98,
+  }), { id: 'DF123', stockCode: '600410', tradeDate: '2026-09-11', createdAt: 1789000000000 });
+  const report = buildDarkFundReport(result);
+  assert.match(report, /2026年9月11日 11:24/);
+  assert.match(report, /华胜天成（600410）现报20.48元/);
+  assert.match(report, /成交额8.16万元/);
+  assert.match(report, /暗盘资金净流出7.25亿元/);
+  assert.doesNotMatch(report, /【|】/);
+  assert.equal(buildDarkFundReport(normalizeAnalysis({ stockName: '缺字段' })), '');
 });
 
 test('does not accept arbitrary local paths', () => {

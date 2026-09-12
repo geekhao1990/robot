@@ -97,6 +97,38 @@ function attachOrderContext(result, order) {
   return output;
 }
 
+function displaySignedAmount(value, unit) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return '';
+  const directionText = amount > 0 ? '净流入' : amount < 0 ? '净流出' : '基本持平';
+  const amountText = Math.abs(amount).toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+  return amount === 0 ? directionText : `${directionText}${amountText}${unit}`;
+}
+
+function buildDarkFundReport(result) {
+  const data = result || {};
+  if (!data.validation || data.validation.passed !== true) return '';
+  const date = String(data.queryDate || '').replace(/^(\d{4})-(\d{2})-(\d{2})$/, (_, y, m, d) => `${y}年${Number(m)}月${Number(d)}日`);
+  const change = Number(data.pctChange);
+  const changeText = change > 0 ? `上涨${Math.abs(change)}%` : change < 0 ? `下跌${Math.abs(change)}%` : '涨跌幅为0%';
+  const quoteLead = data.quoteType === '收盘'
+    ? `${date}，${data.stockName}（${data.stockCode}）收盘报${data.price}元，全天${changeText}`
+    : `${date}${data.capturedAt ? ` ${data.capturedAt}` : ''}，${data.stockName}（${data.stockCode}）现报${data.price}元，较当日基准${changeText}`;
+  const timingNote = data.quoteType === '收盘'
+    ? '以上为收盘时点数据。'
+    : '当前仍处于盘中，价格与成交数据以截图时点为准。';
+  const processed = data.processedResult || {};
+  return `${quoteLead}，成交额${data.turnoverAmount}${data.turnoverAmountUnit}，换手率${data.turnoverRate}%。${timingNote}
+
+从资金层面看，当日明盘大单资金${displaySignedAmount(data.visibleNet, data.unit)}，暗盘资金${displaySignedAmount(data.darkNet, data.unit)}，两者呈现${data.relation}。${processed.corePerformance || ''}${processed.description ? `，${processed.description}` : ''}
+
+从当日资金结构看，本次识别结果归类为“${processed.fundSituation || data.relation}”。该结果仅客观反映截图时点的明盘与暗盘资金关系，不单独用于判断后续价格走势。
+
+暗盘资金只看当日有局限性，建议结合连续5个交易日的暗盘数据进行判断。
+
+风险提示：以上分析结果仅代表大模型观点，仅供参考，不作为投资建议。本文不涉及投资咨询，提及股票不视为明示或暗示推荐，也不应理解为对未来收益的预期或保证。每个指标都有局限性，请理性判断，注意风险。`;
+}
+
 function closeEnough(left, right, reference) {
   if (![left, right, reference].every(Number.isFinite)) return null;
   const tolerance = Math.max(0.02, Math.abs(reference) * 0.01);
@@ -156,6 +188,13 @@ function normalizeAnalysis(raw) {
       ? `${result.mainNet} + ${result.retailNet} = 0`
       : '数值不完整，无法校验',
   };
+  result.validation.issues = [
+    ...(quoteFieldsPresent ? [] : ['行情字段有缺失']),
+    ...(requiredNumbersPresent ? [] : ['资金字段有缺失']),
+    ...(unitPassed ? [] : ['资金单位有误']),
+    ...(fundSumPassed === true ? [] : ['明盘与暗盘加总存在误差']),
+    ...(balancePassed === true ? [] : ['主力与散户加总存在误差']),
+  ];
   return result;
 }
 
@@ -236,4 +275,11 @@ async function analyzeDarkFundImage(imageUrl) {
   return { model: MODEL, result: normalizeAnalysis(raw) };
 }
 
-module.exports = { analyzeDarkFundImage, attachOrderContext, classifyDailyFunds, normalizeAnalysis, uploadedImagePath };
+module.exports = {
+  analyzeDarkFundImage,
+  attachOrderContext,
+  buildDarkFundReport,
+  classifyDailyFunds,
+  normalizeAnalysis,
+  uploadedImagePath,
+};

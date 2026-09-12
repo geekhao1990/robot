@@ -20,6 +20,8 @@ function setup() {
     '../content-types': require('../src/content-types'),
     '../membership': require('../src/membership'),
     '../resource-links': require('../src/resource-links'),
+    '../deepseek-vision': require('../src/deepseek-vision'),
+    '../voice-alert': { notifyQuestionableOrder: async () => ({ sent: false, configured: false }) },
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/admin.js'), 'utf8'), {
     module: mod,
@@ -75,4 +77,21 @@ test('admin controls dark fund entry and can set exact remaining quota', async (
   await assert.rejects(call('PUT', '/api/admin/users/u1/dark-funds/quota', { remaining: -1 }), { status: 400 });
   const closed = await call('PUT', '/api/admin/users/u1/dark-funds', { action: 'cancel' });
   assert.equal(closed.darkFundEnabled, false);
+});
+
+test('admin work order review validates editable AI fields and completes the draft text', async () => {
+  const { data, call } = setup();
+  data.darkFundOrders.push({ id: 'DF-AI-1', userId: 'u1', stockCode: '600410', tradeDate: '2026-09-11', status: 'PENDING', createdAt: 1789000000000 });
+  const response = await call('POST', '/api/admin/dark-fund-orders/DF-AI-1/ai-review', {
+    imageUrl: '/uploads/test.jpg',
+    analysis: {
+      stockName: '华胜天成', capturedAt: '11:24', quoteType: '盘中', price: 20.48,
+      pctChange: -9.98, turnoverAmount: 8.16, turnoverAmountUnit: '万元', turnoverRate: 5.25,
+      unit: '亿元', mainNet: -16.98, visibleNet: -9.73, darkNet: -7.25, retailNet: 16.98,
+    },
+  });
+  assert.equal(response.result.validation.passed, true);
+  assert.match(response.draftText, /华胜天成（600410）/);
+  assert.doesNotMatch(response.draftText, /【|】/);
+  assert.equal(data.darkFundOrders[0].aiReviewStatus, 'PASS');
 });
