@@ -98,6 +98,9 @@ module.exports = function register(router, HttpError) {
     const { analyzeDarkFundImage, attachOrderContext } = require('../deepseek-vision');
     const output = await analyzeDarkFundImage(body.imageUrl);
     output.result = attachOrderContext(output.result, order);
+    order.aiAnalysis = output.result;
+    order.aiAnalyzedAt = Date.now();
+    db.save();
     return output;
   });
 

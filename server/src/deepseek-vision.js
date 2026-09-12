@@ -91,6 +91,7 @@ function attachOrderContext(result, order) {
   const output = result || {};
   output.orderId = String((order && order.id) || '');
   output.stockCode = String((order && order.stockCode) || '');
+  output.stockName = String((order && order.stockName) || '');
   output.queryDate = String((order && order.tradeDate) || '');
   output.requestedAt = Number((order && order.createdAt) || 0);
   output.requestedAtText = formatChinaTime(output.requestedAt);
@@ -168,9 +169,9 @@ async function analyzeDarkFundImage(imageUrl) {
     throw error;
   }
   const imageData = fs.readFileSync(filePath).toString('base64');
-  const prompt = '识别图片顶部股票名称、截图时间和“主力流向”区域；股票代码由工单提供，不要从图片识别或推测。'
+  const prompt = '只识别图片中的截图时间和“主力流向”区域；股票名称和代码均由工单提供，不要从图片识别或推测。'
     + '仅输出JSON对象，必须严格使用这个结构：'
-    + '{"stockName":"","capturedAt":"","unit":"亿元","mainNet":0,"visibleNet":0,"darkNet":0,"retailNet":0}。'
+    + '{"capturedAt":"","unit":"亿元","mainNet":0,"visibleNet":0,"darkNet":0,"retailNet":0}。'
     + 'unit仅允许元、万元、亿元；金额使用图片标题中的原始单位，流出为负，流入为正；'
     + '不要根据颜色猜数值，不要推测图片未显示的数据。';
 

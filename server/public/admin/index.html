@@ -710,7 +710,8 @@ function drawAiImageTest() {
 
 function selectAiOrder(orderId) {
   _aiOrderId = String(orderId || '');
-  _aiImageResult = null;
+  const selected = _aiOrders.find((item) => item.id === _aiOrderId);
+  _aiImageResult = selected && selected.aiAnalysis ? selected.aiAnalysis : null;
   drawAiImageTest();
 }
 
@@ -775,6 +776,8 @@ function startAiImageTest() {
   api('/api/admin/ai-image-test', { method: 'POST', body: JSON.stringify({ imageUrl: _aiImageUrl, orderId: _aiOrderId }) })
     .then((data) => {
       _aiImageResult = data.result;
+      const selected = _aiOrders.find((item) => item.id === _aiOrderId);
+      if (selected) selected.aiAnalysis = data.result;
       const passed = Boolean(data.result && data.result.validation && data.result.validation.passed);
       showAdminToast(passed ? '识别并校验通过' : '识别完成，但需要人工核对', passed ? 'success' : 'error');
     })
