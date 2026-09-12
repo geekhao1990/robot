@@ -150,8 +150,9 @@ mainNet：主力净流入；visibleNet：主力明盘；darkNet：主力暗盘�
             { type: 'image_url', image_url: { url: `data:${mime};base64,${imageData}`, detail: 'original' } },
           ],
         }],
+        thinking: { type: 'disabled' },
         response_format: { type: 'json_object' },
-        max_tokens: 600,
+        max_tokens: 1000,
       }),
       signal: AbortSignal.timeout(60000),
     });
