@@ -792,15 +792,13 @@ function darkFundCopyDate(value) {
 
 function darkFundCopyTemplate(order) {
   const date = darkFundCopyDate(order.tradeDate);
-  return `${date}，【股票名称】（${order.stockCode}）收盘报【收盘价】元，全天【上涨/下跌】【涨跌幅】%，成交额【成交额】亿元，换手率【换手率】%。从近5个交易日走势看，【价格、成交量与盘面节奏概述】。
+  return `${date}，【股票名称】（${order.stockCode}）收盘报【收盘价】元，全天【上涨/下跌】【涨跌幅】%，成交额【成交额】亿元，换手率【换手率】%。从当日盘面看，【价格、成交量与盘面节奏概述】。
 
 从资金层面看，当日明盘大单资金【净流入/净流出】【金额】亿元，暗盘资金【净流入/净流出】【金额】亿元。【结合当日明盘与暗盘方向，说明两者是同向、背离还是出现转折】。
 
-拉长到近5个交易日，明盘资金累计【净流入/净流出】约【金额】亿元，暗盘资金累计【净流入/净流出】约【金额】亿元。【按日期说明近5日资金节奏的变化，突出最值得关注的一至两个交易日】。
+从当日资金结构看，【只客观描述明暗资金的强弱、同向或背离特征】。这类现象只能反映当日资金变化，不单独用于判断后续价格走势。
 
-结合价格、成交量与明暗两类资金变化，【对当日与近5日资金特征作出客观总结，避免将单一指标直接等同于未来涨跌】。明盘资金反映普通软件可见的大单变化，暗盘资金用于补充观察拆单后的资金流向，两者结合有助于减少单一指标带来的误判。
-
-如需持续查看暗盘资金数据，可通过暗盘资金功能查询，用于辅助理解盘面与资金节奏。
+暗盘资金只看当日有局限性，建议结合连续5个交易日的暗盘数据进行判断。
 
 风险提示：以上分析结果仅代表大模型观点，仅供参考，不作为投资建议。本文不涉及投资咨询，提及股票不视为明示或暗示推荐，也不应理解为对未来收益的预期或保证。每个指标都有局限性，请理性判断，注意风险。`;
 }
@@ -811,7 +809,7 @@ function completeDarkFundOrder(orderId) {
   _darkFundResultImages = [];
   const template = darkFundCopyTemplate(order);
   openModal(`录入查询结果 · ${esc(order.stockCode)}`, `
-    <div class="field"><label>结果文字</label><textarea id="darkFundResultText" style="min-height:420px">${esc(template)}</textarea><div class="hint">请将【】内的提示全部替换为实际数据，可保留或调整六段结构。</div></div>
+    <div class="field"><label>结果文字</label><textarea id="darkFundResultText" style="min-height:420px">${esc(template)}</textarea><div class="hint">请将【】内的提示全部替换为实际数据，可保留或调整五段结构。</div></div>
     <div class="field"><label>暗盘资金截图</label><div id="darkFundResultImages" class="img-grid"></div><div class="hint">最多9张，第一张作为笔记封面。</div></div>
   `, () => {
     const content = document.getElementById('darkFundResultText').value.trim();
