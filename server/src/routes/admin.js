@@ -89,6 +89,13 @@ module.exports = function register(router, HttpError) {
     };
   });
 
+  // DeepSeek 图片理解测试。图片必须先通过本站安全上传接口保存。
+  router.post('/api/admin/ai-image-test', async (ctx) => {
+    requireAuth(ctx);
+    const { analyzeDarkFundImage } = require('../deepseek-vision');
+    return analyzeDarkFundImage((ctx.body || {}).imageUrl);
+  });
+
   router.put('/api/admin/settings', (ctx) => {
     requireAuth(ctx);
     const d = db.get();

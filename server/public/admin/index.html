@@ -113,6 +113,25 @@
   .admin-toast { position: fixed; top: 78px; right: 28px; z-index: 100; max-width: min(360px, calc(100vw - 40px)); padding: 12px 16px; color: #168c4b; font-size: 14px; line-height: 1.4; background: #effaf3; border: 1px solid #b9e8c9; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); opacity: 0; pointer-events: none; transform: translateY(-8px); transition: opacity .18s ease, transform .18s ease; }
   .admin-toast.show { opacity: 1; transform: translateY(0); }
   .admin-toast.error { color: #c6283d; background: #fff1f3; border-color: #ffc8d1; }
+  .ai-upload-layout { display: flex; gap: 24px; align-items: flex-start; }
+  .ai-upload-card, .ai-result-card { flex: 1; min-width: 0; padding: 22px; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+  .ai-upload-card h3, .ai-result-card h3 { margin-bottom: 8px; }
+  .ai-dropzone { display: flex; min-height: 360px; margin-top: 18px; align-items: center; justify-content: center; overflow: hidden; text-align: center; background: #fafafa; border: 2px dashed #d8dbe2; border-radius: 12px; transition: .18s ease; }
+  .ai-dropzone.drag-over { background: #fff3f5; border-color: var(--primary); }
+  .ai-dropzone img { display: block; width: 100%; max-height: 520px; object-fit: contain; }
+  .ai-empty-icon { margin-bottom: 10px; color: #b8bdc7; font-size: 46px; }
+  .ai-upload-actions { display: flex; gap: 10px; align-items: center; margin-top: 16px; }
+  .ai-upload-actions .btn-primary:disabled { background: #c9cdd4; cursor: not-allowed; }
+  .ai-result-empty { display: flex; min-height: 360px; align-items: center; justify-content: center; color: #aaa; text-align: center; }
+  .ai-result-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 18px; }
+  .ai-result-item { padding: 12px 14px; background: #f7f8fa; border-radius: 8px; }
+  .ai-result-item .label { color: #8a8f99; font-size: 12px; }
+  .ai-result-item .value { margin-top: 5px; color: #222; font-size: 17px; font-weight: 650; word-break: break-all; }
+  .ai-validation { margin-top: 16px; padding: 14px; line-height: 1.8; background: #f7f8fa; border-radius: 8px; }
+  .ai-validation.pass { color: #168c4b; background: #effaf3; }
+  .ai-validation.fail { color: #c6283d; background: #fff1f3; }
+  .ai-json { width: 100%; min-height: 210px; margin-top: 14px; padding: 12px; color: #444; font: 13px/1.6 Consolas, monospace; background: #f7f8fa; border: 1px solid #eee; border-radius: 8px; resize: vertical; }
+  @media (max-width: 980px) { .ai-upload-layout { flex-direction: column; } .ai-upload-card, .ai-result-card { width: 100%; } }
 </style>
 </head>
 <body>
@@ -138,6 +157,7 @@
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
       <div class="nav-item" data-view="orders" onclick="switchView('orders')">💳 会员订单</div>
       <div class="nav-item" data-view="darkFundOrders" onclick="switchView('darkFundOrders')">📈 暗盘查询</div>
+      <div class="nav-item" data-view="aiImageTest" onclick="switchView('aiImageTest')">🖼️ AI识图测试</div>
       <div class="nav-item" data-view="giftCards" onclick="switchView('giftCards')">🎁 礼品卡管理</div>
       <div class="nav-item" data-view="withdrawals" onclick="switchView('withdrawals')">💰 提现审核<span class="nav-badge" id="withdrawBadge"></span></div>
       <div class="nav-item" data-view="points" onclick="switchView('points')">🧾 积分记录<span class="nav-badge" id="anomalyBadge"></span></div>
@@ -219,7 +239,7 @@ function showAdminToast(message, type = 'success') {
     _adminToastTimer = null;
   }, 3000);
 }
-const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', orders: '会员订单', darkFundOrders: '暗盘查询', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
+const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', orders: '会员订单', darkFundOrders: '暗盘查询', aiImageTest: 'AI识图测试', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
 const BASE_CATEGORIES = ['资料', '课程', '金手指', '广告'];
 TITLES.giftCards = '礼品卡管理';
 function switchView(v) {
@@ -231,6 +251,7 @@ function switchView(v) {
   if (v === 'users') renderUsers();
   if (v === 'orders') renderPaymentOrders();
   if (v === 'darkFundOrders') renderDarkFundOrders();
+  if (v === 'aiImageTest') renderAiImageTest();
   if (v === 'giftCards') renderGiftCards();
   if (v === 'withdrawals') renderWithdrawals();
   if (v === 'points') renderPointRecords();
@@ -636,6 +657,126 @@ function refreshAdminBadges() {
     setBadge('anomalyBadge', summary.pointAnomalies);
     setBadge('withdrawBadge', Number(summary.pendingWithdrawals) + Number(summary.approvedWithdrawals));
   }).catch(() => {});
+}
+
+// DeepSeek 图片理解测试
+let _aiImageUrl = '';
+let _aiImageName = '';
+let _aiImageResult = null;
+let _aiImageBusy = false;
+
+function renderAiImageTest() {
+  const preview = _aiImageUrl
+    ? `<img src="${esc(_aiImageUrl)}" alt="待识别图片" />`
+    : `<div><div class="ai-empty-icon">＋</div><strong>点击选择图片</strong><div class="hint">也可以把图片拖到这里，支持 JPG、PNG、GIF、WebP</div></div>`;
+  const resultPanel = _aiImageResult ? renderAiImageResult(_aiImageResult) : `
+    <div class="ai-result-empty"><div><div class="ai-empty-icon">⌁</div>上传图片并点击“开始识别”后<br />结果会显示在这里</div></div>`;
+  document.getElementById('content').innerHTML = `
+    <div class="toolbar">
+      <div><h3>DeepSeek 图片理解测试</h3><div class="hint">用于测试完整截图中的股票信息、明盘资金和暗盘资金识别能力，不会生成或发布笔记。</div></div>
+    </div>
+    <div class="ai-upload-layout">
+      <div class="ai-upload-card">
+        <h3>上传图片</h3>
+        <div class="hint">选择后可以预览、移除或反复更换图片。</div>
+        <input id="aiImageFile" type="file" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="onAiImagePicked(event)" />
+        <div class="ai-dropzone" onclick="document.getElementById('aiImageFile').click()" ondragover="onAiImageDragOver(event)" ondragleave="onAiImageDragLeave(event)" ondrop="onAiImageDrop(event)">${preview}</div>
+        ${_aiImageName ? `<div class="hint" style="margin-top:9px">当前图片：${esc(_aiImageName)}</div>` : ''}
+        <div class="ai-upload-actions">
+          <button class="btn-primary" onclick="document.getElementById('aiImageFile').click()">${_aiImageUrl ? '更换图片' : '选择图片'}</button>
+          ${_aiImageUrl ? '<button class="btn-sm del" onclick="removeAiImage()">移除</button>' : ''}
+          <button class="btn-primary" style="margin-left:auto" ${(!_aiImageUrl || _aiImageBusy) ? 'disabled' : ''} onclick="startAiImageTest()">${_aiImageBusy ? '处理中…' : '开始识别'}</button>
+        </div>
+      </div>
+      <div class="ai-result-card">
+        <h3>识别结果</h3>
+        <div class="hint">金额保留截图中的原始单位；程序会自动核对加总关系。</div>
+        ${resultPanel}
+      </div>
+    </div>`;
+}
+
+function onAiImageDragOver(event) {
+  event.preventDefault();
+  event.currentTarget.classList.add('drag-over');
+}
+
+function onAiImageDragLeave(event) {
+  event.currentTarget.classList.remove('drag-over');
+}
+
+function onAiImageDrop(event) {
+  event.preventDefault();
+  event.currentTarget.classList.remove('drag-over');
+  const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+  if (file) uploadAiTestImage(file);
+}
+
+function onAiImagePicked(event) {
+  const file = event.target.files && event.target.files[0];
+  if (file) uploadAiTestImage(file);
+  event.target.value = '';
+}
+
+function uploadAiTestImage(file) {
+  if (!/^image\/(jpeg|png|gif|webp)$/i.test(file.type || '')) return showAdminToast('请选择 JPG、PNG、GIF 或 WebP 图片', 'error');
+  if (file.size > 5 * 1024 * 1024) return showAdminToast('图片不能超过5MB', 'error');
+  _aiImageBusy = true;
+  renderAiImageTest();
+  uploadAdminImage(file)
+    .then((url) => {
+      _aiImageUrl = url;
+      _aiImageName = file.name || '已上传图片';
+      _aiImageResult = null;
+      showAdminToast('图片上传成功');
+    })
+    .catch((error) => showAdminToast(error.message || '图片上传失败', 'error'))
+    .finally(() => { _aiImageBusy = false; renderAiImageTest(); });
+}
+
+function removeAiImage() {
+  _aiImageUrl = '';
+  _aiImageName = '';
+  _aiImageResult = null;
+  renderAiImageTest();
+}
+
+function startAiImageTest() {
+  if (!_aiImageUrl || _aiImageBusy) return;
+  _aiImageBusy = true;
+  _aiImageResult = null;
+  renderAiImageTest();
+  api('/api/admin/ai-image-test', { method: 'POST', body: JSON.stringify({ imageUrl: _aiImageUrl }) })
+    .then((data) => {
+      _aiImageResult = data.result;
+      const passed = Boolean(data.result && data.result.validation && data.result.validation.passed);
+      showAdminToast(passed ? '识别并校验通过' : '识别完成，但需要人工核对', passed ? 'success' : 'error');
+    })
+    .catch((error) => showAdminToast(error.message || '识别失败', 'error'))
+    .finally(() => { _aiImageBusy = false; renderAiImageTest(); });
+}
+
+function renderAiImageResult(result) {
+  const validation = result.validation || {};
+  const value = (input) => input === null || input === undefined || input === '' ? '未识别' : esc(input);
+  return `
+    <div class="ai-result-grid">
+      <div class="ai-result-item"><div class="label">股票名称</div><div class="value">${value(result.stockName)}</div></div>
+      <div class="ai-result-item"><div class="label">股票代码</div><div class="value">${value(result.stockCode)}</div></div>
+      <div class="ai-result-item"><div class="label">截图时间</div><div class="value">${value(result.capturedAt)}</div></div>
+      <div class="ai-result-item"><div class="label">金额单位</div><div class="value">${value(result.unit)}</div></div>
+      <div class="ai-result-item"><div class="label">主力净流入</div><div class="value">${value(result.mainNet)}</div></div>
+      <div class="ai-result-item"><div class="label">散户流入</div><div class="value">${value(result.retailNet)}</div></div>
+      <div class="ai-result-item"><div class="label">主力明盘</div><div class="value">${value(result.visibleNet)}</div></div>
+      <div class="ai-result-item"><div class="label">主力暗盘</div><div class="value">${value(result.darkNet)}</div></div>
+      <div class="ai-result-item" style="grid-column:1/-1"><div class="label">方向关系</div><div class="value">${value(result.relation)}</div></div>
+    </div>
+    <div class="ai-validation ${validation.passed ? 'pass' : 'fail'}">
+      <strong>${validation.passed ? '✓ 数据校验通过' : '⚠ 数据需要人工核对'}</strong><br />
+      明盘 + 暗盘：${esc(validation.fundSumExpression || '无法校验')} ${validation.fundSumPassed === true ? '✓' : '✕'}<br />
+      主力 + 散户：${esc(validation.balanceExpression || '无法校验')} ${validation.balancePassed === true ? '✓' : '✕'}
+    </div>
+    <textarea class="ai-json" readonly>${esc(JSON.stringify(result, null, 2))}</textarea>`;
 }
 
 // 会员订单
