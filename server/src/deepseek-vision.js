@@ -124,14 +124,11 @@ async function analyzeDarkFundImage(imageUrl) {
     throw error;
   }
   const imageData = fs.readFileSync(filePath).toString('base64');
-  const prompt = `读取图片中的股票与“主力流向”区域，只返回一个JSON对象，不要解释，不要Markdown。
-字段必须为：
-stockName：股票名称，识别不到返回空字符串；
-stockCode：六位股票代码，识别不到返回空字符串；
-capturedAt：图片显示的时间，识别不到返回空字符串；
-unit：资金区域标题中的单位，只能是“元”“万元”或“亿元”；
-mainNet：主力净流入；visibleNet：主力明盘；darkNet：主力暗盘；retailNet：散户流入。
-所有金额保留图片原始单位和正负号，只返回数字，不带单位。流出必须为负数，流入必须为正数。不要根据颜色猜数值，不要补造图片中不存在的数据。`;
+  const prompt = '识别图片顶部股票名称、六位股票代码、截图时间和“主力流向”区域。'
+    + '仅输出JSON对象，必须严格使用这个结构：'
+    + '{"stockName":"","stockCode":"","capturedAt":"","unit":"亿元","mainNet":0,"visibleNet":0,"darkNet":0,"retailNet":0}。'
+    + '图片没有代码时stockCode留空；unit仅允许元、万元、亿元；金额使用图片标题中的原始单位，流出为负，流入为正；'
+    + '不要根据颜色猜数值，不要推测图片未显示的数据。';
 
   let response;
   try {
