@@ -6,7 +6,7 @@ const { TYPE_LABELS, normalizeType, typeLabel, typeForCategory } = require('../c
 const { getPlan, activateMembership, refreshDarkFundQuota, setManualDarkFundQuota } = require('../membership');
 const { normalizeResourceLinks } = require('../resource-links');
 const { analyzeDarkFundImage, attachOrderContext, buildDarkFundReport, normalizeAnalysis } = require('../deepseek-vision');
-const { notifyQuestionableOrder } = require('../voice-alert');
+const { AI_AUTO_COMPLETE_DELAY_MS } = require('../dark-fund-orders');
 const crypto = require('crypto');
 
 module.exports = function register(router, HttpError) {
@@ -242,19 +242,19 @@ module.exports = function register(router, HttpError) {
     const normalized = attachOrderContext(result, order);
     const passed = normalized.validation && normalized.validation.passed === true;
     const draftText = passed ? buildDarkFundReport(normalized) : '';
-    let voiceAlert = order.aiVoiceAlert || null;
-    if (!passed && (!voiceAlert || voiceAlert.sent !== true)) {
-      voiceAlert = await notifyQuestionableOrder(order.id);
-      voiceAlert.at = Date.now();
-    }
+    const reviewedAt = Date.now();
     order.aiAnalysis = normalized;
     order.aiDraftText = draftText;
     order.aiImageUrl = String(imageUrl || order.aiImageUrl || '');
-    order.aiReviewedAt = Date.now();
+    order.aiReviewedAt = reviewedAt;
     order.aiReviewStatus = passed ? 'PASS' : 'QUESTIONABLE';
-    order.aiVoiceAlert = voiceAlert;
+    if (passed) {
+      order.aiAutoCompleteAt = Number(order.aiAutoCompleteAt) || reviewedAt + AI_AUTO_COMPLETE_DELAY_MS;
+    } else {
+      order.aiAutoCompleteAt = 0;
+    }
     db.save();
-    return { result: normalized, draftText, voiceAlert };
+    return { result: normalized, draftText, autoCompleteAt: order.aiAutoCompleteAt || 0 };
   };
 
   router.get('/api/admin/gold-finger', (ctx) => {

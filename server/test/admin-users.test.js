@@ -21,7 +21,7 @@ function setup() {
     '../membership': require('../src/membership'),
     '../resource-links': require('../src/resource-links'),
     '../deepseek-vision': require('../src/deepseek-vision'),
-    '../voice-alert': { notifyQuestionableOrder: async () => ({ sent: false, configured: false }) },
+    '../dark-fund-orders': require('../src/dark-fund-orders'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/admin.js'), 'utf8'), {
     module: mod,
@@ -93,5 +93,6 @@ test('admin work order review validates editable AI fields and completes the dra
   assert.equal(response.result.validation.passed, true);
   assert.match(response.draftText, /华胜天成（600410）/);
   assert.doesNotMatch(response.draftText, /【|】/);
+  assert(response.autoCompleteAt >= Date.now() + 3 * 60 * 1000 - 1000);
   assert.equal(data.darkFundOrders[0].aiReviewStatus, 'PASS');
 });

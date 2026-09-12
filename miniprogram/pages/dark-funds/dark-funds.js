@@ -75,9 +75,9 @@ Page({
       .then((order) => {
         wx.hideLoading();
         if (!order || !order.orderId) throw new Error('工单提交失败');
-        this.setData({ remaining: Number(order.remaining) || 0, waitingText: '等待查询价格' });
+        this.setData({ remaining: Number(order.remaining) || 0, waitingText: '等待结果' });
         this.loadOrders(true);
-        wx.showModal({ title: '已提交', content: '等待查询价格', showCancel: false });
+        wx.showModal({ title: '已提交', content: '等待结果', showCancel: false });
       })
       .catch((error) => {
         wx.hideLoading();
@@ -94,7 +94,7 @@ Page({
         const normalized = (orders || []).map((item) => ({
           ...item,
           ready: item.ready === true || item.status === 'READY' || item.status === 'SUCCESS',
-          statusText: item.ready === true || item.status === 'READY' || item.status === 'SUCCESS' ? '查询就绪' : '等待查询价格',
+          statusText: item.ready === true || item.status === 'READY' || item.status === 'SUCCESS' ? '点击查看' : '等待结果',
         }));
         const unread = normalized.filter((item) => item.ready && item.unread).length;
         this.setData({ orders: normalized, historyBadge: Math.min(99, unread) });
@@ -107,7 +107,7 @@ Page({
   },
   openOrder(e) {
     const order = this.data.orders.find((item) => item.id === e.currentTarget.dataset.id);
-    if (!order || !order.ready) return wx.showToast({ title: '等待查询价格', icon: 'none' });
+    if (!order || !order.ready) return wx.showToast({ title: '等待结果', icon: 'none' });
     wx.showLoading({ title: '加载中', mask: true });
     api.getDarkFundOrder(order.id)
       .then((readyOrder) => {

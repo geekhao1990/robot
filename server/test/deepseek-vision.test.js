@@ -76,6 +76,21 @@ test('builds a complete intraday report only after every field passes validation
   assert.equal(buildDarkFundReport(normalizeAnalysis({ stockName: '缺字段' })), '');
 });
 
+test('accepts essential fields and omits sentences for missing optional quote fields', () => {
+  const result = attachOrderContext(normalizeAnalysis({
+    stockName: '华胜天成', pctChange: -9.98, unit: '亿元',
+    mainNet: -16.98, visibleNet: -9.73, darkNet: -7.25, retailNet: 16.98,
+  }), { id: 'DF124', stockCode: '600410', tradeDate: '2026-09-11', createdAt: 1789000000000 });
+  assert.equal(result.validation.passed, true);
+  assert.equal(result.validation.quoteFieldsPresent, false);
+  assert.deepEqual(result.validation.optionalMissingFields, ['截图时间', '行情类型', '当前价/收盘价', '成交额', '换手率']);
+  const report = buildDarkFundReport(result);
+  assert.match(report, /华胜天成（600410）下跌9.98%/);
+  assert.match(report, /主力资金净流出16.98亿元/);
+  assert.match(report, /散户资金净流入16.98亿元/);
+  assert.doesNotMatch(report, /价格为|现报|收盘报|成交额|换手率|undefined|null/);
+});
+
 test('does not accept arbitrary local paths', () => {
   assert.equal(uploadedImagePath('file:///etc/passwd'), null);
   assert.equal(uploadedImagePath('/uploads/../secret.txt'), null);

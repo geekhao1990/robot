@@ -44,6 +44,7 @@ function setup() {
     '../wechat-pay': wechatPay,
     '../util': require('../src/util'),
     '../trading-date': require('../src/trading-date'),
+    '../dark-fund-orders': require('../src/dark-fund-orders'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/payment.js'), 'utf8'), {
     module: mod,

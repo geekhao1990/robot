@@ -160,7 +160,7 @@
       <div class="nav-item" data-view="goldFinger" onclick="switchView('goldFinger')">☝️ 金手指数据</div>
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
       <div class="nav-item" data-view="orders" onclick="switchView('orders')">💳 会员订单</div>
-      <div class="nav-item" data-view="darkFundOrders" onclick="switchView('darkFundOrders')">📈 工单</div>
+      <div class="nav-item" data-view="darkFundOrders" onclick="switchView('darkFundOrders')">📈 暗盘工单</div>
       <div class="nav-item" data-view="giftCards" onclick="switchView('giftCards')">🎁 礼品卡管理</div>
       <div class="nav-item" data-view="withdrawals" onclick="switchView('withdrawals')">💰 提现审核<span class="nav-badge" id="withdrawBadge"></span></div>
       <div class="nav-item" data-view="points" onclick="switchView('points')">🧾 积分记录<span class="nav-badge" id="anomalyBadge"></span></div>
@@ -242,7 +242,7 @@ function showAdminToast(message, type = 'success') {
     _adminToastTimer = null;
   }, 3000);
 }
-const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', orders: '会员订单', darkFundOrders: '工单', aiImageTest: '工单处理', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
+const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', orders: '会员订单', darkFundOrders: '暗盘工单', aiImageTest: '暗盘工单处理', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
 const BASE_CATEGORIES = ['资料', '课程', '金手指', '广告'];
 TITLES.giftCards = '礼品卡管理';
 function switchView(v) {
@@ -671,7 +671,7 @@ let _aiImageBusy = false;
 let _aiOrders = [];
 let _aiOrderId = '';
 let _aiDraftText = '';
-let _aiVoiceAlert = null;
+let _aiAutoCompleteAt = 0;
 let _aiFormDirty = false;
 
 function renderAiImageTest() {
@@ -682,7 +682,7 @@ function renderAiImageTest() {
     if (!_aiImageResult && selected.aiAnalysis) _aiImageResult = selected.aiAnalysis;
     if (!_aiImageUrl && selected.aiImageUrl) _aiImageUrl = selected.aiImageUrl;
     if (!_aiDraftText && selected.aiDraftText) _aiDraftText = selected.aiDraftText;
-    _aiVoiceAlert = selected.aiVoiceAlert || _aiVoiceAlert;
+    _aiAutoCompleteAt = Number(selected.aiAutoCompleteAt) || _aiAutoCompleteAt;
     drawAiImageTest();
   }).catch((error) => showAdminToast(error.message || '工单加载失败', 'error'));
 }
@@ -696,8 +696,8 @@ function drawAiImageTest() {
     <div class="ai-result-empty"><div><div class="ai-empty-icon">⌁</div>上传图片并点击“开始识别”后<br />所有识别字段会显示为可修改输入框</div></div>`;
   document.getElementById('content').innerHTML = `
     <div class="toolbar">
-      <div><h3>处理工单 · ${esc(order.id || '')}</h3><div class="hint">${esc(order.stockCode || '')} · ${esc(order.tradeDate || '')} · 正常则自动补全文案，异常则电话提醒核对。</div></div>
-      <button class="btn-cancel" onclick="switchView('darkFundOrders')">返回工单</button>
+      <div><h3>处理暗盘工单 · ${esc(order.id || '')}</h3><div class="hint">${esc(order.stockCode || '')} · ${esc(order.tradeDate || '')} · 截图识别完成且必要字段通过后，3分钟自动完成；缺失的非必要字段不会写入结果。</div></div>
+      <button class="btn-cancel" onclick="switchView('darkFundOrders')">返回暗盘工单</button>
     </div>
     <div class="ai-upload-layout">
       <div class="ai-upload-card">
@@ -727,7 +727,7 @@ function openAiImageForOrder(orderId) {
   _aiImageName = _aiImageUrl ? '已上传工单截图' : '';
   _aiImageResult = order.aiAnalysis || null;
   _aiDraftText = order.aiDraftText || '';
-  _aiVoiceAlert = order.aiVoiceAlert || null;
+  _aiAutoCompleteAt = Number(order.aiAutoCompleteAt) || 0;
   _aiFormDirty = false;
   switchView('aiImageTest');
 }
@@ -765,7 +765,7 @@ function uploadAiTestImage(file) {
       _aiImageName = file.name || '已上传图片';
       _aiImageResult = null;
       _aiDraftText = '';
-      _aiVoiceAlert = null;
+      _aiAutoCompleteAt = 0;
       _aiFormDirty = false;
       showAdminToast('图片上传成功');
     })
@@ -778,7 +778,7 @@ function removeAiImage() {
   _aiImageName = '';
   _aiImageResult = null;
   _aiDraftText = '';
-  _aiVoiceAlert = null;
+  _aiAutoCompleteAt = 0;
   _aiFormDirty = false;
   drawAiImageTest();
 }
@@ -792,13 +792,12 @@ function startAiImageTest() {
     .then((data) => {
       _aiImageResult = data.result;
       _aiDraftText = data.draftText || '';
-      _aiVoiceAlert = data.voiceAlert || null;
+      _aiAutoCompleteAt = Number(data.autoCompleteAt) || 0;
       _aiFormDirty = false;
       const selected = _aiOrders.find((item) => item.id === _aiOrderId);
-      if (selected) Object.assign(selected, { aiAnalysis: data.result, aiDraftText: _aiDraftText, aiImageUrl: _aiImageUrl, aiVoiceAlert: _aiVoiceAlert });
+      if (selected) Object.assign(selected, { aiAnalysis: data.result, aiDraftText: _aiDraftText, aiImageUrl: _aiImageUrl, aiAutoCompleteAt: _aiAutoCompleteAt });
       const passed = Boolean(data.result && data.result.validation && data.result.validation.passed);
-      const alerted = data.voiceAlert && data.voiceAlert.sent;
-      showAdminToast(passed ? '识别通过，结果文字已补全' : (alerted ? '发现疑问，已拨打电话提醒' : '发现疑问，请人工核对；电话通知待配置'), passed ? 'success' : 'error');
+      showAdminToast(passed ? '必要字段通过，结果文字已补全，3分钟后自动完成' : '必要字段缺失或资金校验有误，请人工核对', passed ? 'success' : 'error');
     })
     .catch((error) => showAdminToast(error.message || '识别失败', 'error'))
     .finally(() => { _aiImageBusy = false; drawAiImageTest(); });
@@ -817,7 +816,10 @@ function aiSelect(field, value, values) {
 function renderAiImageResult(result) {
   const validation = result.validation || {};
   const processed = result.processedResult || {};
-  const alertText = _aiVoiceAlert ? (_aiVoiceAlert.sent ? '异常电话已拨出' : esc(_aiVoiceAlert.message || '异常电话未拨出')) : '未触发异常电话';
+  const optionalMissing = Array.isArray(validation.optionalMissingFields) ? validation.optionalMissingFields : [];
+  const autoCompleteText = validation.passed && _aiAutoCompleteAt
+    ? `系统将在 ${new Date(_aiAutoCompleteAt).toLocaleTimeString('zh-CN', { hour12: false })} 自动完成工单`
+    : '';
   return `
     <div class="ai-result-grid">
       <div class="ai-result-item"><div class="label">股票名称</div>${aiInput('stockName', result.stockName)}</div>
@@ -833,7 +835,7 @@ function renderAiImageResult(result) {
       <div class="ai-result-item"><div class="label">换手率（%）</div>${aiInput('turnoverRate', result.turnoverRate, { type: 'number' })}</div>
       <div class="ai-result-item"><div class="label">资金单位</div>${aiSelect('unit', result.unit, ['', '元', '万元', '亿元'])}</div>
       <div class="ai-result-item"><div class="label">主力净流入</div>${aiInput('mainNet', result.mainNet, { type: 'number' })}</div>
-      <div class="ai-result-item"><div class="label">散户流入</div>${aiInput('retailNet', result.retailNet, { type: 'number' })}</div>
+      <div class="ai-result-item"><div class="label">散户净流入</div>${aiInput('retailNet', result.retailNet, { type: 'number' })}</div>
       <div class="ai-result-item"><div class="label">主力明盘</div>${aiInput('visibleNet', result.visibleNet, { type: 'number' })}</div>
       <div class="ai-result-item"><div class="label">主力暗盘</div>${aiInput('darkNet', result.darkNet, { type: 'number' })}</div>
       <div class="ai-result-item"><div class="label">方向关系（自动）</div>${aiInput('', result.relation, { readonly: true })}</div>
@@ -844,11 +846,12 @@ function renderAiImageResult(result) {
       <div class="ai-result-item" style="grid-column:1/-1"><div class="label">判断依据（自动）</div>${aiInput('', processed.basis, { readonly: true })}</div>
     </div>
     <div class="ai-validation ${validation.passed ? 'pass' : 'fail'}">
-      <strong>${validation.passed ? '✓ 数据校验通过' : '⚠ 数据需要人工核对'}</strong><br />
-      行情字段：${validation.quoteFieldsPresent === true ? '完整 ✓' : '有缺失 ✕'}<br />
+      <strong>${validation.passed ? '✓ 必要字段校验通过' : '⚠ 必要字段需要人工核对'}</strong><br />
+      必要字段：${validation.essentialFieldsPresent === true ? '完整 ✓' : '有缺失 ✕'}<br />
       明盘 + 暗盘：${esc(validation.fundSumExpression || '无法校验')} ${validation.fundSumPassed === true ? '✓' : '✕'}<br />
       主力 + 散户：${esc(validation.balanceExpression || '无法校验')} ${validation.balancePassed === true ? '✓' : '✕'}<br />
-      电话提醒：${alertText}
+      非必要字段：${optionalMissing.length ? `${esc(optionalMissing.join('、'))}缺失，将删除对应分句` : '完整'}
+      ${autoCompleteText ? `<br />${esc(autoCompleteText)}` : ''}
     </div>
     <div class="field" style="margin-top:16px"><label>结果文字</label><textarea id="aiDraftText" class="ai-report-editor" oninput="_aiDraftText=this.value">${esc(_aiDraftText)}</textarea></div>
     <div class="ai-result-actions">
@@ -876,7 +879,7 @@ function reviewAiWorkOrder() {
   }).then((data) => {
     _aiImageResult = data.result;
     _aiDraftText = data.draftText || '';
-    _aiVoiceAlert = data.voiceAlert || null;
+    _aiAutoCompleteAt = Number(data.autoCompleteAt) || 0;
     _aiFormDirty = false;
     const passed = data.result && data.result.validation && data.result.validation.passed;
     showAdminToast(passed ? '校验通过，结果文字已补全' : '仍有疑问，请继续核对输入框', passed ? 'success' : 'error');
@@ -979,7 +982,7 @@ function redeemWechatGift(orderId) {
     .catch((error) => alert(error.message));
 }
 
-// 工单：用户提交后等待，管理员上传长截图，AI识别、校验并生成公开笔记。
+// 暗盘工单：用户提交后等待，管理员上传长截图，AI识别、校验并生成公开笔记。
 let _darkFundOrders = [];
 let _darkFundOrderPage = 1;
 let _darkFundResultImages = [];
@@ -1006,7 +1009,7 @@ function drawDarkFundOrders() {
       <td>${start + index + 1}</td>
       <td><strong>${esc(order.stockCode)}</strong><div class="hint">${esc(String(order.tradeDate || '').replaceAll('-', '').slice(2))} 暗盘数据</div></td>
       <td>${esc(user.name || '用户不存在')}<div class="hint">${esc(user.id || order.userId || '')}</div><div class="hint">${esc(user.phone || '')}</div></td>
-      <td>${ready ? '<span class="tag paid">查询就绪</span>' : '<span class="tag">等待查询价格</span>'}</td>
+      <td>${ready ? '<span class="tag paid">点击查看</span>' : '<span class="tag">等待结果</span>'}</td>
       <td>${order.createdAt ? fmtDate(order.createdAt) : '—'}${order.readyAt ? `<div class="hint">就绪 ${fmtDate(order.readyAt)}</div>` : ''}</td>
       <td>${ready
         ? `<button class="btn-sm" onclick='openDarkFundSnapshot("${order.id}")'>查看笔记</button>`
@@ -1014,7 +1017,7 @@ function drawDarkFundOrders() {
     </tr>`;
   }).join('');
   document.getElementById('content').innerHTML = `
-    <div class="toolbar"><div><h3>工单</h3><div class="hint">用户提交后进入等待队列；上传手机长截图后由 AI 识别、校验并补全结果文字。</div></div></div>
+    <div class="toolbar"><div><h3>暗盘工单</h3><div class="hint">用户提交后进入等待队列；上传手机长截图后由 AI 识别、校验并补全结果文字。</div></div></div>
     <table><thead><tr><th>序号</th><th>股票/日期</th><th>查询用户</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#999;padding:40px">暂无查询记录</td></tr>'}</tbody></table>
     ${pagerHtml(_darkFundOrderPage, pages, total, 'gotoDarkFundOrderPage')}`;
