@@ -14,6 +14,24 @@ function darkFundOrderNo() {
   return `DF${Date.now()}${crypto.randomBytes(5).toString('hex')}`.slice(0, 32);
 }
 
+function defaultDarkFundCopy(order) {
+  const parts = String(order.tradeDate || '').split('-').map(Number);
+  const date = parts.length === 3 && parts.every(Number.isFinite)
+    ? `${parts[0]}年${parts[1]}月${parts[2]}日`
+    : String(order.tradeDate || '');
+  return `${date}，【股票名称】（${order.stockCode}）收盘报【收盘价】元，全天【上涨/下跌】【涨跌幅】%，成交额【成交额】亿元，换手率【换手率】%。从近5个交易日走势看，【价格、成交量与盘面节奏概述】。
+
+从资金层面看，当日明盘大单资金【净流入/净流出】【金额】亿元，暗盘资金【净流入/净流出】【金额】亿元。【说明当日两类资金是同向、背离还是出现转折】。
+
+拉长到近5个交易日，明盘资金累计【净流入/净流出】约【金额】亿元，暗盘资金累计【净流入/净流出】约【金额】亿元。【说明近5日资金节奏和关键交易日】。
+
+结合价格、成交量与明暗两类资金变化，【对当日与近5日资金特征作出客观总结】。明盘资金反映普通软件可见的大单变化，暗盘资金用于补充观察拆单后的资金流向，两者结合有助于减少单一指标带来的误判。
+
+如需持续查看暗盘资金数据，可通过暗盘资金功能查询，用于辅助理解盘面与资金节奏。
+
+风险提示：以上分析结果仅代表大模型观点，仅供参考，不作为投资建议。本文不涉及投资咨询，提及股票不视为明示或暗示推荐，也不应理解为对未来收益的预期或保证。每个指标都有局限性，请理性判断，注意风险。`;
+}
+
 function activateOrder(d, order, transactionId) {
   if (order.status === 'SUCCESS') return;
   const user = d.users.find((item) => item.id === order.userId);
@@ -73,7 +91,7 @@ function activateDarkFundOrder(d, order, transactionId) {
     id: `dark_${order.id}`,
     visibility: 'public',
     title: `${order.stockCode}｜${shortDate}暗盘数据`,
-    content: order.snapshotText || `股票代码：${order.stockCode}\n数据日期：${shortDate}\n以下为本次查询的暗盘资金数据。`,
+    content: order.snapshotText || defaultDarkFundCopy(order),
     images,
     cover: images[0] || '',
     coverRatio: 1.25,
@@ -263,8 +281,11 @@ module.exports = function register(router, HttpError) {
       ? body.images.map((item) => String(item || '').trim()).filter((item) => /^(https?:\/\/|\/uploads\/)/i.test(item)).slice(0, 9)
       : [];
     if (!images.length) throw new HttpError(400, '请上传暗盘资金截图');
+    const content = String(body.content || '').trim().slice(0, 5000);
+    if (!content) throw new HttpError(400, '请填写结果文字');
+    if (/[【】]/.test(content)) throw new HttpError(400, '请先替换结果文字中的所有占位内容');
     order.snapshotImages = images;
-    order.snapshotText = String(body.content || '').trim().slice(0, 5000) || `股票代码：${order.stockCode}\n数据日期：${compactDate(order.tradeDate)}\n以下为本次查询的暗盘资金数据。`;
+    order.snapshotText = content;
     activateDarkFundOrder(d, order, 'ADMIN');
     return publicDarkFundOrder(order);
   });

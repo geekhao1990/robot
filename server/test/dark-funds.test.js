@@ -82,6 +82,11 @@ test('entitlement query creates a pending ticket, then admin completion notifies
   assert.equal(pending[0].unread, false);
   await assert.rejects(call('GET', `/api/dark-funds/orders/${created.orderId}`), { status: 409 });
   await assert.rejects(call('PUT', `/api/admin/dark-fund-orders/${created.orderId}/complete`, { images: ['/uploads/result.png'] }, ''), { status: 401 });
+  await assert.rejects(call('PUT', `/api/admin/dark-fund-orders/${created.orderId}/complete`, {
+    images: ['/uploads/result.png'],
+    content: '【股票名称】查询结果',
+  }, 'admin'), { status: 400 });
+  assert.equal(data.darkFundOrders[0].status, 'PENDING');
   const completed = await call('PUT', `/api/admin/dark-fund-orders/${created.orderId}/complete`, {
     images: ['/uploads/result.png'],
     content: '暗盘资金查询结果',

@@ -17,7 +17,7 @@ Page({
         const snapshot = order.snapshot || {};
         const note = snapshot.note || {
           title: `${order.stockCode}｜${order.compactTradeDate}暗盘数据`,
-          content: `股票代码：${order.stockCode}\n数据日期：${order.compactTradeDate}\n以下为本次查询的暗盘资金数据。`,
+          content: `本次暗盘资金查询结果正在整理，请稍后刷新历史订单。`,
           images: [],
           author: { name: 'NiuLai' },
         };
