@@ -7,6 +7,12 @@ test('normalizes a valid same-direction outflow result', () => {
     stockName: '华胜天成',
     stockCode: '600410',
     capturedAt: '11:24',
+    quoteType: '盘中',
+    price: 20.48,
+    pctChange: -9.98,
+    turnoverAmount: 12.1,
+    turnoverAmountUnit: '亿元',
+    turnoverRate: 5.25,
     unit: '亿元',
     mainNet: -16.98,
     visibleNet: -9.73,
@@ -19,6 +25,10 @@ test('normalizes a valid same-direction outflow result', () => {
   assert.equal(result.validation.fundSumPassed, true);
   assert.equal(result.validation.balancePassed, true);
   assert.equal(result.validation.passed, true);
+  assert.equal(result.price, 20.48);
+  assert.equal(result.pctChange, -9.98);
+  assert.equal(result.turnoverAmount, 12.1);
+  assert.equal(result.turnoverRate, 5.25);
 });
 
 test('maps daily visible and dark funds without five-day data', () => {
@@ -30,13 +40,13 @@ test('maps daily visible and dark funds without five-day data', () => {
   assert.equal(classifyDailyFunds(null, -20), null);
 });
 
-test('takes stock identity, query date and request time from the frontend order', () => {
+test('takes stock code, query date and request time from the order but keeps the image stock name', () => {
   const result = attachOrderContext({ stockCode: '999999', stockName: '图片错误名称', mainNet: -10 }, {
     id: 'DF123', stockCode: '600105', stockName: '', tradeDate: '2026-09-10', createdAt: 1789000000000,
   });
   assert.equal(result.orderId, 'DF123');
   assert.equal(result.stockCode, '600105');
-  assert.equal(result.stockName, '');
+  assert.equal(result.stockName, '图片错误名称');
   assert.equal(result.queryDate, '2026-09-10');
   assert.equal(result.requestedAt, 1789000000000);
   assert.match(result.requestedAtText, /^2026-09-/);

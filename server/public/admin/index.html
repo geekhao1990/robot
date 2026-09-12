@@ -684,7 +684,7 @@ function drawAiImageTest() {
   const orderOptions = _aiOrders.map((order) => `<option value="${esc(order.id)}" ${order.id === _aiOrderId ? 'selected' : ''}>${esc(order.stockCode)} · ${esc(order.tradeDate)} · ${esc(order.createdAt ? fmtDate(order.createdAt) : '')}</option>`).join('');
   document.getElementById('content').innerHTML = `
     <div class="toolbar">
-      <div><h3>DeepSeek 图片识别与加工</h3><div class="hint">股票代码、查询日期和请求时间来自用户前台工单；图片只识别股票名称及当日资金。</div></div>
+      <div><h3>DeepSeek 长图识别与加工</h3><div class="hint">长图识别股票名称、截图时间、价格、涨跌幅、成交额、换手率和当日资金；代码与查询日期以前台工单为准。</div></div>
     </div>
     <div class="ai-upload-layout">
       <div class="ai-upload-card">
@@ -796,6 +796,11 @@ function renderAiImageResult(result) {
       <div class="ai-result-item"><div class="label">查询日期（前台）</div><div class="value">${value(result.queryDate)}</div></div>
       <div class="ai-result-item"><div class="label">请求时间（前台）</div><div class="value">${value(result.requestedAtText)}</div></div>
       <div class="ai-result-item"><div class="label">截图时间</div><div class="value">${value(result.capturedAt)}</div></div>
+      <div class="ai-result-item"><div class="label">行情类型</div><div class="value">${value(result.quoteType)}</div></div>
+      <div class="ai-result-item"><div class="label">${result.quoteType === '收盘' ? '收盘价' : '当前价'}</div><div class="value">${value(result.price)}</div></div>
+      <div class="ai-result-item"><div class="label">涨跌幅</div><div class="value">${result.pctChange === null || result.pctChange === undefined ? '未识别' : `${esc(result.pctChange)}%`}</div></div>
+      <div class="ai-result-item"><div class="label">成交额</div><div class="value">${result.turnoverAmount === null || result.turnoverAmount === undefined ? '未识别' : `${esc(result.turnoverAmount)}${esc(result.turnoverAmountUnit || '')}`}</div></div>
+      <div class="ai-result-item"><div class="label">换手率</div><div class="value">${result.turnoverRate === null || result.turnoverRate === undefined ? '未识别' : `${esc(result.turnoverRate)}%`}</div></div>
       <div class="ai-result-item"><div class="label">金额单位</div><div class="value">${value(result.unit)}</div></div>
       <div class="ai-result-item"><div class="label">主力净流入</div><div class="value">${value(result.mainNet)}</div></div>
       <div class="ai-result-item"><div class="label">散户流入</div><div class="value">${value(result.retailNet)}</div></div>
@@ -811,6 +816,7 @@ function renderAiImageResult(result) {
     </div>
     <div class="ai-validation ${validation.passed ? 'pass' : 'fail'}">
       <strong>${validation.passed ? '✓ 数据校验通过' : '⚠ 数据需要人工核对'}</strong><br />
+      行情字段：${validation.quoteFieldsPresent === true ? '完整 ✓' : '有缺失 ✕'}<br />
       明盘 + 暗盘：${esc(validation.fundSumExpression || '无法校验')} ${validation.fundSumPassed === true ? '✓' : '✕'}<br />
       主力 + 散户：${esc(validation.balanceExpression || '无法校验')} ${validation.balancePassed === true ? '✓' : '✕'}
     </div>

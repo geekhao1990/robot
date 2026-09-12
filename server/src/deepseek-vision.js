@@ -91,7 +91,6 @@ function attachOrderContext(result, order) {
   const output = result || {};
   output.orderId = String((order && order.id) || '');
   output.stockCode = String((order && order.stockCode) || '');
-  output.stockName = String((order && order.stockName) || '');
   output.queryDate = String((order && order.tradeDate) || '');
   output.requestedAt = Number((order && order.createdAt) || 0);
   output.requestedAtText = formatChinaTime(output.requestedAt);
@@ -109,6 +108,12 @@ function normalizeAnalysis(raw) {
     stockName: String(raw.stockName || '').trim(),
     stockCode: String(raw.stockCode || '').trim(),
     capturedAt: String(raw.capturedAt || '').trim(),
+    quoteType: ['盘中', '收盘'].includes(String(raw.quoteType || '').trim()) ? String(raw.quoteType).trim() : '',
+    price: finiteNumber(raw.price),
+    pctChange: finiteNumber(raw.pctChange),
+    turnoverAmount: finiteNumber(raw.turnoverAmount),
+    turnoverAmountUnit: String(raw.turnoverAmountUnit || '').trim(),
+    turnoverRate: finiteNumber(raw.turnoverRate),
     unit: String(raw.unit || '').trim(),
     mainNet: finiteNumber(raw.mainNet),
     visibleNet: finiteNumber(raw.visibleNet),
@@ -131,9 +136,15 @@ function normalizeAnalysis(raw) {
   const requiredNumbersPresent = [result.mainNet, result.visibleNet, result.darkNet, result.retailNet]
     .every(Number.isFinite);
   const unitPassed = ['元', '万元', '亿元'].includes(result.unit);
+  const quoteFieldsPresent = Boolean(
+    result.stockName && result.capturedAt && result.quoteType
+    && [result.price, result.pctChange, result.turnoverAmount, result.turnoverRate].every(Number.isFinite)
+    && ['元', '万元', '亿元'].includes(result.turnoverAmountUnit),
+  );
 
   result.validation = {
-    passed: requiredNumbersPresent && unitPassed && fundSumPassed === true && balancePassed === true,
+    passed: quoteFieldsPresent && requiredNumbersPresent && unitPassed && fundSumPassed === true && balancePassed === true,
+    quoteFieldsPresent,
     requiredNumbersPresent,
     unitPassed,
     fundSumPassed,
@@ -169,11 +180,14 @@ async function analyzeDarkFundImage(imageUrl) {
     throw error;
   }
   const imageData = fs.readFileSync(filePath).toString('base64');
-  const prompt = '只识别图片中的截图时间和“主力流向”区域；股票名称和代码均由工单提供，不要从图片识别或推测。'
+  const prompt = '这是一张手机长截图。识别图片中的股票名称、截图时间、当前价或收盘价、涨跌幅、成交额、换手率和“主力流向”区域；'
+    + '股票代码由前台工单提供，不要从图片识别或推测代码。'
     + '仅输出JSON对象，必须严格使用这个结构：'
-    + '{"capturedAt":"","unit":"亿元","mainNet":0,"visibleNet":0,"darkNet":0,"retailNet":0}。'
-    + 'unit仅允许元、万元、亿元；金额使用图片标题中的原始单位，流出为负，流入为正；'
-    + '不要根据颜色猜数值，不要推测图片未显示的数据。';
+    + '{"stockName":"","capturedAt":"","quoteType":"盘中","price":null,"pctChange":null,"turnoverAmount":null,"turnoverAmountUnit":"亿元","turnoverRate":null,"unit":"亿元","mainNet":null,"visibleNet":null,"darkNet":null,"retailNet":null}。'
+    + 'quoteType仅允许盘中或收盘；如图片明确显示已收盘或收盘价则填收盘，否则填盘中。'
+    + 'pctChange和turnoverRate只填百分比数字，不带%；turnoverAmount保留图片数值，turnoverAmountUnit保留元、万元或亿元。'
+    + 'unit是主力资金图表的单位，仅允许元、万元、亿元；资金流出为负，流入为正。'
+    + '只填写图片中明确显示的数据，识别不到的字段必须填null或空字符串，不要根据颜色猜数值，不要推测。';
 
   let response;
   try {
