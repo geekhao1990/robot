@@ -92,8 +92,13 @@ module.exports = function register(router, HttpError) {
   // DeepSeek 图片理解测试。图片必须先通过本站安全上传接口保存。
   router.post('/api/admin/ai-image-test', async (ctx) => {
     requireAuth(ctx);
-    const { analyzeDarkFundImage } = require('../deepseek-vision');
-    return analyzeDarkFundImage((ctx.body || {}).imageUrl);
+    const body = ctx.body || {};
+    const order = (db.get().darkFundOrders || []).find((item) => item.id === String(body.orderId || ''));
+    if (!order) throw new HttpError(404, '请选择对应的暗盘查询工单');
+    const { analyzeDarkFundImage, attachOrderContext } = require('../deepseek-vision');
+    const output = await analyzeDarkFundImage(body.imageUrl);
+    output.result = attachOrderContext(output.result, order);
+    return output;
   });
 
   router.put('/api/admin/settings', (ctx) => {

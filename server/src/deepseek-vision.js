@@ -54,6 +54,49 @@ function relationFor(visibleNet, darkNet) {
   return '方向不明确';
 }
 
+function classifyDailyFunds(visibleNet, darkNet) {
+  if (![visibleNet, darkNet].every(Number.isFinite)) return null;
+  let rule;
+  if (visibleNet > 0 && darkNet > 0) {
+    rule = ['趋势流入', '明暗资金同步流入', '倾向做多', '主力持续吸筹，趋势一致。'];
+  } else if (visibleNet < 0 && darkNet < 0) {
+    rule = ['趋势流出', '明暗资金同步流出', '倾向做空', '主力持续出货，弱势延续。'];
+  } else if (visibleNet < 0 && darkNet > 0) {
+    rule = ['暗盘领跑', '暗盘强于明盘', '潜伏吸筹', '主力提前布局。'];
+  } else if (visibleNet > 0 && darkNet < 0) {
+    rule = ['明盘掩护', '明盘强、暗盘弱', '拉高派发', '借拉升完成出货。'];
+  } else {
+    rule = ['当日分歧', '当日明暗方向不一致', '短线博弈', '多空信号不一致。'];
+  }
+  return {
+    fundSituation: rule[0],
+    corePerformance: rule[1],
+    interpretation: rule[2],
+    description: rule[3],
+    basis: '仅依据当日明盘与暗盘资金，未使用近5日资金数据。',
+  };
+}
+
+function formatChinaTime(timestamp) {
+  const value = Number(timestamp);
+  if (!Number.isFinite(value) || value <= 0) return '';
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  }).format(new Date(value)).replaceAll('/', '-');
+}
+
+function attachOrderContext(result, order) {
+  const output = result || {};
+  output.orderId = String((order && order.id) || '');
+  output.stockCode = String((order && order.stockCode) || '');
+  output.queryDate = String((order && order.tradeDate) || '');
+  output.requestedAt = Number((order && order.createdAt) || 0);
+  output.requestedAtText = formatChinaTime(output.requestedAt);
+  return output;
+}
+
 function closeEnough(left, right, reference) {
   if (![left, right, reference].every(Number.isFinite)) return null;
   const tolerance = Math.max(0.02, Math.abs(reference) * 0.01);
@@ -72,6 +115,7 @@ function normalizeAnalysis(raw) {
     retailNet: finiteNumber(raw.retailNet),
   };
   result.relation = relationFor(result.visibleNet, result.darkNet);
+  result.processedResult = classifyDailyFunds(result.visibleNet, result.darkNet);
 
   const fundSumPassed = closeEnough(
     Number(result.visibleNet) + Number(result.darkNet),
@@ -124,10 +168,10 @@ async function analyzeDarkFundImage(imageUrl) {
     throw error;
   }
   const imageData = fs.readFileSync(filePath).toString('base64');
-  const prompt = '识别图片顶部股票名称、六位股票代码、截图时间和“主力流向”区域。'
+  const prompt = '识别图片顶部股票名称、截图时间和“主力流向”区域；股票代码由工单提供，不要从图片识别或推测。'
     + '仅输出JSON对象，必须严格使用这个结构：'
-    + '{"stockName":"","stockCode":"","capturedAt":"","unit":"亿元","mainNet":0,"visibleNet":0,"darkNet":0,"retailNet":0}。'
-    + '图片没有代码时stockCode留空；unit仅允许元、万元、亿元；金额使用图片标题中的原始单位，流出为负，流入为正；'
+    + '{"stockName":"","capturedAt":"","unit":"亿元","mainNet":0,"visibleNet":0,"darkNet":0,"retailNet":0}。'
+    + 'unit仅允许元、万元、亿元；金额使用图片标题中的原始单位，流出为负，流入为正；'
     + '不要根据颜色猜数值，不要推测图片未显示的数据。';
 
   let response;
@@ -177,4 +221,4 @@ async function analyzeDarkFundImage(imageUrl) {
   return { model: MODEL, result: normalizeAnalysis(raw) };
 }
 
-module.exports = { analyzeDarkFundImage, normalizeAnalysis, uploadedImagePath };
+module.exports = { analyzeDarkFundImage, attachOrderContext, classifyDailyFunds, normalizeAnalysis, uploadedImagePath };

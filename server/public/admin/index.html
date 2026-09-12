@@ -157,7 +157,7 @@
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
       <div class="nav-item" data-view="orders" onclick="switchView('orders')">💳 会员订单</div>
       <div class="nav-item" data-view="darkFundOrders" onclick="switchView('darkFundOrders')">📈 暗盘查询</div>
-      <div class="nav-item" data-view="aiImageTest" onclick="switchView('aiImageTest')">🖼️ AI识图测试</div>
+      <div class="nav-item" data-view="aiImageTest" onclick="switchView('aiImageTest')">🖼️ AI识图处理</div>
       <div class="nav-item" data-view="giftCards" onclick="switchView('giftCards')">🎁 礼品卡管理</div>
       <div class="nav-item" data-view="withdrawals" onclick="switchView('withdrawals')">💰 提现审核<span class="nav-badge" id="withdrawBadge"></span></div>
       <div class="nav-item" data-view="points" onclick="switchView('points')">🧾 积分记录<span class="nav-badge" id="anomalyBadge"></span></div>
@@ -239,7 +239,7 @@ function showAdminToast(message, type = 'success') {
     _adminToastTimer = null;
   }, 3000);
 }
-const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', orders: '会员订单', darkFundOrders: '暗盘查询', aiImageTest: 'AI识图测试', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
+const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', orders: '会员订单', darkFundOrders: '暗盘查询', aiImageTest: 'AI识图处理', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
 const BASE_CATEGORIES = ['资料', '课程', '金手指', '广告'];
 TITLES.giftCards = '礼品卡管理';
 function switchView(v) {
@@ -664,19 +664,31 @@ let _aiImageUrl = '';
 let _aiImageName = '';
 let _aiImageResult = null;
 let _aiImageBusy = false;
+let _aiOrders = [];
+let _aiOrderId = '';
 
 function renderAiImageTest() {
+  api('/api/admin/dark-fund-orders').then((orders) => {
+    _aiOrders = orders || [];
+    if (_aiOrderId && !_aiOrders.some((item) => item.id === _aiOrderId)) _aiOrderId = '';
+    drawAiImageTest();
+  }).catch((error) => showAdminToast(error.message || '查询工单加载失败', 'error'));
+}
+
+function drawAiImageTest() {
   const preview = _aiImageUrl
     ? `<img src="${esc(_aiImageUrl)}" alt="待识别图片" />`
     : `<div><div class="ai-empty-icon">＋</div><strong>点击选择图片</strong><div class="hint">也可以把图片拖到这里，支持 JPG、PNG、GIF、WebP</div></div>`;
   const resultPanel = _aiImageResult ? renderAiImageResult(_aiImageResult) : `
     <div class="ai-result-empty"><div><div class="ai-empty-icon">⌁</div>上传图片并点击“开始识别”后<br />结果会显示在这里</div></div>`;
+  const orderOptions = _aiOrders.map((order) => `<option value="${esc(order.id)}" ${order.id === _aiOrderId ? 'selected' : ''}>${esc(order.stockCode)} · ${esc(order.tradeDate)} · ${esc(order.createdAt ? fmtDate(order.createdAt) : '')}</option>`).join('');
   document.getElementById('content').innerHTML = `
     <div class="toolbar">
-      <div><h3>DeepSeek 图片理解测试</h3><div class="hint">用于测试完整截图中的股票信息、明盘资金和暗盘资金识别能力，不会生成或发布笔记。</div></div>
+      <div><h3>DeepSeek 图片识别与加工</h3><div class="hint">股票代码、查询日期和请求时间来自用户前台工单；图片只识别股票名称及当日资金。</div></div>
     </div>
     <div class="ai-upload-layout">
       <div class="ai-upload-card">
+        <div class="field"><label>对应查询工单</label><select onchange="selectAiOrder(this.value)"><option value="">请选择六位神奇数字工单</option>${orderOptions}</select></div>
         <h3>上传图片</h3>
         <div class="hint">选择后可以预览、移除或反复更换图片。</div>
         <input id="aiImageFile" type="file" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="onAiImagePicked(event)" />
@@ -685,7 +697,7 @@ function renderAiImageTest() {
         <div class="ai-upload-actions">
           <button class="btn-primary" onclick="document.getElementById('aiImageFile').click()">${_aiImageUrl ? '更换图片' : '选择图片'}</button>
           ${_aiImageUrl ? '<button class="btn-sm del" onclick="removeAiImage()">移除</button>' : ''}
-          <button class="btn-primary" style="margin-left:auto" ${(!_aiImageUrl || _aiImageBusy) ? 'disabled' : ''} onclick="startAiImageTest()">${_aiImageBusy ? '处理中…' : '开始识别'}</button>
+          <button class="btn-primary" style="margin-left:auto" ${(!_aiImageUrl || !_aiOrderId || _aiImageBusy) ? 'disabled' : ''} onclick="startAiImageTest()">${_aiImageBusy ? '处理中…' : '开始识别'}</button>
         </div>
       </div>
       <div class="ai-result-card">
@@ -694,6 +706,20 @@ function renderAiImageTest() {
         ${resultPanel}
       </div>
     </div>`;
+}
+
+function selectAiOrder(orderId) {
+  _aiOrderId = String(orderId || '');
+  _aiImageResult = null;
+  drawAiImageTest();
+}
+
+function openAiImageForOrder(orderId) {
+  _aiOrderId = String(orderId || '');
+  _aiImageUrl = '';
+  _aiImageName = '';
+  _aiImageResult = null;
+  switchView('aiImageTest');
 }
 
 function onAiImageDragOver(event) {
@@ -722,7 +748,7 @@ function uploadAiTestImage(file) {
   if (!/^image\/(jpeg|png|gif|webp)$/i.test(file.type || '')) return showAdminToast('请选择 JPG、PNG、GIF 或 WebP 图片', 'error');
   if (file.size > 5 * 1024 * 1024) return showAdminToast('图片不能超过5MB', 'error');
   _aiImageBusy = true;
-  renderAiImageTest();
+  drawAiImageTest();
   uploadAdminImage(file)
     .then((url) => {
       _aiImageUrl = url;
@@ -731,38 +757,41 @@ function uploadAiTestImage(file) {
       showAdminToast('图片上传成功');
     })
     .catch((error) => showAdminToast(error.message || '图片上传失败', 'error'))
-    .finally(() => { _aiImageBusy = false; renderAiImageTest(); });
+    .finally(() => { _aiImageBusy = false; drawAiImageTest(); });
 }
 
 function removeAiImage() {
   _aiImageUrl = '';
   _aiImageName = '';
   _aiImageResult = null;
-  renderAiImageTest();
+  drawAiImageTest();
 }
 
 function startAiImageTest() {
-  if (!_aiImageUrl || _aiImageBusy) return;
+  if (!_aiImageUrl || !_aiOrderId || _aiImageBusy) return;
   _aiImageBusy = true;
   _aiImageResult = null;
-  renderAiImageTest();
-  api('/api/admin/ai-image-test', { method: 'POST', body: JSON.stringify({ imageUrl: _aiImageUrl }) })
+  drawAiImageTest();
+  api('/api/admin/ai-image-test', { method: 'POST', body: JSON.stringify({ imageUrl: _aiImageUrl, orderId: _aiOrderId }) })
     .then((data) => {
       _aiImageResult = data.result;
       const passed = Boolean(data.result && data.result.validation && data.result.validation.passed);
       showAdminToast(passed ? '识别并校验通过' : '识别完成，但需要人工核对', passed ? 'success' : 'error');
     })
     .catch((error) => showAdminToast(error.message || '识别失败', 'error'))
-    .finally(() => { _aiImageBusy = false; renderAiImageTest(); });
+    .finally(() => { _aiImageBusy = false; drawAiImageTest(); });
 }
 
 function renderAiImageResult(result) {
   const validation = result.validation || {};
+  const processed = result.processedResult || {};
   const value = (input) => input === null || input === undefined || input === '' ? '未识别' : esc(input);
   return `
     <div class="ai-result-grid">
       <div class="ai-result-item"><div class="label">股票名称</div><div class="value">${value(result.stockName)}</div></div>
       <div class="ai-result-item"><div class="label">股票代码</div><div class="value">${value(result.stockCode)}</div></div>
+      <div class="ai-result-item"><div class="label">查询日期（前台）</div><div class="value">${value(result.queryDate)}</div></div>
+      <div class="ai-result-item"><div class="label">请求时间（前台）</div><div class="value">${value(result.requestedAtText)}</div></div>
       <div class="ai-result-item"><div class="label">截图时间</div><div class="value">${value(result.capturedAt)}</div></div>
       <div class="ai-result-item"><div class="label">金额单位</div><div class="value">${value(result.unit)}</div></div>
       <div class="ai-result-item"><div class="label">主力净流入</div><div class="value">${value(result.mainNet)}</div></div>
@@ -770,6 +799,12 @@ function renderAiImageResult(result) {
       <div class="ai-result-item"><div class="label">主力明盘</div><div class="value">${value(result.visibleNet)}</div></div>
       <div class="ai-result-item"><div class="label">主力暗盘</div><div class="value">${value(result.darkNet)}</div></div>
       <div class="ai-result-item" style="grid-column:1/-1"><div class="label">方向关系</div><div class="value">${value(result.relation)}</div></div>
+      <div class="ai-result-item" style="grid-column:1/-1">
+        <div class="label">加工结果（仅使用当日资金）</div>
+        <div class="value">${value(processed.fundSituation)}</div>
+        <div style="margin-top:6px">${value(processed.corePerformance)} · ${value(processed.interpretation)}</div>
+        <div class="hint" style="margin-top:5px">${value(processed.description)} ${value(processed.basis)}</div>
+      </div>
     </div>
     <div class="ai-validation ${validation.passed ? 'pass' : 'fail'}">
       <strong>${validation.passed ? '✓ 数据校验通过' : '⚠ 数据需要人工核对'}</strong><br />
@@ -888,7 +923,7 @@ function drawDarkFundOrders() {
       <td>${order.createdAt ? fmtDate(order.createdAt) : '—'}${order.readyAt ? `<div class="hint">就绪 ${fmtDate(order.readyAt)}</div>` : ''}</td>
       <td>${ready
         ? `<button class="btn-sm" onclick='openDarkFundSnapshot("${order.id}")'>查看笔记</button>`
-        : `<button class="btn-sm" onclick='completeDarkFundOrder("${order.id}")'>录入结果</button>`}</td>
+        : `<button class="btn-sm" onclick='openAiImageForOrder("${order.id}")'>AI识别</button> <button class="btn-sm" onclick='completeDarkFundOrder("${order.id}")'>录入结果</button>`}</td>
     </tr>`;
   }).join('');
   document.getElementById('content').innerHTML = `
