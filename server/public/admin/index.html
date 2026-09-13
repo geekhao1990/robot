@@ -122,6 +122,9 @@
   .ai-empty-icon { margin-bottom: 10px; color: #b8bdc7; font-size: 46px; }
   .ai-upload-actions { display: flex; gap: 10px; align-items: center; margin-top: 16px; }
   .ai-upload-actions .btn-primary:disabled { background: #c9cdd4; cursor: not-allowed; }
+  .ai-under-image { margin-top: 22px; padding-top: 20px; border-top: 1px solid #eceef2; }
+  .ai-under-image h3 { margin-bottom: 4px; }
+  .ai-auto-review-status { margin-top: 10px; color: #8a8f99; font-size: 12px; text-align: right; }
   .ai-result-empty { display: flex; min-height: 360px; align-items: center; justify-content: center; color: #aaa; text-align: center; }
   .ai-result-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 18px; }
   .ai-result-item { padding: 12px 14px; background: #f7f8fa; border-radius: 8px; }
@@ -246,6 +249,7 @@ const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '�
 const BASE_CATEGORIES = ['资料', '课程', '金手指', '广告'];
 TITLES.giftCards = '礼品卡管理';
 function switchView(v) {
+  if (v !== 'aiImageTest') cancelAiReviewTimer();
   const activeView = v === 'aiImageTest' ? 'darkFundOrders' : v;
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === activeView));
   document.getElementById('viewTitle').textContent = TITLES[v];
@@ -673,6 +677,8 @@ let _aiOrderId = '';
 let _aiDraftText = '';
 let _aiAutoCompleteAt = 0;
 let _aiFormDirty = false;
+let _aiReviewTimer = null;
+let _aiFormRevision = 0;
 
 function renderAiImageTest() {
   api('/api/admin/dark-fund-orders').then((orders) => {
@@ -692,8 +698,9 @@ function drawAiImageTest() {
   const preview = _aiImageUrl
     ? `<img src="${esc(_aiImageUrl)}" alt="待识别图片" />`
     : `<div><div class="ai-empty-icon">＋</div><strong>点击选择图片</strong><div class="hint">也可以把图片拖到这里，支持 JPG、PNG、GIF、WebP</div></div>`;
-  const resultPanel = _aiImageResult ? renderAiImageResult(_aiImageResult) : `
+  const fieldsPanel = _aiImageResult ? renderAiFields(_aiImageResult) : `
     <div class="ai-result-empty"><div><div class="ai-empty-icon">⌁</div>上传图片并点击“开始识别”后<br />所有识别字段会显示为可修改输入框</div></div>`;
+  const reviewPanel = _aiImageResult ? renderAiReviewPanel(_aiImageResult) : '';
   document.getElementById('content').innerHTML = `
     <div class="toolbar">
       <div><h3>处理暗盘工单 · ${esc(order.id || '')}</h3><div class="hint">${esc(order.stockCode || '')} · ${esc(order.tradeDate || '')} · 截图识别完成且必要字段通过后，3分钟自动完成；缺失的非必要字段不会写入结果。</div></div>
@@ -711,16 +718,18 @@ function drawAiImageTest() {
           ${_aiImageUrl ? '<button class="btn-sm del" onclick="removeAiImage()">移除</button>' : ''}
           <button class="btn-primary" style="margin-left:auto" ${(!_aiImageUrl || !_aiOrderId || _aiImageBusy) ? 'disabled' : ''} onclick="startAiImageTest()">${_aiImageBusy ? '处理中…' : '开始识别'}</button>
         </div>
+        ${reviewPanel ? `<div class="ai-under-image"><h3>字段校验与结果文字</h3><div class="hint">必要字段完整后自动补全文字；手动修改识别字段后也会自动重新校验。</div>${reviewPanel}</div>` : ''}
       </div>
       <div class="ai-result-card">
-        <h3>识别结果与结果文字</h3>
-        <div class="hint">所有字段均放在输入框中；修正后点击“重新校验并补全文字”。</div>
-        ${resultPanel}
+        <h3>识别字段</h3>
+        <div class="hint">所有字段均可核对；手动修改后将自动校验并补全文字。</div>
+        ${fieldsPanel}
       </div>
     </div>`;
 }
 
 function openAiImageForOrder(orderId) {
+  cancelAiReviewTimer();
   _aiOrderId = String(orderId || '');
   const order = _darkFundOrders.find((item) => item.id === _aiOrderId) || {};
   _aiImageUrl = order.aiImageUrl || '';
@@ -729,6 +738,7 @@ function openAiImageForOrder(orderId) {
   _aiDraftText = order.aiDraftText || '';
   _aiAutoCompleteAt = Number(order.aiAutoCompleteAt) || 0;
   _aiFormDirty = false;
+  _aiFormRevision = 0;
   switchView('aiImageTest');
 }
 
@@ -757,6 +767,7 @@ function onAiImagePicked(event) {
 function uploadAiTestImage(file) {
   if (!/^image\/(jpeg|png|gif|webp)$/i.test(file.type || '')) return showAdminToast('请选择 JPG、PNG、GIF 或 WebP 图片', 'error');
   if (file.size > 5 * 1024 * 1024) return showAdminToast('图片不能超过5MB', 'error');
+  cancelAiReviewTimer();
   _aiImageBusy = true;
   drawAiImageTest();
   uploadAdminImage(file)
@@ -767,6 +778,7 @@ function uploadAiTestImage(file) {
       _aiDraftText = '';
       _aiAutoCompleteAt = 0;
       _aiFormDirty = false;
+      _aiFormRevision = 0;
       showAdminToast('图片上传成功');
     })
     .catch((error) => showAdminToast(error.message || '图片上传失败', 'error'))
@@ -774,17 +786,20 @@ function uploadAiTestImage(file) {
 }
 
 function removeAiImage() {
+  cancelAiReviewTimer();
   _aiImageUrl = '';
   _aiImageName = '';
   _aiImageResult = null;
   _aiDraftText = '';
   _aiAutoCompleteAt = 0;
   _aiFormDirty = false;
+  _aiFormRevision = 0;
   drawAiImageTest();
 }
 
 function startAiImageTest() {
   if (!_aiImageUrl || !_aiOrderId || _aiImageBusy) return;
+  cancelAiReviewTimer();
   _aiImageBusy = true;
   _aiImageResult = null;
   drawAiImageTest();
@@ -794,6 +809,7 @@ function startAiImageTest() {
       _aiDraftText = data.draftText || '';
       _aiAutoCompleteAt = Number(data.autoCompleteAt) || 0;
       _aiFormDirty = false;
+      _aiFormRevision = 0;
       const selected = _aiOrders.find((item) => item.id === _aiOrderId);
       if (selected) Object.assign(selected, { aiAnalysis: data.result, aiDraftText: _aiDraftText, aiImageUrl: _aiImageUrl, aiAutoCompleteAt: _aiAutoCompleteAt });
       const passed = Boolean(data.result && data.result.validation && data.result.validation.passed);
@@ -805,21 +821,16 @@ function startAiImageTest() {
 
 function aiFieldValue(value) { return value === null || value === undefined ? '' : String(value); }
 function aiInput(field, value, options = {}) {
-  const attrs = options.readonly ? 'readonly' : `data-ai-field="${field}" oninput="_aiFormDirty=true"`;
+  const attrs = options.readonly ? 'readonly' : `data-ai-field="${field}" oninput="scheduleAiReview()"`;
   const type = options.type || 'text';
   return `<input type="${type}" ${type === 'number' ? 'step="any"' : ''} ${attrs} value="${esc(aiFieldValue(value))}" />`;
 }
 function aiSelect(field, value, values) {
-  return `<select data-ai-field="${field}" onchange="_aiFormDirty=true">${values.map((item) => `<option value="${esc(item)}" ${item === value ? 'selected' : ''}>${esc(item || '请选择')}</option>`).join('')}</select>`;
+  return `<select data-ai-field="${field}" onchange="scheduleAiReview()">${values.map((item) => `<option value="${esc(item)}" ${item === value ? 'selected' : ''}>${esc(item || '请选择')}</option>`).join('')}</select>`;
 }
 
-function renderAiImageResult(result) {
-  const validation = result.validation || {};
+function renderAiFields(result) {
   const processed = result.processedResult || {};
-  const optionalMissing = Array.isArray(validation.optionalMissingFields) ? validation.optionalMissingFields : [];
-  const autoCompleteText = validation.passed && _aiAutoCompleteAt
-    ? `系统将在 ${new Date(_aiAutoCompleteAt).toLocaleTimeString('zh-CN', { hour12: false })} 自动完成工单`
-    : '';
   return `
     <div class="ai-result-grid">
       <div class="ai-result-item"><div class="label">股票名称</div>${aiInput('stockName', result.stockName)}</div>
@@ -844,7 +855,16 @@ function renderAiImageResult(result) {
       <div class="ai-result-item"><div class="label">解读（自动）</div>${aiInput('', processed.interpretation, { readonly: true })}</div>
       <div class="ai-result-item"><div class="label">说明（自动）</div>${aiInput('', processed.description, { readonly: true })}</div>
       <div class="ai-result-item" style="grid-column:1/-1"><div class="label">判断依据（自动）</div>${aiInput('', processed.basis, { readonly: true })}</div>
-    </div>
+    </div>`;
+}
+
+function renderAiReviewPanel(result) {
+  const validation = result.validation || {};
+  const optionalMissing = Array.isArray(validation.optionalMissingFields) ? validation.optionalMissingFields : [];
+  const autoCompleteText = validation.passed && _aiAutoCompleteAt
+    ? `系统将在 ${new Date(_aiAutoCompleteAt).toLocaleTimeString('zh-CN', { hour12: false })} 自动完成工单`
+    : '';
+  return `
     <div class="ai-validation ${validation.passed ? 'pass' : 'fail'}">
       <strong>${validation.passed ? '✓ 必要字段校验通过' : '⚠ 必要字段需要人工核对'}</strong><br />
       必要字段：${validation.essentialFieldsPresent === true ? '完整 ✓' : '有缺失 ✕'}<br />
@@ -854,9 +874,9 @@ function renderAiImageResult(result) {
       ${autoCompleteText ? `<br />${esc(autoCompleteText)}` : ''}
     </div>
     <div class="field" style="margin-top:16px"><label>结果文字</label><textarea id="aiDraftText" class="ai-report-editor" oninput="_aiDraftText=this.value">${esc(_aiDraftText)}</textarea></div>
+    <div id="aiAutoReviewStatus" class="ai-auto-review-status">${_aiFormDirty ? '等待自动校验…' : '识别字段修改后自动校验并更新文字'}</div>
     <div class="ai-result-actions">
-      <button class="btn-sm" ${_aiImageBusy ? 'disabled' : ''} onclick="reviewAiWorkOrder()">重新校验并补全文字</button>
-      <button class="btn-primary" ${(_aiImageBusy || !validation.passed || !_aiDraftText || _aiFormDirty) ? 'disabled' : ''} onclick="completeAiWorkOrder()">完成工单</button>
+      <button id="aiCompleteOrderButton" class="btn-primary" ${(_aiImageBusy || !validation.passed || !_aiDraftText || _aiFormDirty) ? 'disabled' : ''} onclick="completeAiWorkOrder()">完成工单</button>
     </div>`;
 }
 
@@ -870,25 +890,66 @@ function readAiAnalysisForm() {
   return result;
 }
 
+function cancelAiReviewTimer() {
+  if (_aiReviewTimer) clearTimeout(_aiReviewTimer);
+  _aiReviewTimer = null;
+}
+
+function scheduleAiReview() {
+  _aiFormDirty = true;
+  _aiFormRevision += 1;
+  const completeButton = document.getElementById('aiCompleteOrderButton');
+  if (completeButton) completeButton.disabled = true;
+  const status = document.getElementById('aiAutoReviewStatus');
+  if (status) status.textContent = '等待自动校验…';
+  cancelAiReviewTimer();
+  _aiReviewTimer = setTimeout(runScheduledAiReview, 700);
+}
+
+function runScheduledAiReview() {
+  _aiReviewTimer = null;
+  if (!document.querySelector('.ai-upload-layout') || !_aiOrderId || !_aiImageResult) return;
+  if (_aiImageBusy) {
+    _aiReviewTimer = setTimeout(runScheduledAiReview, 300);
+    return;
+  }
+  reviewAiWorkOrder();
+}
+
 function reviewAiWorkOrder() {
   if (_aiImageBusy || !_aiOrderId || !_aiImageResult) return;
-  _aiImageResult = readAiAnalysisForm();
+  const revision = _aiFormRevision;
+  const analysis = readAiAnalysisForm();
+  _aiImageResult = analysis;
   _aiImageBusy = true;
+  const status = document.getElementById('aiAutoReviewStatus');
+  if (status) status.textContent = '正在自动校验并补全文字…';
   api('/api/admin/dark-fund-orders/' + encodeURIComponent(_aiOrderId) + '/ai-review', {
-    method: 'POST', body: JSON.stringify({ analysis: _aiImageResult, imageUrl: _aiImageUrl }),
+    method: 'POST', body: JSON.stringify({ analysis, imageUrl: _aiImageUrl }),
   }).then((data) => {
+    if (revision !== _aiFormRevision) return;
     _aiImageResult = data.result;
     _aiDraftText = data.draftText || '';
     _aiAutoCompleteAt = Number(data.autoCompleteAt) || 0;
     _aiFormDirty = false;
     const passed = data.result && data.result.validation && data.result.validation.passed;
-    showAdminToast(passed ? '校验通过，结果文字已补全' : '仍有疑问，请继续核对输入框', passed ? 'success' : 'error');
-  }).catch((error) => showAdminToast(error.message || '校验失败', 'error'))
-    .finally(() => { _aiImageBusy = false; drawAiImageTest(); });
+    showAdminToast(passed ? '已自动校验并补全文字' : '必要字段仍有缺失或误差，请继续核对', passed ? 'success' : 'error');
+  }).catch((error) => {
+    if (revision === _aiFormRevision) showAdminToast(error.message || '自动校验失败', 'error');
+  }).finally(() => {
+    _aiImageBusy = false;
+    if (!document.querySelector('.ai-upload-layout')) return;
+    if (revision !== _aiFormRevision) {
+      cancelAiReviewTimer();
+      _aiReviewTimer = setTimeout(runScheduledAiReview, 120);
+      return;
+    }
+    drawAiImageTest();
+  });
 }
 
 function completeAiWorkOrder() {
-  if (_aiFormDirty) return showAdminToast('识别字段有修改，请先重新校验', 'error');
+  if (_aiFormDirty) return showAdminToast('识别字段正在自动校验，请稍候', 'error');
   const validation = _aiImageResult && _aiImageResult.validation;
   const content = String((document.getElementById('aiDraftText') || {}).value || _aiDraftText || '').trim();
   if (!validation || validation.passed !== true) return showAdminToast('数据仍有疑问，不能完成工单', 'error');
