@@ -112,11 +112,12 @@ function buildDarkFundReport(result) {
   const change = Number(data.pctChange);
   const changeText = change > 0 ? `上涨${Math.abs(change)}%` : change < 0 ? `下跌${Math.abs(change)}%` : '涨跌幅为0%';
   const hasPrice = Number.isFinite(data.price);
-  let quoteLead = `${date}${data.capturedAt ? ` ${data.capturedAt}` : ''}，${data.stockName}（${data.stockCode}）`;
-  if (hasPrice && data.quoteType === '收盘') quoteLead += `收盘报${data.price}元，全天${changeText}`;
-  else if (hasPrice && data.capturedAt) quoteLead += `现报${data.price}元，${changeText}`;
-  else if (hasPrice) quoteLead += `价格为${data.price}元，${changeText}`;
-  else if (data.capturedAt) quoteLead += `截图显示，${changeText}`;
+  const isClosed = data.quoteType === '收盘';
+  let quoteLead = isClosed
+    ? `${date}，${data.stockName}（${data.stockCode}）`
+    : `${date}，截至发稿时，${data.stockName}（${data.stockCode}）`;
+  if (hasPrice && isClosed) quoteLead += `收盘报${data.price}元，全天${changeText}`;
+  else if (hasPrice) quoteLead += `报${data.price}元，${changeText}`;
   else quoteLead += changeText;
 
   const quoteParts = [];
@@ -124,19 +125,30 @@ function buildDarkFundReport(result) {
     quoteParts.push(`成交额${data.turnoverAmount}${data.turnoverAmountUnit}`);
   }
   if (Number.isFinite(data.turnoverRate)) quoteParts.push(`换手率${data.turnoverRate}%`);
-  const timingNote = data.quoteType === '收盘'
-    ? '以上为收盘时点数据。'
-    : data.quoteType === '盘中' ? '当前仍处于盘中，数据以截图时点为准。' : '';
   const processed = data.processedResult || {};
-  return `${quoteLead}${quoteParts.length ? `，${quoteParts.join('，')}` : ''}。${timingNote}
+  const quoteParagraph = `${quoteLead}${quoteParts.length ? `，${quoteParts.join('，')}` : ''}。`;
+  const fundParagraph = `资金方面，当日主力资金${displaySignedAmount(data.mainNet, data.unit)}，散户资金${displaySignedAmount(data.retailNet, data.unit)}；明盘大单资金${displaySignedAmount(data.visibleNet, data.unit)}，暗盘资金${displaySignedAmount(data.darkNet, data.unit)}，两者呈现${data.relation}。`;
+  const risk = '风险提示：以上分析结果仅代表大模型观点，仅供参考，不作为投资建议。本文不涉及投资咨询，提及股票不视为明示或暗示推荐，也不应理解为对未来收益的预期或保证。每个指标都有局限性，请理性判断，注意风险。';
 
-从资金层面看，当日主力资金${displaySignedAmount(data.mainNet, data.unit)}，散户资金${displaySignedAmount(data.retailNet, data.unit)}；其中明盘大单资金${displaySignedAmount(data.visibleNet, data.unit)}，暗盘资金${displaySignedAmount(data.darkNet, data.unit)}，两者呈现${data.relation}。${processed.corePerformance || ''}${processed.description ? `，${processed.description}` : ''}
+  if (!isClosed) {
+    return `${quoteParagraph}
 
-从当日资金结构看，本次识别结果归类为“${processed.fundSituation || data.relation}”。该结果仅客观反映截图时点的明盘与暗盘资金关系，不单独用于判断后续价格走势。
+${fundParagraph}
+
+当日资金归类为“${processed.fundSituation || data.relation}”。单日暗盘数据有局限，建议结合近5个交易日观察。
+
+${risk}`;
+  }
+
+  return `${quoteParagraph}
+
+${fundParagraph}
+
+从当日资金结构看，本次识别结果归类为“${processed.fundSituation || data.relation}”。该结果仅客观反映当日明盘与暗盘资金关系，不单独用于判断后续价格走势。
 
 暗盘资金只看当日有局限性，建议结合连续5个交易日的暗盘数据进行判断。
 
-风险提示：以上分析结果仅代表大模型观点，仅供参考，不作为投资建议。本文不涉及投资咨询，提及股票不视为明示或暗示推荐，也不应理解为对未来收益的预期或保证。每个指标都有局限性，请理性判断，注意风险。`;
+${risk}`;
 }
 
 function closeEnough(left, right, reference) {
@@ -244,9 +256,11 @@ async function analyzeDarkFundImage(imageUrl) {
   const prompt = '这是一张手机长截图。识别图片中的股票名称、截图时间、当前价或收盘价、涨跌幅、成交额、换手率和“主力流向”区域；'
     + '股票代码由前台工单提供，不要从图片识别或推测代码。'
     + '仅输出JSON对象，必须严格使用这个结构：'
-    + '{"stockName":"","capturedAt":"","quoteType":"盘中","price":null,"pctChange":null,"turnoverAmount":null,"turnoverAmountUnit":"亿元","turnoverRate":null,"unit":"亿元","mainNet":null,"visibleNet":null,"darkNet":null,"retailNet":null}。'
+    + '{"stockName":"","capturedAt":"","quoteType":"","price":null,"pctChange":null,"turnoverAmount":null,"turnoverAmountUnit":"","turnoverRate":null,"unit":"","mainNet":null,"visibleNet":null,"darkNet":null,"retailNet":null}。'
     + 'quoteType仅允许盘中或收盘；如图片明确显示已收盘或收盘价则填收盘，否则填盘中。'
-    + 'pctChange和turnoverRate只填百分比数字，不带%；turnoverAmount保留图片数值，turnoverAmountUnit保留元、万元或亿元。'
+    + 'pctChange和turnoverRate只填百分比数字，不带%。'
+    + 'turnoverAmount只允许读取明确标注为该股票当日累计“成交额”或“总成交额”的数值，并保留其紧邻的元、万元或亿元单位；盘中截图取截至截图时间的当日累计成交额，收盘截图取当日全天累计成交额。'
+    + '严禁把分时栏中的单笔“额”、现手、逐笔成交额、买卖盘口或柱状图数值当成当日累计成交额；无法确认是当日累计成交额或看不到明确单位时，turnoverAmount必须填null且turnoverAmountUnit填空字符串。'
     + 'unit是主力资金图表的单位，仅允许元、万元、亿元；资金流出为负，流入为正。'
     + '只填写图片中明确显示的数据，识别不到的字段必须填null或空字符串，不要根据颜色猜数值，不要推测。';
 

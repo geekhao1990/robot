@@ -68,12 +68,24 @@ test('builds a complete intraday report only after every field passes validation
     unit: '亿元', mainNet: -16.98, visibleNet: -9.73, darkNet: -7.25, retailNet: 16.98,
   }), { id: 'DF123', stockCode: '600410', tradeDate: '2026-09-11', createdAt: 1789000000000 });
   const report = buildDarkFundReport(result);
-  assert.match(report, /2026年9月11日 11:24/);
-  assert.match(report, /华胜天成（600410）现报20.48元/);
+  assert.match(report, /2026年9月11日，截至发稿时/);
+  assert.match(report, /华胜天成（600410）报20.48元/);
   assert.match(report, /成交额8.16万元/);
   assert.match(report, /暗盘资金净流出7.25亿元/);
+  assert.doesNotMatch(report, /当前仍处于盘中|数据以截图时点为准|明暗资金同步流出，主力持续出货/);
+  assert.ok(report.length < 500);
   assert.doesNotMatch(report, /【|】/);
   assert.equal(buildDarkFundReport(normalizeAnalysis({ stockName: '缺字段' })), '');
+});
+
+test('uses the closing template without publishing internal template-selection text', () => {
+  const result = attachOrderContext(normalizeAnalysis({
+    stockName: '中兵红箭', quoteType: '收盘', price: 16.21, pctChange: 0.43,
+    unit: '万元', mainNet: 100, visibleNet: 40, darkNet: 60, retailNet: -100,
+  }), { id: 'DF125', stockCode: '000519', tradeDate: '2026-09-11', createdAt: 1789000000000 });
+  const report = buildDarkFundReport(result);
+  assert.match(report, /中兵红箭（000519）收盘报16.21元，全天上涨0.43%/);
+  assert.doesNotMatch(report, /截至发稿时|以上为收盘时点数据|当前仍处于盘中/);
 });
 
 test('accepts essential fields and omits sentences for missing optional quote fields', () => {
