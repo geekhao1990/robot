@@ -65,7 +65,10 @@ function successCallback(order) {
     captured_at: '2026-09-19T15:05:00+08:00', latest_price: 46.47, pct_change: 2.95, fund_unit: 1,
     main_net: 9.15, bright_net: 2.26, dark_net: 6.89, source: 'cache',
     images: { fund: { mime_type: 'image/png', data_base64: 'AA==' }, guide: { mime_type: 'image/jpeg', data_base64: 'AA==' } },
-    analysis: { paragraph_1: '第一段', paragraph_2: '第二段', paragraph_3: '第三段' },
+    analysis: {
+      title: '【暗盘追踪】明暗同步流入，资金表现如何？', score: 9.5,
+      paragraph_1: '第一段', paragraph_2: '第二段', paragraph_3: '第三段',
+    },
   };
 }
 
@@ -83,13 +86,19 @@ test('query dispatches immediately and authenticated callback completes it idemp
   await assert.rejects(call('POST', '/api/stock-analysis/callback', successCallback(data.darkFundOrders[0]), '', {}), { status: 401 });
   assert.equal((await call('POST', '/api/stock-analysis/callback', successCallback(data.darkFundOrders[0]), '', { 'x-stock-callback-token': 'callback-secret' })).ok, true);
   assert.equal(data.darkFundOrders[0].status, 'READY');
-  assert.equal(data.notes[0].title, `永鼎股份（600105）｜${created.compactTradeDate}暗盘数据`);
+  assert.equal(data.notes[0].title, '【暗盘追踪】明暗同步流入，资金表现如何？');
   assert.equal(data.notes[0].content, '第一段\n\n第二段\n\n第三段');
+  assert.deepEqual(data.notes[0].tags, ['暗盘资金', '600105', 'score9.5']);
   assert.deepEqual(data.notes[0].images, [
     'https://app.nankaitechschool.com/uploads/fund.png',
     'https://app.nankaitechschool.com/uploads/guide.jpg',
   ]);
-  assert.equal((await call('POST', '/api/stock-analysis/callback', successCallback(data.darkFundOrders[0]), '', { 'x-stock-callback-token': 'callback-secret' })).duplicate, true);
+  const refreshed = successCallback(data.darkFundOrders[0]);
+  refreshed.analysis.title = '【暗盘追踪】新标题';
+  refreshed.analysis.score = 8;
+  assert.equal((await call('POST', '/api/stock-analysis/callback', refreshed, '', { 'x-stock-callback-token': 'callback-secret' })).duplicate, true);
+  assert.equal(data.notes[0].title, '【暗盘追踪】新标题');
+  assert.deepEqual(data.notes[0].tags, ['暗盘资金', '600105', 'score8']);
   const viewed = await call('GET', `/api/dark-funds/orders/${created.orderId}`);
   assert.equal(viewed.unread, false);
   await assert.rejects(call('GET', `/api/dark-funds/orders/${created.orderId}`, {}, 'Bearer u2'), { status: 404 });

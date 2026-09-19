@@ -16,7 +16,10 @@
     <view class="swiper-wrap">
       <swiper class="swiper" style="height: {{swiperHeight}}rpx;" bindchange="onSwiperChange" circular="{{false}}">
         <swiper-item wx:for="{{note.images}}" wx:key="*this">
-          <image class="swiper-img" src="{{item}}" mode="aspectFill" bindtap="onNoteImageTap" data-index="{{index}}" data-url="{{item}}" />
+          <view class="swiper-stage">
+            <image class="swiper-bg" src="{{item}}" mode="aspectFill" />
+            <image class="swiper-img" src="{{item}}" mode="aspectFit" bindload="onDetailImageLoad" bindtap="onNoteImageTap" data-index="{{index}}" data-url="{{item}}" />
+          </view>
         </swiper-item>
       </swiper>
       <view wx:if="{{note.images.length > 1}}" class="dots">

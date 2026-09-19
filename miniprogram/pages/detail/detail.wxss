@@ -86,11 +86,26 @@
 }
 .swiper {
   width: 100%;
+  overflow: hidden;
+  background: #ececec;
+  transition: height .2s ease;
 }
+.swiper-stage,
+.swiper-bg,
 .swiper-img {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
 }
+.swiper-stage { overflow: hidden; }
+.swiper-bg {
+  opacity: .2;
+  filter: blur(24rpx);
+  transform: scale(1.1);
+}
+.swiper-img { z-index: 1; }
 .dots {
   position: absolute;
   left: 0;

@@ -5,7 +5,13 @@ const { getPlan, activateMembership, refreshDarkFundQuota, consumeDarkFundQuota,
 const wechatPay = require('../wechat-pay');
 const { pubUser } = require('../util');
 const { latestTradingDate, compactDate } = require('../trading-date');
-const { attachDarkFundImages, activateDarkFundOrder, normalizeCollectorResult, publicDarkFundOrder } = require('../dark-fund-orders');
+const {
+  attachDarkFundImages,
+  activateDarkFundOrder,
+  normalizeCollectorResult,
+  publicDarkFundOrder,
+  refreshDarkFundOrderResult,
+} = require('../dark-fund-orders');
 const { callbackAuthorized, dispatchStockAnalysis } = require('../collector-client');
 const { persistCollectorImages } = require('../collector-images');
 
@@ -189,6 +195,22 @@ module.exports = function register(router, HttpError) {
     if (!order) throw new HttpError(404, '工单不存在');
     if (String(body.stock_code || '').trim() !== order.stockCode) throw new HttpError(400, '回调股票代码不匹配');
     if (order.status === 'READY' || order.status === 'SUCCESS') {
+      if (body.analysis && String(body.analysis.title || '').trim()) {
+        let imageUrls = order.collectorResult && order.collectorResult.images;
+        let imagesUpdated = false;
+        try {
+          if (!Array.isArray(imageUrls) || imageUrls.length !== 2) {
+            imageUrls = persistCollectorImages(body.images, order.id);
+            imagesUpdated = true;
+          }
+          const result = normalizeCollectorResult({ ...body, image_urls: imageUrls }, order);
+          refreshDarkFundOrderResult(d, order, result);
+        } catch (error) {
+          throw new HttpError(400, error.message);
+        }
+        db.save();
+        return { ok: true, duplicate: true, analysisUpdated: true, imagesUpdated };
+      }
       if (body.images) {
         const existingImages = order.collectorResult && order.collectorResult.images;
         if (Array.isArray(existingImages) && existingImages.length === 2) {

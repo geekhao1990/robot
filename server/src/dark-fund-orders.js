@@ -43,6 +43,8 @@ function callbackNumber(value, field) {
 
 function normalizeCollectorResult(payload, order) {
   const analysis = payload && payload.analysis && typeof payload.analysis === 'object' ? payload.analysis : {};
+  const analysisTitle = String(analysis.title || '').trim();
+  const score = callbackNumber(analysis.score, '综合评分');
   const paragraph1 = String(analysis.paragraph_1 || '').trim();
   const paragraph2 = String(analysis.paragraph_2 || '').trim();
   const paragraph3 = String(analysis.paragraph_3 || '').trim();
@@ -61,6 +63,8 @@ function normalizeCollectorResult(payload, order) {
     source: ['cache', 'phone'].includes(String(payload.source || '')) ? String(payload.source) : 'phone',
     images: Array.isArray(payload.image_urls) ? payload.image_urls.map((item) => String(item || '').trim()) : [],
     analysis: {
+      title: analysisTitle,
+      score,
       paragraph_1: paragraph1,
       ...(paragraph2 ? { paragraph_2: paragraph2 } : {}),
       paragraph_3: paragraph3,
@@ -72,6 +76,10 @@ function normalizeCollectorResult(payload, order) {
   if (result.tradingDate !== order.tradeDate) throw new Error('回调交易日不匹配');
   if (!result.stockName) throw new Error('股票名称缺失');
   if (![0, 1].includes(result.fundUnit)) throw new Error('资金单位仅允许0（万元）或1（亿元）');
+  if (!analysisTitle) throw new Error('笔记标题缺失');
+  if (score < 0 || score > 10 || Math.round(score * 2) !== score * 2) {
+    throw new Error('综合评分必须为0到10之间的0.5分档数字');
+  }
   if (!paragraph1 || !paragraph3) throw new Error('三段论文字不完整');
   if (result.images.length !== 2 || result.images.some((item) => !/^https:\/\//i.test(item))) {
     throw new Error('工单图片不完整');
@@ -96,10 +104,13 @@ function activateDarkFundOrder(data, order, collectorResult, readyAt = Date.now(
   order.collectorResult = result;
   order.callbackAt = readyAt;
   const images = result.images.slice(0, 2);
+  const scoreText = Number.isInteger(result.analysis.score)
+    ? String(result.analysis.score)
+    : result.analysis.score.toFixed(1);
   const note = {
     id: `dark_${order.id}`,
     visibility: 'public',
-    title: `${result.stockName}（${order.stockCode}）｜${shortDate}暗盘数据`,
+    title: result.analysis.title,
     content: paragraphs.join('\n\n'),
     images,
     cover: images[0] || '',
@@ -108,7 +119,7 @@ function activateDarkFundOrder(data, order, collectorResult, readyAt = Date.now(
     author: { id: author.id, name: '暗盘', avatar: author.avatar || '' },
     category: '资料',
     type: 'material',
-    tags: ['暗盘资金', order.stockCode],
+    tags: ['暗盘资金', order.stockCode, `score${scoreText}`],
     likes: crypto.randomInt(5, 101),
     collects: crypto.randomInt(5, 101),
     riskDisclaimerEnabled: true,
@@ -153,6 +164,30 @@ function attachDarkFundImages(data, order, images) {
   return true;
 }
 
+function refreshDarkFundOrderResult(data, order, result) {
+  const noteId = order.noteId || (order.snapshot && order.snapshot.note && order.snapshot.note.id);
+  const note = (data.notes || []).find((item) => item.id === noteId);
+  if (!note || !result || !result.analysis) return false;
+  const paragraphs = [result.analysis.paragraph_1, result.analysis.paragraph_2, result.analysis.paragraph_3].filter(Boolean);
+  const scoreText = Number.isInteger(result.analysis.score)
+    ? String(result.analysis.score)
+    : result.analysis.score.toFixed(1);
+  note.title = result.analysis.title;
+  note.content = paragraphs.join('\n\n');
+  note.tags = ['暗盘资金', order.stockCode, `score${scoreText}`];
+  if (Array.isArray(result.images) && result.images.length === 2) {
+    note.images = result.images.slice();
+    note.cover = result.images[0];
+  }
+  order.collectorResult = result;
+  order.callbackAt = Date.now();
+  if (order.snapshot) {
+    order.snapshot.result = result;
+    order.snapshot.note = { ...order.snapshot.note, ...note };
+  }
+  return true;
+}
+
 function publicDarkFundOrder(order) {
   const ready = order.status === 'READY' || order.status === 'SUCCESS';
   return {
@@ -184,4 +219,5 @@ module.exports = {
   activateDarkFundOrder,
   normalizeCollectorResult,
   publicDarkFundOrder,
+  refreshDarkFundOrderResult,
 };

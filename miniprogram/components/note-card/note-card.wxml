@@ -1,6 +1,24 @@
 <view class="card" bindtap="onTap">
   <view class="cover-wrap" style="padding-bottom: {{ratio * 100}}%;">
-    <image class="cover" src="{{note.cover}}" mode="aspectFill" lazy-load="true" />
+    <swiper
+      wx:if="{{imageList.length > 1}}"
+      class="cover-swiper"
+      current="{{currentImage}}"
+      bindchange="onImageChange"
+      circular="{{false}}"
+    >
+      <swiper-item wx:for="{{imageList}}" wx:key="*this">
+        <view class="cover-stage">
+          <image class="cover-bg" src="{{item}}" mode="aspectFill" lazy-load="true" />
+          <image class="cover" src="{{item}}" mode="aspectFit" lazy-load="true" bindload="onCoverLoad" data-index="{{index}}" />
+        </view>
+      </swiper-item>
+    </swiper>
+    <view wx:elif="{{imageList.length}}" class="cover-stage">
+      <image class="cover-bg" src="{{imageList[0]}}" mode="aspectFill" lazy-load="true" />
+      <image class="cover" src="{{imageList[0]}}" mode="aspectFit" lazy-load="true" bindload="onCoverLoad" data-index="0" />
+    </view>
+    <view wx:if="{{imageList.length > 1}}" class="image-count">{{currentImage + 1}}/{{imageList.length}}</view>
     <view wx:if="{{note.video}}" class="video-tag">▶</view>
     <view wx:if="{{deletable}}" class="card-del" catchtap="onDelete">×</view>
   </view>

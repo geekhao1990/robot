@@ -4,6 +4,12 @@ const config = require('../../utils/config');
 const { formatCount, fromNow, toast } = require('../../utils/util');
 const RISK_DISCLAIMER = '数据来自交易所和互联网公开数据，由本人整理发布，不构成投资建议';
 
+function detailImageHeight(width, height) {
+  if (!Number(width) || !Number(height)) return 750;
+  const ratio = Math.max(0.65, Math.min(Number(height) / Number(width), 1.5));
+  return Math.round(750 * ratio);
+}
+
 Page({
   data: {
     statusBarHeight: 20,
@@ -105,9 +111,11 @@ Page({
       const authorId = note.authorId || (note.author && note.author.id);
       const user = store.getUser();
       const isOwnNote = !!(user && authorId && user.id === authorId);
+      this._imageRatios = {};
       this.setData({
         note,
-        swiperHeight: Math.min(750 * (note.coverRatio || 1.3), 1000),
+        current: 0,
+        swiperHeight: detailImageHeight(1, note.coverRatio || 1.3),
         likeText: formatCount(note.likes),
         collectText: formatCount(note.collects),
         timeText: fromNow(note.time),
@@ -127,7 +135,23 @@ Page({
     });
   },
 
-  onSwiperChange(e) { this.setData({ current: e.detail.current }); },
+  onDetailImageLoad(e) {
+    const index = Number(e.currentTarget.dataset.index) || 0;
+    const width = Number(e.detail && e.detail.width);
+    const height = Number(e.detail && e.detail.height);
+    if (!width || !height) return;
+    this._imageRatios = this._imageRatios || {};
+    this._imageRatios[index] = { width, height };
+    if (index === this.data.current) this.setData({ swiperHeight: detailImageHeight(width, height) });
+  },
+  onSwiperChange(e) {
+    const current = Number(e.detail.current) || 0;
+    const dimensions = this._imageRatios && this._imageRatios[current];
+    this.setData({
+      current,
+      ...(dimensions ? { swiperHeight: detailImageHeight(dimensions.width, dimensions.height) } : {}),
+    });
+  },
   onNoteImageTap(e) {
     if (this.data.note && this.data.note.type === 'gold' && Number(e.currentTarget.dataset.index) === 0) {
       return this.openGoldFeature();
