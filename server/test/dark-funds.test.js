@@ -27,6 +27,8 @@ function setup(options = {}) {
     callbackAuthorized: (headers) => headers['x-stock-callback-token'] === 'callback-secret',
     dispatchStockAnalysis: async (order) => {
       if (options.dispatchError) throw Object.assign(new Error('采集机离线'), { status: 502 });
+      assert.match(order.tradeDate, /^\d{4}-\d{2}-\d{2}$/);
+      assert.equal(typeof order.createdAt, 'number');
       return { ok: true, order_id: order.id, status: 'queued' };
     },
   };

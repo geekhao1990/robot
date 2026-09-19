@@ -39,7 +39,12 @@ async function dispatchStockAnalysis(order) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ order_id: order.id, stock_code: order.stockCode }),
+        body: JSON.stringify({
+          order_id: order.id,
+          stock_code: order.stockCode,
+          trading_date: order.tradeDate,
+          requested_at: new Date(order.createdAt).toISOString(),
+        }),
         signal: AbortSignal.timeout(8000),
       });
       const payload = await response.json().catch(() => ({}));
