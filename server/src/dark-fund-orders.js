@@ -59,6 +59,7 @@ function normalizeCollectorResult(payload, order) {
     brightNet: callbackNumber(payload.bright_net, '主力明盘'),
     darkNet: callbackNumber(payload.dark_net, '主力暗盘'),
     source: ['cache', 'phone'].includes(String(payload.source || '')) ? String(payload.source) : 'phone',
+    images: Array.isArray(payload.image_urls) ? payload.image_urls.map((item) => String(item || '').trim()) : [],
     analysis: {
       paragraph_1: paragraph1,
       ...(paragraph2 ? { paragraph_2: paragraph2 } : {}),
@@ -72,6 +73,9 @@ function normalizeCollectorResult(payload, order) {
   if (!result.stockName) throw new Error('股票名称缺失');
   if (![0, 1].includes(result.fundUnit)) throw new Error('资金单位仅允许0（万元）或1（亿元）');
   if (!paragraph1 || !paragraph3) throw new Error('三段论文字不完整');
+  if (result.images.length !== 2 || result.images.some((item) => !/^https:\/\//i.test(item))) {
+    throw new Error('工单图片不完整');
+  }
   const tolerance = Math.max(0.02, Math.abs(result.mainNet) * 0.01);
   if (Math.abs(result.brightNet + result.darkNet - result.mainNet) > tolerance) {
     throw new Error('主力明盘与暗盘加总存在误差');
@@ -91,7 +95,7 @@ function activateDarkFundOrder(data, order, collectorResult, readyAt = Date.now(
   order.viewedAt = 0;
   order.collectorResult = result;
   order.callbackAt = readyAt;
-  const images = [];
+  const images = result.images.slice(0, 2);
   const note = {
     id: `dark_${order.id}`,
     visibility: 'public',
@@ -130,6 +134,25 @@ function activateDarkFundOrder(data, order, collectorResult, readyAt = Date.now(
   return true;
 }
 
+function attachDarkFundImages(data, order, images) {
+  if (!Array.isArray(images) || images.length !== 2) return false;
+  if (order.collectorResult) order.collectorResult.images = images.slice();
+  const noteId = order.noteId || (order.snapshot && order.snapshot.note && order.snapshot.note.id);
+  const note = (data.notes || []).find((item) => item.id === noteId);
+  if (note) {
+    note.images = images.slice();
+    note.cover = images[0];
+  }
+  if (order.snapshot) {
+    if (order.snapshot.result) order.snapshot.result.images = images.slice();
+    if (order.snapshot.note) {
+      order.snapshot.note.images = images.slice();
+      order.snapshot.note.cover = images[0];
+    }
+  }
+  return true;
+}
+
 function publicDarkFundOrder(order) {
   const ready = order.status === 'READY' || order.status === 'SUCCESS';
   return {
@@ -157,6 +180,7 @@ function publicDarkFundOrder(order) {
 }
 
 module.exports = {
+  attachDarkFundImages,
   activateDarkFundOrder,
   normalizeCollectorResult,
   publicDarkFundOrder,

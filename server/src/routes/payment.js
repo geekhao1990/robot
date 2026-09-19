@@ -5,8 +5,9 @@ const { getPlan, activateMembership, refreshDarkFundQuota, consumeDarkFundQuota,
 const wechatPay = require('../wechat-pay');
 const { pubUser } = require('../util');
 const { latestTradingDate, compactDate } = require('../trading-date');
-const { activateDarkFundOrder, normalizeCollectorResult, publicDarkFundOrder } = require('../dark-fund-orders');
+const { attachDarkFundImages, activateDarkFundOrder, normalizeCollectorResult, publicDarkFundOrder } = require('../dark-fund-orders');
 const { callbackAuthorized, dispatchStockAnalysis } = require('../collector-client');
+const { persistCollectorImages } = require('../collector-images');
 
 function orderNo() {
   return `VIP${Date.now()}${crypto.randomBytes(4).toString('hex')}`.slice(0, 32);
@@ -187,7 +188,24 @@ module.exports = function register(router, HttpError) {
     const order = (d.darkFundOrders || []).find((item) => item.id === orderId);
     if (!order) throw new HttpError(404, '工单不存在');
     if (String(body.stock_code || '').trim() !== order.stockCode) throw new HttpError(400, '回调股票代码不匹配');
-    if (order.status === 'READY' || order.status === 'SUCCESS') return { ok: true, duplicate: true };
+    if (order.status === 'READY' || order.status === 'SUCCESS') {
+      if (body.images) {
+        const existingImages = order.collectorResult && order.collectorResult.images;
+        if (Array.isArray(existingImages) && existingImages.length === 2) {
+          return { ok: true, duplicate: true, imagesUpdated: false };
+        }
+        let imageUrls;
+        try {
+          imageUrls = persistCollectorImages(body.images, order.id);
+        } catch (error) {
+          throw new HttpError(400, error.message);
+        }
+        attachDarkFundImages(d, order, imageUrls);
+        db.save();
+        return { ok: true, duplicate: true, imagesUpdated: true };
+      }
+      return { ok: true, duplicate: true };
+    }
     if (String(body.status || '').toLowerCase() === 'failed' || body.ok === false) {
       order.status = 'FAILED';
       order.collectorError = String(body.error || '采集失败').slice(0, 500);
@@ -202,7 +220,12 @@ module.exports = function register(router, HttpError) {
     }
     let result;
     try {
-      result = normalizeCollectorResult(body, order);
+      result = normalizeCollectorResult({
+        ...body,
+        image_urls: ['https://pending.invalid/fund', 'https://pending.invalid/guide'],
+      }, order);
+      const imageUrls = persistCollectorImages(body.images, order.id);
+      result.images = imageUrls;
     } catch (error) {
       throw new HttpError(400, error.message);
     }

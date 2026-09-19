@@ -32,12 +32,19 @@ function setup(options = {}) {
       return { ok: true, order_id: order.id, status: 'queued' };
     },
   };
+  const collectorImages = {
+    persistCollectorImages: () => [
+      'https://app.nankaitechschool.com/uploads/fund.png',
+      'https://app.nankaitechschool.com/uploads/guide.jpg',
+    ],
+  };
   const mod = { exports: {} };
   const dependencyMap = {
     '../db': db,
     '../auth': { userIdFor: (token) => token === 'Bearer u2' ? 'u2' : (token === 'Bearer u1' ? 'u1' : ''), isAdmin: (token) => token === 'admin' },
     '../membership': require('../src/membership'), '../wechat-pay': wechatPay, '../util': require('../src/util'),
-    '../trading-date': require('../src/trading-date'), '../dark-fund-orders': require('../src/dark-fund-orders'), '../collector-client': collector,
+    '../trading-date': require('../src/trading-date'), '../dark-fund-orders': require('../src/dark-fund-orders'),
+    '../collector-client': collector, '../collector-images': collectorImages,
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/payment.js'), 'utf8'), {
     module: mod, require: (id) => dependencyMap[id] || require(id), process,
@@ -57,6 +64,7 @@ function successCallback(order) {
     order_id: order.id, stock_code: order.stockCode, stock_name: '永鼎股份', trading_date: order.tradeDate,
     captured_at: '2026-09-19T15:05:00+08:00', latest_price: 46.47, pct_change: 2.95, fund_unit: 1,
     main_net: 9.15, bright_net: 2.26, dark_net: 6.89, source: 'cache',
+    images: { fund: { mime_type: 'image/png', data_base64: 'AA==' }, guide: { mime_type: 'image/jpeg', data_base64: 'AA==' } },
     analysis: { paragraph_1: '第一段', paragraph_2: '第二段', paragraph_3: '第三段' },
   };
 }
@@ -77,6 +85,10 @@ test('query dispatches immediately and authenticated callback completes it idemp
   assert.equal(data.darkFundOrders[0].status, 'READY');
   assert.equal(data.notes[0].title, `永鼎股份（600105）｜${created.compactTradeDate}暗盘数据`);
   assert.equal(data.notes[0].content, '第一段\n\n第二段\n\n第三段');
+  assert.deepEqual(data.notes[0].images, [
+    'https://app.nankaitechschool.com/uploads/fund.png',
+    'https://app.nankaitechschool.com/uploads/guide.jpg',
+  ]);
   assert.equal((await call('POST', '/api/stock-analysis/callback', successCallback(data.darkFundOrders[0]), '', { 'x-stock-callback-token': 'callback-secret' })).duplicate, true);
   const viewed = await call('GET', `/api/dark-funds/orders/${created.orderId}`);
   assert.equal(viewed.unread, false);
@@ -95,6 +107,24 @@ test('invalid or failed collector results do not silently complete an order', as
   }, '', { 'x-stock-callback-token': 'callback-secret' })).ok, true);
   assert.equal(data.darkFundOrders[0].status, 'FAILED');
   assert.equal(data.users[0].darkFundRemaining, 2);
+});
+
+test('a completed legacy order can receive its missing two images exactly once', async () => {
+  const { data, call } = setup();
+  const created = await call('POST', '/api/dark-funds/orders', { stockCode: '600105' });
+  const payload = successCallback(data.darkFundOrders[0]);
+  await call('POST', '/api/stock-analysis/callback', payload, '', { 'x-stock-callback-token': 'callback-secret' });
+  const order = data.darkFundOrders[0];
+  delete order.collectorResult.images;
+  order.snapshot.result.images = [];
+  order.snapshot.note.images = [];
+  data.notes[0].images = [];
+  data.notes[0].cover = '';
+  const repaired = await call('POST', '/api/stock-analysis/callback', payload, '', { 'x-stock-callback-token': 'callback-secret' });
+  assert.equal(repaired.imagesUpdated, true);
+  assert.equal(data.notes[0].images.length, 2);
+  const duplicate = await call('POST', '/api/stock-analysis/callback', payload, '', { 'x-stock-callback-token': 'callback-secret' });
+  assert.equal(duplicate.imagesUpdated, false);
 });
 
 test('dispatch failure refunds quota and records a failed ticket', async () => {
