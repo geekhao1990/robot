@@ -5,8 +5,6 @@ const { pubSettings } = require('../util');
 const { TYPE_LABELS, normalizeType, typeLabel, typeForCategory } = require('../content-types');
 const { getPlan, activateMembership, refreshDarkFundQuota, setManualDarkFundQuota } = require('../membership');
 const { normalizeResourceLinks } = require('../resource-links');
-const { analyzeDarkFundImage, attachOrderContext, buildDarkFundReport, normalizeAnalysis } = require('../deepseek-vision');
-const { AI_AUTO_COMPLETE_DELAY_MS } = require('../dark-fund-orders');
 const crypto = require('crypto');
 
 module.exports = function register(router, HttpError) {
@@ -89,27 +87,6 @@ module.exports = function register(router, HttpError) {
       ...pubSettings(d),
       hotSearch: Array.isArray(d.hotSearch) ? d.hotSearch : [],
     };
-  });
-
-  // 工单内 DeepSeek 图片识别。图片必须先通过本站安全上传接口保存。
-  router.post('/api/admin/ai-image-test', async (ctx) => {
-    requireAuth(ctx);
-    const body = ctx.body || {};
-    const order = (db.get().darkFundOrders || []).find((item) => item.id === String(body.orderId || ''));
-    if (!order) throw new HttpError(404, '请选择对应的工单');
-    if (order.status === 'READY' || order.status === 'SUCCESS') throw new HttpError(409, '该工单已完成');
-    const output = await analyzeDarkFundImage(body.imageUrl);
-    const saved = await saveAiWorkOrderResult(order, output.result, body.imageUrl);
-    return { model: output.model, ...saved };
-  });
-
-  router.post('/api/admin/dark-fund-orders/:id/ai-review', async (ctx) => {
-    requireAuth(ctx);
-    const body = ctx.body || {};
-    const order = (db.get().darkFundOrders || []).find((item) => item.id === ctx.params.id);
-    if (!order) throw new HttpError(404, '工单不存在');
-    if (order.status === 'READY' || order.status === 'SUCCESS') throw new HttpError(409, '该工单已完成');
-    return saveAiWorkOrderResult(order, normalizeAnalysis(body.analysis || {}), body.imageUrl);
   });
 
   router.put('/api/admin/settings', (ctx) => {
@@ -236,25 +213,6 @@ module.exports = function register(router, HttpError) {
         position: importedPercent(item.position, '水位'),
       };
     });
-  };
-
-  const saveAiWorkOrderResult = async (order, result, imageUrl) => {
-    const normalized = attachOrderContext(result, order);
-    const passed = normalized.validation && normalized.validation.passed === true;
-    const draftText = passed ? buildDarkFundReport(normalized) : '';
-    const reviewedAt = Date.now();
-    order.aiAnalysis = normalized;
-    order.aiDraftText = draftText;
-    order.aiImageUrl = String(imageUrl || order.aiImageUrl || '');
-    order.aiReviewedAt = reviewedAt;
-    order.aiReviewStatus = passed ? 'PASS' : 'QUESTIONABLE';
-    if (passed) {
-      order.aiAutoCompleteAt = Number(order.aiAutoCompleteAt) || reviewedAt + AI_AUTO_COMPLETE_DELAY_MS;
-    } else {
-      order.aiAutoCompleteAt = 0;
-    }
-    db.save();
-    return { result: normalized, draftText, autoCompleteAt: order.aiAutoCompleteAt || 0 };
   };
 
   router.get('/api/admin/gold-finger', (ctx) => {

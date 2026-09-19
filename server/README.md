@@ -22,7 +22,32 @@ WECHAT_PAY_API_V3_KEY=32字节APIv3密钥
 WECHAT_PAY_NOTIFY_URL=https://你的域名/api/payments/notify
 WECHAT_PAY_PLATFORM_SERIAL=微信支付平台公钥ID或平台证书序列号
 WECHAT_PAY_PLATFORM_PUBLIC_KEY_PATH=./certs/wechatpay_public_key.pem
+COLLECTOR_ORDERS_URL=https://你的采集机公网地址/orders
+COLLECTOR_API_TOKEN=腾讯云调用采集机的共享密钥
+STOCK_ANALYSIS_CALLBACK_TOKEN=采集机回调腾讯云的共享密钥
 ```
+
+## 暗盘工单异步接口
+
+正式环境只在腾讯云与 Windows 采集机之间使用两个业务接口：
+
+1. 腾讯云向采集机 `POST /orders`，请求体为 `{ "order_id": "...", "stock_code": "600105" }`。采集机只确认入队并立即返回 `{ "ok": true, "order_id": "...", "status": "queued" }`。
+2. 采集机完成缓存/手机采集、公告查询和 DeepSeek 三段论后，向腾讯云 `POST /api/stock-analysis/callback`。请求头必须包含 `X-Stock-Callback-Token`。
+
+回调成功至少包含股票名称、交易日、最新价、涨跌幅、资金单位、主力净流入、主力明盘、主力暗盘和 `analysis.paragraph_1/paragraph_3`。腾讯云校验订单号、股票代码、交易日、资金单位及“明盘 + 暗盘 = 主力净流入”，通过后自动完成工单并生成结果笔记。重复回调按幂等成功处理。
+
+采集失败可回调 `{ "order_id": "...", "stock_code": "...", "status": "failed", "error": "..." }`，腾讯云会标记失败并退还本次查询次数。
+
+Windows 采集机启动前配置：
+
+```env
+COLLECTOR_API_TOKEN=与腾讯云 COLLECTOR_API_TOKEN 完全相同
+STOCK_ANALYSIS_CALLBACK_URL=https://app.nankaitechschool.com/api/stock-analysis/callback
+STOCK_ANALYSIS_CALLBACK_TOKEN=与腾讯云 STOCK_ANALYSIS_CALLBACK_TOKEN 完全相同
+DEEPSEEK_API_KEY=仅保存在 Windows 采集机
+```
+
+采集机将未送达的回调和已接收工单持久化到本地文件；网络中断会自动重试，服务重启不会重复操作已经进入回调发件箱的任务。
 
 2. 接入真实微信登录时，将项目根目录 `project.config.json` 的 `appid` 改为同一个 AppID。
 3. 启动服务：

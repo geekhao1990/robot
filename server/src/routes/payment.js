@@ -1,11 +1,12 @@
 const crypto = require('crypto');
 const db = require('../db');
 const auth = require('../auth');
-const { getPlan, activateMembership, refreshDarkFundQuota, consumeDarkFundQuota } = require('../membership');
+const { getPlan, activateMembership, refreshDarkFundQuota, consumeDarkFundQuota, refundDarkFundQuota } = require('../membership');
 const wechatPay = require('../wechat-pay');
 const { pubUser } = require('../util');
 const { latestTradingDate, compactDate } = require('../trading-date');
-const { activateDarkFundOrder, publicDarkFundOrder } = require('../dark-fund-orders');
+const { activateDarkFundOrder, normalizeCollectorResult, publicDarkFundOrder } = require('../dark-fund-orders');
+const { callbackAuthorized, dispatchStockAnalysis } = require('../collector-client');
 
 function orderNo() {
   return `VIP${Date.now()}${crypto.randomBytes(4).toString('hex')}`.slice(0, 32);
@@ -108,7 +109,7 @@ module.exports = function register(router, HttpError) {
     };
   });
 
-  router.post('/api/dark-funds/orders', (ctx) => {
+  router.post('/api/dark-funds/orders', async (ctx) => {
     const user = currentUser(ctx);
     const stockCode = String((ctx.body || {}).stockCode || '').trim();
     if (!/^\d{6}$/.test(stockCode)) throw new HttpError(400, '请输入6位股票代码');
@@ -126,12 +127,37 @@ module.exports = function register(router, HttpError) {
       tradeDate,
       amount: 0,
       quotaSource: consumed.source,
-      status: 'PENDING',
+      status: 'CREATED',
       createdAt: Date.now(),
     };
     d.darkFundOrders.push(order);
     db.save();
-    return { ...publicDarkFundOrder(order), orderId: order.id, remaining: consumed.total };
+    await db.flush();
+    try {
+      const accepted = await dispatchStockAnalysis(order);
+      if (order.status === 'READY' || order.status === 'SUCCESS') {
+        return { ...publicDarkFundOrder(order), orderId: order.id, remaining: consumed.total };
+      }
+      order.status = 'QUEUED';
+      order.dispatchedAt = Date.now();
+      order.collectorStatus = accepted.status;
+      db.save();
+      return { ...publicDarkFundOrder(order), orderId: order.id, remaining: consumed.total };
+    } catch (error) {
+      // 极快的缓存结果可能已在接单响应返回前回调成功，不能再覆盖为失败或退次数。
+      if (order.status === 'READY' || order.status === 'SUCCESS') {
+        return { ...publicDarkFundOrder(order), orderId: order.id, remaining: consumed.total };
+      }
+      order.status = 'DISPATCH_FAILED';
+      order.dispatchError = error.message;
+      order.failedAt = Date.now();
+      if (!order.quotaRefundedAt) {
+        refundDarkFundQuota(user, consumed.source);
+        order.quotaRefundedAt = Date.now();
+      }
+      db.save();
+      throw error;
+    }
   });
 
   router.get('/api/dark-funds/orders', (ctx) => {
@@ -153,37 +179,43 @@ module.exports = function register(router, HttpError) {
     return publicDarkFundOrder(order);
   });
 
-  router.put('/api/admin/dark-fund-orders/:id/complete', (ctx) => {
-    if (!auth.isAdmin(ctx.headers.authorization)) throw new HttpError(401, '未登录或登录失效');
+  router.post('/api/stock-analysis/callback', (ctx) => {
+    if (!callbackAuthorized(ctx.headers)) throw new HttpError(401, '回调鉴权失败');
     const d = db.get();
-    const order = (d.darkFundOrders || []).find((item) => item.id === ctx.params.id);
-    if (!order) throw new HttpError(404, '工单不存在');
-    if (order.status === 'READY' || order.status === 'SUCCESS') throw new HttpError(409, '该工单已完成');
     const body = ctx.body || {};
-    const images = Array.isArray(body.images)
-      ? body.images.map((item) => String(item || '').trim()).filter((item) => /^(https?:\/\/|\/uploads\/)/i.test(item)).slice(0, 9)
-      : [];
-    if (!images.length) throw new HttpError(400, '请上传暗盘资金截图');
-    const content = String(body.content || '').trim().slice(0, 5000);
-    if (!content) throw new HttpError(400, '请填写结果文字');
-    if (/[【】]/.test(content)) throw new HttpError(400, '请先替换结果文字中的所有占位内容');
-    order.snapshotImages = images;
-    order.snapshotText = content;
-    activateDarkFundOrder(d, order, 'ADMIN');
+    const orderId = String(body.order_id || '').trim();
+    const order = (d.darkFundOrders || []).find((item) => item.id === orderId);
+    if (!order) throw new HttpError(404, '工单不存在');
+    if (String(body.stock_code || '').trim() !== order.stockCode) throw new HttpError(400, '回调股票代码不匹配');
+    if (order.status === 'READY' || order.status === 'SUCCESS') return { ok: true, duplicate: true };
+    if (String(body.status || '').toLowerCase() === 'failed' || body.ok === false) {
+      order.status = 'FAILED';
+      order.collectorError = String(body.error || '采集失败').slice(0, 500);
+      order.failedAt = Date.now();
+      const user = d.users.find((item) => item.id === order.userId);
+      if (user && !order.quotaRefundedAt) {
+        refundDarkFundQuota(user, order.quotaSource);
+        order.quotaRefundedAt = Date.now();
+      }
+      db.save();
+      return { ok: true };
+    }
+    let result;
+    try {
+      result = normalizeCollectorResult(body, order);
+    } catch (error) {
+      throw new HttpError(400, error.message);
+    }
+    activateDarkFundOrder(d, order, result);
     db.save();
-    return publicDarkFundOrder(order);
+    return { ok: true };
   });
 
   router.post('/api/payments/notify', (ctx) => {
     const transaction = wechatPay.verifyAndDecryptNotification(ctx.headers, ctx.rawBody || '');
     if (!transaction) return { code: 'SUCCESS', message: '成功' };
     const d = db.get();
-    let kind = 'vip';
     let order = (d.paymentOrders || []).find((item) => item.id === transaction.out_trade_no);
-    if (!order) {
-      order = (d.darkFundOrders || []).find((item) => item.id === transaction.out_trade_no);
-      kind = 'dark-funds';
-    }
     if (!order) throw new HttpError(404, '订单不存在');
     if (transaction.appid !== process.env.WECHAT_APP_ID || transaction.mchid !== process.env.WECHAT_PAY_MCH_ID) {
       throw new HttpError(400, '支付回调商户信息不匹配');
@@ -192,10 +224,7 @@ module.exports = function register(router, HttpError) {
     if (transaction.trade_state !== 'SUCCESS' || paidAmount.total !== order.amount || paidAmount.currency !== 'CNY') {
       throw new HttpError(400, '支付回调订单信息不匹配');
     }
-    if (kind === 'dark-funds') {
-      activateDarkFundOrder(d, order, transaction.transaction_id);
-      db.save();
-    } else activateOrder(d, order, transaction.transaction_id);
+    activateOrder(d, order, transaction.transaction_id);
     return { code: 'SUCCESS', message: '成功' };
   });
 };

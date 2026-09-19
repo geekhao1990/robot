@@ -91,11 +91,11 @@ Page({
     if (!silent) this.setData({ historyLoading: true });
     return api.getDarkFundOrders()
       .then((orders) => {
-        const normalized = (orders || []).map((item) => ({
-          ...item,
-          ready: item.ready === true || item.status === 'READY' || item.status === 'SUCCESS',
-          statusText: item.ready === true || item.status === 'READY' || item.status === 'SUCCESS' ? '点击查看' : '等待结果',
-        }));
+        const normalized = (orders || []).map((item) => {
+          const ready = item.ready === true || item.status === 'READY' || item.status === 'SUCCESS';
+          const failed = item.status === 'FAILED' || item.status === 'DISPATCH_FAILED';
+          return { ...item, ready, failed, statusText: ready ? '点击查看' : (failed ? '查询失败' : '等待结果') };
+        });
         const unread = normalized.filter((item) => item.ready && item.unread).length;
         this.setData({ orders: normalized, historyBadge: Math.min(99, unread) });
       })
@@ -107,7 +107,7 @@ Page({
   },
   openOrder(e) {
     const order = this.data.orders.find((item) => item.id === e.currentTarget.dataset.id);
-    if (!order || !order.ready) return wx.showToast({ title: '等待结果', icon: 'none' });
+    if (!order || !order.ready) return wx.showToast({ title: order && order.failed ? (order.error || '查询失败，次数已退回') : '等待结果', icon: 'none' });
     wx.showLoading({ title: '加载中', mask: true });
     api.getDarkFundOrder(order.id)
       .then((readyOrder) => {

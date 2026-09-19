@@ -21,7 +21,7 @@ Page({
           images: [],
           author: { name: 'NiuLai' },
         };
-        this.setData({ order: { ...order, snapshot, note, amountText: (Number(order.amount || 0) / 100).toFixed(2), paidAtText: formatTime(order.paidAt) } });
+        this.setData({ order: { ...order, snapshot, note, amountText: (Number(order.amount || 0) / 100).toFixed(2), paidAtText: formatTime(order.readyAt || order.paidAt) } });
       })
       .catch(() => wx.showToast({ title: '订单加载失败', icon: 'none' }))
       .finally(() => this.setData({ loading: false }));

@@ -94,6 +94,17 @@ function consumeDarkFundQuota(user, now = Date.now()) {
   return { source, ...refreshDarkFundQuota(user, now) };
 }
 
+function refundDarkFundQuota(user, source, now = Date.now()) {
+  if (!user) return refreshDarkFundQuota(user, now);
+  refreshDarkFundQuota(user, now);
+  if (source === 'vip' && vipActiveAt(user, now)) {
+    user.darkFundVipRemaining = Math.min(MONTHLY_DARK_FUND_QUOTA, quotaNumber(user.darkFundVipRemaining) + 1);
+  } else {
+    user.darkFundManualRemaining = quotaNumber(user.darkFundManualRemaining) + 1;
+  }
+  return refreshDarkFundQuota(user, now);
+}
+
 function getPlan(id) {
   return Object.prototype.hasOwnProperty.call(PLANS, id) ? PLANS[id] : null;
 }
@@ -133,4 +144,5 @@ module.exports = {
   refreshDarkFundQuota,
   setManualDarkFundQuota,
   consumeDarkFundQuota,
+  refundDarkFundQuota,
 };

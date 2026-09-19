@@ -28,4 +28,5 @@
 .order-side { display: flex; align-items: center; gap: 20rpx; color: #555; font-size: 25rpx; }
 .order-side.pending { color: #b07a12; }
 .order-side.ready { color: #ff2442; font-weight: 700; }
+.order-side.failed { color: #d93025; }
 .arrow { color: #bbb; font-size: 42rpx; font-weight: 300; }
