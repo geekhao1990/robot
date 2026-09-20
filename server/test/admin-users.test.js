@@ -21,6 +21,7 @@ function setup() {
     '../membership': require('../src/membership'),
     '../resource-links': require('../src/resource-links'),
     '../dark-fund-orders': require('../src/dark-fund-orders'),
+    '../gold-finger-sync': { getStatus: () => ({ enabled: false, configured: false, running: false, schedule: [], state: null }), manualSync: async () => ({}) },
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/admin.js'), 'utf8'), {
     module: mod,

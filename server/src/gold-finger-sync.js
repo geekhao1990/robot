@@ -227,6 +227,33 @@ async function tick(now = Date.now()) {
   }
 }
 
+async function manualSync() {
+  if (running) {
+    const error = new Error('金手指同步正在执行，请稍后再试');
+    error.status = 409;
+    throw error;
+  }
+  running = true;
+  try {
+    return await executeSync({ slot: '人工强制更新', requireToday: false, now: Date.now() });
+  } finally {
+    running = false;
+  }
+}
+
+function getStatus() {
+  const settings = config();
+  const data = db.get();
+  return {
+    enabled: settings.enabled,
+    configured: Boolean(settings.baseUrl && settings.username && settings.password),
+    running,
+    schedule: SCHEDULE_MINUTES.map(slotLabel),
+    timezone: 'Asia/Shanghai',
+    state: data.goldFingerSyncState || null,
+  };
+}
+
 function start() {
   if (!config().enabled) {
     console.log('[金手指同步] 未启用');
@@ -252,6 +279,8 @@ module.exports = {
   applySourceRecords,
   fetchSourceData,
   executeSync,
+  manualSync,
+  getStatus,
   tick,
   start,
   stop,

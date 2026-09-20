@@ -101,6 +101,15 @@
   .gold-form .field { flex: 1 1 130px; min-width: 130px; margin-bottom: 0; }
   .gold-form-actions { display: flex; align-items: center; gap: 8px; padding-bottom: 1px; }
   .gold-summary { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .gold-sync-card { margin-bottom: 20px; border-left: 4px solid #d7dbe2; }
+  .gold-sync-card.success { border-left-color: #28a964; }
+  .gold-sync-card.failed { border-left-color: #e33b50; }
+  .gold-sync-card.running { border-left-color: #e5a300; }
+  .gold-sync-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; margin-top: 16px; }
+  .gold-sync-item { min-width: 0; padding: 13px 14px; background: #f7f8fa; border-radius: 8px; }
+  .gold-sync-item .label { color: #8a8f99; font-size: 12px; }
+  .gold-sync-item .value { margin-top: 5px; color: #25272b; font-size: 14px; line-height: 1.5; word-break: break-word; }
+  .gold-sync-error { margin-top: 12px; padding: 10px 12px; color: #c6283d; font-size: 13px; background: #fff1f3; border-radius: 7px; }
   .banner-admin-list { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; }
   .banner-admin-card { width: 250px; overflow: hidden; background: #fafafa; border: 1px solid #eee; border-radius: 10px; }
   .banner-admin-card img { display: block; width: 100%; height: 110px; object-fit: cover; background: #eee; }
@@ -142,7 +151,7 @@
   .ai-optional-check.missing { color: #e53935; font-weight: 600; }
   .ai-optional-note { margin-top: 4px; color: #8a8f99; font-size: 12px; }
   .ai-json { width: 100%; min-height: 210px; margin-top: 14px; padding: 12px; color: #444; font: 13px/1.6 Consolas, monospace; background: #f7f8fa; border: 1px solid #eee; border-radius: 8px; resize: vertical; }
-  @media (max-width: 980px) { .ai-upload-layout { flex-direction: column; } .ai-upload-card, .ai-result-card { width: 100%; } }
+  @media (max-width: 980px) { .ai-upload-layout { flex-direction: column; } .ai-upload-card, .ai-result-card { width: 100%; } .gold-sync-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 </style>
 </head>
 <body>
@@ -954,6 +963,8 @@ let _goldFingerNotes = [];
 let _bannerModalImage = '';
 let _goldFingerPage = 1;
 let _goldFingerImportInitialized = false;
+let _goldFingerSyncStatus = null;
+let _goldFingerSyncing = false;
 const GOLD_FINGER_PAGE_SIZE = 10;
 
 function chinaToday() {
@@ -967,7 +978,8 @@ function renderGoldFinger(page = _goldFingerPage) {
     api('/api/admin/gold-finger-banners'),
     api('/api/admin/notes'),
     api('/api/admin/gold-finger/import-status'),
-  ]).then(([recordPage, banners, notes, importStatus]) => {
+    api('/api/admin/gold-finger/sync-status'),
+  ]).then(([recordPage, banners, notes, importStatus, syncStatus]) => {
     const records = recordPage && recordPage.list ? recordPage.list : [];
     const pages = Math.max(1, Number(recordPage && recordPage.pages) || 1);
     const total = Number(recordPage && recordPage.total) || 0;
@@ -976,6 +988,7 @@ function renderGoldFinger(page = _goldFingerPage) {
     _goldFingerBanners = banners || [];
     _goldFingerNotes = (notes || []).filter((note) => note.type === 'ad');
     _goldFingerImportInitialized = !!(importStatus && importStatus.initialized);
+    _goldFingerSyncStatus = syncStatus || null;
     const noteMap = {};
     _goldFingerNotes.forEach((note) => { noteMap[note.id] = note; });
     const bannerCards = _goldFingerBanners.map((item, index) => `<div class="banner-admin-card">
@@ -1000,7 +1013,27 @@ function renderGoldFinger(page = _goldFingerPage) {
       <td>${fmtDate(item.updatedAt)}</td>
       <td><button class="btn-sm" onclick="editGoldFinger('${esc(item.date)}')">编辑</button><button class="btn-sm del" onclick="deleteGoldFinger('${esc(item.date)}')">删除</button></td>
     </tr>`).join('');
+    const syncState = _goldFingerSyncStatus && _goldFingerSyncStatus.state || {};
+    const syncRunning = _goldFingerSyncing || (_goldFingerSyncStatus && _goldFingerSyncStatus.running) || syncState.status === 'running';
+    const syncStatusClass = syncRunning ? 'running' : (syncState.status === 'success' ? 'success' : (syncState.status === 'failed' ? 'failed' : ''));
+    const syncStatusText = !_goldFingerSyncStatus || !_goldFingerSyncStatus.enabled
+      ? '未启用'
+      : (!_goldFingerSyncStatus.configured ? '配置不完整' : (syncRunning ? '正在更新' : (syncState.status === 'success' ? '运行正常' : (syncState.status === 'failed' ? '更新异常' : '等待首次自动更新'))));
+    const syncResult = syncState.result || {};
+    const resultText = syncState.lastSuccessAt
+      ? `${syncResult.latestDate || '—'} · 新增${Number(syncResult.created) || 0} / 更新${Number(syncResult.updated) || 0} / 保留${Number(syncResult.skipped) || 0}`
+      : '尚无成功记录';
     document.getElementById('content').innerHTML = `
+      <div class="card gold-sync-card ${syncStatusClass}">
+        <div class="toolbar"><div><h3>自动更新状态</h3><div class="hint">服务器按北京时间交易日 ${esc((_goldFingerSyncStatus && _goldFingerSyncStatus.schedule || ['10:00','14:00','16:00']).join('、'))} 自动抓取；强制更新不受交易日和时间限制。</div></div><button id="goldForceSyncButton" class="btn-primary" onclick="forceGoldFingerSync()" ${syncRunning ? 'disabled' : ''}>${syncRunning ? '正在更新…' : '强制更新'}</button></div>
+        <div class="gold-sync-grid">
+          <div class="gold-sync-item"><div class="label">当前状态</div><div class="value"><span class="tag ${syncState.status === 'success' ? 'paid' : (syncState.status === 'failed' ? 'rejected' : 'pending')}">${esc(syncStatusText)}</span></div></div>
+          <div class="gold-sync-item"><div class="label">最近成功</div><div class="value">${syncState.lastSuccessAt ? fmtDate(syncState.lastSuccessAt) : '—'}</div></div>
+          <div class="gold-sync-item"><div class="label">最近执行</div><div class="value">${syncState.lastAttemptAt ? `${fmtDate(syncState.lastAttemptAt)} · ${esc(syncState.lastSlot || '—')}` : '—'}</div></div>
+          <div class="gold-sync-item"><div class="label">最近结果</div><div class="value">${esc(resultText)}</div></div>
+        </div>
+        ${syncState.error ? `<div class="gold-sync-error">失败原因：${esc(syncState.error)}</div>` : ''}
+      </div>
       <div class="card" style="margin-bottom:20px">
         <div class="toolbar"><div><h3>注入 JSON 数据</h3><div class="hint">${_goldFingerImportInitialized ? '增量模式：历史已有日期不覆盖，数组最后一项可更新。' : '首次初始化模式：本次会覆盖这批日期的已有数据，完成后自动转为增量模式。'} 支持直接数组或 { "list": [...] } 格式；阳/阴谱自动取整且保持合计100；“-”会继承前一个交易日的金/银手指。</div></div></div>
         <textarea id="goldJsonImport" style="width:100%;min-height:240px;box-sizing:border-box;font-family:Consolas,Monaco,monospace;font-size:12px;line-height:1.55" placeholder='粘贴 JSON：可直接粘贴 [ ... ]，也可粘贴 { "list": [ ... ] }'></textarea>
@@ -1017,6 +1050,24 @@ function renderGoldFinger(page = _goldFingerPage) {
 }
 
 function gotoGoldFingerPage(page) { renderGoldFinger(page); }
+
+function forceGoldFingerSync() {
+  if (_goldFingerSyncing) return;
+  if (!confirm('确定立即从数据源强制更新金手指数据吗？')) return;
+  _goldFingerSyncing = true;
+  const button = document.getElementById('goldForceSyncButton');
+  if (button) { button.disabled = true; button.textContent = '正在更新…'; }
+  api('/api/admin/gold-finger/sync-now', { method: 'POST', body: '{}' })
+    .then((result) => {
+      showAdminToast(`强制更新成功：${result.latestDate || '最新数据'}，新增${result.created || 0}条，更新${result.updated || 0}条`);
+      renderGoldFinger(1);
+    })
+    .catch((error) => {
+      showAdminToast(error.message || '强制更新失败', 'error');
+      renderGoldFinger();
+    })
+    .finally(() => { _goldFingerSyncing = false; });
+}
 
 function saveGoldBanners(banners) {
   return api('/api/admin/gold-finger-banners', { method: 'PUT', body: JSON.stringify({ banners: banners || _goldFingerBanners }) });

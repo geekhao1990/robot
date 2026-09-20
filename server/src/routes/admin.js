@@ -6,6 +6,7 @@ const { TYPE_LABELS, normalizeType, typeLabel, typeForCategory } = require('../c
 const { getPlan, activateMembership, refreshDarkFundQuota, setManualDarkFundQuota } = require('../membership');
 const { normalizeResourceLinks } = require('../resource-links');
 const crypto = require('crypto');
+const goldFingerSync = require('../gold-finger-sync');
 
 module.exports = function register(router, HttpError) {
   const baseCategories = Object.values(TYPE_LABELS);
@@ -234,6 +235,16 @@ module.exports = function register(router, HttpError) {
   router.get('/api/admin/gold-finger/import-status', (ctx) => {
     requireAuth(ctx);
     return { initialized: db.get().goldFingerImportInitialized === true };
+  });
+
+  router.get('/api/admin/gold-finger/sync-status', (ctx) => {
+    requireAuth(ctx);
+    return goldFingerSync.getStatus();
+  });
+
+  router.post('/api/admin/gold-finger/sync-now', async (ctx) => {
+    requireAuth(ctx);
+    return goldFingerSync.manualSync();
   });
 
   router.put('/api/admin/gold-finger/:date', (ctx) => {
