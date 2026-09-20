@@ -38,6 +38,7 @@ async function dispatchStockAnalysis(order) {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
+          'X-Collector-Token': token,
         },
         body: JSON.stringify({
           order_id: order.id,
