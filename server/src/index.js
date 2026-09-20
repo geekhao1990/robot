@@ -7,6 +7,7 @@ const db = require('./db');
 const { createRouter, HttpError } = require('./router');
 const { handleUpload } = require('./upload');
 const audit = require('./audit');
+const goldFingerSync = require('./gold-finger-sync');
 
 const router = createRouter();
 require('./routes/public')(router, HttpError);
@@ -107,7 +108,10 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '127.0.0.1';
 db.load()
   .then(() => {
-    server.listen(PORT, HOST, () => console.log(`API & 管理后台运行中： http://${HOST}:${PORT}/admin`));
+    server.listen(PORT, HOST, () => {
+      console.log(`API & 管理后台运行中： http://${HOST}:${PORT}/admin`);
+      goldFingerSync.start();
+    });
   })
   .catch((error) => {
     console.error('数据库初始化失败', error);
@@ -115,6 +119,7 @@ db.load()
   });
 
 async function shutdown() {
+  goldFingerSync.stop();
   server.close(async () => {
     try { await db.close(); } finally { process.exit(0); }
   });
