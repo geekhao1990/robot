@@ -109,7 +109,8 @@ function activateDarkFundOrder(data, order, collectorResult, readyAt = Date.now(
     : result.analysis.score.toFixed(1);
   const note = {
     id: `dark_${order.id}`,
-    visibility: 'public',
+    visibility: 'private',
+    ownerUserId: order.userId,
     title: result.analysis.title,
     content: paragraphs.join('\n\n'),
     images,

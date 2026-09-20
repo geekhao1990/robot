@@ -251,6 +251,29 @@ function ensureContentTypes() {
     db.darkFundOrders = [];
     changed = true;
   }
+  db.darkFundOrders.forEach((order) => {
+    const noteId = order.noteId || (order.snapshot && order.snapshot.note && order.snapshot.note.id) || `dark_${order.id}`;
+    const note = db.notes.find((item) => item.id === noteId);
+    if (!note) return;
+    if (note.visibility !== 'private') {
+      note.visibility = 'private';
+      changed = true;
+    }
+    if (note.ownerUserId !== order.userId) {
+      note.ownerUserId = order.userId;
+      changed = true;
+    }
+    if (order.snapshot && order.snapshot.note) {
+      if (order.snapshot.note.visibility !== 'private') {
+        order.snapshot.note.visibility = 'private';
+        changed = true;
+      }
+      if (order.snapshot.note.ownerUserId !== order.userId) {
+        order.snapshot.note.ownerUserId = order.userId;
+        changed = true;
+      }
+    }
+  });
   if (!Array.isArray(db.invites)) {
     db.invites = [];
     changed = true;

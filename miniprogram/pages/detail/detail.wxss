@@ -498,6 +498,47 @@
   background: rgba(20, 15, 12, .58);
   box-sizing: border-box;
 }
+.dark-article {
+  padding: 40rpx 34rpx 24rpx;
+}
+.dark-article .title {
+  margin-bottom: 34rpx;
+  color: #1f1f1f;
+  font-size: 42rpx;
+  line-height: 1.45;
+  letter-spacing: 1rpx;
+}
+.dark-paragraph {
+  margin: 0 0 32rpx;
+  color: #333;
+  font-size: 30rpx;
+  line-height: 1.88;
+  text-align: justify;
+  white-space: pre-wrap;
+}
+.dark-article-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 4rpx 0 38rpx;
+  border-radius: 8rpx;
+}
+.dark-ad-slot {
+  width: 100%;
+  margin: 38rpx 0 12rpx;
+}
+.dark-ad-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 150rpx;
+  color: #c4c4c4;
+  font-size: 20rpx;
+  letter-spacing: 3rpx;
+  background: #f7f7f7;
+  border: 1rpx solid #eeeeee;
+  border-radius: 8rpx;
+}
 .vip-panel {
   position: relative;
   display: flex;
@@ -646,6 +687,11 @@
 .share-action[disabled],
 .contact-action[disabled] {
   opacity: .45;
+}
+.action-disabled,
+.action-disabled .num {
+  color: #c8c8c8;
+  opacity: .55;
 }
 .ic {
   width: 42rpx;

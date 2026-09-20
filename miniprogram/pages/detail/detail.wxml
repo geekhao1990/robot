@@ -13,7 +13,7 @@
   </view>
 
   <scroll-view class="body" scroll-y style="padding-top: {{headerHeight}}px;">
-    <view class="swiper-wrap">
+    <view wx:if="{{!isDarkFundNote}}" class="swiper-wrap">
       <swiper class="swiper" style="height: {{swiperHeight}}rpx;" bindchange="onSwiperChange" circular="{{false}}">
         <swiper-item wx:for="{{note.images}}" wx:key="*this">
           <view class="swiper-stage">
@@ -26,9 +26,20 @@
         <view wx:for="{{note.images}}" wx:key="*this" class="dot {{current === index ? 'active' : ''}}"></view>
       </view>
     </view>
-    <view class="article">
+    <view class="article {{isDarkFundNote ? 'dark-article' : ''}}">
       <view class="title">{{note.title}}</view>
-      <view class="text">{{note.displayContent}}</view>
+      <block wx:if="{{isDarkFundNote}}">
+        <view wx:if="{{darkParagraphs[0]}}" class="dark-paragraph">{{darkParagraphs[0]}}</view>
+        <image wx:if="{{note.images[0]}}" class="dark-article-image" src="{{note.images[0]}}" mode="widthFix" bindtap="onNoteImageTap" data-index="0" data-url="{{note.images[0]}}" />
+        <view wx:if="{{darkParagraphs[1]}}" class="dark-paragraph">{{darkParagraphs[1]}}</view>
+        <image wx:if="{{note.images[1]}}" class="dark-article-image" src="{{note.images[1]}}" mode="widthFix" bindtap="onNoteImageTap" data-index="1" data-url="{{note.images[1]}}" />
+        <view wx:if="{{darkParagraphs[2]}}" class="dark-paragraph">{{darkParagraphs[2]}}</view>
+        <view class="dark-ad-slot">
+          <ad wx:if="{{darkArticleAdUnitId && !articleAdLoadFailed}}" unit-id="{{darkArticleAdUnitId}}" binderror="onArticleAdError" />
+          <view wx:else class="dark-ad-placeholder">广告位</view>
+        </view>
+      </block>
+      <view wx:else class="text">{{note.displayContent}}</view>
       <view class="tags"><text wx:for="{{note.tags}}" wx:key="*this" class="tag">#{{item}}</text></view>
       <view class="meta">{{timeText}}</view>
       <view class="actionbar">
@@ -39,7 +50,7 @@
         <view class="action" bindtap="onCollect">
           <view class="ic star {{note.collected ? 'active' : ''}}"></view><text class="num">{{collectText}}</text>
         </view>
-        <button class="action share-action" open-type="share">
+        <button class="action share-action {{isDarkFundNote ? 'action-disabled' : ''}}" open-type="{{isDarkFundNote ? '' : 'share'}}" disabled="{{isDarkFundNote}}">
           <view class="ic share"></view><text class="num">分享有礼</text>
         </button>
         <button class="action contact-action" open-type="contact">

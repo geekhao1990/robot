@@ -5,6 +5,7 @@ const { pubUser, pubNote } = require('../util');
 const auth = require('../auth');
 const crypto = require('crypto');
 const { code2Session, getPhoneNumber } = require('../wechat');
+const { canViewNote } = require('../note-access');
 
 function getState(userId) {
   const d = db.get();
@@ -489,8 +490,9 @@ module.exports = function register(router, HttpError) {
   router.post('/api/like/:id', (ctx) => {
     const u = currentUser(ctx);
     const s = getState(u.id);
-    const note = db.get().notes.find((n) => n.id === ctx.params.id);
-    if (!note || note.visible === false) throw new HttpError(404, 'not found');
+    const data = db.get();
+    const note = data.notes.find((n) => n.id === ctx.params.id);
+    if (!canViewNote(data, note, u)) throw new HttpError(404, 'not found');
     const liked = !s.likes[ctx.params.id];
     if (liked) { s.likes[ctx.params.id] = Date.now(); note.likes += 1; }
     else { delete s.likes[ctx.params.id]; note.likes = Math.max(0, note.likes - 1); }
@@ -502,8 +504,9 @@ module.exports = function register(router, HttpError) {
   router.post('/api/collect/:id', (ctx) => {
     const u = currentUser(ctx);
     const s = getState(u.id);
-    const note = db.get().notes.find((n) => n.id === ctx.params.id);
-    if (!note || note.visible === false) throw new HttpError(404, 'not found');
+    const data = db.get();
+    const note = data.notes.find((n) => n.id === ctx.params.id);
+    if (!canViewNote(data, note, u)) throw new HttpError(404, 'not found');
     const collected = !s.collects[ctx.params.id];
     if (collected) { s.collects[ctx.params.id] = Date.now(); note.collects += 1; }
     else { delete s.collects[ctx.params.id]; note.collects = Math.max(0, note.collects - 1); }
@@ -555,16 +558,18 @@ module.exports = function register(router, HttpError) {
   router.get('/api/me/likes', (ctx) => {
     const u = currentUser(ctx);
     const s = getState(u.id);
+    const data = db.get();
     const map = {};
-    db.get().notes.forEach((n) => (map[n.id] = n));
-    return Object.keys(s.likes).sort((a, b) => s.likes[b] - s.likes[a]).map((id) => map[id]).filter((note) => note && note.visible !== false).map(pubNote);
+    data.notes.forEach((n) => (map[n.id] = n));
+    return Object.keys(s.likes).sort((a, b) => s.likes[b] - s.likes[a]).map((id) => map[id]).filter((note) => canViewNote(data, note, u)).map(pubNote);
   });
   router.get('/api/me/collects', (ctx) => {
     const u = currentUser(ctx);
     const s = getState(u.id);
+    const data = db.get();
     const map = {};
-    db.get().notes.forEach((n) => (map[n.id] = n));
-    return Object.keys(s.collects).sort((a, b) => s.collects[b] - s.collects[a]).map((id) => map[id]).filter((note) => note && note.visible !== false).map(pubNote);
+    data.notes.forEach((n) => (map[n.id] = n));
+    return Object.keys(s.collects).sort((a, b) => s.collects[b] - s.collects[a]).map((id) => map[id]).filter((note) => canViewNote(data, note, u)).map(pubNote);
   });
 
   // 我发布的笔记

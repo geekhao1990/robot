@@ -10,6 +10,22 @@ function detailImageHeight(width, height) {
   return Math.round(750 * ratio);
 }
 
+function isDarkFundNote(note) {
+  return !!(note && (
+    String(note.id || '').indexOf('dark_') === 0
+    || (Array.isArray(note.tags) && note.tags.indexOf('暗盘资金') >= 0)
+  ));
+}
+
+function darkArticleParagraphs(note, content) {
+  const parts = String(content || '').split(/\n\s*\n/).map((item) => item.trim()).filter(Boolean);
+  const paragraphs = [parts[0] || '', parts[1] || '', parts.slice(2).join('\n\n')];
+  if (note.riskDisclaimerEnabled && String(content || '').indexOf(RISK_DISCLAIMER) < 0) {
+    paragraphs[2] = `${paragraphs[2]}${paragraphs[2] ? '\n\n' : ''}${RISK_DISCLAIMER}`;
+  }
+  return paragraphs;
+}
+
 Page({
   data: {
     statusBarHeight: 20,
@@ -22,6 +38,12 @@ Page({
     collectText: '0',
     timeText: '',
     resourceLabel: '点击领取',
+    isDarkFundNote: false,
+    darkParagraphs: [],
+    darkArticleAdUnitId: /^adunit-/i.test(String(config.darkArticleAdUnitId || ''))
+      ? String(config.darkArticleAdUnitId)
+      : '',
+    articleAdLoadFailed: false,
     followed: false,
     isOwnNote: false,
     inviteCode: '',
@@ -105,6 +127,7 @@ Page({
         return toast('笔记不存在');
       }
       const content = String(note.content || '').replace(/\s+$/, '');
+      const darkFundNote = isDarkFundNote(note);
       note.displayContent = note.riskDisclaimerEnabled
         ? `${content}${content ? '\n\n' : ''}${RISK_DISCLAIMER}`
         : content;
@@ -119,9 +142,20 @@ Page({
         likeText: formatCount(note.likes),
         collectText: formatCount(note.collects),
         timeText: fromNow(note.time),
+        isDarkFundNote: darkFundNote,
+        darkParagraphs: darkFundNote ? darkArticleParagraphs(note, content) : [],
+        resourceLabel: darkFundNote ? '查询暗盘' : '点击领取',
+        articleAdLoadFailed: false,
         isOwnNote,
         followed: !isOwnNote && store.isFollowed(authorId),
-      }, () => this.finishGoldTabLoading());
+      }, () => {
+        if (darkFundNote && wx.hideShareMenu) {
+          wx.hideShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+        } else if (wx.showShareMenu) {
+          wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+        }
+        this.finishGoldTabLoading();
+      });
     }).catch((err) => {
       this._loadingNote = false;
       this.finishGoldTabLoading();
@@ -184,6 +218,9 @@ Page({
   },
   onGetResource() {
     if (!store.isLogin()) return this.requireLogin();
+    if (this.data.isDarkFundNote) {
+      return wx.navigateTo({ url: '/pages/dark-funds/dark-funds' });
+    }
     if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
     return Promise.resolve(this.settingsPromise).then(() => {
       // VIP 总开关关闭时，普通笔记不做会员校验，仍按广告设置领取。
@@ -347,6 +384,9 @@ Page({
     this.setData({ resourceModalVisible: false });
   },
   noop() {},
+  onArticleAdError() {
+    this.setData({ articleAdLoadFailed: true });
+  },
   copyResourceLink(e) {
     const resource = this.data.resourceOptions[Number(e.currentTarget.dataset.index)];
     if (!resource || !resource.url) return;

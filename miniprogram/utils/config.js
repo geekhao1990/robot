@@ -23,4 +23,6 @@ module.exports = {
   rewardedAdEnabled: false,
   // 微信公众平台创建的激励视频广告位 ID，上线前必须替换
   rewardedVideoAdUnitId: 'adunit-xxxxxxxxxxxxxxxx',
+  // 暗盘结果文章底部的横幅广告位；留空时显示占位区。
+  darkArticleAdUnitId: '',
 };

@@ -29,9 +29,11 @@ function setup() {
     goldFingerBanners: [],
     settings: { vipEnabled: true, rewardedAdEnabled: true, featuredNoteId: 'g1' },
     userState: {},
+    darkFundOrders: [{ id: 'DF001', userId: 'u1', noteId: 'dark_DF001' }],
     notes: [
       { id: 'g1', type: 'gold', visible: true, title: '金手指说明', content: '金手指内容', tags: [], author: { name: '作者' }, time: 2 },
       { id: 'n1', type: 'course', visible: true, free: false, title: '普通课程', content: '公开内容', tags: [], author: { name: '作者' }, time: 1 },
+      { id: 'dark_DF001', type: 'material', visible: true, title: '私有暗盘', content: '暗盘内容', tags: ['暗盘资金'], authorId: 'dark-author', author: { name: '暗盘' }, time: 3 },
     ],
   };
   const vipActive = (user) => !!(user && user.vip && Number(user.vipExpire) > Date.now());
@@ -53,6 +55,7 @@ function setup() {
     },
     '../content-types': { typeLabel: () => '' },
     '../resource-links': { resourceList: (note) => note.id === 'n1' ? [{ provider: 'baidu', url: 'https://example.com' }] : [] },
+    '../note-access': require('../src/note-access'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/public.js'), 'utf8'), {
     module: mod,
@@ -114,4 +117,13 @@ test('VIP master switch only controls paid ordinary note validation', async () =
   data.settings.vipEnabled = false;
   const result = await call('/api/notes/n1/resource', {}, 'Bearer u2');
   assert.equal(result.url, 'https://example.com');
+});
+
+test('暗盘笔记不进入公开列表且只有订单本人可直连访问', async () => {
+  const { call } = setup();
+  assert.equal((await call('/api/feed', {}, 'Bearer u1')).list.some((note) => note.id === 'dark_DF001'), false);
+  assert.equal((await call('/api/search', { kw: '暗盘' }, 'Bearer u1')).length, 0);
+  assert.equal((await call('/api/notes/dark_DF001', {}, 'Bearer u1')).id, 'dark_DF001');
+  await assert.rejects(call('/api/notes/dark_DF001', {}, 'Bearer u2'), { status: 404 });
+  await assert.rejects(call('/api/notes/dark_DF001', {}, ''), { status: 404 });
 });

@@ -87,6 +87,8 @@ test('query dispatches immediately and authenticated callback completes it idemp
   assert.equal((await call('POST', '/api/stock-analysis/callback', successCallback(data.darkFundOrders[0]), '', { 'x-stock-callback-token': 'callback-secret' })).ok, true);
   assert.equal(data.darkFundOrders[0].status, 'READY');
   assert.equal(data.notes[0].title, '【暗盘追踪】明暗同步流入，资金表现如何？');
+  assert.equal(data.notes[0].visibility, 'private');
+  assert.equal(data.notes[0].ownerUserId, 'u1');
   assert.equal(data.notes[0].content, '第一段\n\n第二段\n\n第三段');
   assert.deepEqual(data.notes[0].tags, ['暗盘资金', '600105', 'score9.5']);
   assert.deepEqual(data.notes[0].images, [

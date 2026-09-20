@@ -4,6 +4,7 @@ const { vipActive, goldAccess, pubUser, pubNote, pubSettings } = require('../uti
 const auth = require('../auth');
 const { typeLabel } = require('../content-types');
 const { resourceList } = require('../resource-links');
+const { canViewNote, isDarkFundNote } = require('../note-access');
 
 module.exports = function register(router, HttpError) {
   const requireReader = (ctx) => {
@@ -50,7 +51,7 @@ module.exports = function register(router, HttpError) {
     const { tab = 'discover', page = 1, size = 10 } = ctx.query;
     const d = db.get();
     let reader = optionalReader(ctx, d);
-    let list = d.notes.filter((note) => note.visible !== false && (note.type !== 'gold' || goldAccess(reader)));
+    let list = d.notes.filter((note) => !isDarkFundNote(note) && canViewNote(d, note, reader) && (note.type !== 'gold' || goldAccess(reader)));
     if (tab === 'following') {
       reader = requireReader(ctx);
       const state = (d.userState && d.userState[reader.id]) || {};
@@ -86,7 +87,7 @@ module.exports = function register(router, HttpError) {
     if (!kw) return [];
     const contains = (value) => String(value || '').toLowerCase().includes(kw);
     return data.notes.filter(
-      (n) => n.visible !== false && (n.type !== 'gold' || goldAccess(reader)) && (
+      (n) => !isDarkFundNote(n) && canViewNote(data, n, reader) && (n.type !== 'gold' || goldAccess(reader)) && (
         contains(n.title) ||
         contains(n.content) ||
         contains(n.category) ||
@@ -100,7 +101,7 @@ module.exports = function register(router, HttpError) {
   router.get('/api/notes/:id', (ctx) => {
     const data = db.get();
     const reader = optionalReader(ctx, data);
-    const n = data.notes.find((x) => x.id === ctx.params.id && x.visible !== false && (x.type !== 'gold' || goldAccess(reader)));
+    const n = data.notes.find((x) => x.id === ctx.params.id && canViewNote(data, x, reader) && (x.type !== 'gold' || goldAccess(reader)));
     if (!n) { const e = new Error('not found'); e.status = 404; throw e; }
     return pubNote(n);
   });
@@ -150,7 +151,7 @@ module.exports = function register(router, HttpError) {
   router.get('/api/notes/:id/resource', (ctx) => {
     const reader = requireReader(ctx);
     const data = db.get();
-    const note = data.notes.find((n) => n.id === ctx.params.id && n.visible !== false);
+    const note = data.notes.find((n) => n.id === ctx.params.id && canViewNote(data, n, reader));
     if (!note) throw new HttpError(404, 'not found');
     if (note.type === 'gold') throw new HttpError(400, '金手指内容请进入会员专属页面查看');
     if (data.settings && data.settings.vipEnabled === true && note.free !== true && !vipActive(reader)) {
@@ -170,6 +171,7 @@ module.exports = function register(router, HttpError) {
 
   router.get('/api/users/:id/notes', (ctx) => {
     const reader = requireReader(ctx);
-    return db.get().notes.filter((n) => n.authorId === ctx.params.id && n.visible !== false && (n.type !== 'gold' || goldAccess(reader))).map(pubNote);
+    const data = db.get();
+    return data.notes.filter((n) => n.authorId === ctx.params.id && !isDarkFundNote(n) && canViewNote(data, n, reader) && (n.type !== 'gold' || goldAccess(reader))).map(pubNote);
   });
 };
