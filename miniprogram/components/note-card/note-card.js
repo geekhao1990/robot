@@ -34,7 +34,8 @@ Component({
   lifetimes: {
     attached() {
       this._cardAttached = true;
-      this.applyNote(this._pendingNote || this.data.note || {});
+      const current = this.data.note || {};
+      this.applyNote(current.id ? current : (this._pendingNote || current));
     },
     detached() {
       this._cardAttached = false;

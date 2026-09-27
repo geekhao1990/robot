@@ -280,7 +280,7 @@ module.exports = function register(router, HttpError) {
         id: 'wx_' + crypto.createHash('sha256').update(openid).digest('hex').slice(0, 16),
         wxOpenId: openid,
         name: b.name || '微信用户',
-        avatar: b.avatar || 'https://i.pravatar.cc/150?img=68',
+        avatar: b.avatar || 'https://app.nankaitechschool.com/assets/avatars/author-68.jpg',
         desc: b.desc || '这个人很懒，什么都没留下',
         fans: b.fans || 0,
         follows: b.follows || 0,

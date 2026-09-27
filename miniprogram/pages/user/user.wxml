@@ -22,8 +22,8 @@
   </view>
 
   <view class="list">
-    <view wx:if="{{!notes.length}}" class="placeholder">还没有发布笔记</view>
-    <view wx:else class="waterfall">
+    <view class="placeholder" hidden="{{notes.length}}">还没有发布笔记</view>
+    <view class="waterfall" hidden="{{!notes.length}}">
       <view class="column">
         <note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindopen="goDetail" />
       </view>

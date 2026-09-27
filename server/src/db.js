@@ -106,6 +106,38 @@ function applyLifestyleNotesMigration() {
   return true;
 }
 
+const HOSTED_AVATAR_IDS = new Set(['1', '5', '11', '12', '15', '20', '33', '68']);
+
+function hostedAvatarUrl(value) {
+  const match = String(value || '').match(/^https:\/\/i\.pravatar\.cc\/150\?img=(\d+)$/i);
+  if (!match || !HOSTED_AVATAR_IDS.has(match[1])) return String(value || '');
+  return `https://app.nankaitechschool.com/assets/avatars/author-${match[1]}.jpg`;
+}
+
+function applyHostedAuthorAvatarMigration() {
+  db.contentMigrations = db.contentMigrations || {};
+  if (db.contentMigrations.hostedAuthorAvatarsV1 === true) return false;
+  let changed = false;
+  (db.users || []).forEach((user) => {
+    const avatar = hostedAvatarUrl(user.avatar);
+    if (avatar && avatar !== user.avatar) {
+      user.avatar = avatar;
+      changed = true;
+    }
+  });
+  (db.notes || []).forEach((note) => {
+    const author = (db.users || []).find((user) => user.id === note.authorId);
+    if (!author) return;
+    note.author = note.author || { id: author.id, name: author.name };
+    if (note.author.avatar !== author.avatar) {
+      note.author.avatar = author.avatar;
+      changed = true;
+    }
+  });
+  db.contentMigrations.hostedAuthorAvatarsV1 = true;
+  return true;
+}
+
 function mysqlEnabled() {
   return !!String(process.env.MYSQL_DATABASE || '').trim();
 }
@@ -392,9 +424,10 @@ async function load() {
   const contentChanged = ensureContentTypes();
   const settingsChanged = ensureSettings();
   const lifestyleChanged = applyLifestyleNotesMigration();
+  const avatarChanged = applyHostedAuthorAvatarMigration();
   if (mysqlEnabled()) {
     await save();
-  } else if (contentChanged || settingsChanged || lifestyleChanged || !fs.existsSync(FILE)) {
+  } else if (contentChanged || settingsChanged || lifestyleChanged || avatarChanged || !fs.existsSync(FILE)) {
     save();
   }
   return db;

@@ -70,7 +70,7 @@
   <view class="quick-menu {{editingProfile ? 'after-editor' : ''}}">
     <view class="quick-item" bindtap="openGiftModal"><image class="quick-icon" src="/images/profile-gift-card.png" mode="aspectFit" /><view class="quick-title">礼品卡</view></view>
     <view wx:if="{{user && user.darkFundEnabled}}" class="quick-item" bindtap="goDarkFunds"><image class="quick-icon" src="/images/profile-dark-funds.png" mode="aspectFit" /><view class="quick-title">暗盘资金</view></view>
-    <view wx:if="{{user && user.goldAccess}}" class="quick-item" bindtap="goGoldNote"><image class="quick-icon" src="/images/profile-gold-manage.png" mode="aspectFit" /><view class="quick-title">金手指</view></view>
+    <view wx:if="{{user && user.goldAccess}}" class="quick-item" bindtap="goGoldNote"><image class="quick-icon" src="/images/profile-gold.png" mode="aspectFit" /><view class="quick-title">金手指</view></view>
     <view class="quick-item" bindtap="goMessageCenter">
       <view class="quick-icon-wrap"><image class="quick-icon" src="/images/profile-messages.svg" mode="aspectFit" /><view wx:if="{{messageUnread}}" class="quick-badge">{{messageUnread}}</view></view>
       <view class="quick-title">消息中心</view>
@@ -79,11 +79,11 @@
   <block wx:if="{{loggedIn}}">
     <view class="tabs"><view wx:for="{{tabs}}" wx:key="*this" class="tab {{tabIndex === index ? 'active' : ''}}" data-index="{{index}}" bindtap="onTab">{{item}}</view></view>
     <view class="list">
-      <view wx:if="{{currentNotes.length}}" class="waterfall">
+      <view class="waterfall" hidden="{{!currentNotes.length}}">
         <view class="column"><note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindopen="goDetail" /></view>
         <view class="column"><note-card wx:for="{{right}}" wx:key="id" note="{{item}}" bindopen="goDetail" /></view>
       </view>
-      <view wx:else class="placeholder">{{emptyText}}</view>
+      <view class="placeholder" hidden="{{currentNotes.length}}">{{emptyText}}</view>
     </view>
   </block>
 </view>

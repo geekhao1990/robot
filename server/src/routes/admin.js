@@ -526,7 +526,7 @@ module.exports = function register(router, HttpError) {
     const user = {
       id: 'u' + Date.now(),
       name: b.name || '新用户',
-      avatar: b.avatar || 'https://i.pravatar.cc/150?img=1',
+      avatar: b.avatar || 'https://app.nankaitechschool.com/assets/avatars/author-1.jpg',
       desc: b.desc || '',
       fans: b.fans || 0,
       follows: b.follows || 0,

@@ -2,7 +2,7 @@
 // 初始数据。首次启动写入 data/db.json，之后由管理后台维护。
 
 const img = (seed, w = 800, h = 1000) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
-const avatar = (n) => `https://i.pravatar.cc/150?img=${n}`;
+const avatar = (n) => `https://app.nankaitechschool.com/assets/avatars/author-${n}.jpg`;
 const { normalizeType, typeLabel } = require('./content-types');
 
 const YEAR = 365 * 24 * 3600 * 1000;

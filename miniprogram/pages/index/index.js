@@ -81,8 +81,11 @@ Page({
   },
 
   // 瀑布流分列：累计高度短的一列优先放入
-  distribute(notes) {
-    let { left, right, leftH, rightH } = this.data;
+  distribute(notes, reset = false) {
+    let left = reset ? [] : this.data.left;
+    let right = reset ? [] : this.data.right;
+    let leftH = reset ? 0 : this.data.leftH;
+    let rightH = reset ? 0 : this.data.rightH;
     notes.forEach((n) => {
       const h = n.coverRatio || 1.3; // 用比例近似高度
       if (leftH <= rightH) {
@@ -108,12 +111,8 @@ Page({
     this.setData({ loading: true });
     const page = reset ? 1 : this.data.page;
 
-    if (reset) {
-      this.setData({ left: [], right: [], leftH: 0, rightH: 0 });
-    }
-
     api.getFeed({ tab: this.data.tab, page, size: 8 }).then((res) => {
-      this.distribute(res.list);
+      this.distribute(res.list, reset);
       this.setData({
         page: page + 1,
         hasMore: res.hasMore,

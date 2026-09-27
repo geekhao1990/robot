@@ -4,7 +4,7 @@
 
 const img = (seed, w = 400, h = 600) =>
   `https://picsum.photos/seed/${seed}/${w}/${h}`;
-const avatar = (n) => `https://i.pravatar.cc/150?img=${n}`;
+const avatar = (n) => `https://app.nankaitechschool.com/assets/avatars/author-${n}.jpg`;
 
 // ---------------- 用户 ----------------
 const users = [

@@ -46,11 +46,11 @@
     </view>
 
     <view class="content">
-      <view wx:if="{{loading && !left.length && !right.length}}" class="placeholder">加载中...</view>
+      <view class="placeholder" hidden="{{!(loading && !left.length && !right.length)}}">加载中...</view>
 
-      <view wx:elif="{{!left.length && !right.length}}" class="placeholder">{{emptyText}}</view>
+      <view class="placeholder" hidden="{{loading || left.length || right.length}}">{{emptyText}}</view>
 
-      <view wx:else class="waterfall">
+      <view class="waterfall" hidden="{{!left.length && !right.length}}">
         <view class="column">
           <note-card
             wx:for="{{left}}"
@@ -71,7 +71,7 @@
         </view>
       </view>
 
-      <view wx:if="{{!loading && (left.length || right.length)}}" class="loadmore">
+      <view class="loadmore" hidden="{{loading || (!left.length && !right.length)}}">
         {{hasMore ? '上拉加载更多' : '没有更多了～'}}
       </view>
     </view>
