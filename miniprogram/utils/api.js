@@ -84,7 +84,7 @@ function allNotes() {
 
 function localGoldAccess() {
   const user = store.getUser();
-  return !!(user && (user.goldAccess || Number(user.goldExpire) > Date.now()));
+  return !!(user && (user.goldAccess || Number(user.goldExpire) > Date.now() || user.serviceActive || Number(user.serviceExpire) > Date.now()));
 }
 
 // 首页 feed：discover 发现 | following 关注

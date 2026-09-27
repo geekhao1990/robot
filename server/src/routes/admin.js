@@ -1,9 +1,9 @@
 // server/src/routes/admin.js —— 管理后台接口（登录 + 笔记/用户/分类 CRUD）
 const db = require('../db');
 const auth = require('../auth');
-const { pubSettings } = require('../util');
+const { pubSettings, goldAccess } = require('../util');
 const { TYPE_LABELS, normalizeType, typeLabel, typeForCategory } = require('../content-types');
-const { refreshDarkFundQuota, setManualDarkFundQuota } = require('../membership');
+const { refreshDarkFundQuota, setManualDarkFundQuota, addManualDarkFundQuota } = require('../membership');
 const { normalizeResourceLinks } = require('../resource-links');
 const crypto = require('crypto');
 const goldFingerSync = require('../gold-finger-sync');
@@ -71,7 +71,7 @@ module.exports = function register(router, HttpError) {
       notes: d.notes.length,
       users: d.users.length,
       newUsers: d.users.filter((u) => Array.isArray(u.tags) && u.tags.includes('new')).length,
-      goldUsers: d.users.filter((u) => Number(u.goldExpire) > Date.now()).length,
+      goldUsers: d.users.filter(goldAccess).length,
       materials: d.notes.filter((n) => !n.type || n.type === 'normal' || n.type === 'material').length,
       courses: d.notes.filter((n) => n.type === 'course').length,
       goldNotes: d.notes.filter((n) => n.type === 'gold').length,
@@ -528,10 +528,16 @@ module.exports = function register(router, HttpError) {
       follows: b.follows || 0,
       likes: b.likes || 0,
       goldExpire: 0,
+      goldQuotaGiftMigrated: true,
+      serviceExpire: 0,
+      servicePlan: '',
+      courseAccessPermanent: false,
       official: b.official === true,
       darkFundEnabled: false,
       darkFundRemaining: 0,
       darkFundManualRemaining: 0,
+      darkFundServiceRemaining: 0,
+      darkFundServiceMonth: '',
       createdAt: Date.now(),
       tags: b.official === true ? [] : ['new'],
     };
@@ -587,6 +593,9 @@ module.exports = function register(router, HttpError) {
     if (action === 'open') {
       if (active) throw new HttpError(409, '该用户已开通金手指');
       user.goldExpire = Date.now() + 360 * 24 * 3600 * 1000;
+      addManualDarkFundQuota(user, 5);
+      user.goldQuotaGiftMigrated = true;
+      user.darkFundEnabled = true;
     } else if (action === 'cancel') {
       if (!active) throw new HttpError(409, '该用户未开通金手指');
       user.goldExpire = 0;

@@ -48,7 +48,7 @@ test('admin can delete a gift card and deleted code can no longer be redeemed', 
   await assert.rejects(call('DELETE', `/api/admin/gift-cards/${history.list[0].id}`), { status: 404 });
 });
 
-test('gold redemption extends only gold, survives restart, and concurrent reuse grants once', async () => {
+test('gold redemption extends gold and adds five permanent dark-fund uses exactly once', async () => {
   const { call, data } = setup();
   const future = Date.now() + 86400000;
   data.users[0].goldExpire = future;
@@ -61,11 +61,33 @@ test('gold redemption extends only gold, survives restart, and concurrent reuse 
   assert.equal(results.filter((item) => item.status === 'fulfilled').length, 1);
   assert.equal(data.users[0].goldExpire, future + 360 * 86400000);
   assert.equal(data.users[0].vip, undefined);
+  assert.equal(data.users[0].darkFundManualRemaining, 5);
+  assert.equal(data.users[0].courseAccessPermanent, undefined);
+  assert.equal(data.users[0].darkFundEnabled, true);
   const restarted = setup(JSON.parse(JSON.stringify(data)));
   const retry = await restarted.call('POST', '/api/gift-cards/redeem', body, 'a');
   assert.equal(retry.alreadyRedeemed, true);
   assert.equal(retry.user.goldExpire, future + 360 * 86400000);
+  assert.equal(retry.user.darkFundManualRemaining, 5);
   await assert.rejects(restarted.call('POST', '/api/gift-cards/redeem', body, 'b'), { status: 409 });
+});
+
+test('service packages and dark-fund cards grant distinct permissions', async () => {
+  const { call, data } = setup();
+  const month = await call('POST', '/api/admin/gift-cards', { type: 'service_month', count: 1 });
+  const monthResult = await call('POST', '/api/gift-cards/redeem', { code: month.codes[0] }, 'a');
+  assert.equal(monthResult.user.serviceActive, true);
+  assert.equal(monthResult.user.goldAccess, true);
+  assert.equal(monthResult.user.courseAccess, true);
+  assert.equal(monthResult.user.darkFundServiceRemaining, 15);
+  assert.equal(monthResult.user.darkFundManualRemaining, 0);
+
+  const countCard = await call('POST', '/api/admin/gift-cards', { type: 'dark_50', count: 1 });
+  const countResult = await call('POST', '/api/gift-cards/redeem', { code: countCard.codes[0] }, 'b');
+  assert.equal(countResult.user.courseAccess, true);
+  assert.equal(countResult.user.goldAccess, false);
+  assert.equal(countResult.user.darkFundManualRemaining, 50);
+  assert.equal(data.users[1].courseAccessPermanent, true);
 });
 
 test('month cards are no longer generated or redeemed', async () => {
@@ -92,4 +114,5 @@ test('expired rights restart from redemption, invalid codes and failed writes gr
   const redeemed = await call('POST', '/api/gift-cards/redeem', { code: codes[0] }, 'a');
   assert(redeemed.user.goldExpire >= before + 360 * 86400000);
   assert.equal(redeemed.user.goldActive, true);
+  assert.equal(redeemed.user.darkFundManualRemaining, 5);
 });

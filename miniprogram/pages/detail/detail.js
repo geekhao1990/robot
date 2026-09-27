@@ -219,11 +219,11 @@ Page({
     }
     if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
     return Promise.resolve(this.settingsPromise).then(() => {
-      // 金手指卡领取课程/资料时免广告；其他登录用户仅可通过广告领取免费笔记。
+      // 服务包免广告；暗盘次卡有课程权限但仍按后台设置展示激励广告。
       return store.syncMe().then((user) => {
-        if (this.hasGoldAccess(user)) return this.handleGetResource(true);
-        if (this.data.note && this.data.note.free === true) return this.handleGetResource(false);
-        return this.showGoldCardRequired();
+        if (this.hasServiceAccess(user)) return this.handleGetResource(true);
+        if ((user && user.courseAccess) || (this.data.note && this.data.note.free === true)) return this.handleGetResource(false);
+        return this.showCourseAccessRequired();
       });
     });
   },
@@ -234,12 +234,25 @@ Page({
     wx.hideLoading();
   },
   hasGoldAccess(user) {
-    return !!(user && (user.goldAccess || Number(user.goldExpire) > Date.now()));
+    return !!(user && (user.goldAccess || Number(user.goldExpire) > Date.now() || this.hasServiceAccess(user)));
+  },
+  hasServiceAccess(user) {
+    return !!(user && (user.serviceActive || Number(user.serviceExpire) > Date.now()));
   },
   showGoldCardRequired() {
     wx.showModal({
       title: '需要金手指卡',
-      content: '请前往「我—礼品卡」兑换金手指卡后使用课程和金手指功能。',
+      content: '请前往「我—礼品卡」兑换金手指卡或服务包后使用金手指功能。',
+      confirmText: '去兑换',
+      success: (result) => {
+        if (result.confirm) wx.switchTab({ url: '/pages/profile/profile' });
+      },
+    });
+  },
+  showCourseAccessRequired() {
+    wx.showModal({
+      title: '需要课程权限',
+      content: '请前往「我—礼品卡」兑换服务包或暗盘次卡后查看课程。',
       confirmText: '去兑换',
       success: (result) => {
         if (result.confirm) wx.switchTab({ url: '/pages/profile/profile' });
@@ -322,7 +335,7 @@ Page({
       if (!resources.length) return toast('管理员尚未配置获取地址');
       this.setData({ resourceOptions: resources, resourceModalVisible: true });
     }).catch((err) => {
-      if (err && err.statusCode === 403) return this.showGoldCardRequired();
+      if (err && err.statusCode === 403) return this.showCourseAccessRequired();
       toast('获取地址失败，请联系客服');
     });
   },

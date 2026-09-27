@@ -183,10 +183,16 @@ function ensureContentTypes() {
       follows: 0,
       likes: 0,
       goldExpire: 0,
+      goldQuotaGiftMigrated: true,
+      serviceExpire: 0,
+      servicePlan: '',
+      courseAccessPermanent: false,
       official: true,
       darkFundEnabled: false,
       darkFundRemaining: 0,
       darkFundManualRemaining: 0,
+      darkFundServiceRemaining: 0,
+      darkFundServiceMonth: '',
       createdAt: 0,
       tags: [],
     };
@@ -214,6 +220,9 @@ function ensureContentTypes() {
       user.goldExpire = 0;
       changed = true;
     }
+    if (!Number.isFinite(Number(user.serviceExpire))) { user.serviceExpire = 0; changed = true; }
+    if (typeof user.servicePlan !== 'string') { user.servicePlan = ''; changed = true; }
+    if (typeof user.courseAccessPermanent !== 'boolean') { user.courseAccessPermanent = false; changed = true; }
     // 一次性把仍有效的旧会员权益迁移为金手指卡，避免历史用户权益丢失。
     const now = Date.now();
     const legacyVipActive = user.vip === true && (user.vipPermanent === true || Number(user.vipExpire) > now);
@@ -230,6 +239,15 @@ function ensureContentTypes() {
       changed = true;
     }
     if (refreshDarkFundQuota(user).changed) changed = true;
+    if (typeof user.goldQuotaGiftMigrated !== 'boolean') {
+      if (Number(user.goldExpire) > Date.now()) {
+        user.darkFundManualRemaining = Math.max(0, Number(user.darkFundManualRemaining) || 0) + 5;
+        user.darkFundEnabled = true;
+        refreshDarkFundQuota(user);
+      }
+      user.goldQuotaGiftMigrated = true;
+      changed = true;
+    }
   });
   if (!Array.isArray(db.paymentOrders)) {
     db.paymentOrders = [];

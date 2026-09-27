@@ -43,6 +43,7 @@ test('admin gold entitlement enforces open and cancel states', async () => {
   const before = Date.now();
   const opened = await call('PUT', '/api/admin/users/u1/gold', { action: 'open' });
   assert(opened.goldExpire >= before + 360 * 24 * 3600 * 1000);
+  assert.equal(opened.darkFundManualRemaining, 5);
   await assert.rejects(call('PUT', '/api/admin/users/u1/gold', { action: 'open' }), { status: 409 });
   const cancelled = await call('PUT', '/api/admin/users/u1/gold', { action: 'cancel' });
   assert.equal(cancelled.goldExpire, 0);

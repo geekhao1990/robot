@@ -60,8 +60,11 @@ Page({
   entitlementRows(user) {
     if (!user) return [];
     const now = Date.now();
+    const serviceActive = user.serviceActive || Number(user.serviceExpire) > now;
+    if (serviceActive) return [{ type: 'service', name: user.servicePlan === 'service_year' ? '服务包年卡' : '服务包月卡', active: true }];
     return [
       { type: 'gold', name: '金手指卡', active: Number(user.goldExpire) > now },
+      { type: 'course', name: '课程权限', active: user.courseAccessPermanent === true },
     ].filter((item) => item.active);
   },
   openGiftModal() { this.setData({ giftModalVisible: true }); },
@@ -79,7 +82,8 @@ Page({
     api.redeemGiftCard(code).then((result) => {
       store.setUser(result.user);
       this.setData({ user: result.user, giftCode: '', giftModalVisible: false, entitlements: this.entitlementRows(result.user) });
-      wx.showModal({ title: result.alreadyRedeemed ? '该卡已兑换' : '兑换成功', content: result.alreadyRedeemed ? '权益已在当前账号生效。' : '金手指卡权益已增加' + result.days + '天。', showCancel: false });
+      const detail = result.days ? `${result.days}天` : `${result.quota || 0}次`;
+      wx.showModal({ title: result.alreadyRedeemed ? '该卡已兑换' : '兑换成功', content: result.alreadyRedeemed ? '权益已在当前账号生效。' : `${result.label || '礼品卡'}已生效（${detail}）。`, showCancel: false });
     }).catch((error) => wx.showModal({ title: '兑换失败', content: this.errorText(error), showCancel: false }))
       .finally(() => this.setData({ redeemingGift: false }));
   },

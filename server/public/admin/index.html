@@ -259,6 +259,15 @@ function showAdminToast(message, type = 'success') {
 }
 const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', darkFundOrders: '暗盘工单', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
 const BASE_CATEGORIES = ['资料', '课程', '金手指', '广告'];
+const GIFT_CARD_LABELS = {
+  gold: '金手指卡（360天 + 5次暗盘）',
+  service_month: '服务包月卡（30天 + 每月15次暗盘）',
+  service_year: '服务包年卡（360天 + 每月15次暗盘）',
+  dark_1: '暗盘1次卡（含课程权限）',
+  dark_50: '暗盘50次卡（含课程权限）',
+  dark_100: '暗盘100次卡（含课程权限）',
+  dark_180: '暗盘180次卡（含课程权限）',
+};
 TITLES.giftCards = '礼品卡管理';
 function switchView(v) {
   const activeView = v;
@@ -291,7 +300,7 @@ function renderOverview() {
         <div class="card"><div class="n">${s.ads}</div><div class="l">广告内容</div></div>
         <div class="card"><div class="n">${s.users}</div><div class="l">用户总数</div></div>
         <div class="card"><div class="n">${s.newUsers}</div><div class="l">新注册用户</div></div>
-        <div class="card"><div class="n">${s.goldUsers}</div><div class="l">金手指卡用户</div></div>
+        <div class="card"><div class="n">${s.goldUsers}</div><div class="l">金手指权限用户</div></div>
         <div class="card"><div class="n">${s.categories}</div><div class="l">分类数</div></div>
       </div>`;
   });
@@ -550,12 +559,19 @@ function drawUsers() {
   const pageItems = all.slice(start, start + PAGE_SIZE);
   const rows = pageItems.map((u, i) => {
     const goldActive = Number(u.goldExpire) > Date.now();
+    const serviceActive = Number(u.serviceExpire) > Date.now();
     const darkFundActive = u.darkFundEnabled === true;
     const goldStatus = goldActive
       ? `<span class="tag vip">金手指卡 · 至 ${fmtDate(u.goldExpire)}</span>`
       : (u.goldExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
+    const serviceStatus = serviceActive
+      ? `<span class="tag vip">${u.servicePlan === 'service_year' ? '服务包年卡' : '服务包月卡'} · 至 ${fmtDate(u.serviceExpire)}</span>`
+      : (u.serviceExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
+    const courseStatus = serviceActive || u.courseAccessPermanent === true
+      ? `<span class="tag course">已开通${u.courseAccessPermanent === true ? ' · 次卡权益' : ''}</span>`
+      : '<span class="tag">未开通</span>';
     const darkFundStatus = darkFundActive
-      ? `<span class="tag vip">已开通 · 剩余 ${Math.max(0, Number(u.darkFundRemaining) || 0)} 次</span><div class="hint">后台人工次数</div>`
+      ? `<span class="tag vip">已开通 · 剩余 ${Math.max(0, Number(u.darkFundRemaining) || 0)} 次</span><div class="hint">服务包 ${Math.max(0, Number(u.darkFundServiceRemaining) || 0)} · 永久 ${Math.max(0, Number(u.darkFundManualRemaining) || 0)}</div>`
       : '<span class="tag">未开通</span>';
     return `
       <tr>
@@ -569,6 +585,8 @@ function drawUsers() {
         </td>
         <td>${u.official ? '<span class="tag course">官方账号</span>' : '<span class="tag">普通用户</span>'}</td>
         <td>${goldStatus}</td>
+        <td>${serviceStatus}</td>
+        <td>${courseStatus}</td>
         <td>${darkFundStatus}</td>
         <td>
           <button class="btn-sm" ${goldActive ? 'disabled' : ''} onclick='setGold("${u.id}","open")'>开通金手指卡</button>
@@ -589,7 +607,7 @@ function drawUsers() {
       </div>
       <button class="btn-primary" onclick="editUser()">+ 新增用户</button>
     </div>
-    <table><thead><tr><th>序号</th><th>昵称</th><th>手机号</th><th>注册信息</th><th>账号类型</th><th>金手指卡</th><th>暗盘资金</th><th>操作</th></tr></thead>
+    <table><thead><tr><th>序号</th><th>昵称</th><th>手机号</th><th>注册信息</th><th>账号类型</th><th>金手指卡</th><th>服务包</th><th>课程权限</th><th>暗盘资金</th><th>操作</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${pagerHtml(_userPage, pages, total, 'gotoUserPage')}`;
 }
@@ -614,7 +632,7 @@ function setDarkFundQuota(id) {
   openModal('设置暗盘资金查询次数', `
     <div class="field"><label>用户</label><input value="${esc(user.name)}（${esc(user.id)}）" disabled /></div>
     <div class="field"><label>后台永久次数</label><input id="darkFundQuota" type="number" min="0" max="100000" step="1" value="${Math.max(0, Number(user.darkFundManualRemaining) || 0)}" /></div>
-    <div class="hint">后台人工发放的查询次数不会过期。</div>
+    <div class="hint">这里设置的是永久次数；服务包每月15次单独计算并优先使用。</div>
   `, () => {
     const value = Number(document.getElementById('darkFundQuota').value);
     if (!Number.isInteger(value) || value < 0 || value > 100000) return showAdminToast('请输入0到100000之间的整数', 'error');
@@ -1138,7 +1156,7 @@ function renderSettings() {
         <div class="field">
           <label>底部金手指入口打开的笔记</label>
           <select id="settingFeatured">${noteOptions}</select>
-          <div class="hint">这篇笔记的主图和「点击领取」均作为金手指功能入口；仅金手指卡有效的用户能看到入口及金手指笔记。</div>
+          <div class="hint">这篇笔记的主图和「点击领取」均作为金手指功能入口；金手指卡或服务包有效的用户能看到入口及金手指笔记。</div>
         </div>
         <div class="field">
           <label>普通笔记激励广告</label>
@@ -1176,14 +1194,15 @@ function renderGiftCards(page = 1) {
     const rows = result.list.map((card) => {
       const code = card.code || '';
       const copyButton = code ? `<button class="btn-sm" onclick='copyGiftCode(${JSON.stringify(code)})'>复制卡密</button>` : '<span class="hint">历史卡密不可复制</span>';
-      const label = code || (card.type === 'gold' ? '金手指卡' : '已停用卡种');
-      return `<tr><td style="font-family:monospace">${esc(code || '—')}</td><td>${card.type === 'gold' ? '金手指卡' : '已停用卡种'}</td><td>${card.status === 'redeemed' ? '已兑换' : '未兑换'}</td><td>${esc(card.redeemedBy || '—')}</td><td>${fmtDate(card.createdAt)}</td><td>${card.redeemedAt ? fmtDate(card.redeemedAt) : '—'}</td><td>${copyButton}<button class="btn-sm del" onclick='deleteGiftCard(${JSON.stringify(card.id)},${JSON.stringify(label)})'>删除</button></td></tr>`;
+      const typeLabel = GIFT_CARD_LABELS[card.type] || '已停用卡种';
+      const label = code || typeLabel;
+      return `<tr><td style="font-family:monospace">${esc(code || '—')}</td><td>${esc(typeLabel)}</td><td>${card.status === 'redeemed' ? '已兑换' : '未兑换'}</td><td>${esc(card.redeemedBy || '—')}</td><td>${fmtDate(card.createdAt)}</td><td>${card.redeemedAt ? fmtDate(card.redeemedAt) : '—'}</td><td>${copyButton}<button class="btn-sm del" onclick='deleteGiftCard(${JSON.stringify(card.id)},${JSON.stringify(label)})'>删除</button></td></tr>`;
     }).join('');
     document.getElementById('content').innerHTML = `
       <div class="card" style="margin-bottom:20px"><h3>生成礼品卡</h3>
-        <div class="hint">金手指卡增加360天权益，可查看课程和金手指；有效期从现有到期时间顺延，每张卡密仅可使用一次。</div>
+        <div class="hint">全部权益仅通过礼品卡兑换。服务包包含课程、金手指和每月15次暗盘；暗盘次卡包含课程但不包含金手指。</div>
         <div class="toolbar" style="display:flex;flex-wrap:wrap;gap:16px;margin-top:16px">
-          <label>权益 <strong>金手指卡（360天）</strong></label>
+          <label>类型 <select id="giftType">${Object.entries(GIFT_CARD_LABELS).map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}</select></label>
           <label>生成数量 <input id="giftCount" type="number" min="1" max="10" value="10" style="width:80px" /></label>
           <button class="btn-primary" id="giftGenerate" onclick="generateGiftCards()">生成卡密</button>
         </div>
@@ -1195,12 +1214,13 @@ function renderGiftCards(page = 1) {
 }
 function generateGiftCards() {
   if (_giftGenerating) return;
+  const type = document.getElementById('giftType').value;
   const count = Number(document.getElementById('giftCount').value);
   if (!Number.isInteger(count) || count < 1 || count > 10) return showAdminToast('一次生成1至10张', 'error');
   _giftGenerating = true;
   const button = document.getElementById('giftGenerate');
   button.disabled = true;
-  api('/api/admin/gift-cards', { method: 'POST', body: JSON.stringify({ type: 'gold', count }) }).then(() => {
+  api('/api/admin/gift-cards', { method: 'POST', body: JSON.stringify({ type, count }) }).then(() => {
     if (!token) return;
     renderGiftCards();
     showAdminToast('卡密已生成');

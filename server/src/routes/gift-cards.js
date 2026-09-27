@@ -2,6 +2,17 @@ const crypto = require('crypto');
 const db = require('../db');
 const auth = require('../auth');
 const { pubUser } = require('../util');
+const { activateService, addManualDarkFundQuota } = require('../membership');
+
+const CARD_TYPES = Object.freeze({
+  gold: Object.freeze({ type: 'gold', label: '金手指卡', days: 360, quota: 5 }),
+  service_month: Object.freeze({ type: 'service_month', label: '服务包月卡', days: 30, quota: 15 }),
+  service_year: Object.freeze({ type: 'service_year', label: '服务包年卡', days: 360, quota: 15 }),
+  dark_1: Object.freeze({ type: 'dark_1', label: '暗盘1次卡', quota: 1 }),
+  dark_50: Object.freeze({ type: 'dark_50', label: '暗盘50次卡', quota: 50 }),
+  dark_100: Object.freeze({ type: 'dark_100', label: '暗盘100次卡', quota: 100 }),
+  dark_180: Object.freeze({ type: 'dark_180', label: '暗盘180次卡', quota: 180 }),
+});
 
 // All card mutations are serialized; the card and entitlement are saved together.
 let queue = Promise.resolve();
@@ -36,10 +47,10 @@ module.exports = function register(router, HttpError) {
   router.post('/api/admin/gift-cards', (ctx) => {
     admin(ctx);
     const body = ctx.body || {};
-    const type = 'gold';
+    const type = String(body.type || 'gold');
     const count = body.count === undefined ? 10 : Number(body.count);
-    const days = 360;
-    if (body.type && body.type !== 'gold') throw new HttpError(400, '目前仅支持生成金手指卡');
+    const definition = CARD_TYPES[type];
+    if (!definition) throw new HttpError(400, '请选择有效的礼品卡类型');
     if (!Number.isInteger(count) || count < 1 || count > 10) throw new HttpError(400, '一次可生成1至10张礼品卡');
     return serialize(async () => {
       const data = db.get();
@@ -54,11 +65,11 @@ module.exports = function register(router, HttpError) {
         known.add(digest(code));
         const formattedCode = code.match(/.{4}/g).join('-');
         codes.push(formattedCode);
-        cards.push({ id: crypto.randomUUID(), batchId, type, days, code: formattedCode, codeHash: digest(code), createdAt: Date.now(), status: 'unused' });
+        cards.push({ id: crypto.randomUUID(), batchId, ...definition, code: formattedCode, codeHash: digest(code), createdAt: Date.now(), status: 'unused' });
       }
       data.giftCards = previous.concat(cards);
       try { await db.save(); } catch (error) { data.giftCards = previous; throw error; }
-      return { batchId, type, days, codes };
+      return { batchId, ...definition, codes };
     });
   });
   router.delete('/api/admin/gift-cards/:id', (ctx) => {
@@ -84,22 +95,33 @@ module.exports = function register(router, HttpError) {
       if (!user) throw new HttpError(401, '用户不存在');
       const card = (data.giftCards || []).find((item) => item.codeHash === digest(code));
       if (!card) throw new HttpError(400, '卡密无效，请检查后重试');
-      if (card.type !== 'gold') throw new HttpError(410, '该卡种已停用，请联系管理员更换金手指卡');
+      const definition = CARD_TYPES[card.type];
+      if (!definition) throw new HttpError(410, '该卡种已停用，请联系管理员更换礼品卡');
       if (card.status !== 'unused') {
-        if (card.status === 'redeemed' && card.redeemedBy === userId) return { alreadyRedeemed: true, type: card.type, days: card.days, user: pubUser(user, true) };
+        if (card.status === 'redeemed' && card.redeemedBy === userId) return { alreadyRedeemed: true, type: card.type, label: definition.label, days: definition.days || 0, quota: definition.quota, user: pubUser(user, true) };
         throw new HttpError(409, '该卡密已被使用');
       }
       const oldUser = { ...user };
       const oldCard = { ...card };
       const now = Date.now();
-      user.goldExpire = Math.max(Number(user.goldExpire) || 0, now) + card.days * 86400000;
+      if (card.type === 'gold') {
+        user.goldExpire = Math.max(Number(user.goldExpire) || 0, now) + definition.days * 86400000;
+        addManualDarkFundQuota(user, definition.quota, now);
+        user.goldQuotaGiftMigrated = true;
+      } else if (card.type === 'service_month' || card.type === 'service_year') {
+        activateService(user, card.type, now);
+      } else {
+        addManualDarkFundQuota(user, definition.quota, now);
+        user.courseAccessPermanent = true;
+      }
+      user.darkFundEnabled = true;
       Object.assign(card, { status: 'redeemed', redeemedBy: userId, redeemedAt: now });
       try { await db.save(); } catch (error) {
         Object.keys(user).forEach((key) => delete user[key]); Object.assign(user, oldUser);
         Object.keys(card).forEach((key) => delete card[key]); Object.assign(card, oldCard);
         throw error;
       }
-      return { type: card.type, days: card.days, user: pubUser(user, true) };
+      return { type: card.type, label: definition.label, days: definition.days || 0, quota: definition.quota, user: pubUser(user, true) };
     });
   });
 };

@@ -1,11 +1,14 @@
 // server/src/util.js —— 公共辅助
 
 const { resourceList } = require('./resource-links');
-const { refreshDarkFundQuota } = require('./membership');
+const { refreshDarkFundQuota, serviceActiveAt } = require('./membership');
 
-// 仅保留金手指卡一种内容权益。
 function goldAccess(user) {
-  return !!(user && Number(user.goldExpire) > Date.now());
+  return !!(user && (Number(user.goldExpire) > Date.now() || serviceActiveAt(user)));
+}
+
+function courseAccess(user) {
+  return !!(user && (user.courseAccessPermanent === true || serviceActiveAt(user)));
 }
 
 // 对外输出的用户对象（隐藏登录标识及已停用的旧会员字段）
@@ -16,6 +19,8 @@ function pubUser(user, includePrivate = false) {
     wxOpenId, phone, phoneCountryCode, phoneBoundAt,
     vip, vipPlan, vipExpire, vipPermanent, vipActivatedAt,
     darkFundVipRemaining, darkFundVipMonth,
+    darkFundServiceMonth,
+    goldQuotaGiftMigrated,
     ...safe
   } = user;
   if (includePrivate) {
@@ -27,8 +32,11 @@ function pubUser(user, includePrivate = false) {
     ...safe,
     goldActive: Number(user.goldExpire) > Date.now(),
     goldAccess: goldAccess(user),
+    serviceActive: serviceActiveAt(user),
+    courseAccess: courseAccess(user),
     darkFundEnabled: user.darkFundEnabled === true,
     darkFundRemaining: darkFundQuota.total,
+    darkFundServiceRemaining: darkFundQuota.service,
     darkFundManualRemaining: darkFundQuota.manual,
   };
 }
@@ -55,4 +63,4 @@ function pubSettings(data) {
   };
 }
 
-module.exports = { goldAccess, pubUser, pubNote, pubSettings };
+module.exports = { goldAccess, courseAccess, pubUser, pubNote, pubSettings };
