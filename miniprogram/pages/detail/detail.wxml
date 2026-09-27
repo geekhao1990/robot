@@ -66,9 +66,21 @@
 <persistent-tab-bar />
 
 <view wx:if="{{pageRenderLoading}}" class="render-loading-mask">
-  <view class="render-loading-panel">
-    <view class="render-loading-icon"></view>
-    <text>加载中...</text>
+  <view class="skeleton-nav" style="padding-top: {{statusBarHeight}}px; height: {{navBarHeight}}px;">
+    <view class="skeleton-nav-inner" style="height: {{navBarHeight}}px;">
+      <view class="skeleton-back skeleton-shimmer"></view>
+      <view class="skeleton-avatar skeleton-shimmer"></view>
+      <view class="skeleton-author skeleton-shimmer"></view>
+      <view class="skeleton-follow skeleton-shimmer"></view>
+    </view>
+  </view>
+  <view class="skeleton-body" style="padding-top: {{headerHeight}}px;">
+    <view class="skeleton-image skeleton-shimmer"></view>
+    <view class="skeleton-title skeleton-shimmer"></view>
+    <view class="skeleton-line long skeleton-shimmer"></view>
+    <view class="skeleton-line skeleton-shimmer"></view>
+    <view class="skeleton-line short skeleton-shimmer"></view>
+    <view class="skeleton-meta skeleton-shimmer"></view>
   </view>
 </view>
 

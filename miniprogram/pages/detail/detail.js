@@ -125,7 +125,9 @@ Page({
       }
       const content = String(note.content || '').replace(/\s+$/, '');
       const darkFundNote = isDarkFundNote(note);
-      const pageImageIndexes = (note.images || []).map((src, index) => src ? index : -1).filter((index) => index >= 0);
+      // 骨架层只等待首屏图片；后续图片继续后台加载，避免多图笔记等待过久。
+      const firstImageIndex = (note.images || []).findIndex(Boolean);
+      const pageImageIndexes = firstImageIndex >= 0 ? [firstImageIndex] : [];
       this._pageImageExpected = new Set(pageImageIndexes);
       this._pageImageSettled = new Set();
       this._pageImageErrorShown = false;
