@@ -24,8 +24,7 @@
 .order-card:last-child { border-bottom: 0; }
 .order-main { min-width: 0; }
 .order-code { color: #222; font-size: 31rpx; font-weight: 750; letter-spacing: 2rpx; }
-.order-date { margin-top: 8rpx; color: #999; font-size: 22rpx; }
-.order-query-time { margin-top: 7rpx; color: #aaa; font-size: 20rpx; }
+.order-query-time { margin-top: 8rpx; color: #aaa; font-size: 20rpx; }
 .order-side { display: flex; align-items: center; gap: 20rpx; color: #555; font-size: 25rpx; }
 .order-side.pending { color: #b07a12; }
 .order-side.ready { color: #ff2442; font-weight: 700; }

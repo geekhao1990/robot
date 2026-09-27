@@ -18,7 +18,7 @@
         <swiper-item wx:for="{{note.images}}" wx:key="*this">
           <view class="swiper-stage">
             <image class="swiper-bg" src="{{item}}" mode="aspectFill" />
-            <image class="swiper-img" src="{{item}}" mode="aspectFit" bindload="onDetailImageLoad" bindtap="onNoteImageTap" data-index="{{index}}" data-url="{{item}}" />
+            <image class="swiper-img" src="{{item}}" mode="aspectFit" bindload="onDetailImageLoad" binderror="onPageImageError" bindtap="onNoteImageTap" data-index="{{index}}" data-url="{{item}}" />
           </view>
         </swiper-item>
       </swiper>
@@ -30,9 +30,9 @@
       <view class="title">{{note.title}}</view>
       <block wx:if="{{isDarkFundNote}}">
         <view wx:if="{{darkParagraphs[0]}}" class="dark-paragraph">{{darkParagraphs[0]}}</view>
-        <image wx:if="{{note.images[0]}}" class="dark-article-image" src="{{note.images[0]}}" mode="widthFix" bindload="onDarkArticleImageLoad" binderror="onDarkArticleImageError" bindtap="onNoteImageTap" data-index="0" data-url="{{note.images[0]}}" />
+        <image wx:if="{{note.images[0]}}" class="dark-article-image" src="{{note.images[0]}}" mode="widthFix" bindload="onPageImageLoad" binderror="onPageImageError" bindtap="onNoteImageTap" data-index="0" data-url="{{note.images[0]}}" />
         <view wx:if="{{darkParagraphs[1]}}" class="dark-paragraph">{{darkParagraphs[1]}}</view>
-        <image wx:if="{{note.images[1]}}" class="dark-article-image" src="{{note.images[1]}}" mode="widthFix" bindload="onDarkArticleImageLoad" binderror="onDarkArticleImageError" bindtap="onNoteImageTap" data-index="1" data-url="{{note.images[1]}}" />
+        <image wx:if="{{note.images[1]}}" class="dark-article-image" src="{{note.images[1]}}" mode="widthFix" bindload="onPageImageLoad" binderror="onPageImageError" bindtap="onNoteImageTap" data-index="1" data-url="{{note.images[1]}}" />
         <view wx:if="{{darkParagraphs[2]}}" class="dark-paragraph">{{darkParagraphs[2]}}</view>
         <view class="dark-ad-slot">
           <ad wx:if="{{darkArticleAdUnitId && !articleAdLoadFailed}}" unit-id="{{darkArticleAdUnitId}}" binderror="onArticleAdError" />
@@ -68,7 +68,7 @@
 <view wx:if="{{pageRenderLoading}}" class="render-loading-mask">
   <view class="render-loading-panel">
     <view class="render-loading-icon"></view>
-    <text>正在加载结果...</text>
+    <text>加载中...</text>
   </view>
 </view>
 

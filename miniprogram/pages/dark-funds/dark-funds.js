@@ -115,19 +115,17 @@ Page({
   openOrder(e) {
     const order = this.data.orders.find((item) => item.id === e.currentTarget.dataset.id);
     if (!order || !order.ready) return wx.showToast({ title: order && order.failed ? (order.error || '查询失败，次数已退回') : '等待结果', icon: 'none' });
-    wx.showLoading({ title: '加载中', mask: true });
     api.getDarkFundOrder(order.id)
       .then((readyOrder) => {
         if (!readyOrder || !readyOrder.noteId) throw new Error('查询结果不存在');
         this.setData({ historyBadge: Math.max(0, this.data.historyBadge - (order.unread ? 1 : 0)) });
         return new Promise((resolve, reject) => wx.navigateTo({
-          url: `/pages/detail/detail?id=${encodeURIComponent(readyOrder.noteId)}&fromDarkFund=1`,
+          url: `/pages/detail/detail?id=${encodeURIComponent(readyOrder.noteId)}`,
           success: resolve,
           fail: reject,
         }));
       })
-      .catch((error) => wx.showModal({ title: '加载失败', content: this.errorText(error), showCancel: false }))
-      .finally(() => wx.hideLoading());
+      .catch((error) => wx.showModal({ title: '加载失败', content: this.errorText(error), showCancel: false }));
   },
   stopOrderPolling() {
     if (this._orderPollingTimer) clearInterval(this._orderPollingTimer);

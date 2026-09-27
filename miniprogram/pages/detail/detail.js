@@ -50,14 +50,11 @@ Page({
     resourceModalVisible: false,
     resourceOptions: [],
     rewardedAdEnabled: config.rewardedAdEnabled === true,
-    pageRenderLoading: false,
+    pageRenderLoading: true,
   },
 
   onLoad(options) {
-    this._darkFundEntryLoading = options.fromDarkFund === '1';
-    if (this._darkFundEntryLoading) this.setData({ pageRenderLoading: true });
     this._goldTabEntryLoading = options.from === 'goldTab';
-    if (this._goldTabEntryLoading) wx.showLoading({ title: '请稍后...', mask: true });
     store.captureInvite(options);
     const app = getApp();
     this.setData({
@@ -123,16 +120,15 @@ Page({
       this._loadingNote = false;
       if (!note) {
         this.finishGoldTabLoading();
+        this.finishPageRenderLoading();
         return toast('笔记不存在');
       }
       const content = String(note.content || '').replace(/\s+$/, '');
       const darkFundNote = isDarkFundNote(note);
-      const darkImageIndexes = darkFundNote
-        ? (note.images || []).map((src, index) => src ? index : -1).filter((index) => index >= 0)
-        : [];
-      this._darkImageExpected = new Set(darkImageIndexes);
-      this._darkImageSettled = new Set();
-      this._darkImageErrorShown = false;
+      const pageImageIndexes = (note.images || []).map((src, index) => src ? index : -1).filter((index) => index >= 0);
+      this._pageImageExpected = new Set(pageImageIndexes);
+      this._pageImageSettled = new Set();
+      this._pageImageErrorShown = false;
       note.displayContent = note.riskDisclaimerEnabled
         ? `${content}${content ? '\n\n' : ''}${RISK_DISCLAIMER}`
         : content;
@@ -153,7 +149,7 @@ Page({
         articleAdLoadFailed: false,
         isOwnNote,
         followed: !isOwnNote && store.isFollowed(authorId),
-        pageRenderLoading: darkFundNote && darkImageIndexes.length > 0,
+        pageRenderLoading: pageImageIndexes.length > 0,
       }, () => {
         if (darkFundNote && wx.hideShareMenu) {
           wx.hideShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
@@ -161,7 +157,7 @@ Page({
           wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
         }
         this.finishGoldTabLoading();
-        if (!darkFundNote || !darkImageIndexes.length) this.finishPageRenderLoading();
+        if (!pageImageIndexes.length) this.finishPageRenderLoading();
       });
     }).catch((err) => {
       this._loadingNote = false;
@@ -179,6 +175,7 @@ Page({
 
   onDetailImageLoad(e) {
     const index = Number(e.currentTarget.dataset.index) || 0;
+    this.settlePageImage(index, false);
     const width = Number(e.detail && e.detail.width);
     const height = Number(e.detail && e.detail.height);
     if (!width || !height) return;
@@ -187,21 +184,21 @@ Page({
     if (index === this.data.current) this.setData({ swiperHeight: detailImageHeight(width, height) });
   },
 
-  onDarkArticleImageLoad(e) {
-    this.settleDarkArticleImage(Number(e.currentTarget.dataset.index), false);
+  onPageImageLoad(e) {
+    this.settlePageImage(Number(e.currentTarget.dataset.index), false);
   },
-  onDarkArticleImageError(e) {
-    this.settleDarkArticleImage(Number(e.currentTarget.dataset.index), true);
+  onPageImageError(e) {
+    this.settlePageImage(Number(e.currentTarget.dataset.index), true);
   },
-  settleDarkArticleImage(index, failed) {
-    if (!this._darkImageExpected || !this._darkImageExpected.has(index)) return;
-    this._darkImageSettled = this._darkImageSettled || new Set();
-    this._darkImageSettled.add(index);
-    if (failed && !this._darkImageErrorShown) {
-      this._darkImageErrorShown = true;
+  settlePageImage(index, failed) {
+    if (!this._pageImageExpected || !this._pageImageExpected.has(index)) return;
+    this._pageImageSettled = this._pageImageSettled || new Set();
+    this._pageImageSettled.add(index);
+    if (failed && !this._pageImageErrorShown) {
+      this._pageImageErrorShown = true;
       wx.showToast({ title: '部分图片加载失败，请检查网络', icon: 'none' });
     }
-    if (this._darkImageSettled.size >= this._darkImageExpected.size) this.finishPageRenderLoading();
+    if (this._pageImageSettled.size >= this._pageImageExpected.size) this.finishPageRenderLoading();
   },
   finishPageRenderLoading() {
     if (!this.data.pageRenderLoading) return;
@@ -264,7 +261,6 @@ Page({
   finishGoldTabLoading() {
     if (!this._goldTabEntryLoading) return;
     this._goldTabEntryLoading = false;
-    wx.hideLoading();
   },
   hasGoldAccess(user) {
     return !!(user && (user.goldAccess || Number(user.goldExpire) > Date.now() || this.hasServiceAccess(user)));
