@@ -26,6 +26,7 @@ Page({
     refreshing: false,
     refreshReady: false,
     profileScrollTop: 0,
+    messageUnread: 0,
   },
   onLoad() {
     const app = getApp();
@@ -49,10 +50,15 @@ Page({
         phoneText: this.phoneText(user && user.phone),
       });
       if (user) {
-        return this.loadTab(this.data.tabIndex);
+        return Promise.all([
+          this.loadTab(this.data.tabIndex),
+          api.getSystemNotificationSummary()
+            .then((result) => this.setData({ messageUnread: Math.min(99, Number(result && result.unread) || 0) }))
+            .catch(() => this.setData({ messageUnread: 0 })),
+        ]);
       } else {
         this._loadRequestId = (this._loadRequestId || 0) + 1;
-        this.setData({ currentNotes: [], left: [], right: [], emptyText: '登录后查看' });
+        this.setData({ currentNotes: [], left: [], right: [], emptyText: '登录后查看', messageUnread: 0 });
         return Promise.resolve();
       }
     };
@@ -209,6 +215,10 @@ Page({
     const user = store.getUser();
     if (!user || user.darkFundEnabled !== true) return wx.showToast({ title: '功能尚未开通', icon: 'none' });
     wx.navigateTo({ url: '/pages/dark-funds/dark-funds' });
+  },
+  goMessageCenter() {
+    if (!store.isLogin()) return this.goLogin();
+    wx.navigateTo({ url: '/pages/message-center/message-center' });
   },
   onLogout() {
     wx.showModal({ title: '提示', content: '确定要退出登录吗？', success: (res) => { if (res.confirm) { store.logout(); this.onShow(); } } });

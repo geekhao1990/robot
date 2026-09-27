@@ -1,5 +1,7 @@
 const db = require('./db');
 const { chinaToday, isTradingDay } = require('./trading-date');
+const { goldAccess } = require('./util');
+const { pushNotification } = require('./notifications');
 
 const SCHEDULE_MINUTES = [10 * 60, 14 * 60, 16 * 60];
 const CHECK_INTERVAL_MS = 30 * 1000;
@@ -186,6 +188,21 @@ async function executeSync({ slot = 'manual', requireToday = true, now = Date.no
     const latestDate = String(items.at(-1)?.date || '');
     if (requireToday && latestDate !== today) throw new Error(`源接口最新日期为${latestDate || '空'}，尚未产生${today}数据`);
     const result = applySourceRecords(data, items, Date.now());
+    if (result.created > 0 || result.updated > 0) {
+      const latest = data.goldFingerRecords.find((item) => item.date === result.latestDate);
+      const fingerprint = latest
+        ? [latest.date, latest.yang, latest.finger, latest.trend, latest.position].join(':')
+        : result.latestDate;
+      (data.users || []).filter(goldAccess).forEach((user) => {
+        pushNotification(data, user.id, {
+          type: 'gold_changed',
+          title: '金手指数据已更新',
+          content: `${result.latestDate}数据已经更新，点击查看`,
+          targetType: 'gold',
+          dedupeKey: `gold:${fingerprint}`,
+        });
+      });
+    }
     state.status = 'success';
     state.lastSuccessAt = Date.now();
     state.result = result;

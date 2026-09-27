@@ -1,0 +1,21 @@
+.page { min-height: 100vh; padding: 0 24rpx 40rpx; color: #222; background: #f6f6f6; box-sizing: border-box; }
+.message-head { display: flex; align-items: center; justify-content: space-between; height: 96rpx; }
+.head-title { font-size: 30rpx; font-weight: 750; }
+.head-count { margin-left: 12rpx; color: #999; font-size: 22rpx; }
+.read-all { color: #ff2442; font-size: 24rpx; }
+.message-list { overflow: hidden; background: #fff; border-radius: 20rpx; }
+.message-item { position: relative; display: flex; align-items: center; min-height: 132rpx; padding: 22rpx 24rpx; border-bottom: 1rpx solid #eee; box-sizing: border-box; }
+.message-item:last-child { border-bottom: 0; }
+.message-item.unread { background: #fffafb; }
+.message-icon { display: flex; flex: 0 0 72rpx; align-items: center; justify-content: center; width: 72rpx; height: 72rpx; margin-right: 20rpx; color: #ff2442; font-size: 26rpx; font-weight: 800; background: #fff0f3; border: 2rpx solid #ffd6dd; border-radius: 50%; }
+.message-icon.dark_ready,.message-icon.dark_recharge { color: #aa6712; background: #fff7df; border-color: #f4dfaa; }
+.message-icon.gold_changed { color: #9a6913; background: linear-gradient(135deg,#fff3bf,#f3d47b); border-color: #e4c163; }
+.message-body { flex: 1; min-width: 0; }
+.message-title-row { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; }
+.message-title { overflow: hidden; font-size: 27rpx; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.message-time { flex-shrink: 0; color: #bbb; font-size: 19rpx; }
+.message-content { display: -webkit-box; margin-top: 10rpx; overflow: hidden; color: #888; font-size: 23rpx; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.unread-dot { position: absolute; top: 24rpx; left: 18rpx; width: 13rpx; height: 13rpx; background: #ff2442; border-radius: 50%; }
+.arrow { margin-left: 14rpx; color: #bbb; font-size: 38rpx; font-weight: 300; }
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 65vh; color: #aaa; font-size: 26rpx; }
+.empty-icon { display: flex; align-items: center; justify-content: center; width: 100rpx; height: 100rpx; margin-bottom: 20rpx; color: #ff2442; font-size: 44rpx; background: #fff; border-radius: 50%; }

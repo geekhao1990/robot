@@ -3,6 +3,7 @@ const db = require('../db');
 const auth = require('../auth');
 const { pubUser } = require('../util');
 const { activateService, addManualDarkFundQuota } = require('../membership');
+const { pushNotification } = require('../notifications');
 
 const CARD_TYPES = Object.freeze({
   gold: Object.freeze({ type: 'gold', label: '金手指卡', days: 360, quota: 5 }),
@@ -103,6 +104,8 @@ module.exports = function register(router, HttpError) {
       }
       const oldUser = { ...user };
       const oldCard = { ...card };
+      const oldNotifications = data.systemNotifications && Array.isArray(data.systemNotifications[userId])
+        ? data.systemNotifications[userId].slice() : null;
       const now = Date.now();
       if (card.type === 'gold') {
         user.goldExpire = Math.max(Number(user.goldExpire) || 0, now) + definition.days * 86400000;
@@ -116,9 +119,19 @@ module.exports = function register(router, HttpError) {
       }
       user.darkFundEnabled = true;
       Object.assign(card, { status: 'redeemed', redeemedBy: userId, redeemedAt: now });
+      pushNotification(data, userId, {
+        type: 'dark_recharge',
+        title: '暗盘次数充值成功',
+        content: `${definition.label}已生效，当前剩余${Number(user.darkFundRemaining) || 0}次`,
+        targetType: 'dark_home',
+        dedupeKey: `gift-card:${card.id}`,
+        createdAt: now,
+      });
       try { await db.save(); } catch (error) {
         Object.keys(user).forEach((key) => delete user[key]); Object.assign(user, oldUser);
         Object.keys(card).forEach((key) => delete card[key]); Object.assign(card, oldCard);
+        if (oldNotifications) data.systemNotifications[userId] = oldNotifications;
+        else if (data.systemNotifications) delete data.systemNotifications[userId];
         throw error;
       }
       return { type: card.type, label: definition.label, days: definition.days || 0, quota: definition.quota, user: pubUser(user, true) };

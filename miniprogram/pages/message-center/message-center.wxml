@@ -1,0 +1,23 @@
+<view class="page">
+  <view class="message-head">
+    <view><text class="head-title">全部消息</text><text wx:if="{{unread}}" class="head-count">{{unread}} 条未读</text></view>
+    <view wx:if="{{unread}}" class="read-all" bindtap="markAllRead">全部已读</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="empty">正在加载...</view>
+  <view wx:elif="{{!list.length}}" class="empty">
+    <view class="empty-icon">✉</view>
+    <view>暂时没有消息</view>
+  </view>
+  <view wx:else class="message-list">
+    <view wx:for="{{list}}" wx:key="id" class="message-item {{item.unread ? 'unread' : ''}}" data-id="{{item.id}}" bindtap="openMessage">
+      <view class="message-icon {{item.type}}">{{item.iconText}}</view>
+      <view class="message-body">
+        <view class="message-title-row"><text class="message-title">{{item.title}}</text><text class="message-time">{{item.timeText}}</text></view>
+        <view class="message-content">{{item.content}}</view>
+      </view>
+      <view wx:if="{{item.unread}}" class="unread-dot"></view>
+      <view class="arrow">›</view>
+    </view>
+  </view>
+</view>

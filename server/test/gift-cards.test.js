@@ -12,7 +12,7 @@ function setup(data = { users: [{ id: 'a' }, { id: 'b' }] }) {
   const mod = { exports: {} };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/gift-cards.js'), 'utf8'), {
     module: mod,
-    require: (id) => ({ '../db': db, '../auth': { isAdmin: (token) => token === 'admin', userIdFor: (token) => token }, '../membership': membership, '../util': { pubUser } }[id] || require(id)),
+    require: (id) => ({ '../db': db, '../auth': { isAdmin: (token) => token === 'admin', userIdFor: (token) => token }, '../membership': membership, '../util': { pubUser }, '../notifications': require('../src/notifications') }[id] || require(id)),
   });
   const router = createRouter();
   mod.exports(router, HttpError);
@@ -64,6 +64,9 @@ test('gold redemption extends gold and adds five permanent dark-fund uses exactl
   assert.equal(data.users[0].darkFundManualRemaining, 5);
   assert.equal(data.users[0].courseAccessPermanent, undefined);
   assert.equal(data.users[0].darkFundEnabled, true);
+  assert.equal(data.systemNotifications.a.length, 1);
+  assert.equal(data.systemNotifications.a[0].type, 'dark_recharge');
+  assert.equal(data.systemNotifications.a[0].targetType, 'dark_home');
   const restarted = setup(JSON.parse(JSON.stringify(data)));
   const retry = await restarted.call('POST', '/api/gift-cards/redeem', body, 'a');
   assert.equal(retry.alreadyRedeemed, true);
@@ -109,6 +112,7 @@ test('expired rights restart from redemption, invalid codes and failed writes gr
   await assert.rejects(call('POST', '/api/gift-cards/redeem', { code: codes[0] }, 'a'), /DB unavailable/);
   assert.equal(data.users[0].goldExpire, 1);
   assert.equal(data.giftCards[0].status, 'unused');
+  assert.equal(data.systemNotifications && data.systemNotifications.a, undefined);
   db.save = async () => {};
   const before = Date.now();
   const redeemed = await call('POST', '/api/gift-cards/redeem', { code: codes[0] }, 'a');

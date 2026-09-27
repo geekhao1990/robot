@@ -1,6 +1,7 @@
 // server/src/routes/message.js —— 消息：通知 + 私信会话（按用户存储，回传后端）
 const db = require('../db');
 const auth = require('../auth');
+const { notificationsFor, unreadCount, markRead } = require('../notifications');
 
 // 新用户首次访问时的示例消息模板
 function notifTemplate() {
@@ -80,7 +81,33 @@ module.exports = function register(router, HttpError) {
   };
 
   // 未读汇总（消息 tab 角标）
-  router.get('/api/messages/summary', (ctx) => summary(getMsg(current(ctx))));
+  router.get('/api/messages/summary', (ctx) => {
+    const userId = current(ctx);
+    const result = summary(getMsg(userId));
+    result.system = unreadCount(db.get(), userId);
+    result.total += result.system;
+    return result;
+  });
+
+  router.get('/api/system-notifications/summary', (ctx) => {
+    const userId = current(ctx);
+    return { unread: unreadCount(db.get(), userId) };
+  });
+
+  router.get('/api/system-notifications', (ctx) => {
+    const userId = current(ctx);
+    const data = db.get();
+    return { list: notificationsFor(data, userId), unread: unreadCount(data, userId) };
+  });
+
+  router.post('/api/system-notifications/read', (ctx) => {
+    const userId = current(ctx);
+    const data = db.get();
+    const id = (ctx.body || {}).all === true ? '' : String((ctx.body || {}).id || '');
+    const unread = markRead(data, userId, id);
+    db.save();
+    return { unread };
+  });
 
   // 通知列表（已填充 actor 用户与笔记）
   router.get('/api/notifications', (ctx) => {

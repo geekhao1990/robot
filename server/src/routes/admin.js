@@ -7,6 +7,7 @@ const { refreshDarkFundQuota, setManualDarkFundQuota, addManualDarkFundQuota } =
 const { normalizeResourceLinks } = require('../resource-links');
 const crypto = require('crypto');
 const goldFingerSync = require('../gold-finger-sync');
+const { notifyFollowersOfNote, pushNotification } = require('../notifications');
 
 module.exports = function register(router, HttpError) {
   const baseCategories = Object.values(TYPE_LABELS);
@@ -417,6 +418,7 @@ module.exports = function register(router, HttpError) {
       time: Date.now(),
     };
     d.notes.unshift(note);
+    notifyFollowersOfNote(d, note);
     db.save();
     return note;
   });
@@ -427,6 +429,7 @@ module.exports = function register(router, HttpError) {
     const i = d.notes.findIndex((n) => n.id === ctx.params.id);
     if (i < 0) throw new HttpError(404, 'not found');
     const b = ctx.body || {};
+    const wasVisible = d.notes[i].visible !== false;
     const note = { ...d.notes[i], ...b };
     const requestedCategory = Object.prototype.hasOwnProperty.call(b, 'category')
       ? b.category
@@ -466,6 +469,7 @@ module.exports = function register(router, HttpError) {
     }
     if (Array.isArray(b.images)) note.cover = b.images[0] || '';
     d.notes[i] = note;
+    if (!wasVisible && note.visible !== false) notifyFollowersOfNote(d, note);
     db.save();
     return note;
   });
@@ -652,7 +656,16 @@ module.exports = function register(router, HttpError) {
     if (action === 'open') {
       if (active) throw new HttpError(409, '该用户已开通暗盘资金入口');
       user.darkFundEnabled = true;
-      if (quota.total < 1) setManualDarkFundQuota(user, 10);
+      if (quota.total < 1) {
+        setManualDarkFundQuota(user, 10);
+        pushNotification(d, user.id, {
+          type: 'dark_recharge',
+          title: '暗盘次数充值成功',
+          content: '后台已为你开通暗盘资金，并添加10次长期有效查询次数',
+          targetType: 'dark_home',
+          dedupeKey: `admin-dark-open:${user.id}:${Date.now()}`,
+        });
+      }
     } else if (action === 'cancel') {
       if (!active) throw new HttpError(409, '该用户未开通暗盘资金入口');
       user.darkFundEnabled = false;
@@ -672,7 +685,17 @@ module.exports = function register(router, HttpError) {
     if (!Number.isInteger(remaining) || remaining < 0 || remaining > 100000) {
       throw new HttpError(400, '查询次数必须是0到100000之间的整数');
     }
+    const before = refreshDarkFundQuota(user).manual;
     setManualDarkFundQuota(user, remaining);
+    if (remaining > before) {
+      pushNotification(d, user.id, {
+        type: 'dark_recharge',
+        title: '暗盘次数充值成功',
+        content: `后台已添加${remaining - before}次长期有效查询次数，当前长期有效${remaining}次`,
+        targetType: 'dark_home',
+        dedupeKey: `admin-dark-quota:${user.id}:${remaining}:${Date.now()}`,
+      });
+    }
     db.save();
     return user;
   });

@@ -450,6 +450,21 @@ function readConv(id) {
   return request('POST', '/api/conversations/' + id + '/read', { auth: true });
 }
 
+function getSystemNotificationSummary() {
+  return request('GET', '/api/system-notifications/summary', { auth: true });
+}
+
+function getSystemNotifications() {
+  return request('GET', '/api/system-notifications', { auth: true });
+}
+
+function readSystemNotification(id) {
+  return request('POST', '/api/system-notifications/read', {
+    auth: true,
+    data: id ? { id } : { all: true },
+  });
+}
+
 // ---------------- 关注 / 粉丝 ----------------
 function getFollowing() {
   if (remote()) {
@@ -498,6 +513,9 @@ module.exports = {
   sendMessage,
   readNotify,
   readConv,
+  getSystemNotificationSummary,
+  getSystemNotifications,
+  readSystemNotification,
   getFollowing,
   getFans,
   getFriends,

@@ -37,6 +37,7 @@ function setup(options = {}) {
     '../membership': require('../src/membership'), '../util': require('../src/util'),
     '../trading-date': require('../src/trading-date'), '../dark-fund-orders': require('../src/dark-fund-orders'),
     '../collector-client': collector, '../collector-images': collectorImages,
+    '../notifications': require('../src/notifications'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/payment.js'), 'utf8'), {
     module: mod, require: (id) => dependencyMap[id] || require(id), process,
@@ -81,6 +82,7 @@ test('online membership payment routes are removed', () => {
       '../dark-fund-orders': require('../src/dark-fund-orders'),
       '../collector-client': { callbackAuthorized: () => false, dispatchStockAnalysis: async () => ({}) },
       '../collector-images': { persistCollectorImages: () => [] },
+      '../notifications': require('../src/notifications'),
     }[id] || require(id)),
     process,
   });
@@ -106,6 +108,9 @@ test('query dispatches immediately and authenticated callback completes it idemp
   await assert.rejects(call('POST', '/api/stock-analysis/callback', successCallback(data.darkFundOrders[0]), '', {}), { status: 401 });
   assert.equal((await call('POST', '/api/stock-analysis/callback', successCallback(data.darkFundOrders[0]), '', { 'x-stock-callback-token': 'callback-secret' })).ok, true);
   assert.equal(data.darkFundOrders[0].status, 'READY');
+  assert.equal(data.systemNotifications.u1.length, 1);
+  assert.equal(data.systemNotifications.u1[0].type, 'dark_ready');
+  assert.equal(data.systemNotifications.u1[0].targetType, 'dark_history');
   assert.equal(data.notes[0].title, '【暗盘追踪】明暗同步流入，资金表现如何？');
   assert.equal(data.notes[0].visibility, 'private');
   assert.equal(data.notes[0].ownerUserId, 'u1');

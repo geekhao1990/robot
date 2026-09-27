@@ -12,6 +12,7 @@ const {
 } = require('../dark-fund-orders');
 const { callbackAuthorized, dispatchStockAnalysis } = require('../collector-client');
 const { persistCollectorImages } = require('../collector-images');
+const { pushNotification } = require('../notifications');
 
 function darkFundOrderNo() {
   return `DF${Date.now()}${crypto.randomBytes(5).toString('hex')}`.slice(0, 32);
@@ -208,6 +209,14 @@ module.exports = function register(router, HttpError) {
       throw new HttpError(400, error.message);
     }
     activateDarkFundOrder(d, order, result);
+    pushNotification(d, order.userId, {
+      type: 'dark_ready',
+      title: `${order.stockCode}暗盘查询已完成`,
+      content: '查询结果已经生成，点击查看历史订单',
+      targetType: 'dark_history',
+      targetId: order.id,
+      dedupeKey: `dark-ready:${order.id}`,
+    });
     db.save();
     return { ok: true };
   });

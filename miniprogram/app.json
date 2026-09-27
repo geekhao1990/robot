@@ -12,6 +12,7 @@
     "pages/login/login",
     "pages/dark-funds/dark-funds",
     "pages/dark-funds-order/dark-funds-order",
+    "pages/message-center/message-center",
     "pages/user/user"
   ],
   "subPackages": [],
