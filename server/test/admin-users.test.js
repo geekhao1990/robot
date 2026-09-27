@@ -51,6 +51,22 @@ test('admin gold entitlement enforces open and cancel states', async () => {
   await assert.rejects(call('PUT', '/api/admin/users/u1/gold', { action: 'cancel' }), { status: 409 });
 });
 
+test('admin can set a custom service package expiry date for legacy subscribers', async () => {
+  const { data, call } = setup();
+  await assert.rejects(call('PUT', '/api/admin/users/u1/service', { action: 'set', expireDate: '2099-12-31' }, ''), { status: 401 });
+  const service = await call('PUT', '/api/admin/users/u1/service', { action: 'set', expireDate: '2099-12-31' });
+  assert.equal(service.servicePlan, 'service_custom');
+  assert.equal(service.serviceExpire, Date.parse('2099-12-31T23:59:59.999+08:00'));
+  assert.equal(service.darkFundServiceRemaining, 15);
+  assert.equal(service.darkFundEnabled, true);
+  assert.equal(data.users[0].servicePlan, 'service_custom');
+  await assert.rejects(call('PUT', '/api/admin/users/u1/service', { action: 'set', expireDate: '2099-02-31' }), { status: 400 });
+  const cancelled = await call('PUT', '/api/admin/users/u1/service', { action: 'cancel' });
+  assert.equal(cancelled.serviceExpire, 0);
+  assert.equal(cancelled.servicePlan, '');
+  assert.equal(cancelled.darkFundServiceRemaining, 0);
+});
+
 test('legacy VIP administration endpoint is removed', async () => {
   const { call } = setup();
   await assert.rejects(call('PUT', '/api/admin/users/u1/vip', { plan: 'month' }), /handler/);

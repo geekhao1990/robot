@@ -606,6 +606,40 @@ module.exports = function register(router, HttpError) {
     return user;
   });
 
+  // 历史订阅用户可由管理员直接设置服务包到期日，无需生成礼品卡。
+  router.put('/api/admin/users/:id/service', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const user = d.users.find((u) => u.id === ctx.params.id);
+    if (!user) throw new HttpError(404, '用户不存在');
+    const body = ctx.body || {};
+    const action = String(body.action || 'set');
+    if (action === 'cancel') {
+      user.serviceExpire = 0;
+      user.servicePlan = '';
+      refreshDarkFundQuota(user);
+      db.save();
+      return user;
+    }
+    if (action !== 'set') throw new HttpError(400, 'action 须为 set/cancel');
+    const expireDate = String(body.expireDate || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(expireDate)) throw new HttpError(400, '请选择正确的服务包到期日期');
+    const expireAt = Date.parse(`${expireDate}T23:59:59.999+08:00`);
+    const normalizedDate = Number.isFinite(expireAt)
+      ? new Date(expireAt + 8 * 3600 * 1000).toISOString().slice(0, 10)
+      : '';
+    if (normalizedDate !== expireDate) throw new HttpError(400, '服务包到期日期无效');
+    if (expireAt <= Date.now()) throw new HttpError(400, '服务包到期时间必须晚于当前时间');
+    const wasActive = Number(user.serviceExpire) > Date.now();
+    user.serviceExpire = expireAt;
+    user.servicePlan = 'service_custom';
+    user.darkFundEnabled = true;
+    if (!wasActive) user.darkFundServiceMonth = '';
+    refreshDarkFundQuota(user);
+    db.save();
+    return user;
+  });
+
   // 暗盘资金入口由后台人工开通；首次开通附加10次永久后台次数，关闭后入口立即隐藏。
   router.put('/api/admin/users/:id/dark-funds', (ctx) => {
     requireAuth(ctx);

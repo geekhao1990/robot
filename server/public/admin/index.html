@@ -525,6 +525,7 @@ function delNote(id) {
 
 // 用户
 function fmtDate(ts) { if (!ts) return ''; const d = new Date(ts); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
+function fmtDateInput(ts) { if (!ts) return ''; const d = new Date(ts); const p = (v) => String(v).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; }
 
 let _userKeyword = '';
 let _userPage = 1;
@@ -564,8 +565,9 @@ function drawUsers() {
     const goldStatus = goldActive
       ? `<span class="tag vip">金手指卡 · 至 ${fmtDate(u.goldExpire)}</span>`
       : (u.goldExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
+    const serviceName = u.servicePlan === 'service_year' ? '服务包年卡' : (u.servicePlan === 'service_custom' ? '服务包' : '服务包月卡');
     const serviceStatus = serviceActive
-      ? `<span class="tag vip">${u.servicePlan === 'service_year' ? '服务包年卡' : '服务包月卡'} · 至 ${fmtDate(u.serviceExpire)}</span>`
+      ? `<span class="tag vip">${serviceName} · 至 ${fmtDate(u.serviceExpire)}</span>`
       : (u.serviceExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
     const courseStatus = serviceActive || u.courseAccessPermanent === true
       ? `<span class="tag course">已开通${u.courseAccessPermanent === true ? ' · 次卡权益' : ''}</span>`
@@ -591,6 +593,8 @@ function drawUsers() {
         <td>
           <button class="btn-sm" ${goldActive ? 'disabled' : ''} onclick='setGold("${u.id}","open")'>开通金手指卡</button>
           <button class="btn-sm del" ${goldActive ? '' : 'disabled'} onclick='setGold("${u.id}","cancel")'>取消金手指卡</button>
+          <button class="btn-sm" onclick='setServiceExpire("${u.id}")'>设置服务包</button>
+          <button class="btn-sm del" ${serviceActive ? '' : 'disabled'} onclick='cancelService("${u.id}")'>取消服务包</button>
           <button class="btn-sm" ${darkFundActive ? 'disabled' : ''} onclick='setDarkFunds("${u.id}","open")'>开通暗盘资金</button>
           <button class="btn-sm del" ${darkFundActive ? '' : 'disabled'} onclick='setDarkFunds("${u.id}","cancel")'>关闭暗盘资金</button>
           <button class="btn-sm" onclick='setDarkFundQuota("${u.id}")'>设置查询次数</button>
@@ -617,6 +621,31 @@ function setGold(id, action) {
   if (!confirm(`确定为该用户「${label}」吗？`)) return;
   api('/api/admin/users/' + id + '/gold', { method: 'PUT', body: JSON.stringify({ action }) })
     .then(() => { showAdminToast(action === 'open' ? '金手指已开通' : '金手指已取消'); renderUsers(); })
+    .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
+}
+function setServiceExpire(id) {
+  const user = _users.find((item) => item.id === id);
+  if (!user) return;
+  const defaultDate = Number(user.serviceExpire) > Date.now()
+    ? fmtDateInput(user.serviceExpire)
+    : fmtDateInput(Date.now() + 30 * 24 * 3600 * 1000);
+  const minDate = fmtDateInput(Date.now());
+  openModal('设置服务包到期日', `
+    <div class="field"><label>用户</label><input value="${esc(user.name)}（${esc(user.id)}）" disabled /></div>
+    <div class="field"><label>服务包有效至</label><input id="serviceExpireDate" type="date" min="${minDate}" value="${defaultDate}" /></div>
+    <div class="hint">所选日期当天23:59:59到期。手工设置享有金手指、课程免广告及每个自然月15次暗盘查询。</div>
+  `, () => {
+    const expireDate = document.getElementById('serviceExpireDate').value;
+    if (!expireDate) return showAdminToast('请选择到期日期', 'error');
+    api('/api/admin/users/' + id + '/service', { method: 'PUT', body: JSON.stringify({ action: 'set', expireDate }) })
+      .then(() => { closeModal(); showAdminToast('服务包到期日已更新'); renderUsers(); })
+      .catch((error) => showAdminToast(error.message || '保存失败', 'error'));
+  });
+}
+function cancelService(id) {
+  if (!confirm('确定取消该用户的服务包吗？')) return;
+  api('/api/admin/users/' + id + '/service', { method: 'PUT', body: JSON.stringify({ action: 'cancel' }) })
+    .then(() => { showAdminToast('服务包已取消'); renderUsers(); })
     .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
 }
 function setDarkFunds(id, action) {
