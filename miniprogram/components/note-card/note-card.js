@@ -37,6 +37,26 @@ Component({
   },
 
   methods: {
+    onCoverTouchStart(e) {
+      const touch = e.touches && e.touches[0];
+      this._coverTouchStart = touch ? { x: touch.clientX, y: touch.clientY } : null;
+      this._coverMoved = false;
+    },
+
+    onCoverTouchMove(e) {
+      const start = this._coverTouchStart;
+      const touch = e.touches && e.touches[0];
+      if (!start || !touch) return;
+      const dx = Math.abs(touch.clientX - start.x);
+      const dy = Math.abs(touch.clientY - start.y);
+      if (dx > 8 || dy > 8) this._coverMoved = true;
+    },
+
+    onCoverTap() {
+      if (this._coverMoved) return;
+      this.onTap();
+    },
+
     onCoverLoad(e) {
       if (Number(e.currentTarget.dataset.index) !== 0) return;
       const width = Number(e.detail && e.detail.width);
