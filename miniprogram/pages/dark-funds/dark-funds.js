@@ -1,11 +1,19 @@
 const api = require('../../utils/api');
 const store = require('../../utils/store');
+const config = require('../../utils/config');
 
 function formatQueryTime(timestamp) {
   const date = new Date(Number(timestamp) || 0);
   if (!Number.isFinite(date.getTime()) || !Number(timestamp)) return '—';
   const pad = (value) => String(value).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function formatExpiryDate(timestamp) {
+  const date = new Date(Number(timestamp) || 0);
+  if (!Number.isFinite(date.getTime()) || !Number(timestamp)) return '';
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 Page({
@@ -15,6 +23,13 @@ Page({
     tradeDate: '',
     compactTradeDate: '',
     remaining: 0,
+    expiringRemaining: 0,
+    permanentRemaining: 0,
+    quotaExpiryText: '',
+    queryAdUnitId: /^adunit-/i.test(String(config.darkFundsQueryAdUnitId || ''))
+      ? String(config.darkFundsQueryAdUnitId)
+      : '',
+    queryAdLoadFailed: false,
     dateLoading: true,
     historyLoading: false,
     orders: [],
@@ -54,7 +69,11 @@ Page({
   loadTradeDate() {
     this.setData({ dateLoading: true });
     api.getDarkFundTradeDate()
-      .then((result) => this.setData({ tradeDate: result.tradeDate, compactTradeDate: result.compactTradeDate, remaining: Number(result.remaining) || 0 }))
+      .then((result) => this.setData({
+        tradeDate: result.tradeDate,
+        compactTradeDate: result.compactTradeDate,
+        ...this.quotaData(result),
+      }))
       .catch(() => wx.showToast({ title: '交易日获取失败', icon: 'none' }))
       .finally(() => this.setData({ dateLoading: false }));
   },
@@ -82,7 +101,7 @@ Page({
       .then((order) => {
         wx.hideLoading();
         if (!order || !order.orderId) throw new Error('工单提交失败');
-        this.setData({ remaining: Number(order.remaining) || 0, waitingText: '等待结果' });
+        this.setData({ ...this.quotaData(order), waitingText: '等待结果' });
         this.loadOrders(true);
         wx.showModal({ title: '已提交', content: '等待结果', showCancel: false });
       })
@@ -130,6 +149,17 @@ Page({
   stopOrderPolling() {
     if (this._orderPollingTimer) clearInterval(this._orderPollingTimer);
     this._orderPollingTimer = null;
+  },
+  quotaData(result) {
+    return {
+      remaining: Number(result && result.remaining) || 0,
+      expiringRemaining: Number(result && result.expiringRemaining) || 0,
+      permanentRemaining: Number(result && result.permanentRemaining) || 0,
+      quotaExpiryText: formatExpiryDate(result && result.quotaExpiresAt),
+    };
+  },
+  onQueryAdError() {
+    this.setData({ queryAdLoadFailed: true });
   },
   errorText(error) {
     return (error && (error.errMsg || (error.data && error.data.error) || error.message)) || '请稍后重试';

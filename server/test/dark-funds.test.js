@@ -92,11 +92,17 @@ test('online membership payment routes are removed', () => {
 
 test('query dispatches immediately and authenticated callback completes it idempotently', async () => {
   const { data, call } = setup();
+  const quota = await call('GET', '/api/dark-funds/trade-date');
+  assert.equal(quota.remaining, 2);
+  assert.equal(quota.expiringRemaining, 0);
+  assert.equal(quota.permanentRemaining, 2);
   await assert.rejects(call('POST', '/api/dark-funds/orders', { stockCode: '123' }), { status: 400 });
   const created = await call('POST', '/api/dark-funds/orders', { stockCode: '600105' });
   assert.equal(created.status, 'QUEUED');
   assert.equal(created.ready, false);
   assert.equal(created.remaining, 1);
+  assert.equal(created.expiringRemaining, 0);
+  assert.equal(created.permanentRemaining, 1);
   await assert.rejects(call('POST', '/api/stock-analysis/callback', successCallback(data.darkFundOrders[0]), '', {}), { status: 401 });
   assert.equal((await call('POST', '/api/stock-analysis/callback', successCallback(data.darkFundOrders[0]), '', { 'x-stock-callback-token': 'callback-secret' })).ok, true);
   assert.equal(data.darkFundOrders[0].status, 'READY');

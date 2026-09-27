@@ -36,6 +36,9 @@ module.exports = function register(router, HttpError) {
       tradeDate,
       compactTradeDate: compactDate(tradeDate),
       remaining: quota.total,
+      expiringRemaining: quota.service,
+      permanentRemaining: quota.manual,
+      quotaExpiresAt: quota.serviceExpireAt,
     };
   });
 
@@ -66,17 +69,38 @@ module.exports = function register(router, HttpError) {
     try {
       const accepted = await dispatchStockAnalysis(order);
       if (order.status === 'READY' || order.status === 'SUCCESS') {
-        return { ...publicDarkFundOrder(order), orderId: order.id, remaining: consumed.total };
+        return {
+          ...publicDarkFundOrder(order),
+          orderId: order.id,
+          remaining: consumed.total,
+          expiringRemaining: consumed.service,
+          permanentRemaining: consumed.manual,
+          quotaExpiresAt: consumed.serviceExpireAt,
+        };
       }
       order.status = 'QUEUED';
       order.dispatchedAt = Date.now();
       order.collectorStatus = accepted.status;
       db.save();
-      return { ...publicDarkFundOrder(order), orderId: order.id, remaining: consumed.total };
+      return {
+        ...publicDarkFundOrder(order),
+        orderId: order.id,
+        remaining: consumed.total,
+        expiringRemaining: consumed.service,
+        permanentRemaining: consumed.manual,
+        quotaExpiresAt: consumed.serviceExpireAt,
+      };
     } catch (error) {
       // 极快的缓存结果可能已在接单响应返回前回调成功，不能再覆盖为失败或退次数。
       if (order.status === 'READY' || order.status === 'SUCCESS') {
-        return { ...publicDarkFundOrder(order), orderId: order.id, remaining: consumed.total };
+        return {
+          ...publicDarkFundOrder(order),
+          orderId: order.id,
+          remaining: consumed.total,
+          expiringRemaining: consumed.service,
+          permanentRemaining: consumed.manual,
+          quotaExpiresAt: consumed.serviceExpireAt,
+        };
       }
       order.status = 'DISPATCH_FAILED';
       order.dispatchError = error.message;

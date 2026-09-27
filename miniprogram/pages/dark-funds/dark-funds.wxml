@@ -16,7 +16,17 @@
         <button class="query-button" bindtap="prepareQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">查询</button>
         <button class="contact-button" open-type="contact">联系客服</button>
       </view>
-      <view class="remaining-tip">剩余次数：{{remaining}}</view>
+      <view class="quota-summary">
+        <view class="remaining-tip">剩余次数：<text>{{remaining}}</text></view>
+        <view class="quota-details">
+          <view><text>30天内到期</text><text>{{expiringRemaining}} 次<text wx:if="{{quotaExpiryText}}" class="quota-expiry">（有效至 {{quotaExpiryText}}）</text></text></view>
+          <view><text>长期有效</text><text>{{permanentRemaining}} 次</text></view>
+        </view>
+      </view>
+      <view class="query-ad-slot">
+        <ad wx:if="{{queryAdUnitId && !queryAdLoadFailed}}" unit-id="{{queryAdUnitId}}" binderror="onQueryAdError" />
+        <view wx:else class="query-ad-placeholder">广告位</view>
+      </view>
       <view wx:if="{{waitingText}}" class="waiting-tip">{{waitingText}}</view>
     </view>
   </view>

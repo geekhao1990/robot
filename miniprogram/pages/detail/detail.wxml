@@ -34,12 +34,12 @@
         <view wx:if="{{darkParagraphs[1]}}" class="dark-paragraph">{{darkParagraphs[1]}}</view>
         <image wx:if="{{note.images[1]}}" class="dark-article-image" src="{{note.images[1]}}" mode="widthFix" bindload="onPageImageLoad" binderror="onPageImageError" bindtap="onNoteImageTap" data-index="1" data-url="{{note.images[1]}}" />
         <view wx:if="{{darkParagraphs[2]}}" class="dark-paragraph">{{darkParagraphs[2]}}</view>
-        <view class="dark-ad-slot">
-          <ad wx:if="{{darkArticleAdUnitId && !articleAdLoadFailed}}" unit-id="{{darkArticleAdUnitId}}" binderror="onArticleAdError" />
-          <view wx:else class="dark-ad-placeholder">广告位</view>
-        </view>
       </block>
       <view wx:else class="text">{{note.displayContent}}</view>
+      <view class="dark-ad-slot">
+        <ad wx:if="{{darkArticleAdUnitId && !articleAdLoadFailed}}" unit-id="{{darkArticleAdUnitId}}" binderror="onArticleAdError" />
+        <view wx:else class="dark-ad-placeholder">广告位</view>
+      </view>
       <view class="tags"><text wx:for="{{note.tags}}" wx:key="*this" class="tag">#{{item}}</text></view>
       <view class="meta">{{timeText}}</view>
       <view class="actionbar">
