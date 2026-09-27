@@ -11,10 +11,10 @@
     <view class="title ellipsis-2">{{note.title}}</view>
     <view class="bottom">
       <image class="avatar" src="{{note.author.avatar}}" mode="aspectFill" />
-      <text class="name ellipsis">{{note.author.name}}</text>
+      <view class="name ellipsis">{{note.author.name}}</view>
       <view class="like" catchtap="onLike">
         <view class="heart {{note.liked ? 'active' : ''}}"></view>
-        <text class="count">{{likeText}}</text>
+        <view class="count">{{likeText}}</view>
       </view>
     </view>
   </view>

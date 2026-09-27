@@ -142,7 +142,7 @@
   box-shadow: 0 8rpx 24rpx rgba(0,0,0,.08);
 }
 .quick-menu.after-editor { margin-top: 0; }
-.quick-item { display: flex; flex: 1; min-width: 0; flex-direction: column; align-items: center; justify-content: flex-start; }
+.quick-item { display: flex; flex: 0 0 16.6667%; width: 16.6667%; min-width: 0; flex-direction: column; align-items: center; justify-content: flex-start; }
 .quick-icon-wrap { position: relative; width: 56rpx; height: 56rpx; }
 .quick-icon { width: 56rpx; height: 56rpx; }
 .quick-badge { position: absolute; top: -10rpx; right: -16rpx; display: flex; align-items: center; justify-content: center; min-width: 28rpx; height: 28rpx; padding: 0 5rpx; color: #fff; font-size: 17rpx; font-weight: 700; line-height: 1; background: #ff2442; border: 3rpx solid #fff; border-radius: 999rpx; box-sizing: border-box; }
