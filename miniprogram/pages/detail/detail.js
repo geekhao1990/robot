@@ -219,11 +219,11 @@ Page({
     }
     if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
     return Promise.resolve(this.settingsPromise).then(() => {
-      // 免费笔记登录后按广告设置领取；非免费课程/资料仅金手指卡可领取且免广告。
-      if (this.data.note && this.data.note.free === true) return this.handleGetResource(false);
+      // 金手指卡领取课程/资料时免广告；其他登录用户仅可通过广告领取免费笔记。
       return store.syncMe().then((user) => {
-        if (!this.hasGoldAccess(user)) return this.showGoldCardRequired();
-        return this.handleGetResource(true);
+        if (this.hasGoldAccess(user)) return this.handleGetResource(true);
+        if (this.data.note && this.data.note.free === true) return this.handleGetResource(false);
+        return this.showGoldCardRequired();
       });
     });
   },
