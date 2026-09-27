@@ -62,7 +62,13 @@ Page({
       navBarHeight: app.globalData.navBarHeight,
       headerHeight: app.globalData.statusBarHeight + app.globalData.navBarHeight,
     });
-    this.noteId = options.id;
+    this.noteId = String((options && options.id) || '').trim();
+    if (!this.noteId) {
+      this.finishPageRenderLoading();
+      wx.showToast({ title: '笔记参数无效', icon: 'none' });
+      setTimeout(() => this.goBack(), 600);
+      return;
+    }
     this.loadInviteCode();
     this.loadSettings();
     this.loadNote();

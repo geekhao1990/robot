@@ -47,7 +47,9 @@ Component({
     },
 
     onTap() {
-      this.triggerEvent('tap', { id: this.data.note.id });
+      const id = this.data.note && this.data.note.id;
+      if (!id) return;
+      this.triggerEvent('open', { id });
     },
 
     onDelete() {

@@ -65,10 +65,12 @@ Page({
   },
 
   goDetail(e) {
+    const id = e.detail && e.detail.id;
+    if (!id) return;
     this._returningFromDetail = true;
     this._savedPageScrollTop = Number(this._pageScrollTop) || 0;
     wx.navigateTo({
-      url: `/pages/detail/detail?id=${e.detail.id}`,
+      url: `/pages/detail/detail?id=${encodeURIComponent(id)}`,
       fail: () => { this._returningFromDetail = false; },
     });
   },

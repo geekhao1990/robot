@@ -25,10 +25,10 @@
     <view wx:if="{{!notes.length}}" class="placeholder">还没有发布笔记</view>
     <view wx:else class="waterfall">
       <view class="column">
-        <note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindtap="goDetail" />
+        <note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindopen="goDetail" />
       </view>
       <view class="column">
-        <note-card wx:for="{{right}}" wx:key="id" note="{{item}}" bindtap="goDetail" />
+        <note-card wx:for="{{right}}" wx:key="id" note="{{item}}" bindopen="goDetail" />
       </view>
     </view>
   </view>

@@ -217,11 +217,13 @@ Page({
     this._currentScrollTop = Number(e.detail && e.detail.scrollTop) || 0;
   },
   goDetail(e) {
+    const id = e.detail && e.detail.id;
+    if (!id) return;
     this._returningFromDetail = true;
     const profileScrollTop = Number(this._currentScrollTop) || 0;
     this.setData({ profileScrollTop }, () => {
       wx.navigateTo({
-        url: `/pages/detail/detail?id=${e.detail.id}`,
+        url: `/pages/detail/detail?id=${encodeURIComponent(id)}`,
         fail: () => { this._returningFromDetail = false; },
       });
     });

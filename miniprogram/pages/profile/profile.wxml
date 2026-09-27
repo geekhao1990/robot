@@ -76,8 +76,8 @@
     <view class="tabs"><view wx:for="{{tabs}}" wx:key="*this" class="tab {{tabIndex === index ? 'active' : ''}}" data-index="{{index}}" bindtap="onTab">{{item}}</view></view>
     <view class="list">
       <view wx:if="{{currentNotes.length}}" class="waterfall">
-        <view class="column"><note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindtap="goDetail" /></view>
-        <view class="column"><note-card wx:for="{{right}}" wx:key="id" note="{{item}}" bindtap="goDetail" /></view>
+        <view class="column"><note-card wx:for="{{left}}" wx:key="id" note="{{item}}" bindopen="goDetail" /></view>
+        <view class="column"><note-card wx:for="{{right}}" wx:key="id" note="{{item}}" bindopen="goDetail" /></view>
       </view>
       <view wx:else class="placeholder">{{emptyText}}</view>
     </view>

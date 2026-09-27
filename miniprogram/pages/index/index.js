@@ -150,11 +150,13 @@ Page({
   },
 
   goDetail(e) {
+    const id = e.detail && e.detail.id;
+    if (!id) return;
     this._returningFromDetail = true;
     const feedScrollTop = Number(this._currentScrollTop) || 0;
     this.setData({ feedScrollTop }, () => {
       wx.navigateTo({
-        url: `/pages/detail/detail?id=${e.detail.id}`,
+        url: `/pages/detail/detail?id=${encodeURIComponent(id)}`,
         fail: () => { this._returningFromDetail = false; },
       });
     });
