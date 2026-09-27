@@ -53,7 +53,23 @@ Page({
     this.setData({ followed });
   },
 
+  onShow() {
+    if (!this._returningFromDetail) return;
+    this._returningFromDetail = false;
+    const scrollTop = Number(this._savedPageScrollTop) || 0;
+    wx.nextTick(() => wx.pageScrollTo({ scrollTop, duration: 0 }));
+  },
+
+  onPageScroll(e) {
+    this._pageScrollTop = Number(e.scrollTop) || 0;
+  },
+
   goDetail(e) {
-    wx.navigateTo({ url: `/pages/detail/detail?id=${e.detail.id}` });
+    this._returningFromDetail = true;
+    this._savedPageScrollTop = Number(this._pageScrollTop) || 0;
+    wx.navigateTo({
+      url: `/pages/detail/detail?id=${e.detail.id}`,
+      fail: () => { this._returningFromDetail = false; },
+    });
   },
 });

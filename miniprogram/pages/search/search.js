@@ -29,6 +29,11 @@ Page({
   },
 
   onShow() {
+    if (this._returningFromDetail) {
+      this._returningFromDetail = false;
+      const scrollTop = Number(this._savedPageScrollTop) || 0;
+      return wx.nextTick(() => wx.pageScrollTo({ scrollTop, duration: 0 }));
+    }
     if (this._hotLoaded) return;
     this._hotLoaded = true;
     api.getHotSearch()
@@ -96,7 +101,16 @@ Page({
   },
 
   goDetail(e) {
-    wx.navigateTo({ url: `/pages/detail/detail?id=${e.detail.id}` });
+    this._returningFromDetail = true;
+    this._savedPageScrollTop = Number(this._pageScrollTop) || 0;
+    wx.navigateTo({
+      url: `/pages/detail/detail?id=${e.detail.id}`,
+      fail: () => { this._returningFromDetail = false; },
+    });
+  },
+
+  onPageScroll(e) {
+    this._pageScrollTop = Number(e.scrollTop) || 0;
   },
 
   goBack() {

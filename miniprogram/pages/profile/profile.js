@@ -25,6 +25,7 @@ Page({
     entitlements: [],
     refreshing: false,
     refreshReady: false,
+    profileScrollTop: 0,
   },
   onLoad() {
     const app = getApp();
@@ -32,6 +33,10 @@ Page({
   },
   onShow() {
     refreshTabBar(this, 2);
+    if (this._returningFromDetail) {
+      this._returningFromDetail = false;
+      return;
+    }
     this.refreshProfile();
   },
   refreshProfile() {
@@ -56,7 +61,12 @@ Page({
       : proceed();
     return Promise.resolve(request).finally(() => this.finishRefresh());
   },
-  onTab(e) { const index = Number(e.currentTarget.dataset.index); this.setData({ tabIndex: index }); this.loadTab(index); },
+  onTab(e) {
+    const index = Number(e.currentTarget.dataset.index);
+    this._currentScrollTop = 0;
+    this.setData({ tabIndex: index, profileScrollTop: 0 });
+    this.loadTab(index);
+  },
   entitlementRows(user) {
     if (!user) return [];
     const now = Date.now();
@@ -203,5 +213,17 @@ Page({
   onLogout() {
     wx.showModal({ title: '提示', content: '确定要退出登录吗？', success: (res) => { if (res.confirm) { store.logout(); this.onShow(); } } });
   },
-  goDetail(e) { wx.navigateTo({ url: `/pages/detail/detail?id=${e.detail.id}` }); },
+  onProfileScroll(e) {
+    this._currentScrollTop = Number(e.detail && e.detail.scrollTop) || 0;
+  },
+  goDetail(e) {
+    this._returningFromDetail = true;
+    const profileScrollTop = Number(this._currentScrollTop) || 0;
+    this.setData({ profileScrollTop }, () => {
+      wx.navigateTo({
+        url: `/pages/detail/detail?id=${e.detail.id}`,
+        fail: () => { this._returningFromDetail = false; },
+      });
+    });
+  },
 });

@@ -23,6 +23,7 @@ Page({
     refreshing: false,
     refreshReady: false,
     emptyText: '这里还没有内容～',
+    feedScrollTop: 0,
   },
 
   onLoad() {
@@ -40,6 +41,14 @@ Page({
 
   onShow() {
     refreshTabBar(this, 0);
+    if (this._returningFromDetail) {
+      this._returningFromDetail = false;
+      return;
+    }
+    if (!this._hasShown) {
+      this._hasShown = true;
+      return;
+    }
     if (this.data.tab === 'following') {
       if (!store.isLogin()) {
         this.setData({ tab: 'discover' });
@@ -131,7 +140,8 @@ Page({
       wx.navigateTo({ url: '/pages/login/login' });
       return;
     }
-    this.setData({ tab, page: 1, hasMore: true });
+    this._currentScrollTop = 0;
+    this.setData({ tab, page: 1, hasMore: true, feedScrollTop: 0 });
     this.loadFeed(true);
   },
 
@@ -140,7 +150,18 @@ Page({
   },
 
   goDetail(e) {
-    wx.navigateTo({ url: `/pages/detail/detail?id=${e.detail.id}` });
+    this._returningFromDetail = true;
+    const feedScrollTop = Number(this._currentScrollTop) || 0;
+    this.setData({ feedScrollTop }, () => {
+      wx.navigateTo({
+        url: `/pages/detail/detail?id=${e.detail.id}`,
+        fail: () => { this._returningFromDetail = false; },
+      });
+    });
+  },
+
+  onFeedScroll(e) {
+    this._currentScrollTop = Number(e.detail && e.detail.scrollTop) || 0;
   },
 
   onCardLike(e) {

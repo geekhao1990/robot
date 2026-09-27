@@ -2,6 +2,7 @@
   class="profile-scroll"
   scroll-y
   enhanced
+  scroll-top="{{profileScrollTop}}"
   refresher-enabled
   refresher-threshold="64"
   refresher-default-style="none"
@@ -11,6 +12,7 @@
   bindrefresherrefresh="onRefresherRefresh"
   bindrefresherrestore="onRefresherRestore"
   bindrefresherabort="onRefresherAbort"
+  bindscroll="onProfileScroll"
 >
   <view slot="refresher" class="refresh-indicator">
     <view wx:if="{{refreshing}}" class="refresh-loading"></view>

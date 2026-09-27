@@ -26,6 +26,7 @@
     style="top: {{headerHeight}}px;"
     scroll-y
     enhanced
+    scroll-top="{{feedScrollTop}}"
     lower-threshold="120"
     refresher-enabled
     refresher-threshold="64"
@@ -33,6 +34,7 @@
     refresher-background="#f5f5f5"
     refresher-triggered="{{refreshing}}"
     bindscrolltolower="onScrollToLower"
+    bindscroll="onFeedScroll"
     bindrefresherpulling="onRefresherPulling"
     bindrefresherrefresh="onRefresherRefresh"
     bindrefresherrestore="onRefresherRestore"
