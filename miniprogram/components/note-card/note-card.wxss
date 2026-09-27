@@ -27,7 +27,6 @@
   overflow: hidden;
   background: #ececec;
 }
-.cover-swiper,
 .cover-stage,
 .cover-bg,
 .cover {
