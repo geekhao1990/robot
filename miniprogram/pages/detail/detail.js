@@ -50,9 +50,12 @@ Page({
     resourceModalVisible: false,
     resourceOptions: [],
     rewardedAdEnabled: config.rewardedAdEnabled === true,
+    pageRenderLoading: false,
   },
 
   onLoad(options) {
+    this._darkFundEntryLoading = options.fromDarkFund === '1';
+    if (this._darkFundEntryLoading) this.setData({ pageRenderLoading: true });
     this._goldTabEntryLoading = options.from === 'goldTab';
     if (this._goldTabEntryLoading) wx.showLoading({ title: '请稍后...', mask: true });
     store.captureInvite(options);
@@ -124,6 +127,12 @@ Page({
       }
       const content = String(note.content || '').replace(/\s+$/, '');
       const darkFundNote = isDarkFundNote(note);
+      const darkImageIndexes = darkFundNote
+        ? (note.images || []).map((src, index) => src ? index : -1).filter((index) => index >= 0)
+        : [];
+      this._darkImageExpected = new Set(darkImageIndexes);
+      this._darkImageSettled = new Set();
+      this._darkImageErrorShown = false;
       note.displayContent = note.riskDisclaimerEnabled
         ? `${content}${content ? '\n\n' : ''}${RISK_DISCLAIMER}`
         : content;
@@ -144,6 +153,7 @@ Page({
         articleAdLoadFailed: false,
         isOwnNote,
         followed: !isOwnNote && store.isFollowed(authorId),
+        pageRenderLoading: darkFundNote && darkImageIndexes.length > 0,
       }, () => {
         if (darkFundNote && wx.hideShareMenu) {
           wx.hideShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
@@ -151,9 +161,11 @@ Page({
           wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
         }
         this.finishGoldTabLoading();
+        if (!darkFundNote || !darkImageIndexes.length) this.finishPageRenderLoading();
       });
     }).catch((err) => {
       this._loadingNote = false;
+      this.setData({ pageRenderLoading: false });
       this.finishGoldTabLoading();
       const code = err && err.statusCode;
       wx.showModal({
@@ -173,6 +185,27 @@ Page({
     this._imageRatios = this._imageRatios || {};
     this._imageRatios[index] = { width, height };
     if (index === this.data.current) this.setData({ swiperHeight: detailImageHeight(width, height) });
+  },
+
+  onDarkArticleImageLoad(e) {
+    this.settleDarkArticleImage(Number(e.currentTarget.dataset.index), false);
+  },
+  onDarkArticleImageError(e) {
+    this.settleDarkArticleImage(Number(e.currentTarget.dataset.index), true);
+  },
+  settleDarkArticleImage(index, failed) {
+    if (!this._darkImageExpected || !this._darkImageExpected.has(index)) return;
+    this._darkImageSettled = this._darkImageSettled || new Set();
+    this._darkImageSettled.add(index);
+    if (failed && !this._darkImageErrorShown) {
+      this._darkImageErrorShown = true;
+      wx.showToast({ title: '部分图片加载失败，请检查网络', icon: 'none' });
+    }
+    if (this._darkImageSettled.size >= this._darkImageExpected.size) this.finishPageRenderLoading();
+  },
+  finishPageRenderLoading() {
+    if (!this.data.pageRenderLoading) return;
+    wx.nextTick(() => setTimeout(() => this.setData({ pageRenderLoading: false }), 80));
   },
   onSwiperChange(e) {
     const current = Number(e.detail.current) || 0;

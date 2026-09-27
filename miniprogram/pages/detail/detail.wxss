@@ -680,3 +680,33 @@
   50% { transform: scale(1.4); }
   100% { transform: scale(1); }
 }
+
+.render-loading-mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+}
+.render-loading-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #888;
+  font-size: 25rpx;
+}
+.render-loading-icon {
+  width: 54rpx;
+  height: 54rpx;
+  margin-bottom: 22rpx;
+  border: 5rpx solid #ededed;
+  border-top-color: #ff2442;
+  border-radius: 50%;
+  animation: render-spin .8s linear infinite;
+}
+@keyframes render-spin { to { transform: rotate(360deg); } }

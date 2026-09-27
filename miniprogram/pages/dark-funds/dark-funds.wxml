@@ -29,6 +29,7 @@
         <view class="order-main">
           <view class="order-code">{{item.stockCode}}</view>
           <view class="order-date">{{item.compactTradeDate}} 暗盘数据</view>
+          <view class="order-query-time">查询时间：{{item.queryTimeText}}</view>
         </view>
         <view class="order-side {{item.ready ? 'ready' : 'pending'}} {{item.failed ? 'failed' : ''}}"><text>{{item.statusText}}</text><text wx:if="{{item.ready}}" class="arrow">›</text></view>
       </view>

@@ -1,6 +1,13 @@
 const api = require('../../utils/api');
 const store = require('../../utils/store');
 
+function formatQueryTime(timestamp) {
+  const date = new Date(Number(timestamp) || 0);
+  if (!Number.isFinite(date.getTime()) || !Number(timestamp)) return '—';
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
 Page({
   data: {
     tab: 'query',
@@ -94,7 +101,7 @@ Page({
         const normalized = (orders || []).map((item) => {
           const ready = item.ready === true || item.status === 'READY' || item.status === 'SUCCESS';
           const failed = item.status === 'FAILED' || item.status === 'DISPATCH_FAILED';
-          return { ...item, ready, failed, statusText: ready ? '点击查看' : (failed ? '查询失败' : '等待结果') };
+          return { ...item, ready, failed, queryTimeText: formatQueryTime(item.createdAt), statusText: ready ? '点击查看' : (failed ? '查询失败' : '等待结果') };
         });
         const unread = normalized.filter((item) => item.ready && item.unread).length;
         this.setData({ orders: normalized, historyBadge: Math.min(99, unread) });
@@ -112,25 +119,15 @@ Page({
     api.getDarkFundOrder(order.id)
       .then((readyOrder) => {
         if (!readyOrder || !readyOrder.noteId) throw new Error('查询结果不存在');
-        const note = readyOrder.snapshot && readyOrder.snapshot.note;
-        const images = note && Array.isArray(note.images) ? note.images.filter(Boolean) : [];
-        if (!images.length) throw new Error('结果图片尚未就绪，请稍后重试');
-        return this.preloadImages(images).then(() => {
-          this.setData({ historyBadge: Math.max(0, this.data.historyBadge - (order.unread ? 1 : 0)) });
-          return new Promise((resolve, reject) => wx.navigateTo({
-            url: `/pages/detail/detail?id=${encodeURIComponent(readyOrder.noteId)}`,
-            success: resolve,
-            fail: reject,
-          }));
-        });
+        this.setData({ historyBadge: Math.max(0, this.data.historyBadge - (order.unread ? 1 : 0)) });
+        return new Promise((resolve, reject) => wx.navigateTo({
+          url: `/pages/detail/detail?id=${encodeURIComponent(readyOrder.noteId)}&fromDarkFund=1`,
+          success: resolve,
+          fail: reject,
+        }));
       })
       .catch((error) => wx.showModal({ title: '加载失败', content: this.errorText(error), showCancel: false }))
       .finally(() => wx.hideLoading());
-  },
-  preloadImages(images) {
-    return Promise.all(images.map((src) => new Promise((resolve, reject) => {
-      wx.getImageInfo({ src, success: resolve, fail: () => reject(new Error('结果图片加载失败，请检查网络后重试')) });
-    })));
   },
   stopOrderPolling() {
     if (this._orderPollingTimer) clearInterval(this._orderPollingTimer);

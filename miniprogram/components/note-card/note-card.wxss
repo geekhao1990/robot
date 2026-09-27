@@ -44,21 +44,6 @@
   transform: scale(1.12);
 }
 .cover { z-index: 1; }
-.image-count {
-  position: absolute;
-  top: 12rpx;
-  right: 12rpx;
-  z-index: 3;
-  min-width: 42rpx;
-  padding: 5rpx 10rpx;
-  color: #fff;
-  font-size: 19rpx;
-  line-height: 1;
-  text-align: center;
-  background: rgba(0, 0, 0, .46);
-  border-radius: 999rpx;
-  box-sizing: border-box;
-}
 .video-tag {
   position: absolute;
   left: 16rpx;

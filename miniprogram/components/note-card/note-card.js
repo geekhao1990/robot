@@ -20,7 +20,6 @@ Component({
         this.setData({
           ratio: displayRatio(val.coverRatio),
           imageList,
-          currentImage: 0,
           likeText: formatCount(val.likes),
         });
       },
@@ -34,7 +33,6 @@ Component({
   data: {
     ratio: 1.3,
     imageList: [],
-    currentImage: 0,
     likeText: '0',
   },
 
@@ -46,10 +44,6 @@ Component({
       if (!width || !height) return;
       const ratio = displayRatio(height / width);
       if (Math.abs(ratio - this.data.ratio) > 0.01) this.setData({ ratio });
-    },
-
-    onImageChange(e) {
-      this.setData({ currentImage: Number(e.detail.current) || 0 });
     },
 
     onTap() {
