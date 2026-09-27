@@ -709,9 +709,9 @@ function drawDarkFundOrders() {
       <td>${start + index + 1}</td>
       <td><strong>${esc(order.stockCode)}</strong><div class="hint">${esc(String(order.tradeDate || '').replaceAll('-', '').slice(2))} 暗盘数据</div></td>
       <td>${esc(user.name || '用户不存在')}<div class="hint">${esc(user.id || order.userId || '')}</div><div class="hint">${esc(user.phone || '')}</div></td>
-      <td><span class="tag ${ready ? 'paid' : ''}" ${failed ? 'style="color:#d93025;background:#fff0f0"' : ''}>${esc(statusLabel)}</span>${failed && order.error ? `<div class="hint" style="color:#d93025">${esc(order.error)}</div>` : ''}</td>
+      <td><span class="tag ${ready ? 'paid' : ''}" ${failed ? 'style="color:#d93025;background:#fff0f0"' : ''}>${esc(statusLabel)}</span>${failed && order.error ? `<div class="hint" style="color:#d93025;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(order.error)}">${esc(order.error)}</div>` : ''}</td>
       <td>${order.createdAt ? fmtDate(order.createdAt) : '—'}${order.dispatchedAt ? `<div class="hint">已下发 ${fmtDate(order.dispatchedAt)}</div>` : ''}${order.readyAt ? `<div class="hint">已回传 ${fmtDate(order.readyAt)}</div>` : ''}</td>
-      <td>${ready ? `<button class="btn-sm" onclick='openDarkFundSnapshot("${order.id}")'>查看笔记</button>` : '—'}</td>
+      <td>${ready ? `<button class="btn-sm" onclick='openDarkFundSnapshot("${order.id}")'>查看笔记</button>` : (failed ? `<button class="btn-sm" onclick='showDarkFundError("${order.id}")'>查看原因</button><button class="btn-sm" onclick='retryDarkFundOrder("${order.id}")'>人工处理</button>` : '—')}</td>
     </tr>`;
   }).join('');
   document.getElementById('content').innerHTML = `
@@ -719,6 +719,18 @@ function drawDarkFundOrders() {
     <table><thead><tr><th>序号</th><th>股票/日期</th><th>查询用户</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
     <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#999;padding:40px">暂无查询记录</td></tr>'}</tbody></table>
     ${pagerHtml(_darkFundOrderPage, pages, total, 'gotoDarkFundOrderPage')}`;
+}
+
+function showDarkFundError(orderId) {
+  const order = _darkFundOrders.find((item) => item.id === orderId);
+  alert(order && order.error ? order.error : '后台未记录具体错误，请人工重试后观察状态');
+}
+
+function retryDarkFundOrder(orderId) {
+  if (!confirm('确认重新向采集机下发该工单？本次不会重复扣除用户查询次数。')) return;
+  api('/api/admin/dark-fund-orders/' + encodeURIComponent(orderId) + '/retry', { method: 'POST', body: '{}' })
+    .then(() => { toast('工单已重新下发'); renderDarkFundOrders(); })
+    .catch((error) => { alert(error.message || '重新下发失败'); renderDarkFundOrders(); });
 }
 
 function openDarkFundSnapshot(orderId) {

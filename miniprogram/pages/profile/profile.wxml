@@ -34,7 +34,6 @@
       <view wx:if="{{user}}" class="profile-actions">
         <view class="profile-action" bindtap="openProfileEditor">编辑资料</view>
         <view class="profile-action" bindtap="onLogout">退出登录</view>
-        <view wx:if="{{user.official}}" class="profile-action" bindtap="goGoldManage">维护手指</view>
       </view>
       <view wx:else class="login-prompt" bindtap="goLogin">
         <image class="avatar" src="https://i.pravatar.cc/150?img=68" mode="aspectFill" />
@@ -68,9 +67,7 @@
     </view>
   </view>
   <view class="quick-menu {{editingProfile ? 'after-editor' : ''}}">
-    <view class="quick-item" bindtap="goPoints"><image class="quick-icon" src="/images/profile-points.png" mode="aspectFit" /><view class="quick-title">积分中心</view></view>
     <view class="quick-item" bindtap="openGiftModal"><image class="quick-icon" src="/images/profile-gift-card.png" mode="aspectFit" /><view class="quick-title">礼品卡</view></view>
-    <view class="quick-item" bindtap="goMiniGame"><image class="quick-icon" src="/images/profile-game.png" mode="aspectFit" /><view class="quick-title">游戏赚米</view></view>
     <view wx:if="{{user && user.darkFundEnabled}}" class="quick-item" bindtap="goDarkFunds"><image class="quick-icon" src="/images/profile-dark-funds.png" mode="aspectFit" /><view class="quick-title">暗盘资金</view></view>
   </view>
   <block wx:if="{{loggedIn}}">

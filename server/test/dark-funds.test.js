@@ -126,7 +126,9 @@ test('invalid or failed collector results do not silently complete an order', as
   const bad = successCallback(data.darkFundOrders[0]);
   bad.dark_net = 1;
   await assert.rejects(call('POST', '/api/stock-analysis/callback', bad, '', { 'x-stock-callback-token': 'callback-secret' }), { status: 400 });
-  assert.equal(data.darkFundOrders[0].status, 'QUEUED');
+  assert.equal(data.darkFundOrders[0].status, 'FAILED');
+  assert.match(data.darkFundOrders[0].collectorError, /加总存在误差/);
+  assert.equal(data.users[0].darkFundRemaining, 2);
   assert.equal((await call('POST', '/api/stock-analysis/callback', {
     order_id: created.orderId, stock_code: '600105', status: 'failed', error: '手机离线',
   }, '', { 'x-stock-callback-token': 'callback-secret' })).ok, true);

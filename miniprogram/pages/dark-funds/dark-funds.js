@@ -112,11 +112,25 @@ Page({
     api.getDarkFundOrder(order.id)
       .then((readyOrder) => {
         if (!readyOrder || !readyOrder.noteId) throw new Error('查询结果不存在');
-        this.setData({ historyBadge: Math.max(0, this.data.historyBadge - (order.unread ? 1 : 0)) });
-        wx.navigateTo({ url: `/pages/detail/detail?id=${encodeURIComponent(readyOrder.noteId)}` });
+        const note = readyOrder.snapshot && readyOrder.snapshot.note;
+        const images = note && Array.isArray(note.images) ? note.images.filter(Boolean) : [];
+        if (!images.length) throw new Error('结果图片尚未就绪，请稍后重试');
+        return this.preloadImages(images).then(() => {
+          this.setData({ historyBadge: Math.max(0, this.data.historyBadge - (order.unread ? 1 : 0)) });
+          return new Promise((resolve, reject) => wx.navigateTo({
+            url: `/pages/detail/detail?id=${encodeURIComponent(readyOrder.noteId)}`,
+            success: resolve,
+            fail: reject,
+          }));
+        });
       })
-      .catch((error) => wx.showToast({ title: this.errorText(error), icon: 'none' }))
+      .catch((error) => wx.showModal({ title: '加载失败', content: this.errorText(error), showCancel: false }))
       .finally(() => wx.hideLoading());
+  },
+  preloadImages(images) {
+    return Promise.all(images.map((src) => new Promise((resolve, reject) => {
+      wx.getImageInfo({ src, success: resolve, fail: () => reject(new Error('结果图片加载失败，请检查网络后重试')) });
+    })));
   },
   stopOrderPolling() {
     if (this._orderPollingTimer) clearInterval(this._orderPollingTimer);

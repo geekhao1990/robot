@@ -172,6 +172,15 @@ module.exports = function register(router, HttpError) {
       const imageUrls = persistCollectorImages(body.images, order.id);
       result.images = imageUrls;
     } catch (error) {
+      order.status = 'FAILED';
+      order.collectorError = String(error.message || '采集结果校验失败').slice(0, 500);
+      order.failedAt = Date.now();
+      const user = d.users.find((item) => item.id === order.userId);
+      if (user && !order.quotaRefundedAt) {
+        refundDarkFundQuota(user, order.quotaSource);
+        order.quotaRefundedAt = Date.now();
+      }
+      db.save();
       throw new HttpError(400, error.message);
     }
     activateDarkFundOrder(d, order, result);

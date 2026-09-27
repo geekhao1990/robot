@@ -650,9 +650,45 @@ module.exports = function register(router, HttpError) {
       const user = d.users.find((item) => item.id === order.userId);
       return {
         ...order,
+        error: order.collectorError || order.dispatchError || '',
         user: user ? { id: user.id, name: user.name, phone: user.phone || '' } : null,
       };
     });
+  });
+
+  router.post('/api/admin/dark-fund-orders/:id/retry', async (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const order = (d.darkFundOrders || []).find((item) => item.id === ctx.params.id);
+    if (!order) throw new HttpError(404, '工单不存在');
+    if (!['FAILED', 'DISPATCH_FAILED'].includes(order.status)) throw new HttpError(409, '只有失败工单可以人工重试');
+    order.status = 'CREATED';
+    order.dispatchError = '';
+    order.collectorError = '';
+    order.failedAt = 0;
+    order.manualRetryAt = Date.now();
+    order.manualRetryCount = (Number(order.manualRetryCount) || 0) + 1;
+    db.save();
+    await db.flush();
+    try {
+      const { dispatchStockAnalysis } = require('../collector-client');
+      const accepted = await dispatchStockAnalysis(order);
+      if (order.status !== 'READY' && order.status !== 'SUCCESS') {
+        order.status = 'QUEUED';
+        order.dispatchedAt = Date.now();
+        order.collectorStatus = accepted.status;
+      }
+      db.save();
+      return { ok: true, status: order.status };
+    } catch (error) {
+      if (order.status !== 'READY' && order.status !== 'SUCCESS') {
+        order.status = 'DISPATCH_FAILED';
+        order.dispatchError = error.message || '无法连接采集机';
+        order.failedAt = Date.now();
+        db.save();
+      }
+      throw new HttpError(error.status || 502, order.dispatchError || error.message);
+    }
   });
 
   // ---------- 积分流水 / 提现人工审核 ----------

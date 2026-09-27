@@ -64,7 +64,13 @@ async function dispatchStockAnalysis(order) {
       lastError = cause;
     }
   }
-  const error = new Error(lastError && lastError.name === 'TimeoutError' ? '采集机接单超时' : '无法连接 Windows 采集机');
+  let message = '无法连接 Windows 采集机';
+  if (lastError && lastError.name === 'TimeoutError') message = '采集机接单超时';
+  else if (lastError) {
+    const detail = (lastError.cause && (lastError.cause.code || lastError.cause.message)) || lastError.message;
+    if (detail) message += `：${detail}`;
+  }
+  const error = new Error(message);
   error.status = 502;
   throw error;
 }
