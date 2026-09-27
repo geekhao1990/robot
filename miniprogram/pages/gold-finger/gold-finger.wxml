@@ -50,6 +50,11 @@
         </view>
       </view>
 
+      <view class="gold-ad-slot">
+        <ad wx:if="{{goldFingerAdUnitId && !adLoadFailed}}" unit-id="{{goldFingerAdUnitId}}" binderror="onAdError" />
+        <view wx:else class="gold-ad-placeholder">广告位</view>
+      </view>
+
       <view class="disclaimer">数据来自互联网，仅供参考不构成投资建议</view>
     </block>
   </scroll-view>

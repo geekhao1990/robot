@@ -73,4 +73,6 @@
 .history-page-number { color: #999; font-size: 24rpx; }
 .banner-swiper { width: 100%; height: 250rpx; margin-top: 28rpx; margin-bottom: 8rpx; overflow: hidden; background: #eee; border-radius: 20rpx; }
 .banner-image { display: block; width: 100%; height: 100%; }
+.gold-ad-slot { width: 100%; margin: 28rpx 0 8rpx; overflow: hidden; border-radius: 12rpx; }
+.gold-ad-placeholder { display: flex; align-items: center; justify-content: center; height: 150rpx; color: #c4bdb4; font-size: 20rpx; letter-spacing: 3rpx; background: rgba(255,255,255,.72); }
 .disclaimer { padding: 24rpx 0 50rpx; color: #aaa095; font-size: 20rpx; text-align: center; }

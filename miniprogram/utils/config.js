@@ -25,4 +25,6 @@ module.exports = {
   rewardedVideoAdUnitId: 'adunit-xxxxxxxxxxxxxxxx',
   // 暗盘结果文章底部的横幅广告位；留空时显示占位区。
   darkArticleAdUnitId: '',
+  // 金手指详情页底部的横幅广告位；留空时显示占位区。
+  goldFingerAdUnitId: '',
 };

@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const config = require('../../utils/config');
 
 const GOLD_FINGER_ICON = 'https://app.nankaitechschool.com/uploads/up_1787930384458_5f0008fd90bf8d07.png';
 const SILVER_FINGER_ICON = 'https://app.nankaitechschool.com/uploads/up_1787930384616_32050eca372a0969.png';
@@ -20,6 +21,10 @@ Page({
     hasMoreHistory: false,
     historyPage: 1,
     historyTotalPages: 1,
+    goldFingerAdUnitId: /^adunit-/i.test(String(config.goldFingerAdUnitId || ''))
+      ? String(config.goldFingerAdUnitId)
+      : '',
+    adLoadFailed: false,
   },
 
   onLoad() {
@@ -103,6 +108,10 @@ Page({
   goBannerNote(e) {
     const id = e.currentTarget.dataset.id;
     if (id) wx.navigateTo({ url: `/pages/detail/detail?id=${encodeURIComponent(id)}` });
+  },
+
+  onAdError() {
+    this.setData({ adLoadFailed: true });
   },
 
   goBack() {
