@@ -68,22 +68,14 @@ test('gold redemption extends only gold, survives restart, and concurrent reuse 
   await assert.rejects(restarted.call('POST', '/api/gift-cards/redeem', body, 'b'), { status: 409 });
 });
 
-test('month cards always add 30 days, extend membership, preserve lifetime, and reject anonymous requests', async () => {
+test('month cards are no longer generated or redeemed', async () => {
   const { call, data } = setup();
-  const future = Date.now() + 86400000;
-  Object.assign(data.users[0], { vip: true, vipExpire: future });
-  Object.assign(data.users[1], { vip: true, vipPermanent: true, vipExpire: 0 });
-  const { codes } = await call('POST', '/api/admin/gift-cards', { type: 'month', days: 900, count: 2 });
-  await assert.rejects(call('POST', '/api/gift-cards/redeem', { code: codes[0] }, ''), { status: 401 });
-  const result = await call('POST', '/api/gift-cards/redeem', { code: codes[0] }, 'a');
-  assert.equal(result.user.vipExpire, future + 30 * 86400000);
-  assert.equal(result.user.vipActive, true);
-  assert.equal(result.user.goldActive, false);
-  assert.equal(result.user.darkFundRemaining, 10);
-  await call('POST', '/api/gift-cards/redeem', { code: codes[1] }, 'b');
-  assert.equal(data.users[1].vipPermanent, true);
-  assert.equal(data.users[1].vipExpire, 0);
-  assert.equal(data.users[1].darkFundRemaining, 10);
+  await assert.rejects(call('POST', '/api/admin/gift-cards', { type: 'month', count: 1 }), { status: 400 });
+  const oldCode = '0123456789ABCDEF0123456789ABCDEF';
+  data.giftCards = [{ id: 'old', type: 'month', status: 'unused', codeHash: require('crypto').createHash('sha256').update(oldCode).digest('hex') }];
+  await assert.rejects(call('POST', '/api/gift-cards/redeem', { code: oldCode }, ''), { status: 401 });
+  await assert.rejects(call('POST', '/api/gift-cards/redeem', { code: oldCode }, 'a'), { status: 410 });
+  assert.equal(data.users[0].goldExpire, undefined);
 });
 
 test('expired rights restart from redemption, invalid codes and failed writes grant nothing', async () => {

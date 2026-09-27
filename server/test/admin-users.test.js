@@ -50,9 +50,9 @@ test('admin gold entitlement enforces open and cancel states', async () => {
   await assert.rejects(call('PUT', '/api/admin/users/u1/gold', { action: 'cancel' }), { status: 409 });
 });
 
-test('admin user endpoint no longer allows opening a monthly VIP directly', async () => {
+test('legacy VIP administration endpoint is removed', async () => {
   const { call } = setup();
-  await assert.rejects(call('PUT', '/api/admin/users/u1/vip', { plan: 'month' }), { status: 400 });
+  await assert.rejects(call('PUT', '/api/admin/users/u1/vip', { plan: 'month' }), /handler/);
 });
 
 test('only admin can inspect dark fund query records', async () => {

@@ -22,12 +22,12 @@ function setup() {
   const data = {
     users: [
       { id: 'u1', goldExpire: now + 86400000 },
-      { id: 'u2', goldExpire: 0, vip: false },
+      { id: 'u2', goldExpire: 0 },
       { id: 'u3', goldExpire: 0, vip: true, vipExpire: now + 86400000 },
     ],
     goldFingerRecords: records,
     goldFingerBanners: [],
-    settings: { vipEnabled: true, rewardedAdEnabled: true, featuredNoteId: 'g1' },
+    settings: { rewardedAdEnabled: true, featuredNoteId: 'g1' },
     userState: {},
     darkFundOrders: [{ id: 'DF001', userId: 'u1', noteId: 'dark_DF001' }],
     notes: [
@@ -36,19 +36,16 @@ function setup() {
       { id: 'dark_DF001', type: 'material', visible: true, title: '私有暗盘', content: '暗盘内容', tags: ['暗盘资金'], authorId: 'dark-author', author: { name: '暗盘' }, time: 3 },
     ],
   };
-  const vipActive = (user) => !!(user && user.vip && Number(user.vipExpire) > Date.now());
-  const goldAccess = (user) => !!(user && (Number(user.goldExpire) > Date.now() || vipActive(user)));
+  const goldAccess = (user) => !!(user && Number(user.goldExpire) > Date.now());
   const mod = { exports: {} };
   const dependencyMap = {
     '../db': { get: () => data },
     '../auth': { userIdFor: (token) => /^Bearer u[123]$/.test(token || '') ? token.slice(7) : '' },
     '../util': {
-      vipActive,
       goldAccess,
       pubUser: (x) => x,
       pubNote: (x) => x,
       pubSettings: (d) => ({
-        vipEnabled: d.settings.vipEnabled,
         rewardedAdEnabled: d.settings.rewardedAdEnabled,
         featuredNoteId: d.settings.featuredNoteId,
       }),
@@ -93,7 +90,7 @@ test('gold finger history returns fixed pages of 10 records', async () => {
   await assert.rejects(call('/api/gold-finger/history', { page: '1' }, 'Bearer u2'), { status: 403 });
 });
 
-test('gold notes and entry are visible only to gold or VIP users', async () => {
+test('gold notes and entry are visible only to gold-card users', async () => {
   const { call } = setup();
   const anonymousSettings = await call('/api/settings', {}, '');
   assert.equal(anonymousSettings.goldAccess, false);
@@ -102,20 +99,19 @@ test('gold notes and entry are visible only to gold or VIP users', async () => {
   assert.equal((await call('/api/search', { kw: '金手指' }, 'Bearer u2')).map((note) => note.id).join(','), '');
   await assert.rejects(call('/api/notes/g1', {}, 'Bearer u2'), { status: 404 });
 
-  for (const token of ['Bearer u1', 'Bearer u3']) {
-    const settings = await call('/api/settings', {}, token);
-    assert.equal(settings.goldAccess, true);
-    assert.equal(settings.featuredNoteId, 'g1');
-    assert.equal((await call('/api/feed', {}, token)).list.map((note) => note.id).join(','), 'g1,n1');
-    assert.equal((await call('/api/notes/g1', {}, token)).id, 'g1');
-  }
+  const settings = await call('/api/settings', {}, 'Bearer u1');
+  assert.equal(settings.goldAccess, true);
+  assert.equal(settings.featuredNoteId, 'g1');
+  assert.equal((await call('/api/feed', {}, 'Bearer u1')).list.map((note) => note.id).join(','), 'g1,n1');
+  assert.equal((await call('/api/notes/g1', {}, 'Bearer u1')).id, 'g1');
+  await assert.rejects(call('/api/notes/g1', {}, 'Bearer u3'), { status: 404 });
 });
 
-test('VIP master switch only controls paid ordinary note validation', async () => {
-  const { data, call } = setup();
+test('gold card grants non-free course resources while ordinary users are blocked', async () => {
+  const { call } = setup();
   await assert.rejects(call('/api/notes/n1/resource', {}, 'Bearer u2'), { status: 403 });
-  data.settings.vipEnabled = false;
-  const result = await call('/api/notes/n1/resource', {}, 'Bearer u2');
+  await assert.rejects(call('/api/notes/n1/resource', {}, 'Bearer u3'), { status: 403 });
+  const result = await call('/api/notes/n1/resource', {}, 'Bearer u1');
   assert.equal(result.url, 'https://example.com');
 });
 

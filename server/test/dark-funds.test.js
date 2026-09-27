@@ -15,14 +15,6 @@ function setup(options = {}) {
     notes: [], paymentOrders: [], darkFundOrders: [],
   };
   const db = { get: () => data, save: () => {}, flush: async () => {} };
-  const wechatPay = {
-    requireConfig: () => ({}), createJsapiPayment: async () => ({ prepayId: 'prepay-id', payment: {} }),
-    queryPayment: async (id) => ({
-      trade_state: 'SUCCESS', appid: process.env.WECHAT_APP_ID, mchid: process.env.WECHAT_PAY_MCH_ID,
-      out_trade_no: id, transaction_id: 'wx-transaction', amount: { total: 100, currency: 'CNY' },
-    }),
-    verifyAndDecryptNotification: () => null,
-  };
   const collector = {
     callbackAuthorized: (headers) => headers['x-stock-callback-token'] === 'callback-secret',
     dispatchStockAnalysis: async (order) => {
@@ -42,7 +34,7 @@ function setup(options = {}) {
   const dependencyMap = {
     '../db': db,
     '../auth': { userIdFor: (token) => token === 'Bearer u2' ? 'u2' : (token === 'Bearer u1' ? 'u1' : ''), isAdmin: (token) => token === 'admin' },
-    '../membership': require('../src/membership'), '../wechat-pay': wechatPay, '../util': require('../src/util'),
+    '../membership': require('../src/membership'), '../util': require('../src/util'),
     '../trading-date': require('../src/trading-date'), '../dark-fund-orders': require('../src/dark-fund-orders'),
     '../collector-client': collector, '../collector-images': collectorImages,
   };
@@ -74,6 +66,28 @@ function successCallback(order) {
 
 test('latest trading date skips the 2026 Mid-Autumn holiday and weekend', () => {
   assert.equal(latestTradingDate(Date.parse('2026-09-26T04:00:00Z')), '2026-09-24');
+});
+
+test('online membership payment routes are removed', () => {
+  const data = { users: [] };
+  const mod = { exports: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/payment.js'), 'utf8'), {
+    module: mod,
+    require: (id) => ({
+      '../db': { get: () => data },
+      '../auth': {},
+      '../membership': require('../src/membership'),
+      '../trading-date': require('../src/trading-date'),
+      '../dark-fund-orders': require('../src/dark-fund-orders'),
+      '../collector-client': { callbackAuthorized: () => false, dispatchStockAnalysis: async () => ({}) },
+      '../collector-images': { persistCollectorImages: () => [] },
+    }[id] || require(id)),
+    process,
+  });
+  const router = createRouter();
+  mod.exports(router, HttpError);
+  assert.equal(router.match('POST', '/api/payments/orders'), null);
+  assert.equal(router.match('POST', '/api/payments/notify'), null);
 });
 
 test('query dispatches immediately and authenticated callback completes it idempotently', async () => {

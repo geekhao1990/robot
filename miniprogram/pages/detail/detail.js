@@ -50,9 +50,6 @@ Page({
     resourceModalVisible: false,
     resourceOptions: [],
     rewardedAdEnabled: config.rewardedAdEnabled === true,
-    vipEnabled: false,
-    vipModalVisible: false,
-    paymentPending: false,
   },
 
   onLoad(options) {
@@ -96,7 +93,6 @@ Page({
     this.settingsPromise = api.getAppSettings().then((settings) => {
       this.setData({
         rewardedAdEnabled: settings.rewardedAdEnabled === true,
-        vipEnabled: settings.vipEnabled === true,
       });
       return settings;
     });
@@ -223,12 +219,10 @@ Page({
     }
     if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
     return Promise.resolve(this.settingsPromise).then(() => {
-      // VIP 总开关关闭时，普通笔记不做会员校验，仍按广告设置领取。
-      if (!this.data.vipEnabled) return this.handleGetResource(false);
-      // 免费笔记：登录后按广告设置领取；会员专享笔记：有效会员直接领取且免广告。
+      // 免费笔记登录后按广告设置领取；非免费课程/资料仅金手指卡可领取且免广告。
       if (this.data.note && this.data.note.free === true) return this.handleGetResource(false);
       return store.syncMe().then((user) => {
-        if (!this.isVipActive(user)) return this.showVipOffer();
+        if (!this.hasGoldAccess(user)) return this.showGoldCardRequired();
         return this.handleGetResource(true);
       });
     });
@@ -239,66 +233,18 @@ Page({
     this._goldTabEntryLoading = false;
     wx.hideLoading();
   },
-  isVipActive(user) {
-    return !!(user && (user.vipActive || (user.vip && (user.vipPermanent || (user.vipExpire && user.vipExpire > Date.now())))));
+  hasGoldAccess(user) {
+    return !!(user && (user.goldAccess || Number(user.goldExpire) > Date.now()));
   },
-  showVipOffer() {
-    this.setData({ vipModalVisible: true });
-  },
-  closeVipOffer() {
-    if (!this.data.paymentPending) this.setData({ vipModalVisible: false });
-  },
-  onBuyVip() {
-    if (this.data.paymentPending) return;
-    if (!store.isLogin()) return this.requireLogin();
-    this.setData({ paymentPending: true });
-    wx.showLoading({ title: '创建订单' });
-    api.createVipOrder('month')
-      .then((order) => {
-        wx.hideLoading();
-        if (!order || !order.orderId || !order.payment) throw new Error('支付订单创建失败');
-        return this.requestVipPayment(order.payment).then(() => this.confirmVipPayment(order.orderId, 5));
-      })
-      .catch((error) => {
-        wx.hideLoading();
-        const message = this.paymentErrorText(error);
-        if (/cancel/i.test(message)) wx.showToast({ title: '已取消支付', icon: 'none' });
-        else wx.showModal({ title: '支付失败', content: message, showCancel: false });
-      })
-      .finally(() => this.setData({ paymentPending: false }));
-  },
-  requestVipPayment(payment) {
-    return new Promise((resolve, reject) => {
-      wx.requestPayment({
-        timeStamp: payment.timeStamp,
-        nonceStr: payment.nonceStr,
-        package: payment.package,
-        signType: payment.signType || 'RSA',
-        paySign: payment.paySign,
-        success: resolve,
-        fail: reject,
-      });
+  showGoldCardRequired() {
+    wx.showModal({
+      title: '需要金手指卡',
+      content: '请前往「我—礼品卡」兑换金手指卡后使用课程和金手指功能。',
+      confirmText: '去兑换',
+      success: (result) => {
+        if (result.confirm) wx.switchTab({ url: '/pages/profile/profile' });
+      },
     });
-  },
-  confirmVipPayment(orderId, retries) {
-    wx.showLoading({ title: '确认支付' });
-    return api.getVipOrder(orderId).then((result) => {
-      if (result && result.status === 'SUCCESS' && result.user) {
-        store.setUser(result.user);
-        wx.hideLoading();
-        this.setData({ vipModalVisible: false });
-        wx.navigateTo({ url: `/pages/payment-success/payment-success?orderId=${encodeURIComponent(orderId)}` });
-        return result;
-      }
-      if (retries > 0) {
-        return new Promise((resolve) => setTimeout(resolve, 1000))
-          .then(() => this.confirmVipPayment(orderId, retries - 1));
-      }
-      throw new Error('支付结果确认中，请稍后在“我”页面查看会员状态');
-    });
-  },
-  paymentErrorText(error) {
-    return (error && (error.errMsg || (error.data && error.data.error) || error.message)) || '请稍后重试';
   },
   handleGetResource(skipAd = false) {
     const note = this.data.note;
@@ -344,8 +290,8 @@ Page({
         this._checkingGoldFeature = false;
         return store.syncMe().then((user) => {
           const open = () => wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
-          if (user && (user.goldAccess || Number(user.goldExpire) > Date.now() || this.isVipActive(user))) return open();
-          return this.showVipOffer();
+          if (this.hasGoldAccess(user)) return open();
+          return this.showGoldCardRequired();
         });
       })
       .catch((error) => {
@@ -376,7 +322,7 @@ Page({
       if (!resources.length) return toast('管理员尚未配置获取地址');
       this.setData({ resourceOptions: resources, resourceModalVisible: true });
     }).catch((err) => {
-      if (err && err.statusCode === 403) return this.showVipOffer();
+      if (err && err.statusCode === 403) return this.showGoldCardRequired();
       toast('获取地址失败，请联系客服');
     });
   },

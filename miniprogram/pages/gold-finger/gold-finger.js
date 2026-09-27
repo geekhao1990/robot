@@ -53,7 +53,7 @@ Page({
       const statusCode = error && error.statusCode;
       wx.showModal({
         title: statusCode === 403 ? '会员专享功能' : '加载失败',
-        content: statusCode === 403 ? '会员已到期或尚未开通，请返回金手指笔记开通9.9元月卡。' : '数据暂时无法加载，请稍后重试。',
+        content: statusCode === 403 ? '金手指卡已到期或尚未兑换，请前往「我—礼品卡」兑换后使用。' : '数据暂时无法加载，请稍后重试。',
         showCancel: false,
         success: () => this.goBack(),
       });

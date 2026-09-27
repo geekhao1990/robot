@@ -10,7 +10,6 @@
     "pages/points/points",
     "pages/withdraw/withdraw",
     "pages/login/login",
-    "pages/payment-success/payment-success",
     "pages/dark-funds/dark-funds",
     "pages/dark-funds-order/dark-funds-order",
     "pages/user/user"

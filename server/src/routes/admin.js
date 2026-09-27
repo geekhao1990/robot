@@ -3,7 +3,7 @@ const db = require('../db');
 const auth = require('../auth');
 const { pubSettings } = require('../util');
 const { TYPE_LABELS, normalizeType, typeLabel, typeForCategory } = require('../content-types');
-const { getPlan, activateMembership, refreshDarkFundQuota, setManualDarkFundQuota } = require('../membership');
+const { refreshDarkFundQuota, setManualDarkFundQuota } = require('../membership');
 const { normalizeResourceLinks } = require('../resource-links');
 const crypto = require('crypto');
 const goldFingerSync = require('../gold-finger-sync');
@@ -71,7 +71,7 @@ module.exports = function register(router, HttpError) {
       notes: d.notes.length,
       users: d.users.length,
       newUsers: d.users.filter((u) => Array.isArray(u.tags) && u.tags.includes('new')).length,
-      vipUsers: d.users.filter((u) => u.vip).length,
+      goldUsers: d.users.filter((u) => Number(u.goldExpire) > Date.now()).length,
       materials: d.notes.filter((n) => !n.type || n.type === 'normal' || n.type === 'material').length,
       courses: d.notes.filter((n) => n.type === 'course').length,
       goldNotes: d.notes.filter((n) => n.type === 'gold').length,
@@ -97,9 +97,6 @@ module.exports = function register(router, HttpError) {
     if (typeof b.rewardedAdEnabled !== 'boolean') {
       throw new HttpError(400, '广告开关必须为布尔值');
     }
-    if (typeof b.vipEnabled !== 'boolean') {
-      throw new HttpError(400, 'VIP开关必须为布尔值');
-    }
     if (!Array.isArray(b.hotSearch)) {
       throw new HttpError(400, '热门搜索格式不正确');
     }
@@ -112,7 +109,6 @@ module.exports = function register(router, HttpError) {
     }
     d.settings = {
       rewardedAdEnabled: b.rewardedAdEnabled,
-      vipEnabled: b.vipEnabled,
       featuredNoteId: b.featuredNoteId,
     };
     d.hotSearch = hotSearch;
@@ -531,14 +527,11 @@ module.exports = function register(router, HttpError) {
       fans: b.fans || 0,
       follows: b.follows || 0,
       likes: b.likes || 0,
-      vip: !!b.vip,
-      vipPermanent: false,
+      goldExpire: 0,
       official: b.official === true,
       darkFundEnabled: false,
       darkFundRemaining: 0,
       darkFundManualRemaining: 0,
-      darkFundVipRemaining: 0,
-      darkFundVipMonth: '',
       createdAt: Date.now(),
       tags: b.official === true ? [] : ['new'],
     };
@@ -581,25 +574,6 @@ module.exports = function register(router, HttpError) {
     d.users = d.users.filter((u) => u.id !== ctx.params.id);
     db.save();
     return { ok: true };
-  });
-
-  // 管理员开通/取消 VIP（月卡只通过订单和赠送流程开通）。
-  router.put('/api/admin/users/:id/vip', (ctx) => {
-    requireAuth(ctx);
-    const d = db.get();
-    const user = d.users.find((u) => u.id === ctx.params.id);
-    if (!user) throw new HttpError(404, 'not found');
-    const plan = (ctx.body || {}).plan;
-    if (plan === 'none') {
-      user.vip = false; user.vipPlan = ''; user.vipExpire = 0; user.vipPermanent = false;
-      refreshDarkFundQuota(user);
-    } else if (['year', 'lifetime'].includes(plan) && getPlan(plan)) {
-      activateMembership(user, plan);
-    } else {
-      throw new HttpError(400, 'plan 须为 year/lifetime/none');
-    }
-    db.save();
-    return user;
   });
 
   // 金手指权益固定开通一年（360天）；已开通时不可重复开通，未开通时不可取消。
@@ -660,27 +634,6 @@ module.exports = function register(router, HttpError) {
     return user;
   });
 
-  // ---------- 会员订单 / 企业微信赠送核销 ----------
-  router.get('/api/admin/payment-orders', (ctx) => {
-    requireAuth(ctx);
-    const d = db.get();
-    return (d.paymentOrders || []).slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map((order) => {
-      const user = d.users.find((item) => item.id === order.userId);
-      return {
-        ...order,
-        user: user ? {
-          id: user.id,
-          name: user.name,
-          avatar: user.avatar,
-          phone: user.phone || '',
-          wechatGiftRedeemedAt: user.wechatGiftRedeemedAt || 0,
-          wechatGiftOrderId: user.wechatGiftOrderId || '',
-        } : null,
-        giftEligible: order.status === 'SUCCESS' && !!user && !user.wechatGiftRedeemedAt,
-      };
-    });
-  });
-
   router.get('/api/admin/dark-fund-orders', (ctx) => {
     requireAuth(ctx);
     const d = db.get();
@@ -691,24 +644,6 @@ module.exports = function register(router, HttpError) {
         user: user ? { id: user.id, name: user.name, phone: user.phone || '' } : null,
       };
     });
-  });
-
-  router.put('/api/admin/payment-orders/:id/wechat-gift', (ctx) => {
-    requireAuth(ctx);
-    const d = db.get();
-    const order = (d.paymentOrders || []).find((item) => item.id === ctx.params.id);
-    if (!order) throw new HttpError(404, '订单不存在');
-    if (order.status !== 'SUCCESS') throw new HttpError(400, '只有已支付订单可以核销赠送月卡');
-    const user = d.users.find((item) => item.id === order.userId);
-    if (!user) throw new HttpError(404, '订单用户不存在');
-    if (user.wechatGiftRedeemedAt) throw new HttpError(409, '该账号已经领取过企业微信赠送月卡');
-    const redeemedAt = Date.now();
-    activateMembership(user, 'month', redeemedAt);
-    user.wechatGiftRedeemedAt = redeemedAt;
-    user.wechatGiftOrderId = order.id;
-    order.wechatGiftRedeemedAt = redeemedAt;
-    db.save();
-    return { ok: true, order, user };
   });
 
   // ---------- 积分流水 / 提现人工审核 ----------

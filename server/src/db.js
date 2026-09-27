@@ -7,7 +7,7 @@ const path = require('path');
 const mysql = require('mysql2/promise');
 const { CONTENT_TYPES, TYPE_LABELS, typeLabel, typeForCategory } = require('./content-types');
 const { normalizeResourceLinks } = require('./resource-links');
-const { chinaMonthKey, vipActiveAt, refreshDarkFundQuota } = require('./membership');
+const { refreshDarkFundQuota } = require('./membership');
 
 const FILE = path.join(__dirname, '../data/db.json');
 let db = null;
@@ -182,17 +182,11 @@ function ensureContentTypes() {
       fans: 0,
       follows: 0,
       likes: 0,
-      vip: false,
-      vipPlan: '',
-      vipExpire: 0,
-      vipPermanent: false,
       goldExpire: 0,
       official: true,
       darkFundEnabled: false,
       darkFundRemaining: 0,
       darkFundManualRemaining: 0,
-      darkFundVipRemaining: 0,
-      darkFundVipMonth: '',
       createdAt: 0,
       tags: [],
     };
@@ -203,7 +197,6 @@ function ensureContentTypes() {
     if (darkFundAuthor.official !== true) { darkFundAuthor.official = true; changed = true; }
   }
   const existingAuthors = new Set(db.notes.map((note) => note.authorId).filter(Boolean));
-  const quotaMigrationMonth = chinaMonthKey();
   db.users.forEach((user) => {
     if (typeof user.official !== 'boolean') {
       user.official = !user.wxOpenId && existingAuthors.has(user.id);
@@ -214,31 +207,26 @@ function ensureContentTypes() {
       changed = true;
     }
     if (!Array.isArray(user.tags)) {
-      user.tags = user.wxOpenId && !user.vip ? ['new'] : [];
-      changed = true;
-    }
-    if (typeof user.vipPermanent !== 'boolean') {
-      user.vipPermanent = user.vipPlan === 'lifetime';
+      user.tags = user.wxOpenId ? ['new'] : [];
       changed = true;
     }
     if (!Number.isFinite(Number(user.goldExpire))) {
       user.goldExpire = 0;
       changed = true;
     }
-    if (typeof user.darkFundEnabled !== 'boolean') {
-      user.darkFundEnabled = false;
+    // 一次性把仍有效的旧会员权益迁移为金手指卡，避免历史用户权益丢失。
+    const now = Date.now();
+    const legacyVipActive = user.vip === true && (user.vipPermanent === true || Number(user.vipExpire) > now);
+    if (legacyVipActive) {
+      const legacyExpire = user.vipPermanent === true ? Date.UTC(2099, 11, 31) : Number(user.vipExpire);
+      if (legacyExpire > Number(user.goldExpire || 0)) user.goldExpire = legacyExpire;
       changed = true;
     }
-    const legacyRemaining = Math.max(0, Math.floor(Number(user.darkFundRemaining) || 0));
-    const hasSplitQuota = Number.isFinite(Number(user.darkFundManualRemaining))
-      && Number.isFinite(Number(user.darkFundVipRemaining))
-      && typeof user.darkFundVipMonth === 'string';
-    if (!hasSplitQuota) {
-      // 首次升级时保留旧总次数：有效VIP最多10次视为当月额度，其余视为后台永久额度。
-      const vipRemaining = vipActiveAt(user) ? Math.min(10, legacyRemaining) : 0;
-      user.darkFundVipRemaining = vipRemaining;
-      user.darkFundManualRemaining = legacyRemaining - vipRemaining;
-      user.darkFundVipMonth = quotaMigrationMonth;
+    for (const key of ['vip', 'vipPlan', 'vipExpire', 'vipPermanent', 'vipActivatedAt']) {
+      if (Object.prototype.hasOwnProperty.call(user, key)) { delete user[key]; changed = true; }
+    }
+    if (typeof user.darkFundEnabled !== 'boolean') {
+      user.darkFundEnabled = false;
       changed = true;
     }
     if (refreshDarkFundQuota(user).changed) changed = true;
@@ -328,8 +316,8 @@ function ensureSettings() {
     db.settings.rewardedAdEnabled = false;
     changed = true;
   }
-  if (typeof db.settings.vipEnabled !== 'boolean') {
-    db.settings.vipEnabled = false;
+  if (Object.prototype.hasOwnProperty.call(db.settings, 'vipEnabled')) {
+    delete db.settings.vipEnabled;
     changed = true;
   }
   if (Object.prototype.hasOwnProperty.call(db.settings, 'goldFingerEntryEnabled')) {

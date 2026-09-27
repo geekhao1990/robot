@@ -3,7 +3,7 @@
     <view class="nav-inner" style="height: {{navBarHeight}}px;">
       <view class="back" bindtap="goBack">‹</view>
       <view class="nav-title">金手指</view>
-      <view class="nav-vip">VIP</view>
+    <view class="nav-vip">金手指卡</view>
     </view>
   </view>
 

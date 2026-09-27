@@ -61,8 +61,7 @@ Page({
     if (!user) return [];
     const now = Date.now();
     return [
-      { type: 'vip', name: 'VIP', active: !!(user.vip && (user.vipPermanent || Number(user.vipExpire) > now)) },
-      { type: 'gold', name: '金手指', active: Number(user.goldExpire) > now },
+      { type: 'gold', name: '金手指卡', active: Number(user.goldExpire) > now },
     ].filter((item) => item.active);
   },
   openGiftModal() { this.setData({ giftModalVisible: true }); },
@@ -80,7 +79,7 @@ Page({
     api.redeemGiftCard(code).then((result) => {
       store.setUser(result.user);
       this.setData({ user: result.user, giftCode: '', giftModalVisible: false, entitlements: this.entitlementRows(result.user) });
-      wx.showModal({ title: result.alreadyRedeemed ? '该卡已兑换' : '兑换成功', content: result.alreadyRedeemed ? '权益已在当前账号生效。' : (result.type === 'gold' ? '金手指' : '会员') + '权益已增加' + result.days + '天。', showCancel: false });
+      wx.showModal({ title: result.alreadyRedeemed ? '该卡已兑换' : '兑换成功', content: result.alreadyRedeemed ? '权益已在当前账号生效。' : '金手指卡权益已增加' + result.days + '天。', showCancel: false });
     }).catch((error) => wx.showModal({ title: '兑换失败', content: this.errorText(error), showCancel: false }))
       .finally(() => this.setData({ redeemingGift: false }));
   },

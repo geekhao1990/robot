@@ -1,6 +1,6 @@
 // server/src/routes/public.js —— 小程序只读接口
 const db = require('../db');
-const { vipActive, goldAccess, pubUser, pubNote, pubSettings } = require('../util');
+const { goldAccess, pubUser, pubNote, pubSettings } = require('../util');
 const auth = require('../auth');
 const { typeLabel } = require('../content-types');
 const { resourceList } = require('../resource-links');
@@ -106,7 +106,7 @@ module.exports = function register(router, HttpError) {
     return pubNote(n);
   });
 
-  // 独立金手指功能：金手指卡或有效 VIP 用户可查看。
+  // 独立金手指功能：仅有效金手指卡用户可查看。
   router.get('/api/gold-finger/latest', (ctx) => {
     const data = requireGoldAccess(ctx);
     const records = sortedGoldRecords(data);
@@ -154,8 +154,8 @@ module.exports = function register(router, HttpError) {
     const note = data.notes.find((n) => n.id === ctx.params.id && canViewNote(data, n, reader));
     if (!note) throw new HttpError(404, 'not found');
     if (note.type === 'gold') throw new HttpError(400, '金手指内容请进入会员专属页面查看');
-    if (data.settings && data.settings.vipEnabled === true && note.free !== true && !vipActive(reader)) {
-      throw new HttpError(403, '开通VIP后可领取该资源');
+    if (note.free !== true && !goldAccess(reader)) {
+      throw new HttpError(403, '请先兑换金手指卡');
     }
     const resources = resourceList(note);
     if (!resources.length) throw new HttpError(404, '暂未配置获取地址');

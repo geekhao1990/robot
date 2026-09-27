@@ -1,67 +1,34 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
-  activateMembership,
-  chinaMonthKey,
   refreshDarkFundQuota,
   setManualDarkFundQuota,
   consumeDarkFundQuota,
+  refundDarkFundQuota,
 } = require('../src/membership');
 
-test('VIP dark-fund quota resets to 10 each China calendar month without stacking', () => {
-  const september = Date.parse('2026-09-10T04:00:00Z');
-  const october = Date.parse('2026-10-01T04:00:00Z');
-  const user = {
-    vip: true,
-    vipExpire: Date.parse('2026-10-20T04:00:00Z'),
-    darkFundManualRemaining: 3,
-    darkFundVipRemaining: 2,
-    darkFundVipMonth: chinaMonthKey(september),
-    darkFundRemaining: 5,
-  };
-
-  const used = consumeDarkFundQuota(user, september);
-  assert.equal(used.source, 'vip');
-  assert.equal(used.vip, 1);
-  assert.equal(used.manual, 3);
-
-  activateMembership(user, 'month', september);
-  assert.equal(refreshDarkFundQuota(user, september).vip, 1);
-
-  const nextMonth = refreshDarkFundQuota(user, october);
-  assert.equal(nextMonth.vip, 10);
-  assert.equal(nextMonth.manual, 3);
-  assert.equal(nextMonth.total, 13);
+test('dark-fund quota is manual-only and never resets by month', () => {
+  const user = { darkFundManualRemaining: 3, darkFundRemaining: 3 };
+  const used = consumeDarkFundQuota(user, Date.parse('2026-09-10T04:00:00Z'));
+  assert.equal(used.source, 'manual');
+  assert.equal(used.total, 2);
+  assert.equal(refreshDarkFundQuota(user, Date.parse('2026-10-10T04:00:00Z')).total, 2);
+  refundDarkFundQuota(user, used.source);
+  assert.equal(refreshDarkFundQuota(user).total, 3);
 });
 
-test('expired VIP quota is void while admin quota remains permanent', () => {
-  const now = Date.parse('2026-09-10T04:00:00Z');
-  const user = {
-    vip: true,
-    vipExpire: now - 1,
-    darkFundManualRemaining: 4,
-    darkFundVipRemaining: 7,
-    darkFundVipMonth: chinaMonthKey(now),
-    darkFundRemaining: 11,
-  };
-
-  const quota = refreshDarkFundQuota(user, now);
+test('legacy VIP quota is preserved once as permanent manual quota', () => {
+  const user = { darkFundManualRemaining: 4, darkFundVipRemaining: 7, darkFundVipMonth: '2026-09', darkFundRemaining: 11 };
+  const quota = refreshDarkFundQuota(user);
   assert.equal(quota.vip, 0);
-  assert.equal(quota.manual, 4);
-  assert.equal(quota.total, 4);
-  assert.equal(consumeDarkFundQuota(user, now).source, 'manual');
-  assert.equal(refreshDarkFundQuota(user, now).manual, 3);
-
-  setManualDarkFundQuota(user, 20, now);
-  assert.equal(refreshDarkFundQuota(user, now + 40 * 86400000).manual, 20);
+  assert.equal(quota.manual, 11);
+  assert.equal(user.darkFundVipRemaining, 0);
+  assert.equal(refreshDarkFundQuota(user).total, 11);
 });
 
-test('new VIP activation grants exactly 10 current-month uses', () => {
-  const now = Date.parse('2026-09-10T04:00:00Z');
-  const user = { vip: false, vipExpire: 0, darkFundRemaining: 0 };
-  activateMembership(user, 'month', now);
-  const quota = refreshDarkFundQuota(user, now);
-  assert.equal(quota.vip, 10);
-  assert.equal(quota.manual, 0);
-  assert.equal(quota.total, 10);
+test('admin can set the exact permanent query quota', () => {
+  const user = { darkFundRemaining: 0 };
+  setManualDarkFundQuota(user, 20);
+  assert.equal(refreshDarkFundQuota(user).manual, 20);
+  assert.equal(refreshDarkFundQuota(user).total, 20);
 });

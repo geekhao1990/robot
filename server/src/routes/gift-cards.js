@@ -1,7 +1,6 @@
 const crypto = require('crypto');
 const db = require('../db');
 const auth = require('../auth');
-const { activateMembership } = require('../membership');
 const { pubUser } = require('../util');
 
 // All card mutations are serialized; the card and entitlement are saved together.
@@ -37,10 +36,10 @@ module.exports = function register(router, HttpError) {
   router.post('/api/admin/gift-cards', (ctx) => {
     admin(ctx);
     const body = ctx.body || {};
-    const type = body.type;
+    const type = 'gold';
     const count = body.count === undefined ? 10 : Number(body.count);
-    const days = type === 'month' ? 30 : 360;
-    if (!['gold', 'month'].includes(type)) throw new HttpError(400, '请选择金手指卡或月卡');
+    const days = 360;
+    if (body.type && body.type !== 'gold') throw new HttpError(400, '目前仅支持生成金手指卡');
     if (!Number.isInteger(count) || count < 1 || count > 10) throw new HttpError(400, '一次可生成1至10张礼品卡');
     return serialize(async () => {
       const data = db.get();
@@ -85,6 +84,7 @@ module.exports = function register(router, HttpError) {
       if (!user) throw new HttpError(401, '用户不存在');
       const card = (data.giftCards || []).find((item) => item.codeHash === digest(code));
       if (!card) throw new HttpError(400, '卡密无效，请检查后重试');
+      if (card.type !== 'gold') throw new HttpError(410, '该卡种已停用，请联系管理员更换金手指卡');
       if (card.status !== 'unused') {
         if (card.status === 'redeemed' && card.redeemedBy === userId) return { alreadyRedeemed: true, type: card.type, days: card.days, user: pubUser(user, true) };
         throw new HttpError(409, '该卡密已被使用');
@@ -92,8 +92,7 @@ module.exports = function register(router, HttpError) {
       const oldUser = { ...user };
       const oldCard = { ...card };
       const now = Date.now();
-      if (card.type === 'month') activateMembership(user, 'month', now);
-      else user.goldExpire = Math.max(Number(user.goldExpire) || 0, now) + card.days * 86400000;
+      user.goldExpire = Math.max(Number(user.goldExpire) || 0, now) + card.days * 86400000;
       Object.assign(card, { status: 'redeemed', redeemedBy: userId, redeemedAt: now });
       try { await db.save(); } catch (error) {
         Object.keys(user).forEach((key) => delete user[key]); Object.assign(user, oldUser);

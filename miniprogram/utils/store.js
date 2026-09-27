@@ -139,7 +139,7 @@ function login(profile) {
     name: profile.name || previous.name || '微信用户',
     avatar: profile.avatar || previous.avatar || '',
     desc: previous.desc || '',
-    vip: false,
+    goldExpire: Number(previous.goldExpire) || 0,
   });
   return Promise.resolve(state.user);
 }

@@ -84,12 +84,7 @@ function allNotes() {
 
 function localGoldAccess() {
   const user = store.getUser();
-  return !!(user && (
-    user.goldAccess ||
-    Number(user.goldExpire) > Date.now() ||
-    user.vipActive ||
-    (user.vip && (user.vipPermanent || Number(user.vipExpire) > Date.now()))
-  ));
+  return !!(user && (user.goldAccess || Number(user.goldExpire) > Date.now()));
 }
 
 // 首页 feed：discover 发现 | following 关注
@@ -180,7 +175,6 @@ const APP_SETTINGS_CACHE_KEY = 'niulai_app_settings';
 function baseAppSettings() {
   return {
     rewardedAdEnabled: config.rewardedAdEnabled === true,
-    vipEnabled: false,
     goldAccess: false,
     featuredNoteId: config.featuredNoteId || 'n3',
   };
@@ -188,7 +182,6 @@ function baseAppSettings() {
 function normalizeAppSettings(settings, fallback = baseAppSettings()) {
   return {
     rewardedAdEnabled: settings && typeof settings.rewardedAdEnabled === 'boolean' ? settings.rewardedAdEnabled : fallback.rewardedAdEnabled,
-    vipEnabled: settings && typeof settings.vipEnabled === 'boolean' ? settings.vipEnabled : fallback.vipEnabled,
     goldAccess: settings && settings.goldAccess === true,
     featuredNoteId: settings && typeof settings.featuredNoteId === 'string' ? settings.featuredNoteId : fallback.featuredNoteId,
   };
@@ -277,14 +270,6 @@ function updateMyProfile(profile) {
 
 function bindWechatPhone(code) {
   return request('POST', '/api/me/phone', { auth: true, data: { code } });
-}
-
-function createVipOrder(plan) {
-  return request('POST', '/api/payments/orders', { auth: true, data: { plan } });
-}
-
-function getVipOrder(orderId) {
-  return request('GET', '/api/payments/orders/' + encodeURIComponent(orderId), { auth: true });
 }
 
 function getDarkFundTradeDate() {
@@ -521,8 +506,6 @@ module.exports = {
   getMe,
   updateMyProfile,
   bindWechatPhone,
-  createVipOrder,
-  getVipOrder,
   getDarkFundTradeDate,
   createDarkFundOrder,
   getDarkFundOrders,
