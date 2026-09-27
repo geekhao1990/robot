@@ -25,7 +25,6 @@
     class="feed-scroll"
     style="top: {{headerHeight}}px;"
     scroll-y
-    enhanced
     scroll-top="{{feedScrollTop}}"
     lower-threshold="120"
     refresher-enabled

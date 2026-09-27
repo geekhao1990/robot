@@ -8,10 +8,10 @@
     <view wx:if="{{deletable}}" class="card-del" catchtap="onDelete">×</view>
   </view>
   <view class="info">
-    <view class="title ellipsis-2">{{note.title}}</view>
+    <view class="title ellipsis-2">{{cardTitle}}</view>
     <view class="bottom">
-      <image class="avatar" src="{{note.author.avatar}}" mode="aspectFill" />
-      <view class="name ellipsis">{{note.author.name}}</view>
+      <image class="avatar" src="{{authorAvatar}}" mode="aspectFill" binderror="onAvatarError" />
+      <view class="name ellipsis">{{authorName}}</view>
       <view class="like" catchtap="onLike">
         <view class="heart {{note.liked ? 'active' : ''}}"></view>
         <view class="count">{{likeText}}</view>

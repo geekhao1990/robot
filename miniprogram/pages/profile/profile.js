@@ -223,6 +223,23 @@ Page({
     if (!user || user.darkFundEnabled !== true) return wx.showToast({ title: '功能尚未开通', icon: 'none' });
     wx.navigateTo({ url: '/pages/dark-funds/dark-funds' });
   },
+  goGoldNote() {
+    if (!store.isLogin()) return this.goLogin();
+    const user = store.getUser();
+    if (!user || user.goldAccess !== true) return wx.showToast({ title: '金手指权益尚未开通', icon: 'none' });
+    api.getAppSettings().then((settings) => {
+      const noteId = String(settings && settings.featuredNoteId || '').trim();
+      if (!noteId) throw new Error('金手指笔记暂未配置');
+      wx.navigateTo({
+        url: `/pages/detail/detail?id=${encodeURIComponent(noteId)}&from=goldTab`,
+        fail: () => {
+          wx.showToast({ title: '页面打开失败，请重试', icon: 'none' });
+        },
+      });
+    }).catch((error) => {
+      wx.showToast({ title: error.message || '金手指笔记暂未配置', icon: 'none' });
+    });
+  },
   goMessageCenter() {
     if (!store.isLogin()) return this.goLogin();
     wx.navigateTo({ url: '/pages/message-center/message-center' });
