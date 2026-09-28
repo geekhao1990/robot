@@ -333,7 +333,7 @@ module.exports = function register(router, HttpError) {
       user = {
         id: 'web_' + crypto.createHash('sha256').update(openid).digest('hex').slice(0, 16),
         wxOpenId: openid,
-        wxUnionId: session && session.unionid ? session.unionid : '',
+        wxUnionId: '',
         name: 'Web用户',
         avatar: 'https://app.nankaitechschool.com/assets/avatars/author-68.jpg',
         desc: 'Web 前台用户',
