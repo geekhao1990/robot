@@ -1,11 +1,13 @@
 <view class="page">
   <view class="logo-wrap">
-    <view class="logo">NiuLai</view>
     <view class="slogan">交易是一个人的修行</view>
   </view>
 
   <view class="wx-box">
-    <image class="wx-icon" src="/images/niulai-logo.png" mode="aspectFill" />
+    <view class="default-avatar">
+      <view class="avatar-head"></view>
+      <view class="avatar-body"></view>
+    </view>
     <view class="wx-tip">{{loginTip}}</view>
   </view>
 

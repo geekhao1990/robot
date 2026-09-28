@@ -49,7 +49,6 @@ Page({
     inviteCode: '',
     resourceModalVisible: false,
     resourceOptions: [],
-    rewardedAdEnabled: config.rewardedAdEnabled === true,
     pageRenderLoading: true,
   },
 
@@ -70,7 +69,6 @@ Page({
       return;
     }
     this.loadInviteCode();
-    this.loadSettings();
     this.loadNote();
   },
 
@@ -93,16 +91,6 @@ Page({
       isOwnNote,
       followed: !isOwnNote && store.isFollowed(authorId),
     });
-  },
-
-  loadSettings() {
-    this.settingsPromise = api.getAppSettings().then((settings) => {
-      this.setData({
-        rewardedAdEnabled: settings.rewardedAdEnabled === true,
-      });
-      return settings;
-    });
-    return this.settingsPromise;
   },
 
   loadInviteCode() {
@@ -256,14 +244,7 @@ Page({
       return wx.navigateTo({ url: '/pages/dark-funds/dark-funds' });
     }
     if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
-    return Promise.resolve(this.settingsPromise).then(() => {
-      // 服务包免广告；暗盘次卡有课程权限但仍按后台设置展示激励广告。
-      return store.syncMe().then((user) => {
-        if (this.hasServiceAccess(user)) return this.handleGetResource(true);
-        if ((user && user.courseAccess) || (this.data.note && this.data.note.free === true)) return this.handleGetResource(false);
-        return this.showCourseAccessRequired();
-      });
-    });
+    return this.handleGetResource(this.data.note && this.data.note.free === true);
   },
 
   finishGoldTabLoading() {
@@ -286,16 +267,6 @@ Page({
       },
     });
   },
-  showCourseAccessRequired() {
-    wx.showModal({
-      title: '需要课程权限',
-      content: '请前往「我—礼品卡」兑换服务包或暗盘次卡后查看课程。',
-      confirmText: '去兑换',
-      success: (result) => {
-        if (result.confirm) wx.switchTab({ url: '/pages/profile/profile' });
-      },
-    });
-  },
   handleGetResource(skipAd = false) {
     const note = this.data.note;
     if (!note.hasResource) return toast('管理员尚未配置获取地址');
@@ -303,7 +274,6 @@ Page({
     return this.showRewardedAd(() => this.showResource());
   },
   showRewardedAd(onComplete) {
-    if (!this.data.rewardedAdEnabled) return onComplete();
     const adUnitId = config.rewardedVideoAdUnitId;
     if (!adUnitId || /x{4,}/i.test(adUnitId)) {
       return wx.showModal({
@@ -334,7 +304,7 @@ Page({
     if (!store.isLogin()) return this.requireLogin();
     this._checkingGoldFeature = true;
     wx.showLoading({ title: '请稍后...', mask: true });
-    return Promise.resolve(this.settingsPromise)
+    return Promise.resolve()
       .then(() => {
         wx.hideLoading();
         this._checkingGoldFeature = false;
@@ -372,7 +342,6 @@ Page({
       if (!resources.length) return toast('管理员尚未配置获取地址');
       this.setData({ resourceOptions: resources, resourceModalVisible: true });
     }).catch((err) => {
-      if (err && err.statusCode === 403) return this.showCourseAccessRequired();
       toast('获取地址失败，请联系客服');
     });
   },

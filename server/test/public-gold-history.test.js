@@ -38,14 +38,12 @@ function setup() {
     ],
   };
   const goldAccess = (user) => !!(user && (Number(user.goldExpire) > Date.now() || Number(user.serviceExpire) > Date.now()));
-  const courseAccess = (user) => !!(user && (user.courseAccessPermanent || Number(user.serviceExpire) > Date.now()));
   const mod = { exports: {} };
   const dependencyMap = {
     '../db': { get: () => data },
     '../auth': { userIdFor: (token) => /^Bearer u[1234]$/.test(token || '') ? token.slice(7) : '' },
     '../util': {
       goldAccess,
-      courseAccess,
       pubUser: (x) => x,
       pubNote: (x) => x,
       pubSettings: (d) => ({
@@ -111,12 +109,12 @@ test('gold notes and entry are visible to gold-card and service-package users', 
   await assert.rejects(call('/api/notes/g1', {}, 'Bearer u4'), { status: 404 });
 });
 
-test('service packages and dark-fund cards grant course resources but gold-only cards do not', async () => {
+test('every registered user can fetch course resources', async () => {
   const { call } = setup();
-  await assert.rejects(call('/api/notes/n1/resource', {}, 'Bearer u2'), { status: 403 });
-  await assert.rejects(call('/api/notes/n1/resource', {}, 'Bearer u1'), { status: 403 });
-  assert.equal((await call('/api/notes/n1/resource', {}, 'Bearer u3')).url, 'https://example.com');
-  assert.equal((await call('/api/notes/n1/resource', {}, 'Bearer u4')).url, 'https://example.com');
+  for (const token of ['Bearer u1', 'Bearer u2', 'Bearer u3', 'Bearer u4']) {
+    assert.equal((await call('/api/notes/n1/resource', {}, token)).url, 'https://example.com');
+  }
+  await assert.rejects(call('/api/notes/n1/resource', {}, ''), { status: 401 });
 });
 
 test('暗盘笔记不进入公开列表且只有订单本人可直连访问', async () => {

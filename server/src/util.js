@@ -7,10 +7,6 @@ function goldAccess(user) {
   return !!(user && (Number(user.goldExpire) > Date.now() || serviceActiveAt(user)));
 }
 
-function courseAccess(user) {
-  return !!(user && (user.courseAccessPermanent === true || serviceActiveAt(user)));
-}
-
 // 对外输出的用户对象（隐藏登录标识及已停用的旧会员字段）
 function pubUser(user, includePrivate = false) {
   if (!user) return user;
@@ -33,7 +29,6 @@ function pubUser(user, includePrivate = false) {
     goldActive: Number(user.goldExpire) > Date.now(),
     goldAccess: goldAccess(user),
     serviceActive: serviceActiveAt(user),
-    courseAccess: courseAccess(user),
     darkFundEnabled: user.darkFundEnabled === true,
     darkFundRemaining: darkFundQuota.total,
     darkFundServiceRemaining: darkFundQuota.service,
@@ -63,4 +58,4 @@ function pubSettings(data) {
   };
 }
 
-module.exports = { goldAccess, courseAccess, pubUser, pubNote, pubSettings };
+module.exports = { goldAccess, pubUser, pubNote, pubSettings };

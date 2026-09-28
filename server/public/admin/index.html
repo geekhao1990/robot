@@ -263,10 +263,10 @@ const GIFT_CARD_LABELS = {
   gold: '金手指卡（360天 + 5次暗盘）',
   service_month: '服务包月卡（30天 + 每月15次暗盘）',
   service_year: '服务包年卡（360天 + 每月15次暗盘）',
-  dark_1: '暗盘1次卡（含课程权限）',
-  dark_50: '暗盘50次卡（含课程权限）',
-  dark_100: '暗盘100次卡（含课程权限）',
-  dark_180: '暗盘180次卡（含课程权限）',
+  dark_1: '暗盘1次卡',
+  dark_50: '暗盘50次卡',
+  dark_100: '暗盘100次卡',
+  dark_180: '暗盘180次卡',
 };
 TITLES.giftCards = '礼品卡管理';
 function switchView(v) {
@@ -359,7 +359,7 @@ function drawNotes() {
       <td>${esc(n.author && n.author.name)}</td>
       <td><span class="tag ${n.type === 'gold' ? 'gold' : (n.type === 'course' ? 'course' : (n.type === 'ad' ? 'ad' : ''))}">${esc(n.category || '资料')}</span></td>
       <td><div class="switch-cell"><label class="switch" title="是否显示"><input type="checkbox" ${n.visible !== false ? 'checked' : ''} onchange="toggleNoteFlag('${n.id}','visible',this.checked)" /><span class="switch-slider"></span></label><span>${n.visible !== false ? '显示' : '隐藏'}</span></div></td>
-      <td><div class="switch-cell"><label class="switch" title="是否免费"><input type="checkbox" ${n.free === true ? 'checked' : ''} onchange="toggleNoteFlag('${n.id}','free',this.checked)" /><span class="switch-slider"></span></label><span>${n.free === true ? '免费' : '会员'}</span></div></td>
+      <td><div class="switch-cell"><label class="switch" title="是否免费"><input type="checkbox" ${n.free === true ? 'checked' : ''} onchange="toggleNoteFlag('${n.id}','free',this.checked)" /><span class="switch-slider"></span></label><span>${n.free === true ? '免费' : '收费'}</span></div></td>
       <td>赞 ${n.likes} · 藏 ${n.collects}</td>
       <td>
         <button class="btn-sm" onclick='editNote("${n.id}")'>编辑</button>
@@ -569,9 +569,6 @@ function drawUsers() {
     const serviceStatus = serviceActive
       ? `<span class="tag vip">${serviceName} · 至 ${fmtDate(u.serviceExpire)}</span>`
       : (u.serviceExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
-    const courseStatus = serviceActive || u.courseAccessPermanent === true
-      ? `<span class="tag course">已开通${u.courseAccessPermanent === true ? ' · 次卡权益' : ''}</span>`
-      : '<span class="tag">未开通</span>';
     const darkFundStatus = darkFundActive
       ? `<span class="tag vip">已开通 · 剩余 ${Math.max(0, Number(u.darkFundRemaining) || 0)} 次</span><div class="hint">服务包 ${Math.max(0, Number(u.darkFundServiceRemaining) || 0)} · 永久 ${Math.max(0, Number(u.darkFundManualRemaining) || 0)}</div>`
       : '<span class="tag">未开通</span>';
@@ -588,7 +585,6 @@ function drawUsers() {
         <td>${u.official ? '<span class="tag course">官方账号</span>' : '<span class="tag">普通用户</span>'}</td>
         <td>${goldStatus}</td>
         <td>${serviceStatus}</td>
-        <td>${courseStatus}</td>
         <td>${darkFundStatus}</td>
         <td>
           <button class="btn-sm" ${goldActive ? 'disabled' : ''} onclick='setGold("${u.id}","open")'>开通金手指卡</button>
@@ -611,7 +607,7 @@ function drawUsers() {
       </div>
       <button class="btn-primary" onclick="editUser()">+ 新增用户</button>
     </div>
-    <table><thead><tr><th>序号</th><th>昵称</th><th>手机号</th><th>注册信息</th><th>账号类型</th><th>金手指卡</th><th>服务包</th><th>课程权限</th><th>暗盘资金</th><th>操作</th></tr></thead>
+    <table><thead><tr><th>序号</th><th>昵称</th><th>手机号</th><th>注册信息</th><th>账号类型</th><th>金手指卡</th><th>服务包</th><th>暗盘资金</th><th>操作</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${pagerHtml(_userPage, pages, total, 'gotoUserPage')}`;
 }
@@ -1200,12 +1196,8 @@ function renderSettings() {
           <div class="hint">这篇笔记的主图和「点击领取」均作为金手指功能入口；金手指卡或服务包有效的用户能看到入口及金手指笔记。</div>
         </div>
         <div class="field">
-          <label>普通笔记激励广告</label>
-          <select id="settingAd">
-            <option value="false" ${settings.rewardedAdEnabled ? '' : 'selected'}>关闭</option>
-            <option value="true" ${settings.rewardedAdEnabled ? 'selected' : ''}>开启</option>
-          </select>
-          <div class="hint">关闭后直接展示领取链接；开启后需看完激励广告才能领取。</div>
+          <label>笔记领取规则</label>
+          <div class="hint">免费笔记直接展示领取链接；收费笔记必须看完激励广告后领取。</div>
         </div>
         <div class="field">
           <label>热门搜索</label>
@@ -1220,7 +1212,7 @@ function renderSettings() {
 function saveSettings() {
   const body = {
     featuredNoteId: document.getElementById('settingFeatured').value,
-    rewardedAdEnabled: document.getElementById('settingAd').value === 'true',
+    rewardedAdEnabled: true,
     hotSearch: Array.from(new Set(document.getElementById('settingHotSearch').value.split(/[\n,，]/).map((item) => item.trim()).filter(Boolean))),
   };
   api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(body) })

@@ -7,15 +7,9 @@
   text-align: center;
   padding: 120rpx 0 60rpx;
 }
-.logo {
-  font-size: 60rpx;
-  font-weight: 800;
-  color: #ff2442;
-}
 .slogan {
   font-size: 28rpx;
   color: #999;
-  margin-top: 16rpx;
 }
 
 .wx-box {
@@ -25,11 +19,33 @@
   margin-top: 40rpx;
   margin-bottom: 70rpx;
 }
-.wx-icon {
+.default-avatar {
+  position: relative;
+  overflow: hidden;
   width: 150rpx;
   height: 150rpx;
+  background: #f2f2f2;
   border-radius: 50%;
-  object-fit: cover;
+}
+.avatar-head {
+  position: absolute;
+  top: 30rpx;
+  left: 50%;
+  width: 50rpx;
+  height: 50rpx;
+  background: #c8c8c8;
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+.avatar-body {
+  position: absolute;
+  left: 50%;
+  bottom: -20rpx;
+  width: 112rpx;
+  height: 76rpx;
+  background: #c8c8c8;
+  border-radius: 58rpx 58rpx 0 0;
+  transform: translateX(-50%);
 }
 .wx-tip {
   font-size: 26rpx;

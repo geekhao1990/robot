@@ -1,6 +1,6 @@
 // server/src/routes/public.js —— 小程序只读接口
 const db = require('../db');
-const { goldAccess, courseAccess, pubUser, pubNote, pubSettings } = require('../util');
+const { goldAccess, pubUser, pubNote, pubSettings } = require('../util');
 const auth = require('../auth');
 const { typeLabel } = require('../content-types');
 const { resourceList } = require('../resource-links');
@@ -154,9 +154,6 @@ module.exports = function register(router, HttpError) {
     const note = data.notes.find((n) => n.id === ctx.params.id && canViewNote(data, n, reader));
     if (!note) throw new HttpError(404, 'not found');
     if (note.type === 'gold') throw new HttpError(400, '金手指内容请进入会员专属页面查看');
-    if (note.free !== true && !courseAccess(reader)) {
-      throw new HttpError(403, '请先兑换服务包或暗盘次卡');
-    }
     const resources = resourceList(note);
     if (!resources.length) throw new HttpError(404, '暂未配置获取地址');
     return { resources, url: resources[0].url };

@@ -115,7 +115,6 @@ module.exports = function register(router, HttpError) {
         activateService(user, card.type, now);
       } else {
         addManualDarkFundQuota(user, definition.quota, now);
-        user.courseAccessPermanent = true;
       }
       user.darkFundEnabled = true;
       Object.assign(card, { status: 'redeemed', redeemedBy: userId, redeemedAt: now });

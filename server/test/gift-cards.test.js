@@ -81,16 +81,16 @@ test('service packages and dark-fund cards grant distinct permissions', async ()
   const monthResult = await call('POST', '/api/gift-cards/redeem', { code: month.codes[0] }, 'a');
   assert.equal(monthResult.user.serviceActive, true);
   assert.equal(monthResult.user.goldAccess, true);
-  assert.equal(monthResult.user.courseAccess, true);
+  assert.equal(monthResult.user.courseAccess, undefined);
   assert.equal(monthResult.user.darkFundServiceRemaining, 15);
   assert.equal(monthResult.user.darkFundManualRemaining, 0);
 
   const countCard = await call('POST', '/api/admin/gift-cards', { type: 'dark_50', count: 1 });
   const countResult = await call('POST', '/api/gift-cards/redeem', { code: countCard.codes[0] }, 'b');
-  assert.equal(countResult.user.courseAccess, true);
+  assert.equal(countResult.user.courseAccess, undefined);
   assert.equal(countResult.user.goldAccess, false);
   assert.equal(countResult.user.darkFundManualRemaining, 50);
-  assert.equal(data.users[1].courseAccessPermanent, true);
+  assert.equal(data.users[1].courseAccessPermanent, undefined);
 });
 
 test('month cards are no longer generated or redeemed', async () => {
