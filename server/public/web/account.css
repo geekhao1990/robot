@@ -31,3 +31,20 @@
   color: #bbb;
   font-size: 12px;
 }
+
+.profile-login-pill,
+.profile-logout {
+  margin-left: auto;
+  padding: 7px 15px;
+  border: 1px solid rgba(255, 255, 255, .75);
+  border-radius: 99px;
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.profile-main {
+  min-width: 0;
+  flex: 1;
+}
