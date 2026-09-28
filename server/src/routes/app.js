@@ -4,7 +4,7 @@ const db = require('../db');
 const { pubUser, pubNote } = require('../util');
 const auth = require('../auth');
 const crypto = require('crypto');
-const { code2Session, getPhoneNumber } = require('../wechat');
+const { code2Session } = require('../wechat');
 const { canViewNote } = require('../note-access');
 
 function getState(userId) {
@@ -336,17 +336,6 @@ module.exports = function register(router, HttpError) {
     if (!avatar) throw new HttpError(400, '请先选择头像');
     user.name = name;
     user.avatar = avatar;
-    db.save();
-    return { user: pubUser(user, true) };
-  });
-
-  // 手机号必须使用微信 getPhoneNumber 返回的一次性 code，由服务端向微信换取。
-  router.post('/api/me/phone', async (ctx) => {
-    const user = currentUser(ctx);
-    const phoneInfo = await getPhoneNumber(String((ctx.body || {}).code || ''));
-    user.phone = phoneInfo.purePhoneNumber || phoneInfo.phoneNumber || '';
-    user.phoneCountryCode = phoneInfo.countryCode || '86';
-    user.phoneBoundAt = Date.now();
     db.save();
     return { user: pubUser(user, true) };
   });

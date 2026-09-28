@@ -8,7 +8,7 @@ function goldAccess(user) {
 }
 
 // 对外输出的用户对象（隐藏登录标识及已停用的旧会员字段）
-function pubUser(user, includePrivate = false) {
+function pubUser(user) {
   if (!user) return user;
   const darkFundQuota = refreshDarkFundQuota(user);
   const {
@@ -19,11 +19,6 @@ function pubUser(user, includePrivate = false) {
     goldQuotaGiftMigrated,
     ...safe
   } = user;
-  if (includePrivate) {
-    safe.phone = phone || '';
-    safe.phoneCountryCode = phoneCountryCode || '';
-    safe.phoneBoundAt = phoneBoundAt || 0;
-  }
   return {
     ...safe,
     goldActive: Number(user.goldExpire) > Date.now(),

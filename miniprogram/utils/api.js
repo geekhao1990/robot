@@ -268,10 +268,6 @@ function updateMyProfile(profile) {
   return request('PUT', '/api/me/profile', { auth: true, data: profile });
 }
 
-function bindWechatPhone(code) {
-  return request('POST', '/api/me/phone', { auth: true, data: { code } });
-}
-
 function getDarkFundTradeDate() {
   return request('GET', '/api/dark-funds/trade-date', { auth: true });
 }
@@ -523,7 +519,6 @@ module.exports = {
   login,
   getMe,
   updateMyProfile,
-  bindWechatPhone,
   getDarkFundTradeDate,
   createDarkFundOrder,
   getDarkFundOrders,

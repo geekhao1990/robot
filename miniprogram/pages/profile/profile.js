@@ -13,10 +13,8 @@ Page({
     tabIndex: 0,
     currentNotes: [], left: [], right: [],
     emptyText: '还没有收藏的笔记',
-    phoneText: '未绑定手机号',
     editingProfile: false,
     savingProfile: false,
-    bindingPhone: false,
     draftName: '',
     draftAvatar: '',
     giftCode: '',
@@ -47,7 +45,6 @@ Page({
         user,
         entitlements: this.entitlementRows(user),
         loggedIn: !!user,
-        phoneText: this.phoneText(user && user.phone),
       });
       if (user) {
         return Promise.all([
@@ -136,11 +133,6 @@ Page({
   onRefresherAbort() {
     if (this.data.refreshReady) this.setData({ refreshReady: false });
   },
-  phoneText(phone) {
-    const value = String(phone || '');
-    if (value.length === 11) return value.slice(0, 3) + '****' + value.slice(7);
-    return value || '未绑定手机号';
-  },
   openProfileEditor() {
     const user = store.getUser();
     if (!user) return this.goLogin();
@@ -151,7 +143,7 @@ Page({
     });
   },
   closeProfileEditor() {
-    if (!this.data.savingProfile && !this.data.bindingPhone) this.setData({ editingProfile: false });
+    if (!this.data.savingProfile) this.setData({ editingProfile: false });
   },
   onNameInput(e) {
     this.setData({ draftName: e.detail.value });
@@ -172,7 +164,7 @@ Page({
     upload
       .then((avatarUrl) => store.updateProfile({ name, avatar: avatarUrl }))
       .then((user) => {
-        this.setData({ user, editingProfile: false, phoneText: this.phoneText(user.phone) });
+        this.setData({ user, editingProfile: false });
         wx.hideLoading();
         wx.showToast({ title: '资料已更新', icon: 'success' });
       })
@@ -182,28 +174,6 @@ Page({
       })
       .finally(() => {
         this.setData({ savingProfile: false });
-      });
-  },
-  onGetPhoneNumber(e) {
-    if (this.data.bindingPhone) return;
-    const detail = e.detail || {};
-    if (!detail.code || !/getPhoneNumber:ok/i.test(detail.errMsg || '')) {
-      return wx.showToast({ title: '未授权手机号', icon: 'none' });
-    }
-    this.setData({ bindingPhone: true });
-    wx.showLoading({ title: '绑定中' });
-    store.bindPhone(detail.code)
-      .then((user) => {
-        this.setData({ user, phoneText: this.phoneText(user.phone) });
-        wx.hideLoading();
-        wx.showToast({ title: '手机号已绑定', icon: 'success' });
-      })
-      .catch((err) => {
-        wx.hideLoading();
-        wx.showModal({ title: '绑定失败', content: this.errorText(err), showCancel: false });
-      })
-      .finally(() => {
-        this.setData({ bindingPhone: false });
       });
   },
   errorText(err) {

@@ -7,7 +7,7 @@
     <view class="wx-tip">{{loginTip}}</view>
   </view>
 
-  <button class="wx-login-btn" open-type="getPhoneNumber" bindgetphonenumber="onWechatLogin" loading="{{loggingIn}}" disabled="{{loggingIn}}">
+  <button class="wx-login-btn" bindtap="onWechatLogin" loading="{{loggingIn}}" disabled="{{loggingIn}}">
     {{loginText}}
   </button>
 

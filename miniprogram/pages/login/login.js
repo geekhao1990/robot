@@ -12,12 +12,8 @@ Page({
     store.captureInvite(options);
   },
 
-  onWechatLogin(e) {
+  onWechatLogin() {
     if (this.data.loggingIn) return;
-    const detail = (e && e.detail) || {};
-    const phoneCode = detail.code && /getPhoneNumber:ok/i.test(detail.errMsg || '')
-      ? detail.code
-      : '';
     this.setData({ loggingIn: true, loginText: '登录中…' });
     wx.showLoading({ title: config.wechatAuthRemote ? '微信登录中' : '连接后台中' });
     if (!config.wechatAuthRemote) {
@@ -25,23 +21,20 @@ Page({
         preview: true,
         name: '微信用户',
         avatar: 'https://i.pravatar.cc/150?img=68',
-      }, '');
+      });
     }
     wx.login({
       timeout: 10000,
       success: ({ code }) => {
         if (!code) return this.loginFailed('未获取到微信登录凭证');
-        this.doLogin({ code }, phoneCode);
+        this.doLogin({ code });
       },
       fail: (err) => this.loginFailed(err.errMsg || '无法调起微信登录'),
     });
   },
 
-  doLogin(payload, phoneCode) {
-    store.login(payload).then((user) => {
-      if (!phoneCode || !config.wechatAuthRemote) return user;
-      return store.bindPhone(phoneCode).catch(() => user);
-    }).then(() => {
+  doLogin(payload) {
+    store.login(payload).then(() => {
       wx.hideLoading();
       this.setData({ loggingIn: false, loginText: '已登录' });
       wx.showToast({ title: '登录成功', icon: 'success' });
