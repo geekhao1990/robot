@@ -26,6 +26,7 @@
         <image class="avatar" src="{{user.avatar}}" mode="aspectFill" />
         <view class="meta">
           <view class="name">{{user.name}}</view>
+          <view class="uid user-id" bindlongpress="copyUserId">ID：{{user.id}}（长按复制）</view>
           <view wx:if="{{entitlements.length}}" class="profile-rights">
             <view wx:for="{{entitlements}}" wx:key="type" class="profile-right {{item.type}}">{{item.name}}</view>
           </view>
@@ -54,6 +55,14 @@
     <view class="editor-field">
       <view class="editor-label">昵称</view>
       <input class="nickname-input" type="nickname" maxlength="24" value="{{draftName}}" placeholder="请输入昵称" bindinput="onNameInput" />
+    </view>
+    <view class="editor-field">
+      <view class="editor-label">Web密码</view>
+      <input class="nickname-input" password maxlength="64" value="{{draftPassword}}" placeholder="至少6位，不修改可留空" bindinput="onPasswordInput" />
+    </view>
+    <view class="editor-field">
+      <view class="editor-label">重复密码</view>
+      <input class="nickname-input" password maxlength="64" value="{{draftPasswordConfirm}}" placeholder="再次输入密码" bindinput="onPasswordConfirmInput" />
     </view>
     <view class="editor-actions">
       <button class="editor-button cancel" bindtap="closeProfileEditor">取消</button>

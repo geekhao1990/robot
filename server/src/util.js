@@ -13,6 +13,7 @@ function pubUser(user) {
   const darkFundQuota = refreshDarkFundQuota(user);
   const {
     wxOpenId, wxWebOpenId, wxUnionId, phone, phoneCountryCode, phoneBoundAt,
+    webPasswordHash, webPasswordSalt, webPasswordUpdatedAt,
     vip, vipPlan, vipExpire, vipPermanent, vipActivatedAt,
     darkFundVipRemaining, darkFundVipMonth,
     darkFundServiceMonth,
@@ -21,6 +22,7 @@ function pubUser(user) {
   } = user;
   return {
     ...safe,
+    webPasswordSet: Boolean(webPasswordHash && webPasswordSalt),
     goldActive: Number(user.goldExpire) > Date.now(),
     goldAccess: goldAccess(user),
     serviceActive: serviceActiveAt(user),

@@ -37,6 +37,7 @@
   opacity: .85;
   margin-top: 10rpx;
 }
+.user-id { user-select: text; }
 .profile-rights {
   display: flex;
   align-items: center;

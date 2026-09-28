@@ -160,7 +160,8 @@ function syncMe() {
 
 function updateProfile(profile) {
   if (!authRemote()) {
-    setUser({ ...state.user, ...profile });
+    const { password, confirmPassword, ...safeProfile } = profile || {};
+    setUser({ ...state.user, ...safeProfile });
     return Promise.resolve(state.user);
   }
   return getApi().updateMyProfile(profile).then((result) => {

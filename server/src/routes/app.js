@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const { code2Session } = require('../wechat');
 const webWechatLogin = require('../web-wechat-login');
 const { canViewNote } = require('../note-access');
+const { setPassword, verifyPassword } = require('../user-password');
 
 function getState(userId) {
   const d = db.get();
@@ -321,44 +322,14 @@ module.exports = function register(router, HttpError) {
 
   router.get('/api/web/wechat/status', () => ({ enabled: webWechatLogin.configured() }));
 
-  // Web 前台使用浏览器本地生成的高熵设备密钥建立独立账号，不依赖微信能力。
+  // Web 前台使用小程序个人资料中设置的用户 ID + 密码登录同一账号。
   router.post('/api/web/login', (ctx) => {
     const data = db.get();
     const body = ctx.body || {};
-    const deviceKey = String(body.deviceKey || '').trim();
-    if (!/^[A-Za-z0-9_-]{32,128}$/.test(deviceKey)) throw new HttpError(400, 'Web登录凭证无效');
-    const openid = `web:${crypto.createHash('sha256').update(deviceKey).digest('hex')}`;
-    let user = data.users.find((item) => item.wxOpenId === openid);
-    if (!user) {
-      user = {
-        id: 'web_' + crypto.createHash('sha256').update(openid).digest('hex').slice(0, 16),
-        wxOpenId: openid,
-        wxUnionId: '',
-        name: 'Web用户',
-        avatar: 'https://app.nankaitechschool.com/assets/avatars/author-68.jpg',
-        desc: 'Web 前台用户',
-        fans: 0,
-        follows: 0,
-        likes: 0,
-        goldExpire: 0,
-        goldQuotaGiftMigrated: true,
-        serviceExpire: 0,
-        servicePlan: '',
-        courseAccessPermanent: false,
-        official: false,
-        darkFundEnabled: false,
-        darkFundRemaining: 0,
-        darkFundManualRemaining: 0,
-        darkFundServiceRemaining: 0,
-        darkFundServiceMonth: '',
-        createdAt: Date.now(),
-        tags: ['new', 'web'],
-      };
-      data.users.push(user);
-      applyInviteReward(user, body.inviteCode);
-    }
-    inviteCodeFor(user);
-    db.save();
+    const userId = String(body.userId || '').trim();
+    const password = String(body.password || '');
+    const user = data.users.find((item) => item.id === userId);
+    if (!user || !verifyPassword(user, password)) throw new HttpError(401, '用户ID或密码错误');
     return { token: auth.issue(user.id), user: pubUser(user, true) };
   });
 
@@ -374,15 +345,21 @@ module.exports = function register(router, HttpError) {
     };
   });
 
-  // 用户本人修改头像和昵称。昵称允许重复，只做长度和空值校验。
+  // 用户本人修改头像、昵称，并可设置用于 Web 登录的密码。
   router.put('/api/me/profile', (ctx) => {
     const user = currentUser(ctx);
     const body = ctx.body || {};
     const name = String(body.name || '').trim();
     const avatar = String(body.avatar || '').trim();
+    const password = String(body.password || '');
+    const confirmPassword = String(body.confirmPassword || '');
     if (!name) throw new HttpError(400, '昵称不能为空');
     if (name.length > 24) throw new HttpError(400, '昵称最多24个字符');
     if (!avatar) throw new HttpError(400, '请先选择头像');
+    if (password || confirmPassword) {
+      if (password !== confirmPassword) throw new HttpError(400, '两次输入的密码不一致');
+      try { setPassword(user, password); } catch (error) { throw new HttpError(400, error.message); }
+    }
     user.name = name;
     user.avatar = avatar;
     db.save();
