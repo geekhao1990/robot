@@ -9,17 +9,11 @@
 </head>
 <body>
   <div class="app-shell">
-    <header class="topbar">
-      <button id="backButton" class="icon-button hidden" aria-label="返回">‹</button>
-      <div><div class="brand">NiuLai</div><div id="pageSubtitle" class="subtitle">课程与数据服务</div></div>
-      <button id="refreshButton" class="icon-button" aria-label="刷新">↻</button>
-    </header>
     <main id="app" class="content"><div class="skeleton-page"><i></i><i></i><i></i></div></main>
     <nav id="tabbar" class="tabbar">
-      <button data-route="home" class="active"><span>⌂</span><em>课程</em></button>
-      <button data-route="gold"><span>☝</span><em>金手指</em></button>
-      <button data-route="dark"><span>◫</span><em>暗盘</em></button>
-      <button data-route="profile"><span>◉</span><em>我的</em></button>
+      <button data-route="home" class="active"><em>首页</em></button>
+      <button data-route="gold" class="finger-tab"><img src="/web/assets/gold-tab-default.png" alt="金手指"></button>
+      <button data-route="profile"><em>我</em></button>
     </nav>
   </div>
   <div id="toast" class="toast"></div>
