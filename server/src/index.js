@@ -51,8 +51,9 @@ const server = http.createServer((req, res) => {
   const parsed = url.parse(req.url, true);
   const pathname = parsed.pathname;
 
-  // 首页跳转到后台
-  if (pathname === '/') { res.writeHead(302, { Location: '/admin' }); return res.end(); }
+  // Web 前台；管理后台继续使用 /admin。
+  if (pathname === '/') { res.writeHead(302, { Location: '/web' }); return res.end(); }
+  if (pathname === '/web' || pathname.startsWith('/web/')) return serveFile(res, 'web', pathname.replace(/^\/web/, ''));
   // 静态后台
   if (pathname === '/admin' || pathname.startsWith('/admin/')) return serveFile(res, 'admin', pathname.replace(/^\/admin/, ''));
   // 上传的图片

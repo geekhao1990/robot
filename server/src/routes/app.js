@@ -313,6 +313,46 @@ module.exports = function register(router, HttpError) {
     return { token, user: pubUser(user, true) };
   });
 
+  // Web 前台使用浏览器本地生成的高熵设备密钥建立独立账号，不依赖微信能力。
+  router.post('/api/web/login', (ctx) => {
+    const data = db.get();
+    const body = ctx.body || {};
+    const deviceKey = String(body.deviceKey || '').trim();
+    if (!/^[A-Za-z0-9_-]{32,128}$/.test(deviceKey)) throw new HttpError(400, 'Web登录凭证无效');
+    const openid = `web:${crypto.createHash('sha256').update(deviceKey).digest('hex')}`;
+    let user = data.users.find((item) => item.wxOpenId === openid);
+    if (!user) {
+      user = {
+        id: 'web_' + crypto.createHash('sha256').update(openid).digest('hex').slice(0, 16),
+        wxOpenId: openid,
+        name: 'Web用户',
+        avatar: 'https://app.nankaitechschool.com/assets/avatars/author-68.jpg',
+        desc: 'Web 前台用户',
+        fans: 0,
+        follows: 0,
+        likes: 0,
+        goldExpire: 0,
+        goldQuotaGiftMigrated: true,
+        serviceExpire: 0,
+        servicePlan: '',
+        courseAccessPermanent: false,
+        official: false,
+        darkFundEnabled: false,
+        darkFundRemaining: 0,
+        darkFundManualRemaining: 0,
+        darkFundServiceRemaining: 0,
+        darkFundServiceMonth: '',
+        createdAt: Date.now(),
+        tags: ['new', 'web'],
+      };
+      data.users.push(user);
+      applyInviteReward(user, body.inviteCode);
+    }
+    inviteCodeFor(user);
+    db.save();
+    return { token: auth.issue(user.id), user: pubUser(user, true) };
+  });
+
   // 当前用户 + 交互状态
   router.get('/api/me', (ctx) => {
     const u = currentUser(ctx);
