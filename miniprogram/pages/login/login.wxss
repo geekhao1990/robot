@@ -3,20 +3,11 @@
   background: #fff;
   padding: 0 60rpx;
 }
-.logo-wrap {
-  text-align: center;
-  padding: 120rpx 0 60rpx;
-}
-.slogan {
-  font-size: 28rpx;
-  color: #999;
-}
-
 .wx-box {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 40rpx;
+  padding-top: 180rpx;
   margin-bottom: 70rpx;
 }
 .default-avatar {
