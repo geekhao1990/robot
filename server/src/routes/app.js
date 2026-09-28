@@ -561,10 +561,4 @@ module.exports = function register(router, HttpError) {
     return Object.keys(s.collects).sort((a, b) => s.collects[b] - s.collects[a]).map((id) => map[id]).filter((note) => canViewNote(data, note, u)).map(pubNote);
   });
 
-  // 我发布的笔记
-  router.get('/api/me/notes', (ctx) => {
-    const u = currentUser(ctx);
-    return db.get().notes.filter((n) => n.authorId === u.id && n.visible !== false).map(pubNote);
-  });
-
 };

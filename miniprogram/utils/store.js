@@ -1,7 +1,6 @@
 // utils/store.js
 // 状态层：后端为数据源，本地仅作运行时缓存 + 离线镜像。
 // 登录后从 /api/me 拉取交互状态；点赞/收藏/关注/发布等写操作回传后端。
-// 草稿仍只存本地（见 publish 页）。
 
 const data = require('../mock/data');
 const config = require('./config');
@@ -20,7 +19,6 @@ const KEY = {
   LIKES: 'xhs_likes',
   COLLECTS: 'xhs_collects',
   FOLLOWS: 'xhs_follows',
-  MY_NOTES: 'xhs_my_notes',
   READ: 'xhs_read',
   PENDING_INVITE: 'xhs_pending_invite',
 };
@@ -31,7 +29,6 @@ let state = {
   likes: {},
   collects: {},
   follows: {},
-  myNotes: [],
   read: { notify: {}, conv: {} },
 };
 
@@ -56,7 +53,6 @@ function init() {
   state.likes = load(KEY.LIKES, {});
   state.collects = load(KEY.COLLECTS, {});
   state.follows = load(KEY.FOLLOWS, {});
-  state.myNotes = load(KEY.MY_NOTES, []);
   state.read = load(KEY.READ, { notify: {}, conv: {} });
   // 从本地 mock 切换到真实后端时，旧缓存没有服务端 token，必须重新登录。
   if (authRemote() && !state.token) {
@@ -244,29 +240,6 @@ function followedIds() {
   return Object.keys(state.follows).sort((a, b) => state.follows[b] - state.follows[a]);
 }
 
-// ---------- 我发布的笔记（仅本地/离线回退用；远程以 api.getMyNotes 为准） ----------
-function getMyNotes() {
-  return state.myNotes;
-}
-function addMyNote(note) {
-  state.myNotes.unshift(note);
-  save(KEY.MY_NOTES, state.myNotes);
-}
-function removeMyNote(id) {
-  state.myNotes = state.myNotes.filter((n) => n.id !== id);
-  save(KEY.MY_NOTES, state.myNotes);
-}
-function updateMyNote(note) {
-  const i = state.myNotes.findIndex((n) => n.id === note.id);
-  if (i > -1) {
-    state.myNotes[i] = note;
-    save(KEY.MY_NOTES, state.myNotes);
-  }
-}
-function getMyNote(id) {
-  return state.myNotes.find((n) => n.id === id) || null;
-}
-
 // ---------- 消息未读 / 已读 ----------
 const EMPTY_SUMMARY = { like: 0, comment: 0, follow: 0, conv: 0, total: 0 };
 let msgSummary = { ...EMPTY_SUMMARY };
@@ -335,6 +308,5 @@ module.exports = {
   isCollected, toggleCollect,
   isFollowed, toggleFollow,
   likedIds, collectedIds, followedIds,
-  getMyNotes, addMyNote, removeMyNote, updateMyNote, getMyNote,
   markNotifyRead, isNotifyRead, markConvRead, isConvRead, messageUnread, refreshMessageSummary,
 };

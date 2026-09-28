@@ -77,9 +77,9 @@ function decorate(note) {
   };
 }
 
-// 所有笔记（mock + 用户发布）
+// 本地预览笔记
 function allNotes() {
-  return [...store.getMyNotes(), ...data.notes];
+  return data.notes;
 }
 
 function localGoldAccess() {
@@ -342,24 +342,7 @@ function collectNote(id) {
 function followUser(uid) {
   return request('POST', '/api/follow/' + uid, { auth: true });
 }
-function publishNote(payload) {
-  return request('POST', '/api/notes', { auth: true, data: payload });
-}
-function updateNote(id, payload) {
-  return request('PUT', '/api/notes/' + id, { auth: true, data: payload });
-}
-function deleteNote(id) {
-  return request('DELETE', '/api/notes/' + id, { auth: true });
-}
-
-// 我的笔记 / 收藏 / 赞过
-function getMyNotes() {
-  if (remote()) {
-    return request('GET', '/api/me/notes', { auth: true })
-      .then((list) => (list || []).map(decorate));
-  }
-  return delay(store.getMyNotes().map(decorate));
-}
+// 我的收藏 / 赞过
 function getMyCollects() {
   if (remote()) {
     return request('GET', '/api/me/collects', { auth: true })
@@ -535,11 +518,7 @@ module.exports = {
   likeNote,
   collectNote,
   followUser,
-  publishNote,
-  updateNote,
-  deleteNote,
   // 我的内容
-  getMyNotes,
   getMyCollects,
   getMyLikes,
 };
