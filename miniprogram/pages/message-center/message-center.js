@@ -48,16 +48,6 @@ Page({
       .finally(() => this.setData({ loading: false }));
   },
 
-  markAllRead() {
-    if (!this.data.unread) return;
-    api.readSystemNotification().then(() => {
-      this.setData({
-        unread: 0,
-        list: this.data.list.map((item) => ({ ...item, unread: false })),
-      });
-    }).catch(() => wx.showToast({ title: '操作失败', icon: 'none' }));
-  },
-
   openMessage(e) {
     const item = this.data.list.find((entry) => entry.id === e.currentTarget.dataset.id);
     if (!item) return;

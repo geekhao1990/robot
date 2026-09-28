@@ -6,8 +6,15 @@ test('scheduler selects the latest due Beijing slot', () => {
   const at = (iso) => Date.parse(iso);
   assert.equal(dueSlot(at('2026-09-18T01:59:00Z')), undefined);
   assert.equal(dueSlot(at('2026-09-18T02:00:00Z')), 600);
-  assert.equal(dueSlot(at('2026-09-18T06:03:00Z')), 840);
-  assert.equal(dueSlot(at('2026-09-18T08:01:00Z')), 960);
+  assert.equal(dueSlot(at('2026-09-18T03:29:00Z')), 600);
+  assert.equal(dueSlot(at('2026-09-18T03:30:00Z')), 690);
+  assert.equal(dueSlot(at('2026-09-18T05:29:00Z')), 690);
+  assert.equal(dueSlot(at('2026-09-18T05:30:00Z')), 810);
+  assert.equal(dueSlot(at('2026-09-18T06:29:00Z')), 810);
+  assert.equal(dueSlot(at('2026-09-18T06:30:00Z')), 870);
+  assert.equal(dueSlot(at('2026-09-18T07:29:00Z')), 870);
+  assert.equal(dueSlot(at('2026-09-18T07:30:00Z')), 930);
+  assert.equal(dueSlot(at('2026-09-18T08:01:00Z')), 930);
 });
 
 test('source percentages round yang and derive yin while dashes inherit finger', () => {

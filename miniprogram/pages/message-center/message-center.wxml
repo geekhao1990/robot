@@ -1,7 +1,6 @@
 <view class="page">
   <view class="message-head">
-    <view><text class="head-title">全部消息</text><text wx:if="{{unread}}" class="head-count">{{unread}} 条未读</text></view>
-    <view wx:if="{{unread}}" class="read-all" bindtap="markAllRead">全部已读</view>
+    <text class="head-title">全部消息</text>
   </view>
 
   <view wx:if="{{loading}}" class="empty">正在加载...</view>

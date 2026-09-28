@@ -3,7 +3,13 @@ const { chinaToday, isTradingDay } = require('./trading-date');
 const { goldAccess } = require('./util');
 const { pushNotification } = require('./notifications');
 
-const SCHEDULE_MINUTES = [10 * 60, 14 * 60, 16 * 60];
+const SCHEDULE_MINUTES = [
+  10 * 60,
+  11 * 60 + 30,
+  13 * 60 + 30,
+  14 * 60 + 30,
+  15 * 60 + 30,
+];
 const CHECK_INTERVAL_MS = 30 * 1000;
 const RETRY_INTERVAL_MS = 5 * 60 * 1000;
 let timer = null;
@@ -276,7 +282,7 @@ function start() {
     console.log('[金手指同步] 未启用');
     return () => {};
   }
-  console.log('[金手指同步] 已启用，北京时间交易日 10:00、14:00、16:00 自动更新');
+  console.log('[金手指同步] 已启用，北京时间交易日 10:00、11:30、13:30、14:30、15:30 自动更新');
   setTimeout(() => tick().catch(console.error), 1000);
   timer = setInterval(() => tick().catch(console.error), CHECK_INTERVAL_MS);
   timer.unref?.();

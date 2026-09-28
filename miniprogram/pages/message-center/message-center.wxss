@@ -1,8 +1,6 @@
 .page { min-height: 100vh; padding: 0 24rpx 40rpx; color: #222; background: #f6f6f6; box-sizing: border-box; }
 .message-head { display: flex; align-items: center; justify-content: space-between; height: 96rpx; }
 .head-title { font-size: 30rpx; font-weight: 750; }
-.head-count { margin-left: 12rpx; color: #999; font-size: 22rpx; }
-.read-all { color: #ff2442; font-size: 24rpx; }
 .message-list { overflow: hidden; background: #fff; border-radius: 20rpx; }
 .message-item { position: relative; display: flex; align-items: center; min-height: 132rpx; padding: 22rpx 24rpx; border-bottom: 1rpx solid #eee; box-sizing: border-box; }
 .message-item:last-child { border-bottom: 0; }
