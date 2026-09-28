@@ -376,13 +376,6 @@ Page({
     if (note.images && note.images[0]) share.imageUrl = note.images[0];
     return share;
   },
-  goService() {
-    wx.setStorageSync('agent_return_target', {
-      path: `/pages/detail/detail?id=${encodeURIComponent(this.noteId || '')}`,
-      createdAt: Date.now(),
-    });
-    wx.switchTab({ url: '/pages/agent/agent' });
-  },
   goBack() { wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) }); },
   requireLogin() {
     if (this._loginRedirected) return;

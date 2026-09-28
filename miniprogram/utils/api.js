@@ -149,18 +149,6 @@ function getGoldFingerHistory(page = 1) {
   return request('GET', '/api/gold-finger/history', { auth: true, data: { page } });
 }
 
-function getOfficialGoldFinger() {
-  return request('GET', '/api/official/gold-finger', { auth: true });
-}
-
-function saveOfficialGoldFinger(date, payload) {
-  return request('PUT', '/api/official/gold-finger/' + encodeURIComponent(date), { auth: true, data: payload });
-}
-
-function deleteOfficialGoldFinger(date) {
-  return request('DELETE', '/api/official/gold-finger/' + encodeURIComponent(date), { auth: true });
-}
-
 function getCategories() {
   if (remote()) return request('GET', '/api/categories');
   return delay(data.categories, 0);
@@ -231,19 +219,6 @@ function mockSearch(kw) {
   return delay(list);
 }
 
-function getUserById(id) {
-  if (remote()) return http('/api/users/' + id);
-  return delay(data.userMap[id] || null);
-}
-
-function getNotesByAuthor(authorId) {
-  if (remote()) {
-    return http('/api/users/' + authorId + '/notes')
-      .then((list) => (list || []).map(decorate));
-  }
-  return delay(allNotes().filter((n) => n.authorId === authorId).map(decorate));
-}
-
 // 我点赞 / 收藏的笔记
 function getNotesByIds(ids) {
   if (remote()) {
@@ -282,22 +257,6 @@ function getDarkFundOrders() {
 
 function getDarkFundOrder(orderId) {
   return request('GET', '/api/dark-funds/orders/' + encodeURIComponent(orderId), { auth: true });
-}
-
-function getPoints() {
-  return request('GET', '/api/points', { auth: true });
-}
-
-function getPointTransactions(page = 1) {
-  return request('GET', '/api/points/transactions', { auth: true, data: { page } });
-}
-
-function createAdRewardTicket() {
-  return request('POST', '/api/points/ad-ticket', { auth: true });
-}
-
-function claimAdReward(ticket) {
-  return request('POST', '/api/points/ad-reward', { auth: true, data: { ticket } });
 }
 
 function getInvites() {
@@ -466,16 +425,11 @@ module.exports = {
   getResource,
   getGoldFinger,
   getGoldFingerHistory,
-  getOfficialGoldFinger,
-  saveOfficialGoldFinger,
-  deleteOfficialGoldFinger,
   getCategories,
   getHotSearch,
   getCachedAppSettings,
   getAppSettings,
   search,
-  getUserById,
-  getNotesByAuthor,
   getNotesByIds,
   getNotifications,
   getConversations,
@@ -498,10 +452,6 @@ module.exports = {
   createDarkFundOrder,
   getDarkFundOrders,
   getDarkFundOrder,
-  getPoints,
-  getPointTransactions,
-  createAdRewardTicket,
-  claimAdReward,
   getInvites,
   // 写操作
   uploadImage,

@@ -180,13 +180,6 @@ Page({
     return (err && (err.errMsg || (err.data && err.data.error) || err.message)) || '请稍后重试';
   },
   goLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
-  goPoints() {
-    if (!store.isLogin()) return this.goLogin();
-    wx.navigateTo({ url: '/pages/points/points' });
-  },
-  goMiniGame() {
-    wx.showToast({ title: '游戏赚米即将上线', icon: 'none' });
-  },
   goDarkFunds() {
     if (!store.isLogin()) return this.goLogin();
     const user = store.getUser();

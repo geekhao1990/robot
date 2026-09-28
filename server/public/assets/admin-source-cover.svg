@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f6f7fb"/><stop offset="1" stop-color="#e7ecf8"/></linearGradient></defs>
+  <rect width="800" height="1000" fill="url(#g)"/><rect x="60" y="95" width="680" height="575" rx="30" fill="#fff" stroke="#d9deea" stroke-width="4"/>
+  <rect x="60" y="95" width="170" height="575" rx="30" fill="#26344f"/><circle cx="145" cy="165" r="36" fill="#ff2442"/><rect x="105" y="245" width="80" height="13" rx="7" fill="#71809d"/><rect x="105" y="295" width="95" height="13" rx="7" fill="#71809d"/><rect x="105" y="345" width="70" height="13" rx="7" fill="#71809d"/>
+  <rect x="275" y="150" width="190" height="95" rx="18" fill="#edf2ff"/><rect x="500" y="150" width="190" height="95" rx="18" fill="#fff0f2"/><rect x="275" y="285" width="415" height="300" rx="18" fill="#f8f9fc"/>
+  <polyline points="310,505 365,440 425,470 485,350 545,405 650,315" fill="none" stroke="#ff2442" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="60" y="770" fill="#202b42" font-family="Arial,'Microsoft YaHei'" font-size="52" font-weight="700">后台管理系统源码</text><text x="62" y="840" fill="#68758e" font-family="Arial,'Microsoft YaHei'" font-size="29">响应式布局 · 接口对接 · 权限管理</text>
+  <rect x="60" y="885" width="270" height="58" rx="29" fill="#26344f"/><text x="105" y="925" fill="#fff" font-family="Arial,'Microsoft YaHei'" font-size="25">手机电脑自适应</text>
+</svg>

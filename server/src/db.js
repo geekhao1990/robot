@@ -375,17 +375,9 @@ function ensureSettings() {
     changed = true;
   }
   const configured = notes.find((n) => n.id === db.settings.featuredNoteId);
-  let goldNote = configured && configured.type === 'gold'
+  const goldNote = configured && configured.type === 'gold'
     ? configured
     : notes.find((n) => n.type === 'gold');
-  if (!goldNote) {
-    goldNote = configured || notes.find((n) => n.type === 'course') || notes[0];
-    if (goldNote) {
-      goldNote.type = 'gold';
-      goldNote.category = typeLabel('gold');
-      changed = true;
-    }
-  }
   if (goldNote && (goldNote.courseUrl || goldNote.baiduUrl || goldNote.quarkUrl)) {
     Object.assign(goldNote, normalizeResourceLinks(goldNote, 'gold'));
     changed = true;

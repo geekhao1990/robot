@@ -55,6 +55,33 @@ const notes = [
   note({ id: 'n8', authorId: 'u5', title: '周末在家做一份巴斯克蛋糕', ratio: 1.1, images: ['basque-cake', 'afternoon-coffee'], content: '不追求完美的裂纹，刚出炉时的焦香就已经很满足。配一杯咖啡，周末下午会变得特别慢。', tags: ['烘焙日常', '甜品', '周末生活'], likes: 61, collects: 42, hours: 30 }),
 ];
 
+// 当前内容库只保留网站源码类教程，避免首次部署重新写入历史演示笔记。
+notes.splice(0, notes.length,
+  note({
+    id: 'source-code-1', authorId: 'u6', type: 'course',
+    title: '从零搭建个人网站｜完整源码结构讲解', ratio: 1.25,
+    images: [],
+    content: '这篇笔记从项目目录开始，讲清 HTML、CSS 和 JavaScript 各自负责什么，并介绍页面布局、响应式适配和部署上线的基本流程。适合第一次接触网站开发的人按步骤学习。',
+    tags: ['网站源码', '前端开发', '入门教程'], likes: 18, collects: 12, hours: 1,
+  }),
+  note({
+    id: 'source-code-2', authorId: 'u6', type: 'course',
+    title: '响应式后台管理系统源码｜手机电脑都能用', ratio: 1.25,
+    images: [],
+    content: '整理了一套后台管理系统的常用模块，包括登录、列表、搜索、表单、状态切换和接口请求。页面同时适配手机与电脑，可用于学习后台项目的结构和交互实现。',
+    tags: ['后台源码', '响应式布局', '网页开发'], likes: 23, collects: 16, hours: 3,
+  })
+);
+notes[0].images = ['https://app.nankaitechschool.com/assets/source-code-cover.svg'];
+notes[0].cover = notes[0].images[0];
+notes[1].images = ['https://app.nankaitechschool.com/assets/admin-source-cover.svg'];
+notes[1].cover = notes[1].images[0];
+notes.forEach((item) => {
+  item.free = true;
+  item.visible = true;
+  item.riskDisclaimerEnabled = false;
+});
+
 const categories = ['资料', '课程', '金手指', '广告'];
 const hotSearch = ['慢早餐', '桌面收纳', '通勤好物', '一人食', '手机摄影', '周末生活', '烘焙', '居家办公'];
 const admins = [{ username: 'admin', password: 'admin123' }];
@@ -63,7 +90,7 @@ const admins = [{ username: 'admin', password: 'admin123' }];
 const userState = {};
 // 每个用户的消息数据（通知/会话），首次访问时按模板懒初始化。
 const messageData = {};
-const settings = { rewardedAdEnabled: false, featuredNoteId: 'n3' };
+const settings = { rewardedAdEnabled: false, featuredNoteId: '' };
 
 module.exports = function seed() {
   return {
