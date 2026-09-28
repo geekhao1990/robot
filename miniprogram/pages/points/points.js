@@ -8,7 +8,6 @@ Page({
     watching: false,
     adEnabled: false,
     balance: 0,
-    cashValue: '0.00',
     todayViews: 0,
     todayEarned: 0,
     remaining: 40,
@@ -18,7 +17,6 @@ Page({
     dailyLimit: 40,
     perAd: 5,
     completionBonus: 200,
-    pointsPerYuan: 200,
     transactions: [],
     transactionModalVisible: false,
     transactionLoading: false,
@@ -94,7 +92,6 @@ Page({
     const todayViews = Number(summary.todayViews) || 0;
     this.setData({
       balance: Number(summary.balance) || 0,
-      cashValue: Number(summary.cashValue || 0).toFixed(2),
       todayViews,
       todayEarned: Number(summary.todayEarned) || 0,
       remaining: Number(summary.remaining) || 0,
@@ -104,7 +101,6 @@ Page({
       dailyLimit,
       perAd: Number(rules.perAd) || 5,
       completionBonus: Number(rules.completionBonus) || 200,
-      pointsPerYuan: Number(rules.pointsPerYuan) || 200,
     });
   },
 
@@ -186,10 +182,6 @@ Page({
   errorMessage(error, fallback) {
     const data = error && error.data;
     return (data && (data.message || data.error)) || fallback;
-  },
-
-  openWithdraw() {
-    wx.navigateTo({ url: '/pages/withdraw/withdraw' });
   },
 
   openTransactionModal() {

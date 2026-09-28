@@ -25,18 +25,8 @@ page { background: #f7f7f7; }
 
 .balance-label { font-size: 26rpx; opacity: .86; }
 .balance-value { margin-top: 8rpx; font-size: 72rpx; line-height: 1.15; font-weight: 800; }
-.balance-cash { margin-top: 6rpx; font-size: 24rpx; opacity: .78; }
 .balance-actions { display: flex; align-items: center; width: 100%; margin-top: 30rpx; }
-.balance-action {
-  width: 210rpx;
-  padding: 17rpx 0;
-  text-align: center;
-  font-size: 25rpx;
-  background: rgba(255,255,255,.18);
-  border: 1rpx solid rgba(255,255,255,.25);
-  border-radius: 999rpx;
-}
-.balance-detail-link { margin-left: 28rpx; padding: 12rpx 4rpx; color: #fff; font-size: 24rpx; text-decoration: underline; text-underline-offset: 5rpx; opacity: .9; }
+.balance-detail-link { padding: 12rpx 4rpx; color: #fff; font-size: 24rpx; text-decoration: underline; text-underline-offset: 5rpx; opacity: .9; }
 
 .task-card {
   display: flex;
