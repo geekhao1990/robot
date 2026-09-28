@@ -1,0 +1,183 @@
+.follow.followed {
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #888;
+}
+
+.small-action.active {
+  color: #ff2442;
+}
+
+.small-action.disabled {
+  color: #c8c8c8;
+  pointer-events: none;
+}
+
+.profile-library {
+  margin: 0 10px 12px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.profile-tabs {
+  display: flex;
+  height: 48px;
+  border-bottom: 1px solid #eee;
+}
+
+.profile-tabs button {
+  position: relative;
+  flex: 1;
+  border: 0;
+  background: none;
+  color: #888;
+}
+
+.profile-tabs button.active {
+  color: #222;
+  font-weight: 700;
+}
+
+.profile-tabs button.active::after {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 24px;
+  height: 3px;
+  content: '';
+  transform: translateX(-50%);
+  border-radius: 99px;
+  background: #ff2442;
+}
+
+.profile-notes {
+  padding: 7px;
+}
+
+.quick-item[data-action='messages'] {
+  position: relative;
+}
+
+.web-menu-badge,
+.web-tab-badge {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: 2px solid #fff;
+  border-radius: 99px;
+  background: #ff2442;
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.web-menu-badge {
+  top: 4px;
+  right: 8px;
+}
+
+.tabs button {
+  overflow: visible;
+}
+
+.web-tab-badge {
+  top: 5px;
+  right: calc(50% - 52px);
+}
+
+.messages-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.message-list {
+  margin-top: 10px;
+  background: #fff;
+}
+
+.message-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 76px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eee;
+}
+
+.message-item.unread {
+  background: #fffafb;
+}
+
+.message-icon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-right: 11px;
+  border-radius: 50%;
+  background: #fff0d0;
+  color: #a66b00;
+  font-weight: 800;
+}
+
+.message-icon.dark_ready {
+  background: #ffe8ec;
+  color: #ff2442;
+}
+
+.message-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.message-title-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.message-title-row strong {
+  overflow: hidden;
+  flex: 1;
+  color: #333;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-title-row time {
+  color: #bbb;
+  font-size: 10px;
+}
+
+.message-body p {
+  overflow: hidden;
+  margin: 6px 0 0;
+  color: #888;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unread-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-left: 8px;
+  border-radius: 50%;
+  background: #ff2442;
+}
+
+.message-arrow {
+  margin-left: 8px;
+  color: #bbb;
+  font-size: 23px;
+  font-weight: 300;
+}
