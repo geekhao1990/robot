@@ -8,6 +8,7 @@ const { createRouter, HttpError } = require('./router');
 const { handleUpload } = require('./upload');
 const audit = require('./audit');
 const goldFingerSync = require('./gold-finger-sync');
+const webWechatLogin = require('./web-wechat-login');
 
 const router = createRouter();
 require('./routes/public')(router, HttpError);
@@ -50,6 +51,23 @@ const server = http.createServer((req, res) => {
 
   const parsed = url.parse(req.url, true);
   const pathname = parsed.pathname;
+
+  if (pathname === '/api/web/wechat/start' && req.method === 'GET') {
+    try {
+      res.writeHead(302, { Location: webWechatLogin.loginUrl() });
+      return res.end();
+    } catch (error) {
+      return sendJson(res, error.status || 500, { error: error.message || '微信登录启动失败' });
+    }
+  }
+  if (pathname === '/api/web/wechat/callback' && req.method === 'GET') {
+    return webWechatLogin.complete(parsed.query)
+      .then((token) => {
+        res.writeHead(302, { Location: `/web?wechat_token=${encodeURIComponent(token)}` });
+        res.end();
+      })
+      .catch((error) => sendJson(res, error.status || 500, { error: error.message || '微信登录失败' }));
+  }
 
   // Web 前台；管理后台继续使用 /admin。
   if (pathname === '/') { res.writeHead(302, { Location: '/web' }); return res.end(); }

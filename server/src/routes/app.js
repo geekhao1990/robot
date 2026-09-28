@@ -5,6 +5,7 @@ const { pubUser, pubNote } = require('../util');
 const auth = require('../auth');
 const crypto = require('crypto');
 const { code2Session } = require('../wechat');
+const webWechatLogin = require('../web-wechat-login');
 const { canViewNote } = require('../note-access');
 
 function getState(userId) {
@@ -266,14 +267,17 @@ module.exports = function register(router, HttpError) {
     const d = db.get();
     const b = ctx.body || {};
     let openid;
+    let session = null;
     if (b.preview === true) {
       if (!previewLoginAllowed(ctx)) throw new HttpError(403, '预览登录仅限本地开发环境');
       openid = 'local-preview-user';
     } else {
-      const session = await code2Session(b.code);
+      session = await code2Session(b.code);
       openid = session.openid;
     }
-    let user = d.users.find((u) => u.wxOpenId === openid);
+    let user = session && session.unionid
+      ? d.users.find((u) => u.wxUnionId === session.unionid) || d.users.find((u) => u.wxOpenId === openid)
+      : d.users.find((u) => u.wxOpenId === openid);
     let created = false;
     if (!user) {
       user = {
@@ -302,6 +306,8 @@ module.exports = function register(router, HttpError) {
       d.users.push(user);
       created = true;
     } else {
+      user.wxOpenId = openid;
+      if (session && session.unionid) user.wxUnionId = session.unionid;
       // 同步昵称头像
       if (b.name) user.name = b.name;
       if (b.avatar) user.avatar = b.avatar;
@@ -312,6 +318,8 @@ module.exports = function register(router, HttpError) {
     const token = auth.issue(user.id);
     return { token, user: pubUser(user, true) };
   });
+
+  router.get('/api/web/wechat/status', () => ({ enabled: webWechatLogin.configured() }));
 
   // Web 前台使用浏览器本地生成的高熵设备密钥建立独立账号，不依赖微信能力。
   router.post('/api/web/login', (ctx) => {
@@ -325,6 +333,7 @@ module.exports = function register(router, HttpError) {
       user = {
         id: 'web_' + crypto.createHash('sha256').update(openid).digest('hex').slice(0, 16),
         wxOpenId: openid,
+        wxUnionId: session && session.unionid ? session.unionid : '',
         name: 'Web用户',
         avatar: 'https://app.nankaitechschool.com/assets/avatars/author-68.jpg',
         desc: 'Web 前台用户',

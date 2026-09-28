@@ -12,7 +12,7 @@ function pubUser(user) {
   if (!user) return user;
   const darkFundQuota = refreshDarkFundQuota(user);
   const {
-    wxOpenId, phone, phoneCountryCode, phoneBoundAt,
+    wxOpenId, wxWebOpenId, wxUnionId, phone, phoneCountryCode, phoneBoundAt,
     vip, vipPlan, vipExpire, vipPermanent, vipActivatedAt,
     darkFundVipRemaining, darkFundVipMonth,
     darkFundServiceMonth,
