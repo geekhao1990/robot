@@ -163,6 +163,7 @@ const APP_SETTINGS_CACHE_KEY = 'niulai_app_settings';
 function baseAppSettings() {
   return {
     rewardedAdEnabled: config.rewardedAdEnabled === true,
+    rewardedVideoAdUnitId: String(config.rewardedVideoAdUnitId || ''),
     goldAccess: false,
     featuredNoteId: config.featuredNoteId || 'n3',
   };
@@ -170,6 +171,9 @@ function baseAppSettings() {
 function normalizeAppSettings(settings, fallback = baseAppSettings()) {
   return {
     rewardedAdEnabled: settings && typeof settings.rewardedAdEnabled === 'boolean' ? settings.rewardedAdEnabled : fallback.rewardedAdEnabled,
+    rewardedVideoAdUnitId: settings && typeof settings.rewardedVideoAdUnitId === 'string'
+      ? settings.rewardedVideoAdUnitId
+      : fallback.rewardedVideoAdUnitId,
     goldAccess: settings && settings.goldAccess === true,
     featuredNoteId: settings && typeof settings.featuredNoteId === 'string' ? settings.featuredNoteId : fallback.featuredNoteId,
   };

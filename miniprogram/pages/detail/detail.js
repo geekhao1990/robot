@@ -17,6 +17,32 @@ function isDarkFundNote(note) {
   ));
 }
 
+function rewardedAdErrorText(error) {
+  const code = Number(error && (error.errCode || error.err_code));
+  const messages = {
+    1000: '微信广告服务暂时异常',
+    1001: '广告请求参数错误',
+    1002: '广告位无效，请检查广告位 ID',
+    1003: '微信广告组件内部错误',
+    1004: '当前暂无合适的广告，请稍后再试',
+    1005: '广告位正在审核中',
+    1006: '广告位审核未通过',
+    1007: '当前小程序的广告能力已被限制',
+    1008: '该广告位已关闭',
+    1009: '广告加载超时，请检查网络后重试',
+    1100: '操作过于频繁，请稍后再试',
+    1101: '广告已过期，正在重新加载',
+    1102: '当前微信版本不支持该广告能力',
+    1103: '当前运行环境无法展示广告',
+    1104: '网络异常，请检查网络后重试',
+    1105: '广告尚未加载成功，请稍后再试',
+    1106: '广告展示失败，请稍后再试',
+    2000: '微信广告服务返回未知错误',
+  };
+  const message = messages[code] || String((error && error.errMsg) || '广告加载失败，请稍后再试');
+  return { code: Number.isFinite(code) ? code : '', message };
+}
+
 function darkArticleParagraphs(note, content) {
   const parts = String(content || '').split(/\n\s*\n/).map((item) => item.trim()).filter(Boolean);
   const paragraphs = [parts[0] || '', parts[1] || '', parts.slice(2).join('\n\n')];
@@ -274,11 +300,28 @@ Page({
     return this.showRewardedAd(() => this.showResource());
   },
   showRewardedAd(onComplete) {
-    const adUnitId = config.rewardedVideoAdUnitId;
+    return api.getAppSettings().then(
+      (settings) => {
+        const adUnitId = String((settings && settings.rewardedVideoAdUnitId) || config.rewardedVideoAdUnitId || '').trim();
+        return this.openRewardedAd(adUnitId, onComplete);
+      },
+      () => this.openRewardedAd(String(config.rewardedVideoAdUnitId || '').trim(), onComplete),
+    );
+  },
+  showRewardedAdError(error) {
+    const detail = rewardedAdErrorText(error);
+    console.error('[RewardedVideoAd]', error || detail);
+    return wx.showModal({
+      title: '广告暂时不可用',
+      content: `${detail.message}${detail.code ? `（错误码 ${detail.code}）` : ''}`,
+      showCancel: false,
+    });
+  },
+  openRewardedAd(adUnitId, onComplete) {
     if (!adUnitId || /x{4,}/i.test(adUnitId)) {
       return wx.showModal({
         title: '暂时无法领取',
-        content: '领取服务暂未配置完成，请稍后再试。',
+        content: '激励视频广告位尚未配置，请联系管理员。',
         showCancel: false,
       });
     }
@@ -288,16 +331,33 @@ Page({
       this.rewardAd.onClose((res) => {
         const complete = this._rewardedAdComplete;
         this._rewardedAdComplete = null;
-        if ((!res || res.isEnded) && complete) complete();
-        else toast('看完广告后才能获取内容');
+        this._rewardedAdShowing = false;
+        // 旧基础库不返回 res；少数客户端返回空对象。只有明确返回 false 才视为中途退出。
+        if (!res || res.isEnded !== false) {
+          if (complete) complete();
+          return;
+        }
+        if (complete) toast('广告尚未播放完成，请看完后再领取');
       });
-      this.rewardAd.onError(() => {
-        this._rewardedAdComplete = null;
-        toast('广告加载失败，请稍后再试');
+      this.rewardAd.onError((error) => {
+        // 已经展示后的客户端异常仍可能继续触发 onClose，不能提前清空领取回调。
+        this._rewardedAdLastError = error;
+        console.error('[RewardedVideoAd:onError]', error);
+        if (this._rewardedAdShowing) this.showRewardedAdError(error);
       });
     }
     this._rewardedAdComplete = onComplete;
-    this.rewardAd.show().catch(() => this.rewardAd.load().then(() => this.rewardAd.show()).catch(() => {}));
+    this._rewardedAdLastError = null;
+    const showAd = () => this.rewardAd.show().then(() => {
+      this._rewardedAdShowing = true;
+    });
+    return showAd().catch(() => this.rewardAd.load()
+      .then(showAd)
+      .catch((error) => {
+        this._rewardedAdShowing = false;
+        this._rewardedAdComplete = null;
+        return this.showRewardedAdError(this._rewardedAdLastError || error);
+      }));
   },
   openGoldFeature() {
     if (this._checkingGoldFeature) return;

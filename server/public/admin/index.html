@@ -1200,6 +1200,11 @@ function renderSettings() {
           <div class="hint">免费笔记直接展示领取链接；收费笔记必须看完激励广告后领取。</div>
         </div>
         <div class="field">
+          <label>激励视频广告位 ID</label>
+          <input id="settingRewardedAdUnitId" value="${esc(settings.rewardedVideoAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+          <div class="hint">在微信小程序后台创建“激励视频广告位”后填写；留空时收费笔记无法领取。</div>
+        </div>
+        <div class="field">
           <label>热门搜索</label>
           <textarea id="settingHotSearch" placeholder="每行填写一个热门搜索词">${esc((settings.hotSearch || []).join('\n'))}</textarea>
           <div class="hint">每行一个，最多20项；保存后展示在小程序搜索页。</div>
@@ -1213,6 +1218,7 @@ function saveSettings() {
   const body = {
     featuredNoteId: document.getElementById('settingFeatured').value,
     rewardedAdEnabled: true,
+    rewardedVideoAdUnitId: document.getElementById('settingRewardedAdUnitId').value.trim(),
     hotSearch: Array.from(new Set(document.getElementById('settingHotSearch').value.split(/[\n,，]/).map((item) => item.trim()).filter(Boolean))),
   };
   api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(body) })

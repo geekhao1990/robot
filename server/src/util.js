@@ -51,6 +51,10 @@ function pubSettings(data) {
     || notes.find((n) => n.type === 'gold');
   return {
     rewardedAdEnabled: raw.rewardedAdEnabled === true,
+    rewardedVideoAdUnitId: /^adunit-[a-zA-Z0-9_-]+$/.test(String(raw.rewardedVideoAdUnitId || '').trim())
+      && !/x{4,}/i.test(String(raw.rewardedVideoAdUnitId || ''))
+      ? String(raw.rewardedVideoAdUnitId).trim()
+      : '',
     featuredNoteId: featured ? featured.id : '',
   };
 }
