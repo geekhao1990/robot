@@ -37,6 +37,8 @@ function rewardedAdErrorText(error) {
     1104: '网络异常，请检查网络后重试',
     1105: '广告尚未加载成功，请稍后再试',
     1106: '广告展示失败，请稍后再试',
+    2002: '距离上次广告展示时间太短，请稍后再试',
+    2003: '广告正在播放，请勿重复点击',
     2000: '微信广告服务返回未知错误',
   };
   const message = messages[code] || String((error && error.errMsg) || '广告加载失败，请稍后再试');
@@ -75,6 +77,7 @@ Page({
     inviteCode: '',
     resourceModalVisible: false,
     resourceOptions: [],
+    resourceClaiming: false,
     pageRenderLoading: true,
   },
 
@@ -295,9 +298,16 @@ Page({
   },
   handleGetResource(skipAd = false) {
     const note = this.data.note;
+    if (this._resourceClaiming) return;
     if (!note.hasResource) return toast('管理员尚未配置获取地址');
-    if (skipAd) return this.showResource();
-    return this.showRewardedAd(() => this.showResource());
+    this._resourceClaiming = true;
+    this.setData({ resourceClaiming: true });
+    if (skipAd) return this.showResource().finally(() => this.releaseResourceClaim());
+    return this.showRewardedAd(() => this.showResource().finally(() => this.releaseResourceClaim()));
+  },
+  releaseResourceClaim() {
+    this._resourceClaiming = false;
+    if (this.data.resourceClaiming) this.setData({ resourceClaiming: false });
   },
   showRewardedAd(onComplete) {
     return api.getAppSettings().then(
@@ -319,13 +329,17 @@ Page({
   },
   openRewardedAd(adUnitId, onComplete) {
     if (!adUnitId || /x{4,}/i.test(adUnitId)) {
+      this.releaseResourceClaim();
       return wx.showModal({
         title: '暂时无法领取',
         content: '激励视频广告位尚未配置，请联系管理员。',
         showCancel: false,
       });
     }
-    if (!wx.createRewardedVideoAd) return toast('当前微信版本不支持激励广告');
+    if (!wx.createRewardedVideoAd) {
+      this.releaseResourceClaim();
+      return toast('当前微信版本不支持激励广告');
+    }
     if (!this.rewardAd) {
       this.rewardAd = wx.createRewardedVideoAd({ adUnitId });
       this.rewardAd.onClose((res) => {
@@ -335,8 +349,10 @@ Page({
         // 旧基础库不返回 res；少数客户端返回空对象。只有明确返回 false 才视为中途退出。
         if (!res || res.isEnded !== false) {
           if (complete) complete();
+          else this.releaseResourceClaim();
           return;
         }
+        this.releaseResourceClaim();
         if (complete) toast('广告尚未播放完成，请看完后再领取');
       });
       this.rewardAd.onError((error) => {
@@ -351,13 +367,24 @@ Page({
     const showAd = () => this.rewardAd.show().then(() => {
       this._rewardedAdShowing = true;
     });
-    return showAd().catch(() => this.rewardAd.load()
-      .then(showAd)
-      .catch((error) => {
+    return showAd().catch((firstError) => {
+      const firstCause = this._rewardedAdLastError || firstError;
+      const firstCode = Number(firstCause && (firstCause.errCode || firstCause.err_code));
+      if (firstCode === 2003) {
         this._rewardedAdShowing = false;
         this._rewardedAdComplete = null;
-        return this.showRewardedAdError(this._rewardedAdLastError || error);
-      }));
+        this.releaseResourceClaim();
+        return this.showRewardedAdError(firstCause);
+      }
+      return this.rewardAd.load()
+        .then(showAd)
+        .catch((error) => {
+          this._rewardedAdShowing = false;
+          this._rewardedAdComplete = null;
+          this.releaseResourceClaim();
+          return this.showRewardedAdError(this._rewardedAdLastError || error);
+        });
+    });
   },
   openGoldFeature() {
     if (this._checkingGoldFeature) return;
@@ -384,7 +411,7 @@ Page({
       });
   },
   showResource() {
-    api.getResource(this.data.note.id).then((result) => {
+    return api.getResource(this.data.note.id).then((result) => {
       let resources = Array.isArray(result.resources) ? result.resources : [];
       if (!resources.length && result.url) {
         const provider = /quark\.cn/i.test(result.url) ? 'quark' : 'baidu';

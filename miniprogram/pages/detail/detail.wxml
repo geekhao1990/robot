@@ -43,7 +43,9 @@
       <view class="tags"><text wx:for="{{note.tags}}" wx:key="*this" class="tag">#{{item}}</text></view>
       <view class="meta">{{timeText}}</view>
       <view class="actionbar">
-        <view class="course-btn" bindtap="onGetResource">{{resourceLabel}}</view>
+        <view class="course-btn {{resourceClaiming ? 'disabled' : ''}}" bindtap="onGetResource">
+          {{resourceClaiming ? '加载中…' : resourceLabel}}
+        </view>
         <view class="action" bindtap="onLike">
           <view class="ic heart {{note.liked ? 'active' : ''}}"></view><text class="num">{{likeText}}</text>
         </view>

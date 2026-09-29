@@ -231,6 +231,10 @@
   border-radius: 999rpx;
   margin-right: 4rpx;
 }
+.course-btn.disabled {
+  opacity: .58;
+  pointer-events: none;
+}
 /* 评论点赞（竖排小爱心） */
 .c-like {
   display: flex;
