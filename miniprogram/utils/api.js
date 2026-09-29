@@ -164,6 +164,11 @@ function baseAppSettings() {
   return {
     rewardedAdEnabled: config.rewardedAdEnabled === true,
     rewardedVideoAdUnitId: String(config.rewardedVideoAdUnitId || ''),
+    articleAdUnitId: String(config.darkArticleAdUnitId || ''),
+    goldFingerAdUnitId: String(config.goldFingerAdUnitId || ''),
+    darkFundsQueryAdUnitId: String(config.darkFundsQueryAdUnitId || ''),
+    profileAdUnitId: String(config.profileAdUnitId || ''),
+    messageCenterAdUnitId: String(config.messageCenterAdUnitId || ''),
     goldAccess: false,
     featuredNoteId: config.featuredNoteId || 'n3',
   };
@@ -174,6 +179,11 @@ function normalizeAppSettings(settings, fallback = baseAppSettings()) {
     rewardedVideoAdUnitId: settings && typeof settings.rewardedVideoAdUnitId === 'string'
       ? settings.rewardedVideoAdUnitId
       : fallback.rewardedVideoAdUnitId,
+    articleAdUnitId: settings && typeof settings.articleAdUnitId === 'string' ? settings.articleAdUnitId : fallback.articleAdUnitId,
+    goldFingerAdUnitId: settings && typeof settings.goldFingerAdUnitId === 'string' ? settings.goldFingerAdUnitId : fallback.goldFingerAdUnitId,
+    darkFundsQueryAdUnitId: settings && typeof settings.darkFundsQueryAdUnitId === 'string' ? settings.darkFundsQueryAdUnitId : fallback.darkFundsQueryAdUnitId,
+    profileAdUnitId: settings && typeof settings.profileAdUnitId === 'string' ? settings.profileAdUnitId : fallback.profileAdUnitId,
+    messageCenterAdUnitId: settings && typeof settings.messageCenterAdUnitId === 'string' ? settings.messageCenterAdUnitId : fallback.messageCenterAdUnitId,
     goldAccess: settings && settings.goldAccess === true,
     featuredNoteId: settings && typeof settings.featuredNoteId === 'string' ? settings.featuredNoteId : fallback.featuredNoteId,
   };

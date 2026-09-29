@@ -1,4 +1,7 @@
 <view class="page">
+  <view wx:if="{{messageCenterAdUnitId && !messageCenterAdLoadFailed}}" class="message-ad-slot">
+    <ad unit-id="{{messageCenterAdUnitId}}" binderror="onMessageCenterAdError" />
+  </view>
   <view class="message-head">
     <text class="head-title">全部消息</text>
   </view>

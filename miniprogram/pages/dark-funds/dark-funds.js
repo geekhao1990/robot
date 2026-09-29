@@ -46,6 +46,10 @@ Page({
     }
     const tab = options && options.tab === 'history' ? 'history' : 'query';
     this.setData({ tab });
+    api.getAppSettings().then((settings) => {
+      const id = String((settings && settings.darkFundsQueryAdUnitId) || config.darkFundsQueryAdUnitId || '');
+      this.setData({ queryAdUnitId: /^adunit-/i.test(id) ? id : '', queryAdLoadFailed: false });
+    });
     this.loadTradeDate();
   },
   onShow() {

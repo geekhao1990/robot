@@ -49,12 +49,18 @@ function pubSettings(data) {
   const raw = (data && data.settings) || {};
   const featured = notes.find((n) => n.id === raw.featuredNoteId && n.type === 'gold')
     || notes.find((n) => n.type === 'gold');
+  const publicAdUnitId = (value) => {
+    const id = String(value || '').trim();
+    return /^adunit-[a-zA-Z0-9_-]+$/.test(id) && !/x{4,}/i.test(id) ? id : '';
+  };
   return {
     rewardedAdEnabled: raw.rewardedAdEnabled === true,
-    rewardedVideoAdUnitId: /^adunit-[a-zA-Z0-9_-]+$/.test(String(raw.rewardedVideoAdUnitId || '').trim())
-      && !/x{4,}/i.test(String(raw.rewardedVideoAdUnitId || ''))
-      ? String(raw.rewardedVideoAdUnitId).trim()
-      : '',
+    rewardedVideoAdUnitId: publicAdUnitId(raw.rewardedVideoAdUnitId),
+    articleAdUnitId: publicAdUnitId(raw.articleAdUnitId),
+    goldFingerAdUnitId: publicAdUnitId(raw.goldFingerAdUnitId),
+    darkFundsQueryAdUnitId: publicAdUnitId(raw.darkFundsQueryAdUnitId),
+    profileAdUnitId: publicAdUnitId(raw.profileAdUnitId),
+    messageCenterAdUnitId: publicAdUnitId(raw.messageCenterAdUnitId),
     featuredNoteId: featured ? featured.id : '',
   };
 }

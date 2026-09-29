@@ -1,5 +1,6 @@
 const api = require('../../utils/api');
 const store = require('../../utils/store');
+const config = require('../../utils/config');
 
 function formatTime(timestamp) {
   const value = Number(timestamp) || 0;
@@ -25,12 +26,19 @@ Page({
     loading: true,
     list: [],
     unread: 0,
+    messageCenterAdUnitId: /^adunit-/i.test(String(config.messageCenterAdUnitId || '')) ? String(config.messageCenterAdUnitId) : '',
+    messageCenterAdLoadFailed: false,
   },
 
   onLoad() {
     if (!store.isLogin()) return wx.redirectTo({ url: '/pages/login/login' });
+    api.getAppSettings().then((settings) => {
+      const id = String((settings && settings.messageCenterAdUnitId) || config.messageCenterAdUnitId || '');
+      this.setData({ messageCenterAdUnitId: /^adunit-/i.test(id) ? id : '', messageCenterAdLoadFailed: false });
+    });
     this.load();
   },
+  onMessageCenterAdError() { this.setData({ messageCenterAdLoadFailed: true }); },
 
   load() {
     this.setData({ loading: true });

@@ -29,4 +29,8 @@ module.exports = {
   goldFingerAdUnitId: '',
   // 暗盘“六位神奇数字”查询页的横幅广告位；留空时显示占位区。
   darkFundsQueryAdUnitId: '',
+  // “我”页面功能图标与收藏/赞过之间的横幅广告位。
+  profileAdUnitId: '',
+  // 消息中心“全部消息”上方的横幅广告位。
+  messageCenterAdUnitId: '',
 };

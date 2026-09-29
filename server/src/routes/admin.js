@@ -98,10 +98,22 @@ module.exports = function register(router, HttpError) {
     if (typeof b.rewardedAdEnabled !== 'boolean') {
       throw new HttpError(400, '广告开关必须为布尔值');
     }
-    const rewardedVideoAdUnitId = String(b.rewardedVideoAdUnitId || '').trim();
-    if (rewardedVideoAdUnitId && (!/^adunit-[a-zA-Z0-9_-]+$/.test(rewardedVideoAdUnitId) || /x{4,}/i.test(rewardedVideoAdUnitId))) {
-      throw new HttpError(400, '请输入有效的激励视频广告位 ID');
-    }
+    const adUnitFields = [
+      ['rewardedVideoAdUnitId', '激励视频'],
+      ['articleAdUnitId', '笔记正文'],
+      ['goldFingerAdUnitId', '金手指'],
+      ['darkFundsQueryAdUnitId', '暗盘查询'],
+      ['profileAdUnitId', '个人中心'],
+      ['messageCenterAdUnitId', '消息中心'],
+    ];
+    const adUnits = {};
+    adUnitFields.forEach(([key, label]) => {
+      const id = String(b[key] || '').trim();
+      if (id && (!/^adunit-[a-zA-Z0-9_-]+$/.test(id) || /x{4,}/i.test(id))) {
+        throw new HttpError(400, `请输入有效的${label}广告位 ID`);
+      }
+      adUnits[key] = id;
+    });
     if (!Array.isArray(b.hotSearch)) {
       throw new HttpError(400, '热门搜索格式不正确');
     }
@@ -113,8 +125,8 @@ module.exports = function register(router, HttpError) {
       throw new HttpError(400, '请选择金手指类型的入口笔记');
     }
     d.settings = {
-      rewardedAdEnabled: !!rewardedVideoAdUnitId,
-      rewardedVideoAdUnitId,
+      rewardedAdEnabled: !!adUnits.rewardedVideoAdUnitId,
+      ...adUnits,
       featuredNoteId: b.featuredNoteId,
     };
     d.hotSearch = hotSearch;

@@ -34,6 +34,10 @@ Page({
       navBarHeight: app.globalData.navBarHeight,
       headerHeight: app.globalData.statusBarHeight + app.globalData.navBarHeight,
     });
+    api.getAppSettings().then((settings) => {
+      const id = String((settings && settings.goldFingerAdUnitId) || config.goldFingerAdUnitId || '');
+      this.setData({ goldFingerAdUnitId: /^adunit-/i.test(id) ? id : '', adLoadFailed: false });
+    });
     if (!store.isLogin()) return wx.redirectTo({ url: '/pages/login/login' });
     this.loadData();
   },

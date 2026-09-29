@@ -27,11 +27,18 @@ Page({
     refreshReady: false,
     profileScrollTop: 0,
     messageUnread: 0,
+    profileAdUnitId: /^adunit-/i.test(String(config.profileAdUnitId || '')) ? String(config.profileAdUnitId) : '',
+    profileAdLoadFailed: false,
   },
   onLoad() {
     const app = getApp();
     this.setData({ statusBarHeight: app.globalData.statusBarHeight, navBarHeight: app.globalData.navBarHeight });
+    api.getAppSettings().then((settings) => {
+      const id = String((settings && settings.profileAdUnitId) || config.profileAdUnitId || '');
+      this.setData({ profileAdUnitId: /^adunit-/i.test(id) ? id : '', profileAdLoadFailed: false });
+    });
   },
+  onProfileAdError() { this.setData({ profileAdLoadFailed: true }); },
   onShow() {
     refreshTabBar(this, 2);
     if (this._returningFromDetail) {

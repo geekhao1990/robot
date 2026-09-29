@@ -1205,6 +1205,27 @@ function renderSettings() {
           <div class="hint">在微信小程序后台创建“激励视频广告位”后填写；留空时收费笔记无法领取。</div>
         </div>
         <div class="field">
+          <label>笔记正文末尾广告位 ID</label>
+          <input id="settingArticleAdUnitId" value="${esc(settings.articleAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+        </div>
+        <div class="field">
+          <label>金手指详情广告位 ID</label>
+          <input id="settingGoldFingerAdUnitId" value="${esc(settings.goldFingerAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+        </div>
+        <div class="field">
+          <label>暗盘查询页广告位 ID</label>
+          <input id="settingDarkFundsQueryAdUnitId" value="${esc(settings.darkFundsQueryAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+        </div>
+        <div class="field">
+          <label>“我”页面广告位 ID</label>
+          <input id="settingProfileAdUnitId" value="${esc(settings.profileAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+        </div>
+        <div class="field">
+          <label>消息中心广告位 ID</label>
+          <input id="settingMessageCenterAdUnitId" value="${esc(settings.messageCenterAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+          <div class="hint">以上均创建横幅广告位；建议每个位置使用独立广告位，便于统计效果。留空则不展示。</div>
+        </div>
+        <div class="field">
           <label>热门搜索</label>
           <textarea id="settingHotSearch" placeholder="每行填写一个热门搜索词">${esc((settings.hotSearch || []).join('\n'))}</textarea>
           <div class="hint">每行一个，最多20项；保存后展示在小程序搜索页。</div>
@@ -1219,6 +1240,11 @@ function saveSettings() {
     featuredNoteId: document.getElementById('settingFeatured').value,
     rewardedAdEnabled: true,
     rewardedVideoAdUnitId: document.getElementById('settingRewardedAdUnitId').value.trim(),
+    articleAdUnitId: document.getElementById('settingArticleAdUnitId').value.trim(),
+    goldFingerAdUnitId: document.getElementById('settingGoldFingerAdUnitId').value.trim(),
+    darkFundsQueryAdUnitId: document.getElementById('settingDarkFundsQueryAdUnitId').value.trim(),
+    profileAdUnitId: document.getElementById('settingProfileAdUnitId').value.trim(),
+    messageCenterAdUnitId: document.getElementById('settingMessageCenterAdUnitId').value.trim(),
     hotSearch: Array.from(new Set(document.getElementById('settingHotSearch').value.split(/[\n,，]/).map((item) => item.trim()).filter(Boolean))),
   };
   api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(body) })

@@ -90,6 +90,10 @@ Page({
       navBarHeight: app.globalData.navBarHeight,
       headerHeight: app.globalData.statusBarHeight + app.globalData.navBarHeight,
     });
+    api.getAppSettings().then((settings) => {
+      const id = String((settings && settings.articleAdUnitId) || config.darkArticleAdUnitId || '');
+      this.setData({ darkArticleAdUnitId: /^adunit-/i.test(id) ? id : '', articleAdLoadFailed: false });
+    });
     this.noteId = String((options && options.id) || '').trim();
     if (!this.noteId) {
       this.finishPageRenderLoading();
