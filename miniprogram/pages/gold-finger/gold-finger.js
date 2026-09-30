@@ -65,10 +65,7 @@ Page({
       });
     }).catch((error) => {
       this.setData({ loading: false, refreshing: false });
-      if (silent) {
-        wx.showToast({ title: '刷新失败，请稍后重试', icon: 'none' });
-        return;
-      }
+      if (silent) throw error;
       const statusCode = error && error.statusCode;
       wx.showModal({
         title: statusCode === 403 ? '会员专享功能' : '加载失败',
@@ -101,8 +98,21 @@ Page({
 
   refreshGoldFinger() {
     if (this.data.loading || this.data.refreshing) return;
-    this.showGoldInterstitialAd();
-    this.loadData({ silent: true });
+    wx.showLoading({ title: '加载中', mask: true });
+    this.loadData({ silent: true })
+      .then(() => {
+        wx.hideLoading();
+        wx.showToast({ title: '金手指已更新', icon: 'success', duration: 1200 });
+        if (this._refreshAdTimer) clearTimeout(this._refreshAdTimer);
+        this._refreshAdTimer = setTimeout(() => {
+          this._refreshAdTimer = null;
+          this.showGoldInterstitialAd();
+        }, 1200);
+      })
+      .catch(() => {
+        wx.hideLoading();
+        wx.showToast({ title: '刷新失败，请稍后重试', icon: 'none' });
+      });
   },
 
   decorateRecord(record) {
@@ -155,6 +165,8 @@ Page({
   },
 
   onUnload() {
+    if (this._refreshAdTimer) clearTimeout(this._refreshAdTimer);
+    this._refreshAdTimer = null;
     if (this._goldInterstitialAd && this._goldInterstitialAd.destroy) this._goldInterstitialAd.destroy();
     this._goldInterstitialAd = null;
   },
