@@ -277,8 +277,8 @@ function createDarkFundOrder(stockCode) {
   return request('POST', '/api/dark-funds/orders', { auth: true, data: { stockCode } });
 }
 
-function getDarkFundOrders() {
-  return request('GET', '/api/dark-funds/orders', { auth: true });
+function getDarkFundOrders(page = 1) {
+  return request('GET', '/api/dark-funds/orders', { auth: true, data: { page } });
 }
 
 function getDarkFundOrder(orderId) {

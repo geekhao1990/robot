@@ -43,5 +43,14 @@
         <view class="order-side {{item.ready ? 'ready' : 'pending'}} {{item.failed ? 'failed' : ''}}"><text>{{item.statusText}}</text><text wx:if="{{item.ready}}" class="arrow">›</text></view>
       </view>
     </view>
+    <view wx:if="{{!historyLoading && orders.length}}" class="history-pagination">
+      <view class="history-page-button {{historyPage <= 1 ? 'disabled' : ''}}" data-page="{{historyPage - 1}}" bindtap="changeHistoryPage">上一页</view>
+      <view class="history-page-number">第 {{historyPage}} / {{historyTotalPages}} 页</view>
+      <view class="history-page-button {{historyPage >= historyTotalPages ? 'disabled' : ''}}" data-page="{{historyPage + 1}}" bindtap="changeHistoryPage">下一页</view>
+    </view>
+    <view wx:if="{{!historyLoading && orders.length}}" class="history-ad-slot">
+      <ad wx:if="{{queryAdUnitId && !historyAdLoadFailed}}" unit-id="{{queryAdUnitId}}" binderror="onHistoryAdError" />
+      <view wx:else class="query-ad-placeholder">广告位</view>
+    </view>
   </view>
 </view>

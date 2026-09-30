@@ -44,10 +44,10 @@ function setup(options = {}) {
   });
   const router = createRouter();
   mod.exports(router, HttpError);
-  const call = (method, url, body = {}, token = 'Bearer u1', extraHeaders = {}) => Promise.resolve().then(() => {
+  const call = (method, url, body = {}, token = 'Bearer u1', extraHeaders = {}, query = {}) => Promise.resolve().then(() => {
     const match = router.match(method, url);
     assert(match, `${method} ${url} route missing`);
-    return match.handler({ body, headers: { authorization: token, ...extraHeaders }, query: {}, params: match.params, rawBody: '' });
+    return match.handler({ body, headers: { authorization: token, ...extraHeaders }, query, params: match.params, rawBody: '' });
   });
   return { data, call };
 }
@@ -67,6 +67,32 @@ function successCallback(order) {
 
 test('latest trading date skips the 2026 Mid-Autumn holiday and weekend', () => {
   assert.equal(latestTradingDate(Date.parse('2026-09-26T04:00:00Z')), '2026-09-24');
+});
+
+test('dark fund order history uses fixed pages of 10 while preserving the legacy list response', async () => {
+  const { data, call } = setup();
+  for (let index = 1; index <= 23; index += 1) {
+    data.darkFundOrders.push({
+      id: `DF${index}`,
+      userId: 'u1',
+      stockCode: String(600000 + index),
+      tradeDate: '2026-09-30',
+      status: index <= 2 ? 'READY' : 'QUEUED',
+      viewedAt: 0,
+      createdAt: index,
+    });
+  }
+  const second = await call('GET', '/api/dark-funds/orders', {}, 'Bearer u1', {}, { page: '2' });
+  assert.equal(second.list.length, 10);
+  assert.equal(second.page, 2);
+  assert.equal(second.pageSize, 10);
+  assert.equal(second.total, 23);
+  assert.equal(second.totalPages, 3);
+  assert.equal(second.unread, 2);
+  assert.equal(second.list[0].id, 'DF13');
+  const legacy = await call('GET', '/api/dark-funds/orders');
+  assert.equal(Array.isArray(legacy), true);
+  assert.equal(legacy.length, 23);
 });
 
 test('online membership payment routes are removed', () => {

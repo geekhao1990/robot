@@ -117,10 +117,26 @@ module.exports = function register(router, HttpError) {
 
   router.get('/api/dark-funds/orders', (ctx) => {
     const user = currentUser(ctx);
-    return (db.get().darkFundOrders || [])
+    const query = ctx.query || {};
+    const orders = (db.get().darkFundOrders || [])
       .filter((item) => item.userId === user.id)
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
       .map(publicDarkFundOrder);
+    // 未传 page 时保留旧数组响应，兼容尚未更新的小程序版本。
+    if (query.page === undefined || query.page === '') return orders;
+    const pageSize = 10;
+    const total = orders.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const page = Math.min(Math.max(1, Number.parseInt(query.page, 10) || 1), totalPages);
+    const start = (page - 1) * pageSize;
+    return {
+      list: orders.slice(start, start + pageSize),
+      page,
+      pageSize,
+      total,
+      totalPages,
+      unread: orders.filter((item) => item.unread).length,
+    };
   });
 
   router.get('/api/dark-funds/orders/:id', (ctx) => {

@@ -33,7 +33,11 @@ Page({
     dateLoading: true,
     historyLoading: false,
     orders: [],
+    historyPage: 1,
+    historyTotalPages: 1,
+    historyTotal: 0,
     historyBadge: 0,
+    historyAdLoadFailed: false,
     waitingText: '',
     querying: false,
   },
@@ -48,7 +52,11 @@ Page({
     this.setData({ tab });
     api.getAppSettings().then((settings) => {
       const id = String((settings && settings.darkFundsQueryAdUnitId) || config.darkFundsQueryAdUnitId || '');
-      this.setData({ queryAdUnitId: /^adunit-/i.test(id) ? id : '', queryAdLoadFailed: false });
+      this.setData({
+        queryAdUnitId: /^adunit-/i.test(id) ? id : '',
+        queryAdLoadFailed: false,
+        historyAdLoadFailed: false,
+      });
     });
     this.loadTradeDate();
   },
@@ -68,7 +76,7 @@ Page({
     const tab = e.currentTarget.dataset.tab;
     if (tab === this.data.tab) return;
     this.setData({ tab });
-    if (tab === 'history') this.loadOrders();
+    if (tab === 'history') this.loadOrders(false, 1);
   },
   loadTradeDate() {
     this.setData({ dateLoading: true });
@@ -106,7 +114,7 @@ Page({
         wx.hideLoading();
         if (!order || !order.orderId) throw new Error('工单提交失败');
         this.setData({ ...this.quotaData(order), waitingText: '等待结果' });
-        this.loadOrders(true);
+        this.loadOrders(true, 1);
         wx.showModal({ title: '已提交', content: '等待结果', showCancel: false });
       })
       .catch((error) => {
@@ -115,25 +123,39 @@ Page({
       })
       .finally(() => this.setData({ querying: false }));
   },
-  loadOrders(silent) {
+  loadOrders(silent, page = this.data.historyPage || 1) {
     if (this._ordersRequesting) return Promise.resolve();
     this._ordersRequesting = true;
     if (!silent) this.setData({ historyLoading: true });
-    return api.getDarkFundOrders()
-      .then((orders) => {
-        const normalized = (orders || []).map((item) => {
+    return api.getDarkFundOrders(page)
+      .then((result) => {
+        const rows = Array.isArray(result) ? result : ((result && result.list) || []);
+        const normalized = rows.map((item) => {
           const ready = item.ready === true || item.status === 'READY' || item.status === 'SUCCESS';
           const failed = item.status === 'FAILED' || item.status === 'DISPATCH_FAILED';
           return { ...item, ready, failed, queryTimeText: formatQueryTime(item.createdAt), statusText: ready ? '点击查看' : (failed ? '查询失败' : '等待结果') };
         });
-        const unread = normalized.filter((item) => item.ready && item.unread).length;
-        this.setData({ orders: normalized, historyBadge: Math.min(99, unread) });
+        const unread = Array.isArray(result)
+          ? normalized.filter((item) => item.ready && item.unread).length
+          : Number(result && result.unread) || 0;
+        this.setData({
+          orders: normalized,
+          historyBadge: Math.min(99, unread),
+          historyPage: Array.isArray(result) ? 1 : (Number(result && result.page) || 1),
+          historyTotalPages: Array.isArray(result) ? 1 : (Number(result && result.totalPages) || 1),
+          historyTotal: Array.isArray(result) ? normalized.length : (Number(result && result.total) || 0),
+        });
       })
       .catch(() => { if (!silent) wx.showToast({ title: '订单加载失败', icon: 'none' }); })
       .finally(() => {
         this._ordersRequesting = false;
         if (!silent) this.setData({ historyLoading: false });
       });
+  },
+  changeHistoryPage(e) {
+    const page = Number(e.currentTarget.dataset.page);
+    if (!Number.isInteger(page) || page < 1 || page > this.data.historyTotalPages || page === this.data.historyPage) return;
+    this.loadOrders(false, page);
   },
   openOrder(e) {
     const order = this.data.orders.find((item) => item.id === e.currentTarget.dataset.id);
@@ -164,6 +186,9 @@ Page({
   },
   onQueryAdError() {
     this.setData({ queryAdLoadFailed: true });
+  },
+  onHistoryAdError() {
+    this.setData({ historyAdLoadFailed: true });
   },
   errorText(error) {
     return (error && (error.errMsg || (error.data && error.data.error) || error.message)) || '请稍后重试';
