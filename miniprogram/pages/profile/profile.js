@@ -27,18 +27,15 @@ Page({
     refreshReady: false,
     profileScrollTop: 0,
     messageUnread: 0,
-    profileAdUnitId: /^adunit-/i.test(String(config.profileAdUnitId || '')) ? String(config.profileAdUnitId) : '',
-    profileAdLoadFailed: false,
   },
   onLoad() {
     const app = getApp();
     this.setData({ statusBarHeight: app.globalData.statusBarHeight, navBarHeight: app.globalData.navBarHeight });
     api.getAppSettings().then((settings) => {
       const id = String((settings && settings.profileAdUnitId) || config.profileAdUnitId || '');
-      this.setData({ profileAdUnitId: /^adunit-/i.test(id) ? id : '', profileAdLoadFailed: false });
+      if (/^adunit-/i.test(id)) this.createProfileInterstitialAd(id);
     });
   },
-  onProfileAdError() { this.setData({ profileAdLoadFailed: true }); },
   onShow() {
     refreshTabBar(this, 2);
     if (this._returningFromDetail) {
@@ -46,6 +43,32 @@ Page({
       return;
     }
     this.refreshProfile();
+    this.showProfileInterstitialAd();
+  },
+  createProfileInterstitialAd(adUnitId) {
+    if (this._profileInterstitialAd || !wx.createInterstitialAd) return;
+    this._profileInterstitialAd = wx.createInterstitialAd({ adUnitId });
+    this._profileInterstitialAd.onError((error) => {
+      this._profileInterstitialShowing = false;
+      console.error('[ProfileInterstitialAd]', error);
+    });
+    this._profileInterstitialAd.onClose(() => {
+      this._profileInterstitialShowing = false;
+      this._profileInterstitialShown = true;
+    });
+    this.showProfileInterstitialAd();
+  },
+  showProfileInterstitialAd() {
+    if (!store.isLogin() || !this._profileInterstitialAd || this._profileInterstitialShowing || this._profileInterstitialShown) return;
+    this._profileInterstitialShowing = true;
+    this._profileInterstitialAd.show().catch((error) => {
+      this._profileInterstitialShowing = false;
+      console.error('[ProfileInterstitialAd:show]', error);
+    });
+  },
+  onUnload() {
+    if (this._profileInterstitialAd && this._profileInterstitialAd.destroy) this._profileInterstitialAd.destroy();
+    this._profileInterstitialAd = null;
   },
   refreshProfile() {
     const proceed = () => {

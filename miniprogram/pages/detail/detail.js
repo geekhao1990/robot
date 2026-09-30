@@ -290,6 +290,9 @@ Page({
   hasServiceAccess(user) {
     return !!(user && (user.serviceActive || Number(user.serviceExpire) > Date.now()));
   },
+  hasAnnualServiceAccess(user) {
+    return !!(this.hasServiceAccess(user) && user && user.servicePlan === 'service_year');
+  },
   showGoldCardRequired() {
     wx.showModal({
       title: '需要金手指卡',
@@ -391,21 +394,31 @@ Page({
     });
   },
   openGoldFeature() {
-    if (this._checkingGoldFeature) return;
+    if (this._checkingGoldFeature || this._resourceClaiming) return;
     if (!store.isLogin()) return this.requireLogin();
     this._checkingGoldFeature = true;
+    this._resourceClaiming = true;
+    this.setData({ resourceClaiming: true });
     wx.showLoading({ title: '请稍后...', mask: true });
-    return Promise.resolve()
-      .then(() => {
+    return store.syncMe()
+      .then((user) => {
         wx.hideLoading();
-        this._checkingGoldFeature = false;
-        return store.syncMe().then((user) => {
-          const open = () => wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
-          if (this.hasGoldAccess(user)) return open();
+        const open = () => wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
+        if (!this.hasGoldAccess(user)) {
+          this.releaseResourceClaim();
           return this.showGoldCardRequired();
+        }
+        if (this.hasAnnualServiceAccess(user)) {
+          this.releaseResourceClaim();
+          return open();
+        }
+        return this.showRewardedAd(() => {
+          this.releaseResourceClaim();
+          return open();
         });
       })
       .catch((error) => {
+        this.releaseResourceClaim();
         if (error && error.statusCode === 401) return this.requireLogin();
         toast('金手指功能暂时不可用，请稍后重试');
       })

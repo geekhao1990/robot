@@ -78,9 +78,6 @@
       <view class="quick-title">消息中心</view>
     </view>
   </view>
-  <view wx:if="{{loggedIn && profileAdUnitId && !profileAdLoadFailed}}" class="profile-ad-slot">
-    <ad unit-id="{{profileAdUnitId}}" binderror="onProfileAdError" />
-  </view>
   <block wx:if="{{loggedIn}}">
     <view class="tabs"><view wx:for="{{tabs}}" wx:key="*this" class="tab {{tabIndex === index ? 'active' : ''}}" data-index="{{index}}" bindtap="onTab">{{item}}</view></view>
     <view class="list">
