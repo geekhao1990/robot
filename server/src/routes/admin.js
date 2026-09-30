@@ -566,7 +566,6 @@ module.exports = function register(router, HttpError) {
       darkFundRemaining: 0,
       darkFundManualRemaining: 0,
       darkFundServiceRemaining: 0,
-      darkFundServiceMonth: '',
       createdAt: Date.now(),
       tags: b.official === true ? [] : ['new'],
     };
@@ -663,9 +662,11 @@ module.exports = function register(router, HttpError) {
       : '';
     if (normalizedDate !== expireDate) throw new HttpError(400, '服务包到期日期无效');
     if (expireAt <= Date.now()) throw new HttpError(400, '服务包到期时间必须晚于当前时间');
+    const plan = String(body.plan || 'service_custom');
+    if (!['service_month', 'service_year', 'service_custom'].includes(plan)) throw new HttpError(400, '请选择正确的服务包类型');
     const wasActive = Number(user.serviceExpire) > Date.now();
     user.serviceExpire = expireAt;
-    user.servicePlan = 'service_custom';
+    user.servicePlan = plan;
     user.darkFundEnabled = true;
     if (!wasActive) {
       user.darkFundServicePeriodStart = Date.now();

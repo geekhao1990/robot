@@ -39,7 +39,7 @@ function refreshDarkFundQuota(user, now = Date.now()) {
     let periodStart = Number(user.darkFundServicePeriodStart);
     let periodExpire = Number(user.darkFundServicePeriodExpire);
     if (!Number.isFinite(periodStart) || !Number.isFinite(periodExpire) || periodStart <= 0 || periodExpire <= periodStart) {
-      // 旧自然月数据无法还原准确充值时刻：迁移当天起保留现有次数30天。
+      // 旧周期数据无法还原准确充值时刻：迁移当天起保留现有次数30天。
       periodStart = now;
       periodExpire = Math.min(serviceExpire, now + SERVICE_QUOTA_PERIOD_MS);
       changed = true;

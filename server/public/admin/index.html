@@ -264,8 +264,8 @@ const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '�
 const BASE_CATEGORIES = ['资料', '课程', '金手指', '广告'];
 const GIFT_CARD_LABELS = {
   gold: '金手指卡（360天 + 5次暗盘）',
-  service_month: '服务包月卡（30天 + 每月15次暗盘）',
-  service_year: '服务包年卡（360天 + 每月15次暗盘）',
+  service_month: '服务包月卡（30天 + 每30天15次暗盘）',
+  service_year: '服务包年卡（360天 + 每30天15次暗盘）',
   dark_1: '暗盘1次卡',
   dark_50: '暗盘50次卡',
   dark_100: '暗盘100次卡',
@@ -652,12 +652,18 @@ function setServiceExpire(id) {
   const minDate = fmtDateInput(Date.now());
   openModal('设置服务包到期日', `
     <div class="field"><label>用户</label><input value="${esc(user.name)}（${esc(user.id)}）" disabled /></div>
+    <div class="field"><label>服务包类型</label><select id="servicePlan">
+      <option value="service_month" ${user.servicePlan === 'service_month' ? 'selected' : ''}>服务包月卡</option>
+      <option value="service_year" ${user.servicePlan === 'service_year' ? 'selected' : ''}>服务包年卡</option>
+      <option value="service_custom" ${!['service_month', 'service_year'].includes(user.servicePlan) ? 'selected' : ''}>自定义服务包</option>
+    </select></div>
     <div class="field"><label>服务包有效至</label><input id="serviceExpireDate" type="date" min="${minDate}" value="${defaultDate}" /></div>
-    <div class="hint">所选日期当天23:59:59到期。手工设置享有金手指、课程免广告及每个自然月15次暗盘查询。</div>
+    <div class="hint">所选日期当天23:59:59到期。服务包暗盘次数自开通起每连续30天重置为15次，不结转；服务包失效时剩余赠送次数作废。只有服务包年卡免金手指激励广告。</div>
   `, () => {
     const expireDate = document.getElementById('serviceExpireDate').value;
+    const plan = document.getElementById('servicePlan').value;
     if (!expireDate) return showAdminToast('请选择到期日期', 'error');
-    api('/api/admin/users/' + id + '/service', { method: 'PUT', body: JSON.stringify({ action: 'set', expireDate }) })
+    api('/api/admin/users/' + id + '/service', { method: 'PUT', body: JSON.stringify({ action: 'set', expireDate, plan }) })
       .then(() => { closeModal(); showAdminToast('服务包到期日已更新'); renderUsers(); })
       .catch((error) => showAdminToast(error.message || '保存失败', 'error'));
   });

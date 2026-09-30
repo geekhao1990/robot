@@ -31,6 +31,17 @@ test('service package grants 15 uses per rolling 30-day period without stacking'
   assert.equal(reset.total, 18);
 });
 
+test('service quota does not reset at a natural month boundary', () => {
+  const openedAt = Date.parse('2026-01-31T04:00:00Z');
+  const februaryFirst = Date.parse('2026-02-01T04:00:00Z');
+  const rollingBoundary = openedAt + 30 * 86400000;
+  const user = { darkFundManualRemaining: 0, darkFundRemaining: 0 };
+  activateService(user, 'service_year', openedAt);
+  consumeDarkFundQuota(user, openedAt);
+  assert.equal(refreshDarkFundQuota(user, februaryFirst).service, 14);
+  assert.equal(refreshDarkFundQuota(user, rollingBoundary).service, 15);
+});
+
 test('expired service quota is void while permanent quota remains', () => {
   const now = Date.parse('2026-09-10T04:00:00Z');
   const user = {

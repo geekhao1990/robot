@@ -300,7 +300,6 @@ module.exports = function register(router, HttpError) {
         darkFundRemaining: 0,
         darkFundManualRemaining: 0,
         darkFundServiceRemaining: 0,
-        darkFundServiceMonth: '',
         createdAt: Date.now(),
         tags: ['new'],
       };

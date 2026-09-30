@@ -68,6 +68,23 @@ test('admin can set a custom service package expiry date for legacy subscribers'
   assert.equal(cancelled.darkFundServiceRemaining, 0);
 });
 
+test('admin can mark a manually dated service package as an annual plan', async () => {
+  const { data, call } = setup();
+  const service = await call('PUT', '/api/admin/users/u1/service', {
+    action: 'set',
+    expireDate: '2099-12-31',
+    plan: 'service_year',
+  });
+  assert.equal(service.servicePlan, 'service_year');
+  assert.equal(service.darkFundServiceRemaining, 15);
+  assert.equal(data.users[0].servicePlan, 'service_year');
+  await assert.rejects(call('PUT', '/api/admin/users/u1/service', {
+    action: 'set',
+    expireDate: '2099-12-31',
+    plan: 'calendar_month',
+  }), { status: 400 });
+});
+
 test('legacy VIP administration endpoint is removed', async () => {
   const { call } = setup();
   await assert.rejects(call('PUT', '/api/admin/users/u1/vip', { plan: 'month' }), /handler/);

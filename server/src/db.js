@@ -357,7 +357,6 @@ function ensureContentTypes() {
       darkFundRemaining: 0,
       darkFundManualRemaining: 0,
       darkFundServiceRemaining: 0,
-      darkFundServiceMonth: '',
       createdAt: 0,
       tags: [],
     };
