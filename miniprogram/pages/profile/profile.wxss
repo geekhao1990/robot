@@ -145,6 +145,13 @@
 .quick-icon { width: 56rpx; height: 56rpx; }
 .quick-badge { position: absolute; top: -10rpx; right: -16rpx; display: flex; align-items: center; justify-content: center; min-width: 28rpx; height: 28rpx; padding: 0 5rpx; color: #fff; font-size: 17rpx; font-weight: 700; line-height: 1; background: #ff2442; border: 3rpx solid #fff; border-radius: 999rpx; box-sizing: border-box; }
 .quick-title { max-width: 100%; margin-top: 10rpx; color: #333; font-size: 20rpx; font-weight: 600; line-height: 1.2; white-space: nowrap; }
+.service-actions { position: relative; z-index: 2; display: flex; gap: 16rpx; margin: 0 20rpx 24rpx; }
+.service-button { display: flex; flex: 1; min-width: 0; align-items: center; padding: 24rpx 20rpx; background: #fff; border-radius: 20rpx; box-sizing: border-box; }
+.service-icon { display: flex; flex: 0 0 68rpx; align-items: center; justify-content: center; width: 68rpx; height: 68rpx; margin-right: 16rpx; color: #2474d2; font-size: 30rpx; font-weight: 800; background: #e9f4ff; border-radius: 20rpx; }
+.service-icon.payment { color: #16a05d; background: #e8f7ed; }
+.service-copy { min-width: 0; }
+.service-title { color: #333; font-size: 26rpx; font-weight: 700; white-space: nowrap; }
+.service-description { margin-top: 8rpx; overflow: hidden; color: #999; font-size: 18rpx; text-overflow: ellipsis; white-space: nowrap; }
 .tabs {
   display: flex;
   background: #fff;
@@ -252,3 +259,13 @@
 .gift-input { flex: 1; min-width: 0; height: 80rpx; padding: 0 18rpx; border-radius: 12rpx; background: #f6f6f6; font-size: 24rpx; }
 .gift-redeem { flex: 0 0 120rpx; margin: 0 0 0 16rpx; padding: 0; height: 80rpx; line-height: 80rpx; background: #ff2442; color: white; font-size: 26rpx; border-radius: 12rpx; }
 .gift-redeem::after { border: none; }
+.service-qr-mask { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1300; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.48); }
+.service-qr-sheet { width: 100%; padding: 20rpx 48rpx calc(32rpx + env(safe-area-inset-bottom)); text-align: center; background: #fff; border-radius: 36rpx 36rpx 0 0; box-sizing: border-box; animation: service-sheet-in .22s ease-out; }
+.service-qr-handle { width: 72rpx; height: 8rpx; margin: 0 auto 28rpx; background: #ddd; border-radius: 999rpx; }
+.service-qr-title { color: #222; font-size: 38rpx; font-weight: 750; }
+.service-qr-description { margin: 14rpx 0 24rpx; color: #999; font-size: 24rpx; line-height: 1.5; }
+.service-qr-image { display: block; width: 70vw; max-width: 560rpx; margin: 0 auto; border-radius: 18rpx; }
+.service-qr-tip { margin-top: 16rpx; color: #aaa; font-size: 21rpx; }
+.service-qr-close { width: 100%; height: 84rpx; margin-top: 18rpx; color: #888; font-size: 27rpx; line-height: 84rpx; background: transparent; }
+.service-qr-close::after { border: none; }
+@keyframes service-sheet-in { from { transform: translateY(100%); } to { transform: translateY(0); } }

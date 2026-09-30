@@ -22,6 +22,11 @@ Page({
     giftCode: '',
     redeemingGift: false,
     giftModalVisible: false,
+    serviceQrVisible: false,
+    serviceQrTitle: '',
+    serviceQrDescription: '',
+    serviceQrImage: '',
+    serviceQrAccess: false,
     entitlements: [],
     refreshing: false,
     refreshReady: false,
@@ -87,9 +92,12 @@ Page({
   refreshProfile() {
     const proceed = () => {
       const user = store.getUser();
+      const entitlements = this.entitlementRows(user);
       this.setData({
         user,
-        entitlements: this.entitlementRows(user),
+        entitlements,
+        serviceQrAccess: entitlements.length > 0,
+        serviceQrVisible: entitlements.length > 0 ? this.data.serviceQrVisible : false,
         loggedIn: !!user,
       });
       if (user) {
@@ -123,11 +131,34 @@ Page({
     if (serviceActive) return [{ type: 'service', name: user.servicePlan === 'service_year' ? '服务包年卡' : '服务包' }];
     return Number(user.goldExpire) > now ? [{ type: 'gold', name: '金手指' }] : [];
   },
-  openGiftModal() { this.setData({ giftModalVisible: true }); },
+  openGiftModal() { this.setData({ giftModalVisible: true, serviceQrVisible: false }); },
   closeGiftModal() {
     if (!this.data.redeemingGift) this.setData({ giftModalVisible: false });
   },
   noop() {},
+  openEnterpriseWechat() {
+    if (!this.data.serviceQrAccess) return;
+    this.setData({
+      serviceQrVisible: true,
+      serviceQrTitle: '咨询人工',
+      serviceQrDescription: '长按或扫码添加企业微信，进行售前咨询及售后服务',
+      serviceQrImage: '/images/enterprise-wechat.jpg',
+    });
+  },
+  openWechatPayment() {
+    if (!this.data.serviceQrAccess) return;
+    this.setData({
+      serviceQrVisible: true,
+      serviceQrTitle: '老客扫码复购',
+      serviceQrDescription: '长按保存或使用微信扫描二维码',
+      serviceQrImage: '/images/wechat-payment.jpg',
+    });
+  },
+  closeServiceQr() { this.setData({ serviceQrVisible: false }); },
+  previewServiceQr() {
+    const image = this.data.serviceQrImage;
+    if (image) wx.previewImage({ current: image, urls: [image] });
+  },
   onGiftCodeInput(e) { this.setData({ giftCode: e.detail.value }); },
   redeemGift() {
     if (this.data.redeemingGift) return;
@@ -137,7 +168,8 @@ Page({
     this.setData({ redeemingGift: true });
     api.redeemGiftCard(code).then((result) => {
       store.setUser(result.user);
-      this.setData({ user: result.user, giftCode: '', giftModalVisible: false, entitlements: this.entitlementRows(result.user) });
+      const entitlements = this.entitlementRows(result.user);
+      this.setData({ user: result.user, giftCode: '', giftModalVisible: false, entitlements, serviceQrAccess: entitlements.length > 0 });
       const detail = result.days ? `${result.days}天` : `${result.quota || 0}次`;
       wx.showModal({ title: result.alreadyRedeemed ? '该卡已兑换' : '兑换成功', content: result.alreadyRedeemed ? '权益已在当前账号生效。' : `${result.label || '礼品卡'}已生效（${detail}）。`, showCancel: false });
     }).catch((error) => wx.showModal({ title: '兑换失败', content: this.errorText(error), showCancel: false }))
