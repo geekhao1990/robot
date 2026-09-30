@@ -15,7 +15,7 @@
         <view wx:if="{{stockLookupLoading}}" class="stock-dropdown-tip">正在查询股票名称…</view>
         <view wx:elif="{{stockSuggestion}}" class="stock-option">
           <text class="stock-option-code">{{stockSuggestion.stockCode}}</text>
-          <text class="stock-option-name">{{stockSuggestion.stockName}}</text>
+          <text class="stock-option-name {{stockSuggestion.matched ? '' : 'unknown'}}">{{stockSuggestion.stockName || '新股或未收录，可继续提交'}}</text>
         </view>
         <view wx:else class="stock-dropdown-error">{{stockLookupError}}</view>
       </view>

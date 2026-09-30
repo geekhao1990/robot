@@ -105,7 +105,11 @@ Page({
       .then((result) => {
         if (sequence !== this._stockLookupSequence || this.data.stockCode !== stockCode) return;
         this.setData({
-          stockSuggestion: { stockCode: String(result.stockCode || stockCode), stockName: String(result.stockName || '') },
+          stockSuggestion: {
+            stockCode: String(result.stockCode || stockCode),
+            stockName: String(result.stockName || ''),
+            matched: result.matched === true,
+          },
           stockLookupError: '',
         });
       })
@@ -128,7 +132,7 @@ Page({
     if (!this.data.compactTradeDate) return wx.showToast({ title: '请稍后重试', icon: 'none' });
     wx.showModal({
       title: '确认查询',
-      content: `是否查询${stockCode} ${this.data.stockSuggestion.stockName}的${this.data.compactTradeDate}暗盘数据`,
+      content: `是否查询${stockCode}${this.data.stockSuggestion.stockName ? ` ${this.data.stockSuggestion.stockName}` : ''}的${this.data.compactTradeDate}暗盘数据`,
       confirmText: '确定',
       success: (result) => {
         if (result.confirm) this.query(stockCode);
