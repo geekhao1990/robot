@@ -251,6 +251,7 @@ async function executeSync({ slot = 'manual', requireToday = true, now = Date.no
           title: '金手指数据已更新',
           content: `${result.latestDate}数据已经更新，点击查看`,
           targetType: 'gold',
+          targetId: String(data.settings && data.settings.featuredNoteId || ''),
           dedupeKey: `gold:${fingerprint}`,
         });
       });

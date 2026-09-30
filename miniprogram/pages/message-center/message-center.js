@@ -82,6 +82,29 @@ Page({
     this.load(page);
   },
 
+  openGoldNote(item) {
+    const open = (settings) => {
+      const noteId = String((item && item.targetId) || (settings && settings.featuredNoteId) || '').trim();
+      if (!noteId) {
+        wx.showToast({ title: '金手指笔记暂未配置', icon: 'none' });
+        return;
+      }
+      wx.navigateTo({
+        url: `/pages/detail/detail?id=${encodeURIComponent(noteId)}&from=goldNotification`,
+        fail: () => wx.showToast({ title: '页面打开失败，请重试', icon: 'none' }),
+      });
+    };
+    return api.getAppSettings()
+      .then((settings) => {
+        if (!settings || settings.goldAccess !== true) {
+          wx.showToast({ title: '金手指权益尚未开通', icon: 'none' });
+          return;
+        }
+        open(settings);
+      })
+      .catch(() => wx.showToast({ title: '金手指笔记暂时无法打开', icon: 'none' }));
+  },
+
   openMessage(e) {
     const item = this.data.list.find((entry) => entry.id === e.currentTarget.dataset.id);
     if (!item) return;
@@ -93,7 +116,8 @@ Page({
       } else if (item.targetType === 'dark_history') {
         wx.navigateTo({ url: '/pages/dark-funds/dark-funds?tab=history' });
       } else if (item.targetType === 'gold') {
-        wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
+        // 金手指通知必须先进入入口笔记，再由笔记里的“点击领取”执行权益和广告校验。
+        this.openGoldNote(item);
       }
     };
     if (!item.unread) return navigate();
