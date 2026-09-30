@@ -110,7 +110,6 @@
     <view class="service-qr-description">{{serviceQrDescription}}</view>
     <image class="service-qr-image" src="{{serviceQrImage}}" mode="widthFix" bindtap="previewServiceQr" show-menu-by-longpress />
     <view class="service-qr-tip">点击查看大图，长按可识别或保存</view>
-    <button class="service-qr-close" catchtap="closeServiceQr">关闭</button>
   </view>
 </view>
 <view wx:if="{{giftModalVisible}}" class="gift-mask" catchtap="closeGiftModal">

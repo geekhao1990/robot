@@ -266,6 +266,4 @@
 .service-qr-description { margin: 14rpx 0 24rpx; color: #999; font-size: 24rpx; line-height: 1.5; }
 .service-qr-image { display: block; width: 70vw; max-width: 560rpx; margin: 0 auto; border-radius: 18rpx; }
 .service-qr-tip { margin-top: 16rpx; color: #aaa; font-size: 21rpx; }
-.service-qr-close { width: 100%; height: 84rpx; margin-top: 18rpx; color: #888; font-size: 27rpx; line-height: 84rpx; background: transparent; }
-.service-qr-close::after { border: none; }
 @keyframes service-sheet-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
