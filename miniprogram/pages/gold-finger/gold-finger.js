@@ -6,6 +6,9 @@ const SILVER_FINGER_ICON = 'https://app.nankaitechschool.com/uploads/up_17879303
 const TREND_UP_ICON = '/images/trend-up.png';
 const TREND_DOWN_ICON = '/images/trend-down.png';
 const store = require('../../utils/store');
+const REFRESH_WINDOW_MS = 5 * 60 * 1000;
+const REFRESH_LIMIT = 2;
+const REFRESH_HISTORY_KEY = 'gold_finger_manual_refresh_history';
 
 Page({
   data: {
@@ -39,15 +42,17 @@ Page({
     api.getAppSettings().then((settings) => {
       const id = String((settings && settings.goldFingerAdUnitId) || config.goldFingerAdUnitId || '');
       const interstitialId = String((settings && settings.goldFingerInterstitialAdUnitId) || config.goldFingerInterstitialAdUnitId || '');
+      const rewardedId = String((settings && settings.goldRewardedVideoAdUnitId) || config.goldRewardedVideoAdUnitId || '');
       this.setData({ goldFingerAdUnitId: /^adunit-/i.test(id) ? id : '', adLoadFailed: false });
       if (/^adunit-/i.test(interstitialId)) this.createGoldInterstitialAd(interstitialId);
+      if (/^adunit-/i.test(rewardedId)) this.createGoldRewardedAd(rewardedId);
     });
     this.loadData();
   },
 
   loadData(options = {}) {
     const silent = options.silent === true;
-    if (this.data.refreshing) return Promise.resolve();
+    if (this.data.refreshing && options.force !== true) return Promise.resolve();
     this.setData(silent ? { refreshing: true } : { loading: true });
     return api.getGoldFinger().then((result) => {
       const record = result && result.record;
@@ -88,26 +93,99 @@ Page({
   },
 
   showGoldInterstitialAd() {
-    if (!this._goldInterstitialAd || this._goldInterstitialShowing) return;
+    if (!this._goldInterstitialAd || this._goldInterstitialShowing) return Promise.resolve(false);
     this._goldInterstitialShowing = true;
-    this._goldInterstitialAd.show().catch((error) => {
+    return this._goldInterstitialAd.show().then(() => true).catch((error) => {
       this._goldInterstitialShowing = false;
       console.error('[GoldInterstitialAd:show]', error);
+      return false;
     });
+  },
+
+  createGoldRewardedAd(adUnitId) {
+    if (this._goldRewardedAd || !wx.createRewardedVideoAd) return;
+    this._goldRewardedAd = wx.createRewardedVideoAd({ adUnitId });
+    this._goldRewardedAd.onClose(() => {
+      this.finishGoldRewardedAd();
+      if (this._goldRewardedAd) this._goldRewardedAd.load().catch(() => {});
+    });
+    this._goldRewardedAd.onError((error) => {
+      console.error('[GoldRewardedVideoAd]', error);
+      this.finishGoldRewardedAd();
+    });
+    this._goldRewardedAd.load().catch((error) => {
+      console.error('[GoldRewardedVideoAd:load]', error);
+    });
+  },
+
+  finishGoldRewardedAd() {
+    if (this._goldRewardedAdTimer) clearTimeout(this._goldRewardedAdTimer);
+    this._goldRewardedAdTimer = null;
+    const done = this._goldRewardedAdDone;
+    this._goldRewardedAdDone = null;
+    if (done) done();
+  },
+
+  showGoldRewardedAd() {
+    if (!this._goldRewardedAd && /^adunit-/i.test(String(config.goldRewardedVideoAdUnitId || ''))) {
+      this.createGoldRewardedAd(String(config.goldRewardedVideoAdUnitId));
+    }
+    if (!this._goldRewardedAd) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      let finished = false;
+      const done = () => {
+        if (finished) return;
+        finished = true;
+        resolve(true);
+      };
+      this._goldRewardedAdDone = done;
+      // 极少数客户端既不 reject 也不触发 onError；兜底继续刷新，避免广告 SDK 卡死业务。
+      this._goldRewardedAdTimer = setTimeout(() => this.finishGoldRewardedAd(), 8000);
+      const show = () => this._goldRewardedAd.show().then(() => {
+        if (this._goldRewardedAdTimer) clearTimeout(this._goldRewardedAdTimer);
+        this._goldRewardedAdTimer = null;
+      });
+      show().catch((error) => {
+        console.error('[GoldRewardedVideoAd:show]', error);
+        this.finishGoldRewardedAd();
+      });
+    });
+  },
+
+  reserveRefreshAttempt() {
+    const user = store.getUser() || {};
+    const now = Date.now();
+    const key = `${REFRESH_HISTORY_KEY}_${user.id || 'unknown'}`;
+    let history = [];
+    try {
+      const saved = wx.getStorageSync(key);
+      history = Array.isArray(saved) ? saved : [];
+    } catch (error) {}
+    history = history.filter((time) => Number(time) > now - REFRESH_WINDOW_MS);
+    if (history.length >= REFRESH_LIMIT) return false;
+    history.push(now);
+    try { wx.setStorageSync(key, history); } catch (error) {}
+    return true;
   },
 
   refreshGoldFinger() {
     if (this.data.loading || this.data.refreshing) return;
+    if (!this.reserveRefreshAttempt()) {
+      wx.showToast({ title: '操作频繁，请稍后再试', icon: 'none' });
+      return;
+    }
+    this.setData({ refreshing: true });
     wx.showLoading({ title: '加载中', mask: true });
-    this.loadData({ silent: true })
+    store.syncMe()
+      .catch(() => store.getUser())
+      .then((user) => {
+        if (user && user.serviceActive === true) return this.showGoldInterstitialAd();
+        return this.showGoldRewardedAd();
+      })
+      .then(() => this.loadData({ silent: true, force: true }))
       .then(() => {
         wx.hideLoading();
         wx.showToast({ title: '金手指已更新', icon: 'success', duration: 1200 });
-        if (this._refreshAdTimer) clearTimeout(this._refreshAdTimer);
-        this._refreshAdTimer = setTimeout(() => {
-          this._refreshAdTimer = null;
-          this.showGoldInterstitialAd();
-        }, 1200);
       })
       .catch(() => {
         wx.hideLoading();
@@ -165,8 +243,9 @@ Page({
   },
 
   onUnload() {
-    if (this._refreshAdTimer) clearTimeout(this._refreshAdTimer);
-    this._refreshAdTimer = null;
+    this.finishGoldRewardedAd();
+    if (this._goldRewardedAd && this._goldRewardedAd.destroy) this._goldRewardedAd.destroy();
+    this._goldRewardedAd = null;
     if (this._goldInterstitialAd && this._goldInterstitialAd.destroy) this._goldInterstitialAd.destroy();
     this._goldInterstitialAd = null;
   },

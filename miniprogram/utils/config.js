@@ -24,13 +24,13 @@ module.exports = {
   // 微信公众平台创建的激励视频广告位 ID，上线前必须替换
   rewardedVideoAdUnitId: 'adunit-xxxxxxxxxxxxxxxx',
   // 金手指领取专用激励视频广告位；与普通收费笔记分开统计。
-  goldRewardedVideoAdUnitId: '',
+  goldRewardedVideoAdUnitId: 'adunit-697a55396c0730c4',
   // 所有笔记文章末尾的横幅广告位；留空时显示占位区。
   darkArticleAdUnitId: '',
   // 金手指详情页底部的横幅广告位；留空时显示占位区。
-  goldFingerAdUnitId: '',
-  // 金手指详情页进入及手动刷新时展示的插屏广告位。
-  goldFingerInterstitialAdUnitId: '',
+  goldFingerAdUnitId: 'adunit-eb8346b38d582c11',
+  // 金手指详情页进入，以及服务包用户手动刷新时展示的插屏广告位。
+  goldFingerInterstitialAdUnitId: 'adunit-1a677c93cd7ed5e1',
   // 暗盘“六位神奇数字”查询页的横幅广告位；留空时显示占位区。
   darkFundsQueryAdUnitId: '',
   // 进入“我”页面时展示的插屏广告位。
