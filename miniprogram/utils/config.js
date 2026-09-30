@@ -33,10 +33,14 @@ module.exports = {
   goldFingerInterstitialAdUnitId: 'adunit-1a677c93cd7ed5e1',
   // 暗盘“六位神奇数字”查询页的横幅广告位；留空时显示占位区。
   darkFundsQueryAdUnitId: '',
+  // 暗盘历史订单分页下方的横幅广告位。
+  darkFundsHistoryAdUnitId: '',
   // 进入“我”页面时展示的插屏广告位。
   profileAdUnitId: '',
   // “我”页面收藏/赞过模块之后的 Banner 广告位。
   profileBottomAdUnitId: '',
   // 消息中心“全部消息”上方的横幅广告位。
   messageCenterAdUnitId: '',
+  // 消息中心分页下方的横幅广告位。
+  messageCenterBottomAdUnitId: '',
 };

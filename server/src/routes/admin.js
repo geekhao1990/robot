@@ -105,9 +105,11 @@ module.exports = function register(router, HttpError) {
       ['goldFingerAdUnitId', '金手指'],
       ['goldFingerInterstitialAdUnitId', '金手指页面插屏'],
       ['darkFundsQueryAdUnitId', '暗盘查询'],
+      ['darkFundsHistoryAdUnitId', '暗盘历史订单'],
       ['profileAdUnitId', '个人中心'],
       ['profileBottomAdUnitId', '个人中心末尾'],
       ['messageCenterAdUnitId', '消息中心'],
+      ['messageCenterBottomAdUnitId', '消息中心底部'],
     ];
     const adUnits = {};
     adUnitFields.forEach(([key, label]) => {

@@ -29,6 +29,9 @@ Page({
     queryAdUnitId: /^adunit-/i.test(String(config.darkFundsQueryAdUnitId || ''))
       ? String(config.darkFundsQueryAdUnitId)
       : '',
+    historyAdUnitId: /^adunit-/i.test(String(config.darkFundsHistoryAdUnitId || ''))
+      ? String(config.darkFundsHistoryAdUnitId)
+      : '',
     queryAdLoadFailed: false,
     dateLoading: true,
     historyLoading: false,
@@ -52,8 +55,10 @@ Page({
     this.setData({ tab });
     api.getAppSettings().then((settings) => {
       const id = String((settings && settings.darkFundsQueryAdUnitId) || config.darkFundsQueryAdUnitId || '');
+      const historyId = String((settings && settings.darkFundsHistoryAdUnitId) || config.darkFundsHistoryAdUnitId || '');
       this.setData({
         queryAdUnitId: /^adunit-/i.test(id) ? id : '',
+        historyAdUnitId: /^adunit-/i.test(historyId) ? historyId : '',
         queryAdLoadFailed: false,
         historyAdLoadFailed: false,
       });

@@ -49,7 +49,7 @@
       <view class="history-page-button {{historyPage >= historyTotalPages ? 'disabled' : ''}}" data-page="{{historyPage + 1}}" bindtap="changeHistoryPage">下一页</view>
     </view>
     <view wx:if="{{!historyLoading && orders.length}}" class="history-ad-slot">
-      <ad wx:if="{{queryAdUnitId && !historyAdLoadFailed}}" unit-id="{{queryAdUnitId}}" binderror="onHistoryAdError" />
+      <ad wx:if="{{historyAdUnitId && !historyAdLoadFailed}}" unit-id="{{historyAdUnitId}}" binderror="onHistoryAdError" />
       <view wx:else class="query-ad-placeholder">广告位</view>
     </view>
   </view>

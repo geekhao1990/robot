@@ -62,9 +62,11 @@ function pubSettings(data) {
     goldFingerAdUnitId: publicAdUnitId(raw.goldFingerAdUnitId),
     goldFingerInterstitialAdUnitId: publicAdUnitId(raw.goldFingerInterstitialAdUnitId),
     darkFundsQueryAdUnitId: publicAdUnitId(raw.darkFundsQueryAdUnitId),
+    darkFundsHistoryAdUnitId: publicAdUnitId(raw.darkFundsHistoryAdUnitId),
     profileAdUnitId: publicAdUnitId(raw.profileAdUnitId),
     profileBottomAdUnitId: publicAdUnitId(raw.profileBottomAdUnitId),
     messageCenterAdUnitId: publicAdUnitId(raw.messageCenterAdUnitId),
+    messageCenterBottomAdUnitId: publicAdUnitId(raw.messageCenterBottomAdUnitId),
     featuredNoteId: featured ? featured.id : '',
   };
 }

@@ -169,9 +169,11 @@ function baseAppSettings() {
     goldFingerAdUnitId: String(config.goldFingerAdUnitId || ''),
     goldFingerInterstitialAdUnitId: String(config.goldFingerInterstitialAdUnitId || ''),
     darkFundsQueryAdUnitId: String(config.darkFundsQueryAdUnitId || ''),
+    darkFundsHistoryAdUnitId: String(config.darkFundsHistoryAdUnitId || ''),
     profileAdUnitId: String(config.profileAdUnitId || ''),
     profileBottomAdUnitId: String(config.profileBottomAdUnitId || ''),
     messageCenterAdUnitId: String(config.messageCenterAdUnitId || ''),
+    messageCenterBottomAdUnitId: String(config.messageCenterBottomAdUnitId || ''),
     goldAccess: false,
     featuredNoteId: config.featuredNoteId || 'n3',
   };
@@ -191,11 +193,15 @@ function normalizeAppSettings(settings, fallback = baseAppSettings()) {
       ? settings.goldFingerInterstitialAdUnitId
       : fallback.goldFingerInterstitialAdUnitId,
     darkFundsQueryAdUnitId: settings && typeof settings.darkFundsQueryAdUnitId === 'string' ? settings.darkFundsQueryAdUnitId : fallback.darkFundsQueryAdUnitId,
+    darkFundsHistoryAdUnitId: settings && typeof settings.darkFundsHistoryAdUnitId === 'string' ? settings.darkFundsHistoryAdUnitId : fallback.darkFundsHistoryAdUnitId,
     profileAdUnitId: settings && typeof settings.profileAdUnitId === 'string' ? settings.profileAdUnitId : fallback.profileAdUnitId,
     profileBottomAdUnitId: settings && typeof settings.profileBottomAdUnitId === 'string'
       ? settings.profileBottomAdUnitId
       : fallback.profileBottomAdUnitId,
     messageCenterAdUnitId: settings && typeof settings.messageCenterAdUnitId === 'string' ? settings.messageCenterAdUnitId : fallback.messageCenterAdUnitId,
+    messageCenterBottomAdUnitId: settings && typeof settings.messageCenterBottomAdUnitId === 'string'
+      ? settings.messageCenterBottomAdUnitId
+      : fallback.messageCenterBottomAdUnitId,
     goldAccess: settings && settings.goldAccess === true,
     featuredNoteId: settings && typeof settings.featuredNoteId === 'string' ? settings.featuredNoteId : fallback.featuredNoteId,
   };

@@ -1228,6 +1228,11 @@ function renderSettings() {
           <input id="settingDarkFundsQueryAdUnitId" value="${esc(settings.darkFundsQueryAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
         </div>
         <div class="field">
+          <label>暗盘历史订单广告位 ID</label>
+          <input id="settingDarkFundsHistoryAdUnitId" value="${esc(settings.darkFundsHistoryAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+          <div class="hint">历史订单分页控件下方的 Banner 广告位。</div>
+        </div>
+        <div class="field">
           <label>“我”页面插屏广告位 ID</label>
           <input id="settingProfileAdUnitId" value="${esc(settings.profileAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
         </div>
@@ -1237,9 +1242,13 @@ function renderSettings() {
           <div class="hint">请选择 Banner 广告位，展示在收藏/赞过模块之后。</div>
         </div>
         <div class="field">
-          <label>消息中心广告位 ID</label>
+          <label>消息中心顶部广告位 ID</label>
           <input id="settingMessageCenterAdUnitId" value="${esc(settings.messageCenterAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
-          <div class="hint">“我”页面请选择插屏广告；其余四项请选择 Banner 广告。建议每个位置使用独立广告位，留空则不展示。</div>
+        </div>
+        <div class="field">
+          <label>消息中心底部广告位 ID</label>
+          <input id="settingMessageCenterBottomAdUnitId" value="${esc(settings.messageCenterBottomAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+          <div class="hint">消息分页控件下方的 Banner 广告位。每个位置建议使用独立广告位，留空则不展示。</div>
         </div>
         <div class="field">
           <label>热门搜索</label>
@@ -1261,9 +1270,11 @@ function saveSettings() {
     goldFingerAdUnitId: document.getElementById('settingGoldFingerAdUnitId').value.trim(),
     goldFingerInterstitialAdUnitId: document.getElementById('settingGoldFingerInterstitialAdUnitId').value.trim(),
     darkFundsQueryAdUnitId: document.getElementById('settingDarkFundsQueryAdUnitId').value.trim(),
+    darkFundsHistoryAdUnitId: document.getElementById('settingDarkFundsHistoryAdUnitId').value.trim(),
     profileAdUnitId: document.getElementById('settingProfileAdUnitId').value.trim(),
     profileBottomAdUnitId: document.getElementById('settingProfileBottomAdUnitId').value.trim(),
     messageCenterAdUnitId: document.getElementById('settingMessageCenterAdUnitId').value.trim(),
+    messageCenterBottomAdUnitId: document.getElementById('settingMessageCenterBottomAdUnitId').value.trim(),
     hotSearch: Array.from(new Set(document.getElementById('settingHotSearch').value.split(/[\n,，]/).map((item) => item.trim()).filter(Boolean))),
   };
   api('/api/admin/settings', { method: 'PUT', body: JSON.stringify(body) })

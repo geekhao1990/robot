@@ -27,7 +27,7 @@
     <view class="page-number">第 {{page}} / {{totalPages}} 页</view>
     <view class="page-button {{page >= totalPages ? 'disabled' : ''}}" data-page="{{page + 1}}" bindtap="changePage">下一页</view>
   </view>
-  <view wx:if="{{!loading && list.length && messageCenterAdUnitId && !messageCenterBottomAdLoadFailed}}" class="message-ad-slot message-ad-bottom">
-    <ad unit-id="{{messageCenterAdUnitId}}" binderror="onMessageCenterBottomAdError" />
+  <view wx:if="{{!loading && list.length && messageCenterBottomAdUnitId && !messageCenterBottomAdLoadFailed}}" class="message-ad-slot message-ad-bottom">
+    <ad unit-id="{{messageCenterBottomAdUnitId}}" binderror="onMessageCenterBottomAdError" />
   </view>
 </view>

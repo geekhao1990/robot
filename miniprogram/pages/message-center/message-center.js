@@ -30,6 +30,7 @@ Page({
     totalPages: 1,
     total: 0,
     messageCenterAdUnitId: /^adunit-/i.test(String(config.messageCenterAdUnitId || '')) ? String(config.messageCenterAdUnitId) : '',
+    messageCenterBottomAdUnitId: /^adunit-/i.test(String(config.messageCenterBottomAdUnitId || '')) ? String(config.messageCenterBottomAdUnitId) : '',
     messageCenterAdLoadFailed: false,
     messageCenterBottomAdLoadFailed: false,
   },
@@ -38,8 +39,10 @@ Page({
     if (!store.isLogin()) return wx.redirectTo({ url: '/pages/login/login' });
     api.getAppSettings().then((settings) => {
       const id = String((settings && settings.messageCenterAdUnitId) || config.messageCenterAdUnitId || '');
+      const bottomId = String((settings && settings.messageCenterBottomAdUnitId) || config.messageCenterBottomAdUnitId || '');
       this.setData({
         messageCenterAdUnitId: /^adunit-/i.test(id) ? id : '',
+        messageCenterBottomAdUnitId: /^adunit-/i.test(bottomId) ? bottomId : '',
         messageCenterAdLoadFailed: false,
         messageCenterBottomAdLoadFailed: false,
       });
