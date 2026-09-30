@@ -22,4 +22,17 @@ function canViewNote(data, note, reader) {
   return Boolean(reader && ownerUserId && String(reader.id) === ownerUserId);
 }
 
-module.exports = { canViewNote, darkFundOwnerId, isDarkFundNote };
+function findViewableNote(data, noteId, reader) {
+  const id = String(noteId || '');
+  const stored = (data.notes || []).find((item) => item.id === id);
+  if (stored) return canViewNote(data, stored, reader) ? stored : null;
+  const order = (data.darkFundOrders || []).find((item) => (
+    item.noteId === id
+    || (item.snapshot && item.snapshot.note && item.snapshot.note.id === id)
+    || `dark_${item.id}` === id
+  ));
+  const snapshot = order && order.snapshot && order.snapshot.note;
+  return snapshot && canViewNote(data, snapshot, reader) ? snapshot : null;
+}
+
+module.exports = { canViewNote, darkFundOwnerId, findViewableNote, isDarkFundNote };

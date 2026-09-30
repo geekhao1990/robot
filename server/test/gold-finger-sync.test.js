@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { dueSlot, normalizeSourceList, applySourceRecords } = require('../src/gold-finger-sync');
+const { dueSlot, parseSchedule, refreshPolicy, normalizeSourceList, applySourceRecords } = require('../src/gold-finger-sync');
 
 test('scheduler selects the latest due Beijing slot', () => {
   const at = (iso) => Date.parse(iso);
@@ -15,6 +15,15 @@ test('scheduler selects the latest due Beijing slot', () => {
   assert.equal(dueSlot(at('2026-09-18T07:29:00Z')), 870);
   assert.equal(dueSlot(at('2026-09-18T07:30:00Z')), 930);
   assert.equal(dueSlot(at('2026-09-18T08:01:00Z')), 930);
+});
+
+test('client refresh policy follows the server supplied schedule instead of fixed mini-program times', () => {
+  const schedule = parseSchedule('09:45, 12:05,16:10');
+  assert.deepEqual(schedule, [585, 725, 970]);
+  const policy = refreshPolicy(Date.parse('2026-09-30T04:10:00Z'), schedule); // 北京时间 12:10
+  assert.equal(policy.slotKey, '2026-09-30:12:05');
+  assert.equal(policy.scheduleVersion, '09:45,12:05,16:10');
+  assert.equal(policy.nextRefreshAt, Date.parse('2026-09-30T08:12:00Z'));
 });
 
 test('source percentages round yang and derive yin while dashes inherit finger', () => {

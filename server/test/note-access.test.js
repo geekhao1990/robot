@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { canViewNote, darkFundOwnerId, isDarkFundNote } = require('../src/note-access');
+const { canViewNote, darkFundOwnerId, findViewableNote, isDarkFundNote } = require('../src/note-access');
 
 test('暗盘笔记只允许下单用户查看', () => {
   const note = { id: 'dark_DF001', visible: true, tags: ['暗盘资金'] };
@@ -16,4 +16,14 @@ test('普通可见笔记不受暗盘隐私规则影响', () => {
   const data = { darkFundOrders: [] };
   assert.equal(canViewNote(data, { id: 'n1', visible: true }, null), true);
   assert.equal(canViewNote(data, { id: 'n2', visible: false }, { id: 'u1' }), false);
+});
+
+test('已从笔记列表删除的暗盘结果仍可由下单用户从订单快照查看', () => {
+  const snapshotNote = { id: 'dark_DF002', visible: true, tags: ['暗盘资金'], title: '历史结果' };
+  const data = {
+    notes: [],
+    darkFundOrders: [{ id: 'DF002', userId: 'u1', noteId: snapshotNote.id, snapshot: { note: snapshotNote } }],
+  };
+  assert.equal(findViewableNote(data, snapshotNote.id, { id: 'u1' }), snapshotNote);
+  assert.equal(findViewableNote(data, snapshotNote.id, { id: 'u2' }), null);
 });

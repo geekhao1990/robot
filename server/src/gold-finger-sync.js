@@ -3,13 +3,14 @@ const { chinaToday, isTradingDay } = require('./trading-date');
 const { goldAccess } = require('./util');
 const { pushNotification } = require('./notifications');
 
-const SCHEDULE_MINUTES = [
+const DEFAULT_SCHEDULE_MINUTES = [
   10 * 60,
   11 * 60 + 30,
   13 * 60 + 30,
   14 * 60 + 30,
   15 * 60 + 30,
 ];
+const DEFAULT_REFRESH_GRACE_MINUTES = 2;
 const CHECK_INTERVAL_MS = 30 * 1000;
 const RETRY_INTERVAL_MS = 5 * 60 * 1000;
 let timer = null;
@@ -24,6 +25,22 @@ function config() {
   };
 }
 
+function parseSchedule(value) {
+  const parsed = String(value || '').split(',').map((item) => {
+    const match = item.trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return NaN;
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59 ? hour * 60 + minute : NaN;
+  }).filter(Number.isFinite);
+  return [...new Set(parsed)].sort((a, b) => a - b);
+}
+
+function scheduleMinutes() {
+  const configured = parseSchedule(process.env.GOLD_FINGER_SYNC_SCHEDULE);
+  return configured.length ? configured : DEFAULT_SCHEDULE_MINUTES.slice();
+}
+
 function chinaMinutes(timestamp = Date.now()) {
   const date = new Date(timestamp + 8 * 3600 * 1000);
   return date.getUTCHours() * 60 + date.getUTCMinutes();
@@ -33,9 +50,38 @@ function slotLabel(minutes) {
   return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 }
 
-function dueSlot(timestamp = Date.now()) {
+function dueSlot(timestamp = Date.now(), schedule = scheduleMinutes()) {
   const minutes = chinaMinutes(timestamp);
-  return SCHEDULE_MINUTES.filter((slot) => slot <= minutes).at(-1);
+  return schedule.filter((slot) => slot <= minutes).at(-1);
+}
+
+function nextDate(value) {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function chinaSlotTimestamp(date, minutes, graceMinutes = DEFAULT_REFRESH_GRACE_MINUTES) {
+  return Date.parse(`${date}T00:00:00Z`) - 8 * 3600 * 1000 + (minutes + graceMinutes) * 60 * 1000;
+}
+
+function refreshPolicy(timestamp = Date.now(), schedule = scheduleMinutes()) {
+  const slots = schedule.slice().sort((a, b) => a - b);
+  if (!slots.length) return { slotKey: 'disabled', nextRefreshAt: 0, scheduleVersion: '' };
+  const today = chinaToday(timestamp);
+  const tradingToday = isTradingDay(today);
+  const current = tradingToday ? dueSlot(timestamp, slots) : undefined;
+  let nextDay = today;
+  let next = tradingToday ? slots.find((slot) => chinaSlotTimestamp(today, slot) > timestamp) : undefined;
+  if (next === undefined) {
+    do { nextDay = nextDate(nextDay); } while (!isTradingDay(nextDay));
+    next = slots[0];
+  }
+  return {
+    slotKey: tradingToday && current !== undefined ? `${today}:${slotLabel(current)}` : `${today}:pre`,
+    nextRefreshAt: chinaSlotTimestamp(nextDay, next),
+    scheduleVersion: slots.map(slotLabel).join(','),
+  };
 }
 
 function assertDate(value, index) {
@@ -231,7 +277,7 @@ async function tick(now = Date.now()) {
   if (!settings.enabled || running) return;
   const today = chinaToday(now);
   if (!isTradingDay(today)) return;
-  const due = dueSlot(now);
+  const due = dueSlot(now, scheduleMinutes());
   if (due === undefined) return;
   const data = db.get();
   const state = syncState(data, today);
@@ -271,7 +317,7 @@ function getStatus() {
     enabled: settings.enabled,
     configured: Boolean(settings.baseUrl && settings.username && settings.password),
     running,
-    schedule: SCHEDULE_MINUTES.map(slotLabel),
+    schedule: scheduleMinutes().map(slotLabel),
     timezone: 'Asia/Shanghai',
     state: data.goldFingerSyncState || null,
   };
@@ -282,7 +328,7 @@ function start() {
     console.log('[金手指同步] 未启用');
     return () => {};
   }
-  console.log('[金手指同步] 已启用，北京时间交易日 10:00、11:30、13:30、14:30、15:30 自动更新');
+  console.log(`[金手指同步] 已启用，北京时间交易日 ${scheduleMinutes().map(slotLabel).join('、')} 自动更新`);
   setTimeout(() => tick().catch(console.error), 1000);
   timer = setInterval(() => tick().catch(console.error), CHECK_INTERVAL_MS);
   timer.unref?.();
@@ -295,7 +341,10 @@ function stop() {
 }
 
 module.exports = {
-  SCHEDULE_MINUTES,
+  SCHEDULE_MINUTES: DEFAULT_SCHEDULE_MINUTES,
+  parseSchedule,
+  scheduleMinutes,
+  refreshPolicy,
   chinaMinutes,
   dueSlot,
   normalizeSourceList,

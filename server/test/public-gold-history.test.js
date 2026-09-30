@@ -54,6 +54,13 @@ function setup() {
     '../content-types': { typeLabel: () => '' },
     '../resource-links': { resourceList: (note) => note.id === 'n1' ? [{ provider: 'baidu', url: 'https://example.com' }] : [] },
     '../note-access': require('../src/note-access'),
+    '../gold-finger-sync': {
+      refreshPolicy: () => ({
+        slotKey: '2026-09-01@10:00',
+        nextRefreshAt: Date.UTC(2026, 8, 1, 3, 32),
+        scheduleVersion: '10:00,11:30,13:30,14:30,15:30',
+      }),
+    },
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/public.js'), 'utf8'), {
     module: mod,

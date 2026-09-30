@@ -29,6 +29,8 @@ Page({
       ? String(config.goldFingerAdUnitId)
       : '',
     adLoadFailed: false,
+    refreshSlotKey: '',
+    nextRefreshAt: 0,
   },
 
   onLoad() {
@@ -67,6 +69,8 @@ Page({
         hasMoreHistory: result && result.hasMoreHistory === true,
         historyPage: 1,
         historyTotalPages: 1,
+        refreshSlotKey: String(result && result.refreshPolicy && result.refreshPolicy.slotKey || ''),
+        nextRefreshAt: Number(result && result.refreshPolicy && result.refreshPolicy.nextRefreshAt) || 0,
       });
     }).catch((error) => {
       this.setData({ loading: false, refreshing: false });
@@ -84,10 +88,19 @@ Page({
   createGoldInterstitialAd(adUnitId) {
     if (this._goldInterstitialAd || !wx.createInterstitialAd) return;
     this._goldInterstitialAd = wx.createInterstitialAd({ adUnitId });
-    this._goldInterstitialAd.onClose(() => { this._goldInterstitialShowing = false; });
+    this._goldInterstitialAd.onClose(() => {
+      this._goldInterstitialShowing = false;
+      const done = this._goldInterstitialRefreshDone;
+      this._goldInterstitialRefreshDone = null;
+      if (done) done(true);
+    });
     this._goldInterstitialAd.onError((error) => {
       this._goldInterstitialShowing = false;
       console.error('[GoldInterstitialAd]', error);
+      const done = this._goldInterstitialRefreshDone;
+      this._goldInterstitialRefreshDone = null;
+      // 广告拉取失败不阻断业务刷新。
+      if (done) done(true);
     });
     this.showGoldInterstitialAd();
   },
@@ -99,6 +112,25 @@ Page({
       this._goldInterstitialShowing = false;
       console.error('[GoldInterstitialAd:show]', error);
       return false;
+    });
+  },
+
+  showGoldInterstitialForRefresh() {
+    if (!this._goldInterstitialAd) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      let finished = false;
+      const done = (allowed) => {
+        if (finished) return;
+        finished = true;
+        resolve(allowed !== false);
+      };
+      this._goldInterstitialRefreshDone = done;
+      this.showGoldInterstitialAd().then((shown) => {
+        if (!shown) {
+          this._goldInterstitialRefreshDone = null;
+          done(true);
+        }
+      });
     });
   },
 
@@ -176,13 +208,17 @@ Page({
       wx.showToast({ title: '操作频繁，请稍后再试', icon: 'none' });
       return;
     }
+    // 时段只控制数据请求；广告沿用原规则，同一时段也正常展示。
+    const shouldRequestData = !this.data.nextRefreshAt || this.data.nextRefreshAt <= Date.now();
     this.setData({ refreshing: true });
     wx.showLoading({ title: '加载中', mask: true });
-    store.syncMe()
-      .catch(() => store.getUser())
+    const loadUser = shouldRequestData
+      ? store.syncMe().catch(() => store.getUser())
+      : Promise.resolve(store.getUser());
+    loadUser
       .then((user) => {
         if (user && user.serviceActive === true) {
-          return this.showGoldInterstitialAd().then(() => true);
+          return this.showGoldInterstitialForRefresh();
         }
         return this.showGoldRewardedAd();
       })
@@ -193,15 +229,18 @@ Page({
           wx.showToast({ title: '广告未播放完成，未刷新', icon: 'none' });
           return false;
         }
-        return this.loadData({ silent: true, force: true }).then(() => true);
+        if (shouldRequestData) return this.loadData({ silent: true, force: true }).then(() => true);
+        return new Promise((resolve) => setTimeout(() => resolve(true), 450));
       })
       .then((refreshed) => {
         if (!refreshed) return;
         wx.hideLoading();
+        this.setData({ refreshing: false });
         wx.showToast({ title: '金手指已更新', icon: 'success', duration: 1200 });
       })
       .catch(() => {
         wx.hideLoading();
+        this.setData({ refreshing: false });
         wx.showToast({ title: '刷新失败，请稍后重试', icon: 'none' });
       });
   },
@@ -256,6 +295,8 @@ Page({
   },
 
   onUnload() {
+    if (this._goldInterstitialRefreshDone) this._goldInterstitialRefreshDone(false);
+    this._goldInterstitialRefreshDone = null;
     this.finishGoldRewardedAd(false);
     if (this._goldRewardedAd && this._goldRewardedAd.destroy) this._goldRewardedAd.destroy();
     this._goldRewardedAd = null;

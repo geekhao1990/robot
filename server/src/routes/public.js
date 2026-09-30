@@ -4,7 +4,8 @@ const { goldAccess, pubUser, pubNote, pubSettings } = require('../util');
 const auth = require('../auth');
 const { typeLabel } = require('../content-types');
 const { resourceList } = require('../resource-links');
-const { canViewNote, isDarkFundNote } = require('../note-access');
+const { canViewNote, findViewableNote, isDarkFundNote } = require('../note-access');
+const goldFingerSync = require('../gold-finger-sync');
 
 module.exports = function register(router, HttpError) {
   const requireReader = (ctx) => {
@@ -101,7 +102,8 @@ module.exports = function register(router, HttpError) {
   router.get('/api/notes/:id', (ctx) => {
     const data = db.get();
     const reader = optionalReader(ctx, data);
-    const n = data.notes.find((x) => x.id === ctx.params.id && canViewNote(data, x, reader) && (x.type !== 'gold' || goldAccess(reader)));
+    const candidate = findViewableNote(data, ctx.params.id, reader);
+    const n = candidate && (candidate.type !== 'gold' || goldAccess(reader)) ? candidate : null;
     if (!n) { const e = new Error('not found'); e.status = 404; throw e; }
     return pubNote(n);
   });
@@ -123,6 +125,7 @@ module.exports = function register(router, HttpError) {
         })),
       historyMonth: latestFive.length ? latestFive[latestFive.length - 1].date.slice(0, 7) : '',
       hasMoreHistory: records.length > latestFive.length,
+      refreshPolicy: goldFingerSync.refreshPolicy(),
     };
   });
 
