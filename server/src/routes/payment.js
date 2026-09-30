@@ -18,6 +18,19 @@ function darkFundOrderNo() {
   return `DF${Date.now()}${crypto.randomBytes(5).toString('hex')}`.slice(0, 32);
 }
 
+function orderQuotaResponse(order, quota, duplicate = false) {
+  return {
+    ...publicDarkFundOrder(order),
+    orderId: order.id,
+    request_id: order.clientRequestId || '',
+    duplicate,
+    remaining: quota.total,
+    expiringRemaining: quota.service,
+    permanentRemaining: quota.manual,
+    quotaExpiresAt: quota.serviceExpireAt,
+  };
+}
+
 module.exports = function register(router, HttpError) {
   const currentUser = (ctx) => {
     const uid = auth.userIdFor(ctx.headers.authorization);
@@ -46,15 +59,24 @@ module.exports = function register(router, HttpError) {
   router.post('/api/dark-funds/orders', async (ctx) => {
     const user = currentUser(ctx);
     const stockCode = String((ctx.body || {}).stockCode || '').trim();
+    const suppliedRequestId = String((ctx.body || {}).request_id || '').trim();
+    const requestId = suppliedRequestId || `legacy_${darkFundOrderNo()}`;
     if (!/^\d{6}$/.test(stockCode)) throw new HttpError(400, '请输入6位股票代码');
+    if (!/^[A-Za-z0-9_-]{12,80}$/.test(requestId)) throw new HttpError(400, '查询请求标识无效');
     if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
-    const consumed = consumeDarkFundQuota(user);
-    if (!consumed) throw new HttpError(403, '暗盘资金查询次数已用完');
     const d = db.get();
     d.darkFundOrders = Array.isArray(d.darkFundOrders) ? d.darkFundOrders : [];
+    const existing = d.darkFundOrders.find((item) => item.userId === user.id && item.clientRequestId === requestId);
+    if (existing) {
+      if (existing.stockCode !== stockCode) throw new HttpError(409, '查询请求标识已用于其他股票');
+      return orderQuotaResponse(existing, refreshDarkFundQuota(user), true);
+    }
+    const consumed = consumeDarkFundQuota(user);
+    if (!consumed) throw new HttpError(403, '暗盘资金查询次数已用完');
     const tradeDate = latestTradingDate();
     const order = {
       id: darkFundOrderNo(),
+      clientRequestId: requestId,
       userId: user.id,
       product: 'dark-funds',
       stockCode,
@@ -70,38 +92,17 @@ module.exports = function register(router, HttpError) {
     try {
       const accepted = await dispatchStockAnalysis(order);
       if (order.status === 'READY' || order.status === 'SUCCESS') {
-        return {
-          ...publicDarkFundOrder(order),
-          orderId: order.id,
-          remaining: consumed.total,
-          expiringRemaining: consumed.service,
-          permanentRemaining: consumed.manual,
-          quotaExpiresAt: consumed.serviceExpireAt,
-        };
+        return orderQuotaResponse(order, consumed);
       }
       order.status = 'QUEUED';
       order.dispatchedAt = Date.now();
       order.collectorStatus = accepted.status;
       db.save();
-      return {
-        ...publicDarkFundOrder(order),
-        orderId: order.id,
-        remaining: consumed.total,
-        expiringRemaining: consumed.service,
-        permanentRemaining: consumed.manual,
-        quotaExpiresAt: consumed.serviceExpireAt,
-      };
+      return orderQuotaResponse(order, consumed);
     } catch (error) {
       // 极快的缓存结果可能已在接单响应返回前回调成功，不能再覆盖为失败或退次数。
       if (order.status === 'READY' || order.status === 'SUCCESS') {
-        return {
-          ...publicDarkFundOrder(order),
-          orderId: order.id,
-          remaining: consumed.total,
-          expiringRemaining: consumed.service,
-          permanentRemaining: consumed.manual,
-          quotaExpiresAt: consumed.serviceExpireAt,
-        };
+        return orderQuotaResponse(order, consumed);
       }
       order.status = 'DISPATCH_FAILED';
       order.dispatchError = error.message;

@@ -8,7 +8,7 @@ const { createRouter, HttpError } = require('../src/router');
 function setup() {
   const data = {
     users: [{ id: 'wx_example123', name: '测试用户', avatar: '/avatar.jpg', goldExpire: 0, serviceExpire: 0 }],
-    userState: {}, notes: [], categories: [], invites: [], pointAccounts: {}, pointTransactions: [],
+    userState: {}, notes: [{ id: 'n1', likes: 10, collects: 4 }], categories: [], invites: [], pointAccounts: {}, pointTransactions: [],
   };
   const db = { get: () => data, save: () => {} };
   const auth = {
@@ -64,4 +64,23 @@ test('password confirmation and minimum length are enforced', async () => {
   await assert.rejects(call('PUT', '/api/me/profile', {
     name: '测试用户', avatar: '/avatar.jpg', password: '123', confirmPassword: '123',
   }, 'mini-token'), { status: 400 });
+});
+
+test('reaction batch writes final states idempotently instead of toggling twice', async () => {
+  const { data, call } = setup();
+  const body = { items: [{ noteId: 'n1', liked: true, collected: true, updatedAt: 1000 }] };
+  const first = await call('POST', '/api/reactions/batch', body, 'mini-token');
+  const retry = await call('POST', '/api/reactions/batch', body, 'mini-token');
+  assert.equal(first.applied, 1);
+  assert.equal(retry.applied, 1);
+  assert.equal(data.notes[0].likes, 11);
+  assert.equal(data.notes[0].collects, 5);
+  assert.equal(Boolean(data.userState.wx_example123.likes.n1), true);
+  assert.equal(Boolean(data.userState.wx_example123.collects.n1), true);
+
+  await call('POST', '/api/reactions/batch', {
+    items: [{ noteId: 'n1', liked: false, collected: true, updatedAt: 2000 }],
+  }, 'mini-token');
+  assert.equal(data.notes[0].likes, 10);
+  assert.equal(data.notes[0].collects, 5);
 });

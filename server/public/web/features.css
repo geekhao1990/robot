@@ -20,6 +20,463 @@
   background: #fff;
 }
 
+.profile-service-actions {
+  display: flex;
+  gap: 8px;
+  margin: 0 10px 12px;
+}
+
+.profile-service-button {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  padding: 12px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+}
+
+.profile-service-icon {
+  display: flex;
+  flex: 0 0 34px;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-right: 8px;
+  border-radius: 10px;
+  background: #e9f4ff;
+  color: #2474d2;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.profile-service-icon.payment {
+  background: #e8f7ed;
+  color: #16a05d;
+}
+
+.profile-service-button strong {
+  display: block;
+  color: #333;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.profile-service-button small {
+  display: block;
+  overflow: hidden;
+  margin-top: 4px;
+  color: #999;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gift-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1450;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, .45);
+}
+
+.gift-modal.hidden { display: none; }
+
+.gift-sheet {
+  width: min(100%, 500px);
+  padding: 22px 20px calc(22px + env(safe-area-inset-bottom));
+  border-radius: 18px 18px 0 0;
+  background: #fff;
+}
+
+.gift-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #222;
+  font-size: 18px;
+}
+
+.gift-sheet-head button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: none;
+  color: #999;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.gift-sheet .gift-row { margin-top: 16px; }
+
+.web-search-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.web-search-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: max(10px, env(safe-area-inset-top)) 12px 10px;
+  background: #fff;
+}
+
+.web-search-bar {
+  display: flex;
+  align-items: center;
+}
+
+.web-search-input-wrap {
+  display: flex;
+  flex: 1;
+  height: 36px;
+  align-items: center;
+  padding: 0 13px;
+  border-radius: 99px;
+  background: #f3f3f3;
+}
+
+.web-search-input-wrap input {
+  min-width: 0;
+  height: 100%;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #333;
+  font-size: 14px;
+}
+
+.web-search-clear,
+.web-search-cancel,
+.web-search-block-head button {
+  border: 0;
+  background: none;
+}
+
+.web-search-clear {
+  padding: 4px;
+  color: #aaa;
+  font-size: 20px;
+}
+
+.web-search-cancel {
+  flex: none;
+  margin-left: 12px;
+  padding: 6px 0 6px 8px;
+  color: #333;
+  font-size: 14px;
+}
+
+.web-search-content { padding: 12px; }
+
+.web-search-block { margin-bottom: 24px; }
+
+.web-search-block-head {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.web-search-block-head strong { font-size: 15px; }
+.web-search-block-head button { color: #999; font-size: 18px; }
+
+.web-search-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.web-search-word {
+  padding: 7px 15px;
+  border: 0;
+  border-radius: 99px;
+  background: #fff;
+  color: #333;
+  font-size: 13px;
+}
+
+.web-search-word.hot {
+  background: #fff0f2;
+  color: #ff2442;
+}
+
+.web-search-results { margin: -5px; }
+
+.web-search-placeholder {
+  padding: 75px 20px;
+  color: #aaa;
+  text-align: center;
+}
+
+.wechat-modal-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, .48);
+}
+
+.wechat-sheet {
+  width: min(100%, 500px);
+  padding: 10px 24px calc(22px + env(safe-area-inset-bottom));
+  border-radius: 18px 18px 0 0;
+  background: #fff;
+  text-align: center;
+  animation: wechat-sheet-in .22s ease-out;
+}
+
+.wechat-sheet-handle {
+  width: 36px;
+  height: 4px;
+  margin: 0 auto 16px;
+  border-radius: 99px;
+  background: #ddd;
+}
+
+.wechat-sheet h2 {
+  margin: 0;
+  color: #222;
+  font-size: 19px;
+}
+
+.wechat-sheet p {
+  margin: 7px 0 14px;
+  color: #999;
+  font-size: 12px;
+}
+
+.wechat-sheet img {
+  display: block;
+  width: min(76vw, 300px);
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 9px;
+}
+
+.wechat-sheet-close {
+  width: 100%;
+  height: 42px;
+  margin-top: 12px;
+  border: 0;
+  background: none;
+  color: #888;
+}
+
+@keyframes wechat-sheet-in {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.store-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.store-card,
+.store-checkout {
+  margin: 12px;
+  padding: 17px 15px;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.store-card h2 {
+  margin: 0 0 11px;
+  color: #333;
+  font-size: 14px;
+}
+
+.store-card h2:not(:first-child) {
+  margin-top: 20px;
+}
+
+.store-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.store-option {
+  height: 40px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #f7f7f7;
+  color: #555;
+  font-size: 12px;
+}
+
+.store-option.active {
+  border-color: #ff2442;
+  background: #fff1f3;
+  color: #ff2442;
+  font-weight: 700;
+}
+
+.store-option:disabled {
+  border-color: transparent;
+  background: transparent;
+  color: #d2d2d2;
+}
+
+.store-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.store-checkout small {
+  color: #999;
+}
+
+.store-checkout strong {
+  color: #ff2442;
+  font-size: 20px;
+}
+
+.store-checkout h2 {
+  margin: 0 0 9px;
+  color: #555;
+  font-size: 13px;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  border-top: 1px solid #f1f1f1;
+  color: #333;
+  font-size: 13px;
+}
+
+.payment-option input {
+  width: 17px;
+  height: 17px;
+  margin: 0 10px 0 0;
+  accent-color: #ff2442;
+}
+
+.payment-option span {
+  flex: 1;
+}
+
+.payment-option small {
+  color: #bbb;
+  font-size: 10px;
+}
+
+.payment-option.disabled {
+  color: #bbb;
+}
+
+.store-checkout > button.confirm-pay {
+  width: 100%;
+  height: 45px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 99px;
+  background: #ff2442;
+  color: #fff;
+  font-weight: 700;
+}
+
+.store-checkout p {
+  margin: 12px 0 0;
+  color: #aaa;
+  font-size: 10px;
+  text-align: center;
+}
+
+.store-wechat {
+  margin: 12px;
+  padding: 17px 15px 24px;
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+}
+
+.store-wechat p {
+  margin: 0 0 12px;
+  color: #777;
+  font-size: 12px;
+}
+
+.store-wechat img {
+  display: block;
+  width: min(62vw, 230px);
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+.store-bonus-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: rgba(0, 0, 0, .48);
+}
+
+.store-bonus-modal {
+  width: min(100%, 350px);
+  padding: 24px 20px 18px;
+  border-radius: 16px;
+  background: #fff;
+  text-align: center;
+}
+
+.store-bonus-modal > span {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #fff1c8;
+  color: #a66f06;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.store-bonus-modal h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.store-bonus-modal p {
+  margin: 10px 0 18px;
+  color: #777;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.store-bonus-modal button {
+  width: 100%;
+  height: 42px;
+  border: 0;
+  border-radius: 99px;
+  background: #ff2442;
+  color: #fff;
+  font-weight: 700;
+}
+
 .profile-tabs {
   display: flex;
   height: 48px;

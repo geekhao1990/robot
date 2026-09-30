@@ -23,15 +23,15 @@
           <view><text>长期有效</text><text>{{permanentRemaining}} 次</text></view>
         </view>
       </view>
-      <view class="query-ad-slot">
-        <ad wx:if="{{queryAdUnitId && !queryAdLoadFailed}}" unit-id="{{queryAdUnitId}}" binderror="onQueryAdError" />
-        <view wx:else class="query-ad-placeholder">广告位</view>
+      <view wx:if="{{queryAdUnitId && !queryAdLoadFailed}}" class="query-ad-slot">
+        <ad unit-id="{{queryAdUnitId}}" binderror="onQueryAdError" />
       </view>
       <view wx:if="{{waitingText}}" class="waiting-tip">{{waitingText}}</view>
     </view>
   </view>
 
   <view wx:if="{{tab === 'history'}}" class="history-page">
+    <view class="history-toolbar"><view>查询记录</view><view class="history-refresh" bindtap="refreshOrders">{{historyLoading ? '刷新中…' : '刷新'}}</view></view>
     <view wx:if="{{historyLoading}}" class="empty">正在加载...</view>
     <view wx:elif="{{!orders.length}}" class="empty">暂无历史订单</view>
     <view wx:else class="order-list">
@@ -48,9 +48,8 @@
       <view class="history-page-number">第 {{historyPage}} / {{historyTotalPages}} 页</view>
       <view class="history-page-button {{historyPage >= historyTotalPages ? 'disabled' : ''}}" data-page="{{historyPage + 1}}" bindtap="changeHistoryPage">下一页</view>
     </view>
-    <view wx:if="{{!historyLoading && orders.length}}" class="history-ad-slot">
-      <ad wx:if="{{historyAdUnitId && !historyAdLoadFailed}}" unit-id="{{historyAdUnitId}}" binderror="onHistoryAdError" />
-      <view wx:else class="query-ad-placeholder">广告位</view>
+    <view wx:if="{{!historyLoading && orders.length && historyAdUnitId && !historyAdLoadFailed}}" class="history-ad-slot">
+      <ad unit-id="{{historyAdUnitId}}" binderror="onHistoryAdError" />
     </view>
   </view>
 </view>

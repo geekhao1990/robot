@@ -3,7 +3,6 @@
     <view class="nav-inner" style="height: {{navBarHeight}}px;">
       <view class="back" bindtap="goBack">‹</view>
       <view class="nav-title">金手指</view>
-    <view class="nav-vip">金手指卡</view>
     </view>
   </view>
 
@@ -53,9 +52,8 @@
         </view>
       </view>
 
-      <view class="gold-ad-slot">
-        <ad wx:if="{{goldFingerAdUnitId && !adLoadFailed}}" unit-id="{{goldFingerAdUnitId}}" binderror="onAdError" />
-        <view wx:else class="gold-ad-placeholder">广告位</view>
+      <view wx:if="{{goldFingerAdUnitId && !adLoadFailed}}" class="gold-ad-slot">
+        <ad unit-id="{{goldFingerAdUnitId}}" binderror="onAdError" />
       </view>
 
       <view class="disclaimer">数据来自互联网，仅供参考不构成投资建议</view>

@@ -65,6 +65,7 @@ function decorate(note) {
   const liked = store.isLiked(note.id);
   const collected = store.isCollected(note.id);
   const bump = remote() ? 0 : 1;
+  const pending = remote() ? store.pendingReactionDelta(note.id) : { likes: 0, collects: 0 };
   return {
     ...note,
     riskDisclaimerEnabled: note.riskDisclaimerEnabled !== false,
@@ -72,8 +73,8 @@ function decorate(note) {
     hasResource: !!(note.hasResource || resourceOptionsOf(note).length),
     liked,
     collected,
-    likes: note.likes + (liked ? bump : 0),
-    collects: note.collects + (collected ? bump : 0),
+    likes: Math.max(0, Number(note.likes || 0) + (liked ? bump : 0) + pending.likes),
+    collects: Math.max(0, Number(note.collects || 0) + (collected ? bump : 0) + pending.collects),
   };
 }
 
@@ -279,8 +280,8 @@ function getDarkFundTradeDate() {
   return request('GET', '/api/dark-funds/trade-date', { auth: true });
 }
 
-function createDarkFundOrder(stockCode) {
-  return request('POST', '/api/dark-funds/orders', { auth: true, data: { stockCode } });
+function createDarkFundOrder(stockCode, requestId) {
+  return request('POST', '/api/dark-funds/orders', { auth: true, data: { stockCode, request_id: requestId } });
 }
 
 function getDarkFundOrders(page = 1) {
@@ -411,6 +412,9 @@ function readNotify(type) {
 function readConv(id) {
   return request('POST', '/api/conversations/' + id + '/read', { auth: true });
 }
+function batchReactions(items) {
+  return request('POST', '/api/reactions/batch', { auth: true, data: { items } });
+}
 
 function getSystemNotificationSummary() {
   return request('GET', '/api/system-notifications/summary', { auth: true });
@@ -489,6 +493,7 @@ module.exports = {
   uploadImage,
   likeNote,
   collectNote,
+  batchReactions,
   followUser,
   // 我的内容
   getMyCollects,

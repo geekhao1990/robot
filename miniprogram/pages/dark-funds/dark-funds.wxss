@@ -22,9 +22,10 @@
 .quota-details > view { display: flex; align-items: center; justify-content: space-between; min-height: 40rpx; }
 .quota-expiry { color: #aaa; font-size: 19rpx; }
 .query-ad-slot { width: 100%; margin-top: 24rpx; overflow: hidden; border-radius: 12rpx; }
-.query-ad-placeholder { display: flex; align-items: center; justify-content: center; height: 150rpx; color: #c4c4c4; font-size: 20rpx; letter-spacing: 3rpx; background: #f7f7f7; }
 .waiting-tip { display: flex; align-items: center; justify-content: center; height: 64rpx; margin-top: 24rpx; color: #8a6111; font-size: 25rpx; font-weight: 700; background: #fff7df; border-radius: 14rpx; }
 .history-page { padding: 24rpx; }
+.history-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 8rpx 20rpx; color: #333; font-size: 28rpx; font-weight: 700; }
+.history-refresh { padding: 10rpx 22rpx; color: #ff2442; font-size: 24rpx; font-weight: 600; background: #fff; border: 1rpx solid #ffd0d8; border-radius: 999rpx; }
 .empty { padding: 160rpx 0; color: #aaa; font-size: 26rpx; text-align: center; }
 .order-list { overflow: hidden; background: #fff; border-radius: 20rpx; }
 .order-card { display: flex; align-items: center; justify-content: space-between; min-height: 116rpx; padding: 0 28rpx; border-bottom: 1rpx solid #eee; }

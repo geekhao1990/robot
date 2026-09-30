@@ -157,6 +157,18 @@ test('query dispatches immediately and authenticated callback completes it idemp
   await assert.rejects(call('GET', `/api/dark-funds/orders/${created.orderId}`, {}, 'Bearer u2'), { status: 404 });
 });
 
+test('same user and request_id returns the original order without consuming quota twice', async () => {
+  const { data, call } = setup();
+  const body = { stockCode: '600105', request_id: 'df_20260930_same_request' };
+  const first = await call('POST', '/api/dark-funds/orders', body);
+  const second = await call('POST', '/api/dark-funds/orders', body);
+  assert.equal(second.orderId, first.orderId);
+  assert.equal(second.duplicate, true);
+  assert.equal(data.darkFundOrders.length, 1);
+  assert.equal(data.users[0].darkFundRemaining, 1);
+  await assert.rejects(call('POST', '/api/dark-funds/orders', { stockCode: '600106', request_id: body.request_id }), { status: 409 });
+});
+
 test('invalid or failed collector results do not silently complete an order', async () => {
   const { data, call } = setup();
   const created = await call('POST', '/api/dark-funds/orders', { stockCode: '600105' });

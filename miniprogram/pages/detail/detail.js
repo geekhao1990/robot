@@ -320,6 +320,7 @@ Page({
     const fallbackId = String(config[settingsKey] || '').trim();
     return api.getAppSettings().then(
       (settings) => {
+        if (!settings || settings.rewardedAdEnabled !== true) return onComplete();
         const adUnitId = String((settings && settings[settingsKey]) || fallbackId).trim();
         return this.openRewardedAd(adUnitId, onComplete);
       },

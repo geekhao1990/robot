@@ -36,9 +36,8 @@
         <view wx:if="{{darkParagraphs[2]}}" class="dark-paragraph">{{darkParagraphs[2]}}</view>
       </block>
       <view wx:else class="text">{{note.displayContent}}</view>
-      <view class="dark-ad-slot">
-        <ad wx:if="{{darkArticleAdUnitId && !articleAdLoadFailed}}" unit-id="{{darkArticleAdUnitId}}" binderror="onArticleAdError" />
-        <view wx:else class="dark-ad-placeholder">广告位</view>
+      <view wx:if="{{darkArticleAdUnitId && !articleAdLoadFailed}}" class="dark-ad-slot">
+        <ad unit-id="{{darkArticleAdUnitId}}" binderror="onArticleAdError" />
       </view>
       <view class="tags"><text wx:for="{{note.tags}}" wx:key="*this" class="tag">#{{item}}</text></view>
       <view class="meta">{{timeText}}</view>

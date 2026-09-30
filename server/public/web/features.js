@@ -34,7 +34,7 @@ renderNote = async function renderInteractiveNote(id) {
         + paragraphs.slice(images.length).map((item) => `<p class="paragraph">${escapeHtml(item)}</p>`).join('')
       : `<div class="article-images">${images.map((src) => `<div class="detail-image-stage"><img class="detail-bg" src="${escapeHtml(imageUrl(src))}" alt=""><img class="detail-image" src="${escapeHtml(imageUrl(src))}" alt=""></div>`).join('')}</div>`;
     state.currentNote = { id: note.id, authorId };
-    app.innerHTML = `<header class="page-nav"><button class="back" data-action="back">‹</button><div class="nav-author"><img src="${escapeHtml(imageUrl(note.author && note.author.avatar))}" alt=""><strong>${escapeHtml(note.author && note.author.name || '作者')}</strong>${ownNote ? '' : `<button class="follow ${followed ? 'followed' : ''}" data-web-action="follow" data-author-id="${escapeHtml(authorId)}">${followed ? '已关注' : '+ 关注'}</button>`}</div></header>${dark ? '' : media}<article class="article"><h1>${escapeHtml(note.title)}</h1>${dark ? media : paragraphs.map((item) => `<p class="paragraph">${escapeHtml(item)}</p>`).join('')}<div class="ad-placeholder">广告位</div><div class="tags">${(note.tags || []).map((tag) => `<span class="tag">#${escapeHtml(tag)}</span>`).join('')}</div><div class="article-meta">${new Date(note.time || Date.now()).toLocaleDateString()}</div><div class="actionbar">${note.hasResource ? `<button class="primary" data-resource="${escapeHtml(note.id)}" data-free="${note.free === true}">${dark ? '查询暗盘' : '点击领取'}</button>` : ''}${interactionButton('like', liked, '♡', '♥', note.likes)}${interactionButton('collect', collected, '☆', '★', note.collects)}<button class="small-action ${dark ? 'disabled' : ''}"><b>↗</b><span>${dark ? '不可用' : '分享有礼'}</span></button><button class="small-action" data-action="contact"><b>◯</b><span>客服</span></button></div><div id="resourceLinks" class="resource-links"></div></article>`;
+    app.innerHTML = `<header class="page-nav"><button class="back" data-action="back">‹</button><div class="nav-author"><img src="${escapeHtml(imageUrl(note.author && note.author.avatar))}" alt=""><strong>${escapeHtml(note.author && note.author.name || '作者')}</strong>${ownNote ? '' : `<button class="follow ${followed ? 'followed' : ''}" data-web-action="follow" data-author-id="${escapeHtml(authorId)}">${followed ? '已关注' : '+ 关注'}</button>`}</div></header>${dark ? '' : media}<article class="article"><h1>${escapeHtml(note.title)}</h1>${dark ? media : paragraphs.map((item) => `<p class="paragraph">${escapeHtml(item)}</p>`).join('')}<div class="tags">${(note.tags || []).map((tag) => `<span class="tag">#${escapeHtml(tag)}</span>`).join('')}</div><div class="article-meta">${new Date(note.time || Date.now()).toLocaleDateString()}</div><div class="actionbar"><button class="primary" data-resource="${escapeHtml(note.id)}" data-free="${note.free === true}">${dark ? '查询暗盘' : '获取资料'}</button>${interactionButton('like', liked, '♡', '♥', note.likes)}${interactionButton('collect', collected, '☆', '★', note.collects)}</div><div id="resourceLinks" class="resource-links"></div></article>`;
   } catch (error) {
     app.innerHTML = `<div class="notice"><strong>笔记无法打开</strong>${escapeHtml(error.message)}</div>`;
   }
@@ -79,6 +79,138 @@ function profileLibraryHtml(tab, notes) {
   return `<section class="profile-library"><div class="profile-tabs"><button class="${tab === 'collects' ? 'active' : ''}" data-profile-tab="collects">收藏</button><button class="${tab === 'likes' ? 'active' : ''}" data-profile-tab="likes">赞过</button></div><div id="profileNotes" class="profile-notes">${notes.length ? waterfall(notes) : `<div class="empty">${tab === 'collects' ? '还没有收藏的笔记' : '还没有赞过的笔记'}</div>`}</div></section>`;
 }
 
+const WEB_SEARCH_HISTORY_KEY = 'nl_search_history';
+
+function readSearchHistory() {
+  try {
+    const value = JSON.parse(localStorage.getItem(WEB_SEARCH_HISTORY_KEY) || '[]');
+    return Array.isArray(value) ? value.filter(Boolean).slice(0, 10) : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function writeSearchHistory(history) {
+  try { localStorage.setItem(WEB_SEARCH_HISTORY_KEY, JSON.stringify(history)); } catch (_) {}
+}
+
+function searchWordsHtml(words, hot = false) {
+  return words.map((word) => `<button type="button" class="web-search-word ${hot ? 'hot' : ''}" data-search-word="${escapeHtml(word)}">${escapeHtml(word)}</button>`).join('');
+}
+
+function searchBodyHtml() {
+  if (!state.searchSearched) {
+    const historyBlock = state.searchHistory.length
+      ? `<section class="web-search-block"><div class="web-search-block-head"><strong>搜索历史</strong><button type="button" data-action="search-clear-history" aria-label="清空搜索历史">⌫</button></div><div class="web-search-words">${searchWordsHtml(state.searchHistory)}</div></section>`
+      : '';
+    return `${historyBlock}<section class="web-search-block"><div class="web-search-block-head"><strong>🔥 热门搜索</strong></div><div class="web-search-words">${searchWordsHtml(state.searchHot, true)}</div></section>`;
+  }
+  if (state.searchLoading) return '<div class="web-search-placeholder">搜索中...</div>';
+  if (!state.searchResults.length) return `<div class="web-search-placeholder">没有找到「${escapeHtml(state.searchKeyword)}」相关内容</div>`;
+  return `<section class="web-search-results">${waterfall(state.searchResults)}</section>`;
+}
+
+function drawSearch({ focus = false, restoreScroll = false } = {}) {
+  state.route = 'search';
+  tabs.classList.add('hidden');
+  app.innerHTML = `<div class="web-search-page"><header class="web-search-header"><form id="webSearchForm" class="web-search-bar"><div class="web-search-input-wrap"><i class="search-icon"></i><input id="webSearchInput" value="${escapeHtml(state.searchKeyword)}" placeholder="搜索" autocomplete="off" enterkeyhint="search" aria-label="搜索"><button type="button" class="web-search-clear ${state.searchKeyword ? '' : 'hidden'}" data-action="search-clear-input" aria-label="清空">×</button></div><button type="button" class="web-search-cancel" data-action="search-cancel">取消</button></form></header><main class="web-search-content">${searchBodyHtml()}</main></div>`;
+  if (focus) requestAnimationFrame(() => document.querySelector('#webSearchInput')?.focus());
+  if (restoreScroll) requestAnimationFrame(() => window.scrollTo(0, Number(state.searchScrollY) || 0));
+}
+
+async function renderSearch() {
+  stopDarkPolling();
+  const firstVisit = !state.searchInitialized;
+  if (firstVisit) {
+    state.searchInitialized = true;
+    state.searchKeyword = '';
+    state.searchSearched = false;
+    state.searchLoading = false;
+    state.searchResults = [];
+    state.searchHistory = readSearchHistory();
+    state.searchHot = [];
+    state.searchScrollY = 0;
+  }
+  drawSearch({ focus: firstVisit, restoreScroll: !firstVisit });
+  if (state.searchHot.length || state.searchHotLoading) return;
+  state.searchHotLoading = true;
+  try {
+    const hot = await api('/api/hotSearch');
+    state.searchHot = Array.isArray(hot) ? hot : [];
+    if (state.route === 'search' && !state.searchSearched) drawSearch();
+  } catch (_) {
+    state.searchHot = [];
+  } finally {
+    state.searchHotLoading = false;
+  }
+}
+
+async function executeWebSearch(keyword = state.searchKeyword) {
+  const value = String(keyword || '').trim();
+  if (!value) return;
+  state.searchKeyword = value;
+  state.searchHistory = [value, ...state.searchHistory.filter((item) => item !== value)].slice(0, 10);
+  writeSearchHistory(state.searchHistory);
+  state.searchSearched = true;
+  state.searchLoading = true;
+  state.searchResults = [];
+  state.searchScrollY = 0;
+  const requestId = (state.searchRequestId || 0) + 1;
+  state.searchRequestId = requestId;
+  drawSearch();
+  try {
+    const results = await api(`/api/search?kw=${encodeURIComponent(value)}`);
+    if (requestId !== state.searchRequestId) return;
+    state.searchResults = Array.isArray(results) ? results : [];
+  } catch (error) {
+    if (requestId !== state.searchRequestId) return;
+    state.searchResults = [];
+    toast('搜索失败，请稍后重试');
+  } finally {
+    if (requestId === state.searchRequestId) {
+      state.searchLoading = false;
+      if (state.route === 'search') drawSearch();
+    }
+  }
+}
+
+function profileContactHtml() {
+  return `<section class="profile-service-actions"><button type="button" class="profile-service-button" data-action="enterprise-contact"><span class="profile-service-icon">企</span><span><strong>咨询人工</strong><small>售前咨询及售后服务</small></span></button><button type="button" class="profile-service-button" data-action="wechat-payment-code"><span class="profile-service-icon payment">收</span><span><strong>老客扫码复购</strong><small>微信二维码</small></span></button></section>`;
+}
+
+function closeEnterpriseWechatModal() {
+  const host = document.querySelector('#enterpriseWechatModalHost');
+  if (host) host.remove();
+}
+
+function showEnterpriseWechatModal() {
+  closeEnterpriseWechatModal();
+  const host = document.createElement('div');
+  host.id = 'enterpriseWechatModalHost';
+  host.innerHTML = `<div class="wechat-modal-mask"><section class="wechat-sheet"><div class="wechat-sheet-handle"></div><h2>咨询人工</h2><p>长按或扫码添加企业微信，进行售前咨询及售后服务</p><img src="/web/assets/enterprise-wechat.jpg" alt="咨询人工二维码"><button type="button" class="wechat-sheet-close">关闭</button></section></div>`;
+  document.body.appendChild(host);
+  const mask = host.querySelector('.wechat-modal-mask');
+  const close = host.querySelector('.wechat-sheet-close');
+  mask.addEventListener('click', (event) => {
+    if (event.target === mask) closeEnterpriseWechatModal();
+  });
+  close.addEventListener('click', closeEnterpriseWechatModal);
+}
+window.showEnterpriseWechatModal = showEnterpriseWechatModal;
+
+function showWechatPaymentCodeModal() {
+  closeEnterpriseWechatModal();
+  const host = document.createElement('div');
+  host.id = 'enterpriseWechatModalHost';
+  host.innerHTML = `<div class="wechat-modal-mask"><section class="wechat-sheet"><div class="wechat-sheet-handle"></div><h2>老客扫码复购</h2><p>长按保存或使用微信扫描二维码</p><img src="/web/assets/wechat-payment.jpg" alt="微信二维码"><button type="button" class="wechat-sheet-close">关闭</button></section></div>`;
+  document.body.appendChild(host);
+  const mask = host.querySelector('.wechat-modal-mask');
+  mask.addEventListener('click', (event) => {
+    if (event.target === mask) closeEnterpriseWechatModal();
+  });
+  host.querySelector('.wechat-sheet-close').addEventListener('click', closeEnterpriseWechatModal);
+}
+
 const renderProfileBase = renderProfile;
 renderProfile = async function renderInteractiveProfile() {
   await renderProfileBase();
@@ -92,7 +224,7 @@ renderProfile = async function renderInteractiveProfile() {
     const messageItem = document.querySelector('[data-action="messages"]');
     if (messageItem && state.messageUnread) messageItem.insertAdjacentHTML('beforeend', `<span class="web-menu-badge">${Math.min(99, state.messageUnread)}</span>`);
     const gift = document.querySelector('#giftPanel');
-    if (gift) gift.insertAdjacentHTML('beforebegin', profileLibraryHtml(state.profileTab, notes || []));
+    if (gift) gift.insertAdjacentHTML('beforebegin', profileContactHtml() + profileLibraryHtml(state.profileTab, notes || []));
   } catch (error) {
     toast(error.message);
   }
@@ -200,12 +332,11 @@ async function refreshDarkOrders(mode) {
 }
 
 const renderDarkBase = renderDark;
-renderDark = async function renderPollingDark(mode = 'query') {
+renderDark = async function renderEventDrivenDark(mode = 'query') {
   stopDarkPolling();
   await renderDarkBase(mode);
   if (!state.user || !document.querySelector('.dark-page')) return;
-  const pending = await refreshDarkOrders(mode);
-  if (pending && !state.darkPollTimer) state.darkPollTimer = setInterval(() => refreshDarkOrders(mode), 5000);
+  await refreshDarkOrders(mode);
 };
 
 const openNoteBase = openNote;
@@ -218,8 +349,32 @@ const renderRouteBase = renderRoute;
 renderRoute = function renderFeatureRoute(name) {
   if (name !== 'dark') stopDarkPolling();
   if (name === 'messages') return renderMessages();
+  if (name === 'search') return renderSearch();
   return renderRouteBase(name);
 };
+
+document.addEventListener('submit', (event) => {
+  if (event.target.id !== 'webSearchForm') return;
+  event.preventDefault();
+  const input = document.querySelector('#webSearchInput');
+  executeWebSearch(input ? input.value : '');
+});
+
+document.addEventListener('input', (event) => {
+  if (event.target.id !== 'webSearchInput') return;
+  state.searchRequestId = (state.searchRequestId || 0) + 1;
+  state.searchKeyword = event.target.value;
+  state.searchSearched = false;
+  state.searchLoading = false;
+  state.searchResults = [];
+  document.querySelector('.web-search-clear')?.classList.toggle('hidden', !state.searchKeyword);
+  const content = document.querySelector('.web-search-content');
+  if (content) content.innerHTML = searchBodyHtml();
+});
+
+document.addEventListener('click', (event) => {
+  if (state.route === 'search' && event.target.closest('[data-note]')) state.searchScrollY = window.scrollY;
+}, true);
 
 document.addEventListener('click', (event) => {
   const interaction = event.target.closest('[data-web-action]');
@@ -233,7 +388,33 @@ document.addEventListener('click', (event) => {
   if (profileTab) return loadProfileTab(profileTab.dataset.profileTab);
   const message = event.target.closest('[data-message-id]');
   if (message) return openSystemMessage(message);
+  const searchWord = event.target.closest('[data-search-word]');
+  if (searchWord) return executeWebSearch(searchWord.dataset.searchWord);
   const action = event.target.closest('[data-action]')?.dataset.action;
+  if (action === 'search-clear-history') {
+    state.searchHistory = [];
+    writeSearchHistory([]);
+    return drawSearch();
+  }
+  if (action === 'search-clear-input') {
+    state.searchRequestId = (state.searchRequestId || 0) + 1;
+    state.searchKeyword = '';
+    state.searchSearched = false;
+    state.searchLoading = false;
+    state.searchResults = [];
+    return drawSearch({ focus: true });
+  }
+  if (action === 'search-cancel') return history.length > 1 ? history.back() : navigate('home');
+  if (action === 'enterprise-contact') {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return showEnterpriseWechatModal();
+  }
+  if (action === 'wechat-payment-code') {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return showWechatPaymentCodeModal();
+  }
   if (action === 'messages') {
     event.preventDefault();
     event.stopImmediatePropagation();

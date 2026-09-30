@@ -68,14 +68,6 @@ Page({
   onShow() {
     if (!store.isLogin()) return;
     this.loadOrders(true);
-    this.stopOrderPolling();
-    this._orderPollingTimer = setInterval(() => this.loadOrders(true), 10000);
-  },
-  onHide() {
-    this.stopOrderPolling();
-  },
-  onUnload() {
-    this.stopOrderPolling();
   },
   switchTab(e) {
     const tab = e.currentTarget.dataset.tab;
@@ -85,7 +77,7 @@ Page({
   },
   loadTradeDate() {
     this.setData({ dateLoading: true });
-    api.getDarkFundTradeDate()
+    return api.getDarkFundTradeDate()
       .then((result) => this.setData({
         tradeDate: result.tradeDate,
         compactTradeDate: result.compactTradeDate,
@@ -114,16 +106,19 @@ Page({
     if (this.data.querying) return;
     this.setData({ querying: true });
     wx.showLoading({ title: '提交中', mask: true });
-    api.createDarkFundOrder(stockCode)
+    const requestId = this.queryRequestId(stockCode);
+    api.createDarkFundOrder(stockCode, requestId)
       .then((order) => {
         wx.hideLoading();
         if (!order || !order.orderId) throw new Error('工单提交失败');
         this.setData({ ...this.quotaData(order), waitingText: '等待结果' });
+        this.clearQueryRequestId(requestId);
         this.loadOrders(true, 1);
         wx.showModal({ title: '已提交', content: '等待结果', showCancel: false });
       })
       .catch((error) => {
         wx.hideLoading();
+        if (error && Number(error.statusCode) >= 400 && Number(error.statusCode) < 500) this.clearQueryRequestId(requestId);
         wx.showModal({ title: '查询失败', content: this.errorText(error), showCancel: false });
       })
       .finally(() => this.setData({ querying: false }));
@@ -162,6 +157,15 @@ Page({
     if (!Number.isInteger(page) || page < 1 || page > this.data.historyTotalPages || page === this.data.historyPage) return;
     this.loadOrders(false, page);
   },
+  refreshOrders() {
+    if (this.data.historyLoading) return;
+    this.loadOrders(false, 1)
+      .then(() => wx.showToast({ title: '订单已刷新', icon: 'success', duration: 1000 }));
+  },
+  onPullDownRefresh() {
+    Promise.all([this.loadTradeDate(), this.loadOrders(true, this.data.tab === 'history' ? this.data.historyPage : 1)])
+      .finally(() => wx.stopPullDownRefresh());
+  },
   openOrder(e) {
     const order = this.data.orders.find((item) => item.id === e.currentTarget.dataset.id);
     if (!order || !order.ready) return wx.showToast({ title: order && order.failed ? (order.error || '查询失败，次数已退回') : '等待结果', icon: 'none' });
@@ -177,9 +181,23 @@ Page({
       })
       .catch((error) => wx.showModal({ title: '加载失败', content: this.errorText(error), showCancel: false }));
   },
-  stopOrderPolling() {
-    if (this._orderPollingTimer) clearInterval(this._orderPollingTimer);
-    this._orderPollingTimer = null;
+  queryRequestId(stockCode) {
+    const key = 'dark_fund_pending_request';
+    const now = Date.now();
+    let saved = null;
+    try { saved = wx.getStorageSync(key); } catch (error) {}
+    if (saved && saved.stockCode === stockCode && saved.tradeDate === this.data.tradeDate && now - Number(saved.createdAt) < 10 * 60 * 1000) {
+      return saved.requestId;
+    }
+    const requestId = `df_${now}_${Math.random().toString(36).slice(2, 12)}`;
+    try { wx.setStorageSync(key, { requestId, stockCode, tradeDate: this.data.tradeDate, createdAt: now }); } catch (error) {}
+    return requestId;
+  },
+  clearQueryRequestId(requestId) {
+    try {
+      const saved = wx.getStorageSync('dark_fund_pending_request');
+      if (saved && saved.requestId === requestId) wx.removeStorageSync('dark_fund_pending_request');
+    } catch (error) {}
   },
   quotaData(result) {
     return {

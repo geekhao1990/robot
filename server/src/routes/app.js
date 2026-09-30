@@ -529,6 +529,50 @@ module.exports = function register(router, HttpError) {
     return { collected, collects: note.collects };
   });
 
+  // 小程序端把一小时内的点赞/收藏合并成最终状态后批量同步。
+  // 这里接收“目标状态”而不是再次切换，网络重试不会导致赞/藏反转。
+  router.post('/api/reactions/batch', (ctx) => {
+    const user = currentUser(ctx);
+    const data = db.get();
+    const state = getState(user.id);
+    const items = Array.isArray(ctx.body && ctx.body.items) ? ctx.body.items : [];
+    if (!items.length) return { ok: true, applied: 0, items: [] };
+    if (items.length > 200) throw new HttpError(400, '单次最多同步200条互动');
+
+    const result = [];
+    items.forEach((raw) => {
+      const noteId = String(raw && raw.noteId || '').trim();
+      const note = data.notes.find((item) => item.id === noteId);
+      if (!noteId || !canViewNote(data, note, user)) {
+        result.push({ noteId, ok: false, error: 'not found' });
+        return;
+      }
+      const updatedAt = Math.max(1, Number(raw.updatedAt) || Date.now());
+      const liked = raw.liked === true;
+      const collected = raw.collected === true;
+      const wasLiked = !!state.likes[noteId];
+      const wasCollected = !!state.collects[noteId];
+
+      if (liked !== wasLiked) {
+        if (liked) state.likes[noteId] = updatedAt;
+        else delete state.likes[noteId];
+        note.likes = Math.max(0, Number(note.likes || 0) + (liked ? 1 : -1));
+      } else if (liked) {
+        state.likes[noteId] = Math.max(Number(state.likes[noteId]) || 0, updatedAt);
+      }
+      if (collected !== wasCollected) {
+        if (collected) state.collects[noteId] = updatedAt;
+        else delete state.collects[noteId];
+        note.collects = Math.max(0, Number(note.collects || 0) + (collected ? 1 : -1));
+      } else if (collected) {
+        state.collects[noteId] = Math.max(Number(state.collects[noteId]) || 0, updatedAt);
+      }
+      result.push({ noteId, ok: true, liked, collected, likes: note.likes, collects: note.collects });
+    });
+    db.save();
+    return { ok: true, applied: result.filter((item) => item.ok).length, items: result };
+  });
+
   // 关注 / 取消关注作者
   router.post('/api/follow/:id', (ctx) => {
     const u = currentUser(ctx);

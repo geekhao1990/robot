@@ -25,6 +25,7 @@ App({
 
     // 初始化本地缓存，并从后端同步当前用户与交互状态
     store.init();
+    store.startReactionSync();
     store.captureInvite(options);
     this.globalData.userInfo = store.getUser();
     if (store.isLogin()) {
@@ -36,5 +37,10 @@ App({
 
   onShow(options) {
     store.captureInvite(options);
+    store.flushReactions(false);
+  },
+
+  onHide() {
+    store.flushReactions(false);
   },
 });

@@ -519,18 +519,6 @@
   width: 100%;
   margin: 38rpx 0 12rpx;
 }
-.dark-ad-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 150rpx;
-  color: #c4c4c4;
-  font-size: 20rpx;
-  letter-spacing: 3rpx;
-  background: #f7f7f7;
-  border: 1rpx solid #eeeeee;
-  border-radius: 8rpx;
-}
 /* 选择好友面板 */
 .friend-panel {
   position: absolute;

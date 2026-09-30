@@ -13,6 +13,16 @@ const FILE = path.join(__dirname, '../data/db.json');
 let db = null;
 let pool = null;
 let saveChain = Promise.resolve();
+let lastOrdersSignature = null;
+let lastEntitlementsSignature = null;
+let lastReactionsSignature = null;
+
+const ENTITLEMENT_KEYS = Object.freeze([
+  'goldExpire', 'goldQuotaGiftMigrated', 'serviceExpire', 'servicePlan',
+  'courseAccessPermanent', 'darkFundEnabled', 'darkFundRemaining',
+  'darkFundManualRemaining', 'darkFundServiceRemaining',
+  'darkFundServicePeriodStart', 'darkFundServicePeriodExpire',
+]);
 
 const LIFESTYLE_NOTE_UPDATES = Object.freeze({
   n1: {
@@ -154,6 +164,129 @@ function mysqlConfig() {
     connectionLimit: Number(process.env.MYSQL_CONNECTION_LIMIT) || 5,
     queueLimit: 0,
   };
+}
+
+async function ensureDomainTables() {
+  await pool.query(`CREATE TABLE IF NOT EXISTS dark_fund_orders (
+    order_id VARCHAR(80) NOT NULL PRIMARY KEY,
+    user_id VARCHAR(80) NOT NULL,
+    client_request_id VARCHAR(80) NULL,
+    status VARCHAR(32) NOT NULL,
+    created_at BIGINT NOT NULL DEFAULT 0,
+    payload_json LONGTEXT NOT NULL,
+    UNIQUE KEY uniq_dark_fund_request (user_id, client_request_id),
+    KEY idx_dark_fund_user_created (user_id, created_at)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS user_entitlements (
+    user_id VARCHAR(80) NOT NULL PRIMARY KEY,
+    gold_expire BIGINT NOT NULL DEFAULT 0,
+    service_expire BIGINT NOT NULL DEFAULT 0,
+    service_plan VARCHAR(40) NOT NULL DEFAULT '',
+    dark_fund_enabled TINYINT(1) NOT NULL DEFAULT 0,
+    dark_manual_remaining INT NOT NULL DEFAULT 0,
+    dark_service_remaining INT NOT NULL DEFAULT 0,
+    dark_service_expire_at BIGINT NOT NULL DEFAULT 0,
+    payload_json LONGTEXT NOT NULL,
+    updated_at BIGINT NOT NULL DEFAULT 0
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS note_reactions (
+    user_id VARCHAR(80) NOT NULL,
+    note_id VARCHAR(80) NOT NULL,
+    liked TINYINT(1) NOT NULL DEFAULT 0,
+    collected TINYINT(1) NOT NULL DEFAULT 0,
+    updated_at BIGINT NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, note_id),
+    KEY idx_note_reactions_note (note_id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+}
+
+function entitlementOf(user) {
+  const value = {};
+  ENTITLEMENT_KEYS.forEach((key) => { value[key] = user[key]; });
+  return value;
+}
+
+function normalizedStateSnapshot(source) {
+  const orders = (source.darkFundOrders || []).map((order) => ({ ...order }));
+  const entitlements = (source.users || []).filter((user) => user && user.id).map((user) => ({
+    userId: user.id,
+    ...entitlementOf(user),
+  }));
+  const reactions = [];
+  Object.entries(source.userState || {}).forEach(([userId, userState]) => {
+    const likes = userState.likes || {};
+    const collects = userState.collects || {};
+    const noteIds = new Set([...Object.keys(likes), ...Object.keys(collects)]);
+    noteIds.forEach((noteId) => reactions.push({
+      userId,
+      noteId,
+      liked: !!likes[noteId],
+      collected: !!collects[noteId],
+      updatedAt: Math.max(Number(likes[noteId]) || 0, Number(collects[noteId]) || 0),
+    }));
+  });
+  orders.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  entitlements.sort((a, b) => String(a.userId).localeCompare(String(b.userId)));
+  reactions.sort((a, b) => `${a.userId}:${a.noteId}`.localeCompare(`${b.userId}:${b.noteId}`));
+  return { orders, entitlements, reactions };
+}
+
+function appStateSnapshot(source) {
+  const result = {};
+  Object.entries(source).forEach(([key, value]) => {
+    if (key === 'darkFundOrders') return;
+    if (key === 'users') {
+      result.users = (value || []).map((user) => {
+        const copy = { ...user };
+        ENTITLEMENT_KEYS.forEach((field) => delete copy[field]);
+        return copy;
+      });
+      return;
+    }
+    if (key === 'userState') {
+      result.userState = {};
+      Object.entries(value || {}).forEach(([userId, userState]) => {
+        const copy = { ...userState };
+        delete copy.likes;
+        delete copy.collects;
+        result.userState[userId] = copy;
+      });
+      return;
+    }
+    result[key] = value;
+  });
+  return result;
+}
+
+async function hydrateNormalizedState() {
+  const [[orders], [entitlements], [reactions]] = await Promise.all([
+    pool.query('SELECT payload_json FROM dark_fund_orders ORDER BY created_at ASC'),
+    pool.query('SELECT user_id, payload_json FROM user_entitlements'),
+    pool.query('SELECT user_id, note_id, liked, collected, updated_at FROM note_reactions'),
+  ]);
+  if (orders.length) {
+    db.darkFundOrders = orders.map((row) => JSON.parse(row.payload_json));
+  }
+  if (entitlements.length) {
+    const byId = new Map((db.users || []).map((user) => [user.id, user]));
+    entitlements.forEach((row) => {
+      const user = byId.get(row.user_id);
+      if (!user) return;
+      let payload = {};
+      try { payload = JSON.parse(row.payload_json); } catch (error) {}
+      Object.assign(user, payload);
+    });
+  }
+  if (reactions.length) {
+    db.userState = db.userState || {};
+    reactions.forEach((row) => {
+      const userState = db.userState[row.user_id] || (db.userState[row.user_id] = { follows: {} });
+      userState.likes = userState.likes || {};
+      userState.collects = userState.collects || {};
+      if (row.liked) userState.likes[row.note_id] = Number(row.updated_at) || 1;
+      if (row.collected) userState.collects[row.note_id] = Number(row.updated_at) || 1;
+    });
+  }
 }
 
 function ensureContentTypes() {
@@ -397,6 +530,7 @@ async function load() {
       state_value LONGTEXT NOT NULL,
       updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+    await ensureDomainTables();
     const [rows] = await pool.query('SELECT state_key, state_value FROM app_state');
     if (rows.length) {
       db = {};
@@ -408,6 +542,7 @@ async function load() {
     } else {
       db = require('./seed')();
     }
+    await hydrateNormalizedState();
   } else if (fs.existsSync(FILE)) {
     db = JSON.parse(fs.readFileSync(FILE, 'utf8'));
   } else {
@@ -427,7 +562,11 @@ async function load() {
 
 function save() {
   if (mysqlEnabled()) {
-    const snapshot = Object.entries(db).map(([key, value]) => [key, JSON.stringify(value)]);
+    const snapshot = Object.entries(appStateSnapshot(db)).map(([key, value]) => [key, JSON.stringify(value)]);
+    const normalized = normalizedStateSnapshot(db);
+    const ordersSignature = JSON.stringify(normalized.orders);
+    const entitlementsSignature = JSON.stringify(normalized.entitlements);
+    const reactionsSignature = JSON.stringify(normalized.reactions);
     saveChain = saveChain.catch(() => {}).then(async () => {
       const connection = await pool.getConnection();
       try {
@@ -438,7 +577,51 @@ function save() {
             [key, value]
           );
         }
+        await connection.execute("DELETE FROM app_state WHERE state_key = 'darkFundOrders'");
+        if (ordersSignature !== lastOrdersSignature) {
+          for (const order of normalized.orders) {
+            await connection.execute(
+              `INSERT INTO dark_fund_orders
+              (order_id, user_id, client_request_id, status, created_at, payload_json)
+             VALUES (?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE status = VALUES(status), payload_json = VALUES(payload_json)`,
+              [order.id, order.userId, order.clientRequestId || null, order.status || '', Number(order.createdAt) || 0, JSON.stringify(order)]
+            );
+          }
+        }
+        if (entitlementsSignature !== lastEntitlementsSignature) {
+          for (const item of normalized.entitlements) {
+            await connection.execute(
+              `INSERT INTO user_entitlements
+              (user_id, gold_expire, service_expire, service_plan, dark_fund_enabled,
+               dark_manual_remaining, dark_service_remaining, dark_service_expire_at, payload_json, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE gold_expire = VALUES(gold_expire), service_expire = VALUES(service_expire),
+               service_plan = VALUES(service_plan), dark_fund_enabled = VALUES(dark_fund_enabled),
+               dark_manual_remaining = VALUES(dark_manual_remaining), dark_service_remaining = VALUES(dark_service_remaining),
+               dark_service_expire_at = VALUES(dark_service_expire_at), payload_json = VALUES(payload_json),
+               updated_at = VALUES(updated_at)`,
+              [item.userId, Number(item.goldExpire) || 0, Number(item.serviceExpire) || 0, item.servicePlan || '',
+                item.darkFundEnabled ? 1 : 0, Number(item.darkFundManualRemaining) || 0,
+                Number(item.darkFundServiceRemaining) || 0, Number(item.darkFundServicePeriodExpire) || 0,
+                JSON.stringify(item), Date.now()]
+            );
+          }
+        }
+        if (reactionsSignature !== lastReactionsSignature) {
+          // 当前状态是权威快照；仅互动状态变化时才替换，普通业务写入不会反复扫描该表。
+          await connection.execute('DELETE FROM note_reactions');
+          for (const item of normalized.reactions) {
+            await connection.execute(
+              'INSERT INTO note_reactions (user_id, note_id, liked, collected, updated_at) VALUES (?, ?, ?, ?, ?)',
+              [item.userId, item.noteId, item.liked ? 1 : 0, item.collected ? 1 : 0, item.updatedAt]
+            );
+          }
+        }
         await connection.commit();
+        lastOrdersSignature = ordersSignature;
+        lastEntitlementsSignature = entitlementsSignature;
+        lastReactionsSignature = reactionsSignature;
       } catch (error) {
         await connection.rollback();
         throw error;
@@ -467,4 +650,7 @@ async function close() {
   if (pool) await pool.end();
 }
 
-module.exports = { load, save, flush, close, get, mysqlEnabled };
+module.exports = {
+  load, save, flush, close, get, mysqlEnabled,
+  _testing: { appStateSnapshot, normalizedStateSnapshot },
+};

@@ -23,6 +23,10 @@ const KEY = {
   PENDING_INVITE: 'xhs_pending_invite',
 };
 
+const REACTION_BATCH_MS = 60 * 60 * 1000;
+let reactionFlushPromise = null;
+let reactionSyncTimer = null;
+
 let state = {
   token: null,
   user: null,
@@ -45,6 +49,99 @@ function save(key, value) {
   try {
     wx.setStorageSync(key, value);
   } catch (e) {}
+}
+
+function reactionQueueKey(user = state.user) {
+  return user && user.id ? `xhs_reaction_queue_${user.id}` : '';
+}
+
+function reactionQueue() {
+  const key = reactionQueueKey();
+  return key ? load(key, {}) : {};
+}
+
+function saveReactionQueue(queue) {
+  const key = reactionQueueKey();
+  if (key) save(key, queue || {});
+}
+
+function overlayPendingReactions() {
+  const queue = reactionQueue();
+  Object.keys(queue).forEach((id) => {
+    const item = queue[id];
+    if (item.liked) state.likes[id] = item.updatedAt;
+    else delete state.likes[id];
+    if (item.collected) state.collects[id] = item.updatedAt;
+    else delete state.collects[id];
+  });
+}
+
+function queueReaction(id, previous) {
+  const queue = reactionQueue();
+  const old = queue[id];
+  const now = Date.now();
+  queue[id] = {
+    noteId: id,
+    liked: !!state.likes[id],
+    collected: !!state.collects[id],
+    baseLiked: old ? old.baseLiked : !!previous.liked,
+    baseCollected: old ? old.baseCollected : !!previous.collected,
+    queuedAt: old ? old.queuedAt : now,
+    updatedAt: now,
+  };
+  // 用户又切回服务端原状态时无需产生写入。
+  if (queue[id].liked === queue[id].baseLiked && queue[id].collected === queue[id].baseCollected) {
+    delete queue[id];
+  }
+  saveReactionQueue(queue);
+}
+
+function pendingReactionDelta(id) {
+  const item = reactionQueue()[id];
+  if (!item) return { likes: 0, collects: 0 };
+  return {
+    likes: Number(item.liked) - Number(item.baseLiked),
+    collects: Number(item.collected) - Number(item.baseCollected),
+  };
+}
+
+function flushReactions(force = false) {
+  if (!config.useRemote || !state.token || !state.user) return Promise.resolve({ skipped: true });
+  if (reactionFlushPromise) return reactionFlushPromise;
+  const queue = reactionQueue();
+  const items = Object.values(queue);
+  if (!items.length) return Promise.resolve({ skipped: true });
+  const oldest = Math.min(...items.map((item) => Number(item.queuedAt) || Date.now()));
+  if (!force && Date.now() - oldest < REACTION_BATCH_MS) return Promise.resolve({ pending: items.length });
+
+  const submitted = items.map((item) => ({
+    noteId: item.noteId,
+    liked: item.liked,
+    collected: item.collected,
+    updatedAt: item.updatedAt,
+  }));
+  reactionFlushPromise = getApi().batchReactions(submitted).then((result) => {
+    const latest = reactionQueue();
+    const accepted = new Set(((result && result.items) || [])
+      .filter((item) => item && item.ok === true)
+      .map((item) => item.noteId));
+    submitted.forEach((item) => {
+      if (accepted.has(item.noteId) && latest[item.noteId] && latest[item.noteId].updatedAt === item.updatedAt) {
+        delete latest[item.noteId];
+      }
+    });
+    saveReactionQueue(latest);
+    return result;
+  }).catch(() => ({ pending: submitted.length })).then((result) => {
+    reactionFlushPromise = null;
+    return result;
+  });
+  return reactionFlushPromise;
+}
+
+function startReactionSync() {
+  if (reactionSyncTimer) return;
+  reactionSyncTimer = setInterval(() => flushReactions(false), 60 * 1000);
 }
 
 function init() {
@@ -150,6 +247,7 @@ function syncMe() {
       state.likes = toMap(d.likes);
       state.collects = toMap(d.collects);
       state.follows = toMap(d.follows);
+      overlayPendingReactions();
       save(KEY.LIKES, state.likes);
       save(KEY.COLLECTS, state.collects);
       save(KEY.FOLLOWS, state.follows);
@@ -181,18 +279,18 @@ function logout() {
   save(KEY.FOLLOWS, {});
 }
 
-// ---------- 点赞 / 收藏 / 关注（乐观更新 + 回传后端） ----------
+// ---------- 点赞 / 收藏 / 关注 ----------
+// 点赞与收藏先乐观写入本地，按用户合并为最终状态，约一小时后批量回传。
 function isLiked(id) {
   return !!state.likes[id];
 }
 function toggleLike(id) {
+  const previous = { liked: !!state.likes[id], collected: !!state.collects[id] };
   const liked = !state.likes[id];
   if (liked) state.likes[id] = Date.now();
   else delete state.likes[id];
   save(KEY.LIKES, state.likes);
-  if (config.useRemote && state.token) {
-    getApi().likeNote(id).catch(() => revert(state.likes, KEY.LIKES, id, liked));
-  }
+  if (config.useRemote && state.token) queueReaction(id, previous);
   return liked;
 }
 
@@ -200,13 +298,12 @@ function isCollected(id) {
   return !!state.collects[id];
 }
 function toggleCollect(id) {
+  const previous = { liked: !!state.likes[id], collected: !!state.collects[id] };
   const collected = !state.collects[id];
   if (collected) state.collects[id] = Date.now();
   else delete state.collects[id];
   save(KEY.COLLECTS, state.collects);
-  if (config.useRemote && state.token) {
-    getApi().collectNote(id).catch(() => revert(state.collects, KEY.COLLECTS, id, collected));
-  }
+  if (config.useRemote && state.token) queueReaction(id, previous);
   return collected;
 }
 
@@ -307,6 +404,7 @@ module.exports = {
   captureInvite, getPendingInvite,
   isLiked, toggleLike,
   isCollected, toggleCollect,
+  pendingReactionDelta, flushReactions, startReactionSync,
   isFollowed, toggleFollow,
   likedIds, collectedIds, followedIds,
   markNotifyRead, isNotifyRead, markConvRead, isConvRead, messageUnread, refreshMessageSummary,
