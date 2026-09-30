@@ -105,49 +105,51 @@ Page({
   createGoldRewardedAd(adUnitId) {
     if (this._goldRewardedAd || !wx.createRewardedVideoAd) return;
     this._goldRewardedAd = wx.createRewardedVideoAd({ adUnitId });
-    this._goldRewardedAd.onClose(() => {
-      this.finishGoldRewardedAd();
+    this._goldRewardedAd.onClose((result) => {
+      // 只有明确返回 isEnded=false 才属于用户中途关闭；旧基础库不返回结果时按已完成处理。
+      this.finishGoldRewardedAd(!result || result.isEnded !== false);
       if (this._goldRewardedAd) this._goldRewardedAd.load().catch(() => {});
     });
     this._goldRewardedAd.onError((error) => {
       console.error('[GoldRewardedVideoAd]', error);
-      this.finishGoldRewardedAd();
+      this.finishGoldRewardedAd(true);
     });
     this._goldRewardedAd.load().catch((error) => {
       console.error('[GoldRewardedVideoAd:load]', error);
     });
   },
 
-  finishGoldRewardedAd() {
+  finishGoldRewardedAd(shouldRefresh = true) {
     if (this._goldRewardedAdTimer) clearTimeout(this._goldRewardedAdTimer);
     this._goldRewardedAdTimer = null;
     const done = this._goldRewardedAdDone;
     this._goldRewardedAdDone = null;
-    if (done) done();
+    if (done) done(shouldRefresh);
   },
 
   showGoldRewardedAd() {
     if (!this._goldRewardedAd && /^adunit-/i.test(String(config.goldRewardedVideoAdUnitId || ''))) {
       this.createGoldRewardedAd(String(config.goldRewardedVideoAdUnitId));
     }
-    if (!this._goldRewardedAd) return Promise.resolve(false);
+    // 广告能力或广告实例不可用属于拉取失败，不能阻断刷新。
+    if (!this._goldRewardedAd) return Promise.resolve(true);
     return new Promise((resolve) => {
       let finished = false;
-      const done = () => {
+      const done = (shouldRefresh) => {
         if (finished) return;
         finished = true;
-        resolve(true);
+        resolve(shouldRefresh !== false);
       };
       this._goldRewardedAdDone = done;
       // 极少数客户端既不 reject 也不触发 onError；兜底继续刷新，避免广告 SDK 卡死业务。
-      this._goldRewardedAdTimer = setTimeout(() => this.finishGoldRewardedAd(), 8000);
+      this._goldRewardedAdTimer = setTimeout(() => this.finishGoldRewardedAd(true), 8000);
       const show = () => this._goldRewardedAd.show().then(() => {
         if (this._goldRewardedAdTimer) clearTimeout(this._goldRewardedAdTimer);
         this._goldRewardedAdTimer = null;
       });
       show().catch((error) => {
         console.error('[GoldRewardedVideoAd:show]', error);
-        this.finishGoldRewardedAd();
+        this.finishGoldRewardedAd(true);
       });
     });
   },
@@ -179,11 +181,22 @@ Page({
     store.syncMe()
       .catch(() => store.getUser())
       .then((user) => {
-        if (user && user.serviceActive === true) return this.showGoldInterstitialAd();
+        if (user && user.serviceActive === true) {
+          return this.showGoldInterstitialAd().then(() => true);
+        }
         return this.showGoldRewardedAd();
       })
-      .then(() => this.loadData({ silent: true, force: true }))
-      .then(() => {
+      .then((shouldRefresh) => {
+        if (!shouldRefresh) {
+          wx.hideLoading();
+          this.setData({ refreshing: false });
+          wx.showToast({ title: '广告未播放完成，未刷新', icon: 'none' });
+          return false;
+        }
+        return this.loadData({ silent: true, force: true }).then(() => true);
+      })
+      .then((refreshed) => {
+        if (!refreshed) return;
         wx.hideLoading();
         wx.showToast({ title: '金手指已更新', icon: 'success', duration: 1200 });
       })
@@ -243,7 +256,7 @@ Page({
   },
 
   onUnload() {
-    this.finishGoldRewardedAd();
+    this.finishGoldRewardedAd(false);
     if (this._goldRewardedAd && this._goldRewardedAd.destroy) this._goldRewardedAd.destroy();
     this._goldRewardedAd = null;
     if (this._goldInterstitialAd && this._goldInterstitialAd.destroy) this._goldInterstitialAd.destroy();
