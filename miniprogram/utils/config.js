@@ -35,6 +35,8 @@ module.exports = {
   darkFundsQueryAdUnitId: '',
   // 进入“我”页面时展示的插屏广告位。
   profileAdUnitId: '',
+  // “我”页面收藏/赞过模块之后的 Banner 广告位。
+  profileBottomAdUnitId: '',
   // 消息中心“全部消息”上方的横幅广告位。
   messageCenterAdUnitId: '',
 };

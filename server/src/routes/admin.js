@@ -106,6 +106,7 @@ module.exports = function register(router, HttpError) {
       ['goldFingerInterstitialAdUnitId', '金手指页面插屏'],
       ['darkFundsQueryAdUnitId', '暗盘查询'],
       ['profileAdUnitId', '个人中心'],
+      ['profileBottomAdUnitId', '个人中心末尾'],
       ['messageCenterAdUnitId', '消息中心'],
     ];
     const adUnits = {};

@@ -170,6 +170,7 @@ function baseAppSettings() {
     goldFingerInterstitialAdUnitId: String(config.goldFingerInterstitialAdUnitId || ''),
     darkFundsQueryAdUnitId: String(config.darkFundsQueryAdUnitId || ''),
     profileAdUnitId: String(config.profileAdUnitId || ''),
+    profileBottomAdUnitId: String(config.profileBottomAdUnitId || ''),
     messageCenterAdUnitId: String(config.messageCenterAdUnitId || ''),
     goldAccess: false,
     featuredNoteId: config.featuredNoteId || 'n3',
@@ -191,6 +192,9 @@ function normalizeAppSettings(settings, fallback = baseAppSettings()) {
       : fallback.goldFingerInterstitialAdUnitId,
     darkFundsQueryAdUnitId: settings && typeof settings.darkFundsQueryAdUnitId === 'string' ? settings.darkFundsQueryAdUnitId : fallback.darkFundsQueryAdUnitId,
     profileAdUnitId: settings && typeof settings.profileAdUnitId === 'string' ? settings.profileAdUnitId : fallback.profileAdUnitId,
+    profileBottomAdUnitId: settings && typeof settings.profileBottomAdUnitId === 'string'
+      ? settings.profileBottomAdUnitId
+      : fallback.profileBottomAdUnitId,
     messageCenterAdUnitId: settings && typeof settings.messageCenterAdUnitId === 'string' ? settings.messageCenterAdUnitId : fallback.messageCenterAdUnitId,
     goldAccess: settings && settings.goldAccess === true,
     featuredNoteId: settings && typeof settings.featuredNoteId === 'string' ? settings.featuredNoteId : fallback.featuredNoteId,

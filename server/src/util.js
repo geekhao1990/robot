@@ -63,6 +63,7 @@ function pubSettings(data) {
     goldFingerInterstitialAdUnitId: publicAdUnitId(raw.goldFingerInterstitialAdUnitId),
     darkFundsQueryAdUnitId: publicAdUnitId(raw.darkFundsQueryAdUnitId),
     profileAdUnitId: publicAdUnitId(raw.profileAdUnitId),
+    profileBottomAdUnitId: publicAdUnitId(raw.profileBottomAdUnitId),
     messageCenterAdUnitId: publicAdUnitId(raw.messageCenterAdUnitId),
     featuredNoteId: featured ? featured.id : '',
   };

@@ -27,12 +27,19 @@ Page({
     refreshReady: false,
     profileScrollTop: 0,
     messageUnread: 0,
+    profileBottomAdUnitId: /^adunit-/i.test(String(config.profileBottomAdUnitId || '')) ? String(config.profileBottomAdUnitId) : '',
+    profileBottomAdLoadFailed: false,
   },
   onLoad() {
     const app = getApp();
     this.setData({ statusBarHeight: app.globalData.statusBarHeight, navBarHeight: app.globalData.navBarHeight });
     api.getAppSettings().then((settings) => {
       const id = String((settings && settings.profileAdUnitId) || config.profileAdUnitId || '');
+      const bottomId = String((settings && settings.profileBottomAdUnitId) || config.profileBottomAdUnitId || '');
+      this.setData({
+        profileBottomAdUnitId: /^adunit-/i.test(bottomId) ? bottomId : '',
+        profileBottomAdLoadFailed: false,
+      });
       if (/^adunit-/i.test(id)) this.createProfileInterstitialAd(id);
     });
   },
@@ -73,6 +80,9 @@ Page({
   onUnload() {
     if (this._profileInterstitialAd && this._profileInterstitialAd.destroy) this._profileInterstitialAd.destroy();
     this._profileInterstitialAd = null;
+  },
+  onProfileBottomAdError() {
+    this.setData({ profileBottomAdLoadFailed: true });
   },
   refreshProfile() {
     const proceed = () => {

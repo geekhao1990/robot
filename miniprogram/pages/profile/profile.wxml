@@ -88,6 +88,9 @@
       <view class="placeholder" hidden="{{currentNotes.length}}">{{emptyText}}</view>
     </view>
   </block>
+  <view wx:if="{{loggedIn && profileBottomAdUnitId && !profileBottomAdLoadFailed}}" class="profile-bottom-ad">
+    <ad unit-id="{{profileBottomAdUnitId}}" binderror="onProfileBottomAdError" />
+  </view>
 </view>
 </scroll-view>
 <view wx:if="{{giftModalVisible}}" class="gift-mask" catchtap="closeGiftModal">

@@ -1232,6 +1232,11 @@ function renderSettings() {
           <input id="settingProfileAdUnitId" value="${esc(settings.profileAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
         </div>
         <div class="field">
+          <label>“我”页面末尾广告位 ID</label>
+          <input id="settingProfileBottomAdUnitId" value="${esc(settings.profileBottomAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+          <div class="hint">请选择 Banner 广告位，展示在收藏/赞过模块之后。</div>
+        </div>
+        <div class="field">
           <label>消息中心广告位 ID</label>
           <input id="settingMessageCenterAdUnitId" value="${esc(settings.messageCenterAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
           <div class="hint">“我”页面请选择插屏广告；其余四项请选择 Banner 广告。建议每个位置使用独立广告位，留空则不展示。</div>
@@ -1257,6 +1262,7 @@ function saveSettings() {
     goldFingerInterstitialAdUnitId: document.getElementById('settingGoldFingerInterstitialAdUnitId').value.trim(),
     darkFundsQueryAdUnitId: document.getElementById('settingDarkFundsQueryAdUnitId').value.trim(),
     profileAdUnitId: document.getElementById('settingProfileAdUnitId').value.trim(),
+    profileBottomAdUnitId: document.getElementById('settingProfileBottomAdUnitId').value.trim(),
     messageCenterAdUnitId: document.getElementById('settingMessageCenterAdUnitId').value.trim(),
     hotSearch: Array.from(new Set(document.getElementById('settingHotSearch').value.split(/[\n,，]/).map((item) => item.trim()).filter(Boolean))),
   };

@@ -176,6 +176,7 @@
 .list {
   padding: 12rpx;
 }
+.profile-bottom-ad { margin: 20rpx 20rpx calc(30rpx + env(safe-area-inset-bottom)); overflow: hidden; border-radius: 16rpx; }
 /* 草稿卡片（笔记形式） */
 .draft-card {
   background: #fff;
