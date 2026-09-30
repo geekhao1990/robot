@@ -15,6 +15,7 @@ require('./routes/public')(router, HttpError);
 require('./routes/app')(router, HttpError);
 require('./routes/message')(router, HttpError);
 require('./routes/payment')(router, HttpError);
+require('./routes/stocks')(router, HttpError);
 require('./routes/admin')(router, HttpError);
 require('./routes/gift-cards')(router, HttpError);
 

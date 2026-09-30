@@ -8,6 +8,13 @@
 .query-card { padding: 48rpx 32rpx 38rpx; background: #fff; border-radius: 24rpx; box-shadow: 0 8rpx 24rpx rgba(0,0,0,.04); }
 .code-box { padding: 0 24rpx; background: #f7f7f7; border: 2rpx solid transparent; border-radius: 16rpx; }
 .code-input { height: 96rpx; color: #222; font-size: 34rpx; font-weight: 700; letter-spacing: 6rpx; text-align: center; }
+.stock-dropdown { margin-top: 10rpx; overflow: hidden; background: #fff; border: 1rpx solid #eee; border-radius: 14rpx; box-shadow: 0 10rpx 28rpx rgba(0,0,0,.08); }
+.stock-option, .stock-dropdown-tip, .stock-dropdown-error { display: flex; align-items: center; min-height: 76rpx; padding: 0 24rpx; font-size: 25rpx; }
+.stock-option { justify-content: space-between; color: #222; }
+.stock-option-code { font-weight: 750; letter-spacing: 2rpx; }
+.stock-option-name { color: #555; font-weight: 650; }
+.stock-dropdown-tip { justify-content: center; color: #999; }
+.stock-dropdown-error { justify-content: center; color: #ff2442; }
 .trade-date { margin-top: 28rpx; color: #333; font-size: 32rpx; font-weight: 700; text-align: center; }
 .query-actions { display: flex; align-items: center; gap: 18rpx; margin-top: 40rpx; }
 .query-button, .contact-button { display: flex; align-items: center; justify-content: center; height: 88rpx; margin: 0; padding: 0 24rpx; font-size: 29rpx; font-weight: 700; line-height: normal; border-radius: 999rpx; }
@@ -25,7 +32,8 @@
 .waiting-tip { display: flex; align-items: center; justify-content: center; height: 64rpx; margin-top: 24rpx; color: #8a6111; font-size: 25rpx; font-weight: 700; background: #fff7df; border-radius: 14rpx; }
 .history-page { padding: 24rpx; }
 .history-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 8rpx 20rpx; color: #333; font-size: 28rpx; font-weight: 700; }
-.history-refresh { padding: 10rpx 22rpx; color: #ff2442; font-size: 24rpx; font-weight: 600; background: #fff; border: 1rpx solid #ffd0d8; border-radius: 999rpx; }
+.history-refresh { padding: 13rpx 24rpx; color: #fff; font-size: 23rpx; font-weight: 700; background: #ff2442; border-radius: 999rpx; box-shadow: 0 6rpx 16rpx rgba(255,36,66,.22); }
+.history-refresh.disabled { opacity: .62; }
 .empty { padding: 160rpx 0; color: #aaa; font-size: 26rpx; text-align: center; }
 .order-list { overflow: hidden; background: #fff; border-radius: 20rpx; }
 .order-card { display: flex; align-items: center; justify-content: space-between; min-height: 116rpx; padding: 0 28rpx; border-bottom: 1rpx solid #eee; }

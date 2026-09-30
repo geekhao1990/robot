@@ -11,6 +11,14 @@
       <view class="code-box">
         <input class="code-input" type="number" maxlength="6" value="{{stockCode}}" bindinput="onCodeInput" focus />
       </view>
+      <view wx:if="{{stockLookupLoading || stockSuggestion || stockLookupError}}" class="stock-dropdown">
+        <view wx:if="{{stockLookupLoading}}" class="stock-dropdown-tip">正在查询股票名称…</view>
+        <view wx:elif="{{stockSuggestion}}" class="stock-option">
+          <text class="stock-option-code">{{stockSuggestion.stockCode}}</text>
+          <text class="stock-option-name">{{stockSuggestion.stockName}}</text>
+        </view>
+        <view wx:else class="stock-dropdown-error">{{stockLookupError}}</view>
+      </view>
       <view class="trade-date">查询日期：{{compactTradeDate || '获取中...'}}</view>
       <view class="query-actions">
         <button class="query-button" bindtap="prepareQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">查询</button>
@@ -31,7 +39,7 @@
   </view>
 
   <view wx:if="{{tab === 'history'}}" class="history-page">
-    <view class="history-toolbar"><view>查询记录</view><view class="history-refresh" bindtap="refreshOrders">{{historyLoading ? '刷新中…' : '刷新'}}</view></view>
+    <view class="history-toolbar"><view>查询记录</view><view class="history-refresh {{historyLoading ? 'disabled' : ''}}" bindtap="refreshOrders">{{historyLoading ? '工单状态刷新中…' : '请手动刷新工单状态'}}</view></view>
     <view wx:if="{{historyLoading}}" class="empty">正在加载...</view>
     <view wx:elif="{{!orders.length}}" class="empty">暂无历史订单</view>
     <view wx:else class="order-list">

@@ -20,6 +20,9 @@ Page({
   data: {
     tab: 'query',
     stockCode: '',
+    stockSuggestion: null,
+    stockLookupLoading: false,
+    stockLookupError: '',
     tradeDate: '',
     compactTradeDate: '',
     remaining: 0,
@@ -87,15 +90,45 @@ Page({
       .finally(() => this.setData({ dateLoading: false }));
   },
   onCodeInput(e) {
-    this.setData({ stockCode: String(e.detail.value || '').replace(/\D/g, '').slice(0, 6) });
+    const stockCode = String(e.detail.value || '').replace(/\D/g, '').slice(0, 6);
+    const sequence = (this._stockLookupSequence || 0) + 1;
+    this._stockLookupSequence = sequence;
+    this.setData({ stockCode, stockSuggestion: null, stockLookupError: '', stockLookupLoading: false });
+    if (!/^\d{6}$/.test(stockCode)) return;
+    if (/^(4|8|92)/.test(stockCode)) {
+      this.setData({ stockLookupError: '系统繁忙' });
+      wx.showToast({ title: '系统繁忙', icon: 'none' });
+      return;
+    }
+    this.setData({ stockLookupLoading: true });
+    api.lookupStock(stockCode)
+      .then((result) => {
+        if (sequence !== this._stockLookupSequence || this.data.stockCode !== stockCode) return;
+        this.setData({
+          stockSuggestion: { stockCode: String(result.stockCode || stockCode), stockName: String(result.stockName || '') },
+          stockLookupError: '',
+        });
+      })
+      .catch((error) => {
+        if (sequence !== this._stockLookupSequence || this.data.stockCode !== stockCode) return;
+        this.setData({ stockSuggestion: null, stockLookupError: this.errorText(error) });
+      })
+      .finally(() => {
+        if (sequence === this._stockLookupSequence) this.setData({ stockLookupLoading: false });
+      });
   },
   prepareQuery() {
     const stockCode = String(this.data.stockCode || '').trim();
     if (!/^\d{6}$/.test(stockCode)) return wx.showModal({ title: '无法查询', content: '请输入6位股票代码', showCancel: false });
+    if (/^(4|8|92)/.test(stockCode)) return wx.showToast({ title: '系统繁忙', icon: 'none' });
+    if (this.data.stockLookupLoading) return wx.showToast({ title: '正在确认股票信息', icon: 'none' });
+    if (!this.data.stockSuggestion || this.data.stockSuggestion.stockCode !== stockCode) {
+      return wx.showToast({ title: this.data.stockLookupError || '请先确认股票代码', icon: 'none' });
+    }
     if (!this.data.compactTradeDate) return wx.showToast({ title: '请稍后重试', icon: 'none' });
     wx.showModal({
       title: '确认查询',
-      content: `是否查询${stockCode}的${this.data.compactTradeDate}的暗盘数据`,
+      content: `是否查询${stockCode} ${this.data.stockSuggestion.stockName}的${this.data.compactTradeDate}暗盘数据`,
       confirmText: '确定',
       success: (result) => {
         if (result.confirm) this.query(stockCode);

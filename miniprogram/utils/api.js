@@ -280,6 +280,10 @@ function getDarkFundTradeDate() {
   return request('GET', '/api/dark-funds/trade-date', { auth: true });
 }
 
+function lookupStock(code) {
+  return request('GET', '/api/stocks/lookup', { auth: true, data: { code } });
+}
+
 function createDarkFundOrder(stockCode, requestId) {
   return request('POST', '/api/dark-funds/orders', { auth: true, data: { stockCode, request_id: requestId } });
 }
@@ -485,6 +489,7 @@ module.exports = {
   getMe,
   updateMyProfile,
   getDarkFundTradeDate,
+  lookupStock,
   createDarkFundOrder,
   getDarkFundOrders,
   getDarkFundOrder,

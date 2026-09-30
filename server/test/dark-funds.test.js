@@ -69,6 +69,16 @@ test('latest trading date skips the 2026 Mid-Autumn holiday and weekend', () => 
   assert.equal(latestTradingDate(Date.parse('2026-09-26T04:00:00Z')), '2026-09-24');
 });
 
+test('Beijing exchange code is rejected without creating an order or consuming quota', async () => {
+  const { data, call } = setup();
+  await assert.rejects(
+    call('POST', '/api/dark-funds/orders', { stockCode: '920001', request_id: 'df_beijing_001' }),
+    { status: 503, message: '系统繁忙' },
+  );
+  assert.equal(data.darkFundOrders.length, 0);
+  assert.equal(data.users[0].darkFundRemaining, 2);
+});
+
 test('dark fund order history uses fixed pages of 10 while preserving the legacy list response', async () => {
   const { data, call } = setup();
   for (let index = 1; index <= 23; index += 1) {

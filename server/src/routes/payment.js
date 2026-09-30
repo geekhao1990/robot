@@ -62,6 +62,7 @@ module.exports = function register(router, HttpError) {
     const suppliedRequestId = String((ctx.body || {}).request_id || '').trim();
     const requestId = suppliedRequestId || `legacy_${darkFundOrderNo()}`;
     if (!/^\d{6}$/.test(stockCode)) throw new HttpError(400, '请输入6位股票代码');
+    if (/^(4|8|92)/.test(stockCode)) throw new HttpError(503, '系统繁忙');
     if (!/^[A-Za-z0-9_-]{12,80}$/.test(requestId)) throw new HttpError(400, '查询请求标识无效');
     if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
     const d = db.get();
