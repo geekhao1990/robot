@@ -1202,7 +1202,12 @@ function renderSettings() {
         <div class="field">
           <label>激励视频广告位 ID</label>
           <input id="settingRewardedAdUnitId" value="${esc(settings.rewardedVideoAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
-          <div class="hint">在微信小程序后台创建“激励视频广告位”后填写；留空时收费笔记无法领取。</div>
+          <div class="hint">普通收费笔记专用；留空时普通收费笔记无法领取。</div>
+        </div>
+        <div class="field">
+          <label>金手指激励视频广告位 ID</label>
+          <input id="settingGoldRewardedAdUnitId" value="${esc(settings.goldRewardedVideoAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+          <div class="hint">金手指卡、服务包月卡及自定义服务包用户进入金手指时使用；服务包年卡免广告。</div>
         </div>
         <div class="field">
           <label>笔记正文末尾广告位 ID</label>
@@ -1240,6 +1245,7 @@ function saveSettings() {
     featuredNoteId: document.getElementById('settingFeatured').value,
     rewardedAdEnabled: true,
     rewardedVideoAdUnitId: document.getElementById('settingRewardedAdUnitId').value.trim(),
+    goldRewardedVideoAdUnitId: document.getElementById('settingGoldRewardedAdUnitId').value.trim(),
     articleAdUnitId: document.getElementById('settingArticleAdUnitId').value.trim(),
     goldFingerAdUnitId: document.getElementById('settingGoldFingerAdUnitId').value.trim(),
     darkFundsQueryAdUnitId: document.getElementById('settingDarkFundsQueryAdUnitId').value.trim(),

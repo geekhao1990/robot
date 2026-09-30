@@ -316,13 +316,14 @@ Page({
     this._resourceClaiming = false;
     if (this.data.resourceClaiming) this.setData({ resourceClaiming: false });
   },
-  showRewardedAd(onComplete) {
+  showRewardedAd(onComplete, settingsKey = 'rewardedVideoAdUnitId') {
+    const fallbackId = String(config[settingsKey] || '').trim();
     return api.getAppSettings().then(
       (settings) => {
-        const adUnitId = String((settings && settings.rewardedVideoAdUnitId) || config.rewardedVideoAdUnitId || '').trim();
+        const adUnitId = String((settings && settings[settingsKey]) || fallbackId).trim();
         return this.openRewardedAd(adUnitId, onComplete);
       },
-      () => this.openRewardedAd(String(config.rewardedVideoAdUnitId || '').trim(), onComplete),
+      () => this.openRewardedAd(fallbackId, onComplete),
     );
   },
   showRewardedAdError(error) {
@@ -415,7 +416,7 @@ Page({
         return this.showRewardedAd(() => {
           this.releaseResourceClaim();
           return open();
-        });
+        }, 'goldRewardedVideoAdUnitId');
       })
       .catch((error) => {
         this.releaseResourceClaim();

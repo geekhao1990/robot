@@ -56,6 +56,7 @@ function pubSettings(data) {
   return {
     rewardedAdEnabled: raw.rewardedAdEnabled === true,
     rewardedVideoAdUnitId: publicAdUnitId(raw.rewardedVideoAdUnitId),
+    goldRewardedVideoAdUnitId: publicAdUnitId(raw.goldRewardedVideoAdUnitId),
     articleAdUnitId: publicAdUnitId(raw.articleAdUnitId),
     goldFingerAdUnitId: publicAdUnitId(raw.goldFingerAdUnitId),
     darkFundsQueryAdUnitId: publicAdUnitId(raw.darkFundsQueryAdUnitId),

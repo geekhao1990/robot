@@ -100,6 +100,7 @@ module.exports = function register(router, HttpError) {
     }
     const adUnitFields = [
       ['rewardedVideoAdUnitId', '激励视频'],
+      ['goldRewardedVideoAdUnitId', '金手指激励视频'],
       ['articleAdUnitId', '笔记正文'],
       ['goldFingerAdUnitId', '金手指'],
       ['darkFundsQueryAdUnitId', '暗盘查询'],
@@ -125,7 +126,7 @@ module.exports = function register(router, HttpError) {
       throw new HttpError(400, '请选择金手指类型的入口笔记');
     }
     d.settings = {
-      rewardedAdEnabled: !!adUnits.rewardedVideoAdUnitId,
+      rewardedAdEnabled: !!(adUnits.rewardedVideoAdUnitId || adUnits.goldRewardedVideoAdUnitId),
       ...adUnits,
       featuredNoteId: b.featuredNoteId,
     };
