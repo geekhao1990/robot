@@ -659,7 +659,11 @@ module.exports = function register(router, HttpError) {
     user.serviceExpire = expireAt;
     user.servicePlan = 'service_custom';
     user.darkFundEnabled = true;
-    if (!wasActive) user.darkFundServiceMonth = '';
+    if (!wasActive) {
+      user.darkFundServicePeriodStart = Date.now();
+      user.darkFundServicePeriodExpire = Math.min(expireAt, user.darkFundServicePeriodStart + 30 * 86400000);
+      user.darkFundServiceRemaining = 15;
+    }
     refreshDarkFundQuota(user);
     db.save();
     return user;

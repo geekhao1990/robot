@@ -2,16 +2,16 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   activateService,
-  chinaMonthKey,
   refreshDarkFundQuota,
   setManualDarkFundQuota,
   consumeDarkFundQuota,
   refundDarkFundQuota,
 } = require('../src/membership');
 
-test('service package grants 15 uses per China calendar month without stacking', () => {
+test('service package grants 15 uses per rolling 30-day period without stacking', () => {
   const september = Date.parse('2026-09-10T04:00:00Z');
   const october = Date.parse('2026-10-01T04:00:00Z');
+  const nextPeriod = september + 30 * 86400000;
   const user = { darkFundManualRemaining: 3, darkFundRemaining: 3 };
   activateService(user, 'service_year', september);
   assert.equal(refreshDarkFundQuota(user, september).service, 15);
@@ -22,9 +22,13 @@ test('service package grants 15 uses per China calendar month without stacking',
   activateService(user, 'service_month', september);
   assert.equal(refreshDarkFundQuota(user, september).service, 14);
   const nextMonth = refreshDarkFundQuota(user, october);
-  assert.equal(nextMonth.service, 15);
-  assert.equal(nextMonth.manual, 3);
-  assert.equal(nextMonth.total, 18);
+  assert.equal(nextMonth.service, 14);
+  assert.equal(nextMonth.serviceExpireAt, nextPeriod);
+  const reset = refreshDarkFundQuota(user, nextPeriod);
+  assert.equal(reset.service, 15);
+  assert.equal(reset.serviceExpireAt, nextPeriod + 30 * 86400000);
+  assert.equal(reset.manual, 3);
+  assert.equal(reset.total, 18);
 });
 
 test('expired service quota is void while permanent quota remains', () => {
@@ -33,7 +37,8 @@ test('expired service quota is void while permanent quota remains', () => {
     serviceExpire: now - 1,
     darkFundManualRemaining: 4,
     darkFundServiceRemaining: 7,
-    darkFundServiceMonth: chinaMonthKey(now),
+    darkFundServicePeriodStart: now - 10 * 86400000,
+    darkFundServicePeriodExpire: now + 20 * 86400000,
     darkFundRemaining: 11,
   };
   const quota = refreshDarkFundQuota(user, now);

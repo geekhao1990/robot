@@ -1,5 +1,6 @@
 const DAY_MS = 24 * 3600 * 1000;
 const SERVICE_MONTHLY_QUOTA = 15;
+const SERVICE_QUOTA_PERIOD_MS = 30 * DAY_MS;
 
 const SERVICE_PLANS = Object.freeze({
   service_month: Object.freeze({ id: 'service_month', name: '服务包月卡', days: 30 }),
@@ -8,16 +9,6 @@ const SERVICE_PLANS = Object.freeze({
 
 function quotaNumber(value) {
   return Math.max(0, Math.floor(Number(value) || 0));
-}
-
-function chinaMonthKey(now = Date.now()) {
-  const date = new Date(now + 8 * 3600 * 1000);
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
-}
-
-function chinaMonthEnd(now = Date.now()) {
-  const date = new Date(now + 8 * 3600 * 1000);
-  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1) - 8 * 3600 * 1000;
 }
 
 function serviceActiveAt(user, now = Date.now()) {
@@ -39,15 +30,33 @@ function refreshDarkFundQuota(user, now = Date.now()) {
   if (Object.prototype.hasOwnProperty.call(user, 'darkFundVipMonth')) { delete user.darkFundVipMonth; changed = true; }
 
   let service = quotaNumber(user.darkFundServiceRemaining);
-  const month = chinaMonthKey(now);
   if (!serviceActiveAt(user, now)) {
     service = 0;
-    if (user.darkFundServiceMonth !== '') { user.darkFundServiceMonth = ''; changed = true; }
-  } else if (user.darkFundServiceMonth !== month) {
-    service = SERVICE_MONTHLY_QUOTA;
-    user.darkFundServiceMonth = month;
-    changed = true;
+    if (Number(user.darkFundServicePeriodStart) !== 0) { user.darkFundServicePeriodStart = 0; changed = true; }
+    if (Number(user.darkFundServicePeriodExpire) !== 0) { user.darkFundServicePeriodExpire = 0; changed = true; }
+  } else {
+    const serviceExpire = Number(user.serviceExpire);
+    let periodStart = Number(user.darkFundServicePeriodStart);
+    let periodExpire = Number(user.darkFundServicePeriodExpire);
+    if (!Number.isFinite(periodStart) || !Number.isFinite(periodExpire) || periodStart <= 0 || periodExpire <= periodStart) {
+      // 旧自然月数据无法还原准确充值时刻：迁移当天起保留现有次数30天。
+      periodStart = now;
+      periodExpire = Math.min(serviceExpire, now + SERVICE_QUOTA_PERIOD_MS);
+      changed = true;
+    } else if (now >= periodExpire) {
+      const elapsedPeriods = Math.max(1, Math.floor((now - periodStart) / SERVICE_QUOTA_PERIOD_MS));
+      periodStart += elapsedPeriods * SERVICE_QUOTA_PERIOD_MS;
+      periodExpire = Math.min(serviceExpire, periodStart + SERVICE_QUOTA_PERIOD_MS);
+      service = SERVICE_MONTHLY_QUOTA;
+      changed = true;
+    } else if (periodExpire > serviceExpire) {
+      periodExpire = serviceExpire;
+      changed = true;
+    }
+    if (user.darkFundServicePeriodStart !== periodStart) { user.darkFundServicePeriodStart = periodStart; changed = true; }
+    if (user.darkFundServicePeriodExpire !== periodExpire) { user.darkFundServicePeriodExpire = periodExpire; changed = true; }
   }
+  if (Object.prototype.hasOwnProperty.call(user, 'darkFundServiceMonth')) { delete user.darkFundServiceMonth; changed = true; }
   if (user.darkFundServiceRemaining !== service) { user.darkFundServiceRemaining = service; changed = true; }
 
   const total = manual + service;
@@ -56,7 +65,7 @@ function refreshDarkFundQuota(user, now = Date.now()) {
     total,
     service,
     manual,
-    serviceExpireAt: serviceActiveAt(user, now) ? Math.min(Number(user.serviceExpire), chinaMonthEnd(now)) : 0,
+    serviceExpireAt: serviceActiveAt(user, now) ? Number(user.darkFundServicePeriodExpire) || 0 : 0,
     changed,
   };
 }
@@ -77,7 +86,7 @@ function consumeDarkFundQuota(user, now = Date.now()) {
   const quota = refreshDarkFundQuota(user, now);
   if (quota.total < 1) return null;
   let source = 'manual';
-  // 服务包次数月底或服务到期即失效，优先使用有效期更近的次数。
+  // 服务包次数在当前30天周期末或服务到期时失效，优先使用有效期更近的次数。
   if (quota.service > 0 && serviceActiveAt(user, now)) {
     user.darkFundServiceRemaining -= 1;
     source = 'service';
@@ -106,7 +115,8 @@ function activateService(user, planId, now = Date.now()) {
   user.serviceExpire = base + plan.days * DAY_MS;
   user.servicePlan = wasActive && user.servicePlan === 'service_year' ? 'service_year' : plan.id;
   if (!wasActive) {
-    user.darkFundServiceMonth = chinaMonthKey(now);
+    user.darkFundServicePeriodStart = now;
+    user.darkFundServicePeriodExpire = Math.min(user.serviceExpire, now + SERVICE_QUOTA_PERIOD_MS);
     user.darkFundServiceRemaining = SERVICE_MONTHLY_QUOTA;
   }
   refreshDarkFundQuota(user, now);
@@ -115,8 +125,8 @@ function activateService(user, planId, now = Date.now()) {
 
 module.exports = {
   SERVICE_MONTHLY_QUOTA,
+  SERVICE_QUOTA_PERIOD_MS,
   SERVICE_PLANS,
-  chinaMonthKey,
   serviceActiveAt,
   refreshDarkFundQuota,
   setManualDarkFundQuota,

@@ -16,7 +16,7 @@ function pubUser(user) {
     webPasswordHash, webPasswordSalt, webPasswordUpdatedAt,
     vip, vipPlan, vipExpire, vipPermanent, vipActivatedAt,
     darkFundVipRemaining, darkFundVipMonth,
-    darkFundServiceMonth,
+    darkFundServiceMonth, darkFundServicePeriodStart, darkFundServicePeriodExpire,
     goldQuotaGiftMigrated,
     ...safe
   } = user;
@@ -29,6 +29,7 @@ function pubUser(user) {
     darkFundEnabled: user.darkFundEnabled === true,
     darkFundRemaining: darkFundQuota.total,
     darkFundServiceRemaining: darkFundQuota.service,
+    darkFundServiceExpireAt: darkFundQuota.serviceExpireAt,
     darkFundManualRemaining: darkFundQuota.manual,
   };
 }
