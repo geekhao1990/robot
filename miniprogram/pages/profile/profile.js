@@ -18,7 +18,6 @@ Page({
     draftName: '',
     draftAvatar: '',
     draftPassword: '',
-    draftPasswordConfirm: '',
     giftCode: '',
     redeemingGift: false,
     giftModalVisible: false,
@@ -219,7 +218,6 @@ Page({
       draftName: user.name || '',
       draftAvatar: user.avatar || '',
       draftPassword: '',
-      draftPasswordConfirm: '',
     });
   },
   closeProfileEditor() {
@@ -230,9 +228,6 @@ Page({
   },
   onPasswordInput(e) {
     this.setData({ draftPassword: e.detail.value });
-  },
-  onPasswordConfirmInput(e) {
-    this.setData({ draftPasswordConfirm: e.detail.value });
   },
   copyUserId() {
     const user = this.data.user;
@@ -251,19 +246,17 @@ Page({
     const name = String(this.data.draftName || '').trim();
     const avatar = String(this.data.draftAvatar || '').trim();
     const password = String(this.data.draftPassword || '');
-    const confirmPassword = String(this.data.draftPasswordConfirm || '');
     if (!avatar) return wx.showToast({ title: '请先选择头像', icon: 'none' });
     if (!name) return wx.showToast({ title: '请输入昵称', icon: 'none' });
-    if (password || confirmPassword) {
+    if (password) {
       if (password.length < 6) return wx.showToast({ title: '密码至少6位', icon: 'none' });
       if (password.length > 64) return wx.showToast({ title: '密码最多64位', icon: 'none' });
-      if (password !== confirmPassword) return wx.showToast({ title: '两次密码不一致', icon: 'none' });
     }
     this.setData({ savingProfile: true });
     wx.showLoading({ title: '保存中' });
     const upload = /^https?:\/\//i.test(avatar) ? Promise.resolve(avatar) : api.uploadImage(avatar);
     upload
-      .then((avatarUrl) => store.updateProfile({ name, avatar: avatarUrl, password, confirmPassword }))
+      .then((avatarUrl) => store.updateProfile({ name, avatar: avatarUrl, password, confirmPassword: password }))
       .then((user) => {
         this.setData({ user, editingProfile: false });
         wx.hideLoading();

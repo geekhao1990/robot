@@ -57,13 +57,15 @@
       <input class="nickname-input" type="nickname" maxlength="24" value="{{draftName}}" placeholder="请输入昵称" bindinput="onNameInput" />
     </view>
     <view class="editor-field">
-      <view class="editor-label">Web密码</view>
-      <input class="nickname-input" password maxlength="64" value="{{draftPassword}}" placeholder="至少6位，不修改可留空" bindinput="onPasswordInput" />
+      <view class="editor-label">ID</view>
+      <view class="editor-readonly">{{user.id}}</view>
+      <view class="editor-copy" bindtap="copyUserId">复制</view>
     </view>
     <view class="editor-field">
-      <view class="editor-label">重复密码</view>
-      <input class="nickname-input" password maxlength="64" value="{{draftPasswordConfirm}}" placeholder="再次输入密码" bindinput="onPasswordConfirmInput" />
+      <view class="editor-label">设置密码</view>
+      <input class="nickname-input" password maxlength="64" value="{{draftPassword}}" placeholder="至少6位，不修改可留空" bindinput="onPasswordInput" />
     </view>
+    <view class="editor-web-tip">可通过ID和密码在WEB端登录：https://app.nankaitechschool.com/web</view>
     <view class="editor-actions">
       <button class="editor-button cancel" bindtap="closeProfileEditor">取消</button>
       <button class="editor-button save" bindtap="saveProfile" loading="{{savingProfile}}" disabled="{{savingProfile}}">保存</button>
