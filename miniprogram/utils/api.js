@@ -164,8 +164,10 @@ function baseAppSettings() {
   return {
     rewardedAdEnabled: config.rewardedAdEnabled === true,
     rewardedVideoAdUnitId: String(config.rewardedVideoAdUnitId || ''),
+    goldRewardedVideoAdUnitId: String(config.goldRewardedVideoAdUnitId || ''),
     articleAdUnitId: String(config.darkArticleAdUnitId || ''),
     goldFingerAdUnitId: String(config.goldFingerAdUnitId || ''),
+    goldFingerInterstitialAdUnitId: String(config.goldFingerInterstitialAdUnitId || ''),
     darkFundsQueryAdUnitId: String(config.darkFundsQueryAdUnitId || ''),
     profileAdUnitId: String(config.profileAdUnitId || ''),
     messageCenterAdUnitId: String(config.messageCenterAdUnitId || ''),
@@ -179,8 +181,14 @@ function normalizeAppSettings(settings, fallback = baseAppSettings()) {
     rewardedVideoAdUnitId: settings && typeof settings.rewardedVideoAdUnitId === 'string'
       ? settings.rewardedVideoAdUnitId
       : fallback.rewardedVideoAdUnitId,
+    goldRewardedVideoAdUnitId: settings && typeof settings.goldRewardedVideoAdUnitId === 'string'
+      ? settings.goldRewardedVideoAdUnitId
+      : fallback.goldRewardedVideoAdUnitId,
     articleAdUnitId: settings && typeof settings.articleAdUnitId === 'string' ? settings.articleAdUnitId : fallback.articleAdUnitId,
     goldFingerAdUnitId: settings && typeof settings.goldFingerAdUnitId === 'string' ? settings.goldFingerAdUnitId : fallback.goldFingerAdUnitId,
+    goldFingerInterstitialAdUnitId: settings && typeof settings.goldFingerInterstitialAdUnitId === 'string'
+      ? settings.goldFingerInterstitialAdUnitId
+      : fallback.goldFingerInterstitialAdUnitId,
     darkFundsQueryAdUnitId: settings && typeof settings.darkFundsQueryAdUnitId === 'string' ? settings.darkFundsQueryAdUnitId : fallback.darkFundsQueryAdUnitId,
     profileAdUnitId: settings && typeof settings.profileAdUnitId === 'string' ? settings.profileAdUnitId : fallback.profileAdUnitId,
     messageCenterAdUnitId: settings && typeof settings.messageCenterAdUnitId === 'string' ? settings.messageCenterAdUnitId : fallback.messageCenterAdUnitId,

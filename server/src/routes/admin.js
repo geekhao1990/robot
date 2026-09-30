@@ -110,7 +110,9 @@ module.exports = function register(router, HttpError) {
     ];
     const adUnits = {};
     adUnitFields.forEach(([key, label]) => {
-      const id = String(b[key] || '').trim();
+      // 兼容浏览器仍缓存旧版后台页面的情况：旧表单没有的新字段应保留，不能保存为空。
+      const supplied = Object.prototype.hasOwnProperty.call(b, key);
+      const id = String(supplied ? b[key] : (d.settings && d.settings[key]) || '').trim();
       if (id && (!/^adunit-[a-zA-Z0-9_-]+$/.test(id) || /x{4,}/i.test(id))) {
         throw new HttpError(400, `请输入有效的${label}广告位 ID`);
       }

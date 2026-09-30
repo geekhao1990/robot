@@ -40,6 +40,7 @@ Page({
     refreshTabBar(this, 2);
     if (this._returningFromDetail) {
       this._returningFromDetail = false;
+      this.showProfileInterstitialAd();
       return;
     }
     this.refreshProfile();
@@ -54,14 +55,17 @@ Page({
     });
     this._profileInterstitialAd.onClose(() => {
       this._profileInterstitialShowing = false;
-      this._profileInterstitialShown = true;
     });
     this.showProfileInterstitialAd();
   },
   showProfileInterstitialAd() {
-    if (!store.isLogin() || !this._profileInterstitialAd || this._profileInterstitialShowing || this._profileInterstitialShown) return;
+    if (!store.isLogin() || !this._profileInterstitialAd || this._profileInterstitialShowing) return;
     this._profileInterstitialShowing = true;
-    this._profileInterstitialAd.show().catch((error) => {
+    const show = () => this._profileInterstitialAd.show();
+    show().catch((firstError) => {
+      if (!this._profileInterstitialAd || typeof this._profileInterstitialAd.load !== 'function') throw firstError;
+      return this._profileInterstitialAd.load().then(show);
+    }).catch((error) => {
       this._profileInterstitialShowing = false;
       console.error('[ProfileInterstitialAd:show]', error);
     });
