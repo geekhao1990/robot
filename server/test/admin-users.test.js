@@ -73,6 +73,15 @@ test('legacy VIP administration endpoint is removed', async () => {
   await assert.rejects(call('PUT', '/api/admin/users/u1/vip', { plan: 'month' }), /handler/);
 });
 
+test('admin can save a trimmed user remark with a length limit', async () => {
+  const { data, call } = setup();
+  await assert.rejects(call('PUT', '/api/admin/users/u1', { remark: '重点客户' }, ''), { status: 401 });
+  const updated = await call('PUT', '/api/admin/users/u1', { remark: '  历史订阅客户  ' });
+  assert.equal(updated.remark, '历史订阅客户');
+  assert.equal(data.users[0].remark, '历史订阅客户');
+  await assert.rejects(call('PUT', '/api/admin/users/u1', { remark: 'a'.repeat(201) }), { status: 400 });
+});
+
 test('only admin can inspect dark fund query records', async () => {
   const { data, call } = setup();
   data.darkFundOrders.push({ id: 'DF1', userId: 'u1', status: 'SUCCESS', snapshot: { note: { title: '私有快照' } }, createdAt: 1 });

@@ -552,6 +552,7 @@ module.exports = function register(router, HttpError) {
       name: b.name || '新用户',
       avatar: b.avatar || 'https://app.nankaitechschool.com/assets/avatars/author-1.jpg',
       desc: b.desc || '',
+      remark: String(b.remark || '').trim().slice(0, 200),
       fans: b.fans || 0,
       follows: b.follows || 0,
       likes: b.likes || 0,
@@ -580,6 +581,10 @@ module.exports = function register(router, HttpError) {
     const i = d.users.findIndex((u) => u.id === ctx.params.id);
     if (i < 0) throw new HttpError(404, 'not found');
     const update = { ...(ctx.body || {}) };
+    if (Object.prototype.hasOwnProperty.call(update, 'remark')) {
+      update.remark = String(update.remark || '').trim();
+      if (update.remark.length > 200) throw new HttpError(400, '备注最多200个字符');
+    }
     if (Object.prototype.hasOwnProperty.call(update, 'official')) update.official = update.official === true;
     if (update.official === false && d.notes.some((n) => n.authorId === ctx.params.id)) {
       throw new HttpError(400, '该账号仍是笔记作者，请先更换对应笔记作者');
