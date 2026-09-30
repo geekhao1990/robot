@@ -1216,6 +1216,12 @@ function renderSettings() {
         <div class="field">
           <label>金手指详情广告位 ID</label>
           <input id="settingGoldFingerAdUnitId" value="${esc(settings.goldFingerAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+          <div class="hint">金手指详情页底部 Banner 广告位。</div>
+        </div>
+        <div class="field">
+          <label>金手指页面插屏广告位 ID</label>
+          <input id="settingGoldFingerInterstitialAdUnitId" value="${esc(settings.goldFingerInterstitialAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+          <div class="hint">进入金手指页面以及点击“刷新”时展示。</div>
         </div>
         <div class="field">
           <label>暗盘查询页广告位 ID</label>
@@ -1248,6 +1254,7 @@ function saveSettings() {
     goldRewardedVideoAdUnitId: document.getElementById('settingGoldRewardedAdUnitId').value.trim(),
     articleAdUnitId: document.getElementById('settingArticleAdUnitId').value.trim(),
     goldFingerAdUnitId: document.getElementById('settingGoldFingerAdUnitId').value.trim(),
+    goldFingerInterstitialAdUnitId: document.getElementById('settingGoldFingerInterstitialAdUnitId').value.trim(),
     darkFundsQueryAdUnitId: document.getElementById('settingDarkFundsQueryAdUnitId').value.trim(),
     profileAdUnitId: document.getElementById('settingProfileAdUnitId').value.trim(),
     messageCenterAdUnitId: document.getElementById('settingMessageCenterAdUnitId').value.trim(),

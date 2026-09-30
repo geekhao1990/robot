@@ -59,6 +59,7 @@ function pubSettings(data) {
     goldRewardedVideoAdUnitId: publicAdUnitId(raw.goldRewardedVideoAdUnitId),
     articleAdUnitId: publicAdUnitId(raw.articleAdUnitId),
     goldFingerAdUnitId: publicAdUnitId(raw.goldFingerAdUnitId),
+    goldFingerInterstitialAdUnitId: publicAdUnitId(raw.goldFingerInterstitialAdUnitId),
     darkFundsQueryAdUnitId: publicAdUnitId(raw.darkFundsQueryAdUnitId),
     profileAdUnitId: publicAdUnitId(raw.profileAdUnitId),
     messageCenterAdUnitId: publicAdUnitId(raw.messageCenterAdUnitId),

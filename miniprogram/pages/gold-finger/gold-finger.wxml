@@ -27,7 +27,10 @@
       </swiper>
 
       <view class="history-card">
-        <view class="history-title">点金历史</view>
+        <view class="history-title-row">
+          <view class="history-title">点金历史</view>
+          <view class="history-refresh {{refreshing ? 'disabled' : ''}}" bindtap="refreshGoldFinger">{{refreshing ? '刷新中' : '刷新'}}</view>
+        </view>
         <view class="history-head history-grid">
           <text class="history-date-col">日期</text><text>阳谱</text><text>阴谱</text><text class="history-finger-col">点金</text><text class="history-trend-col">趋势</text><text class="history-position-col">水位</text>
         </view>

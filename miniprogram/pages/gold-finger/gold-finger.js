@@ -18,6 +18,7 @@ Page({
     banners: [],
     historyExpanded: false,
     historyLoading: false,
+    refreshing: false,
     hasMoreHistory: false,
     historyPage: 1,
     historyTotalPages: 1,
@@ -34,21 +35,26 @@ Page({
       navBarHeight: app.globalData.navBarHeight,
       headerHeight: app.globalData.statusBarHeight + app.globalData.navBarHeight,
     });
+    if (!store.isLogin()) return wx.redirectTo({ url: '/pages/login/login' });
     api.getAppSettings().then((settings) => {
       const id = String((settings && settings.goldFingerAdUnitId) || config.goldFingerAdUnitId || '');
+      const interstitialId = String((settings && settings.goldFingerInterstitialAdUnitId) || config.goldFingerInterstitialAdUnitId || '');
       this.setData({ goldFingerAdUnitId: /^adunit-/i.test(id) ? id : '', adLoadFailed: false });
+      if (/^adunit-/i.test(interstitialId)) this.createGoldInterstitialAd(interstitialId);
     });
-    if (!store.isLogin()) return wx.redirectTo({ url: '/pages/login/login' });
     this.loadData();
   },
 
-  loadData() {
-    this.setData({ loading: true });
-    api.getGoldFinger().then((result) => {
+  loadData(options = {}) {
+    const silent = options.silent === true;
+    if (this.data.refreshing) return Promise.resolve();
+    this.setData(silent ? { refreshing: true } : { loading: true });
+    return api.getGoldFinger().then((result) => {
       const record = result && result.record;
       const records = ((result && result.records) || (record ? [record] : [])).map((item) => this.decorateRecord(item));
       this.setData({
         loading: false,
+        refreshing: false,
         record: record || null,
         records,
         banners: (result && result.banners) || [],
@@ -58,7 +64,11 @@ Page({
         historyTotalPages: 1,
       });
     }).catch((error) => {
-      this.setData({ loading: false });
+      this.setData({ loading: false, refreshing: false });
+      if (silent) {
+        wx.showToast({ title: '刷新失败，请稍后重试', icon: 'none' });
+        return;
+      }
       const statusCode = error && error.statusCode;
       wx.showModal({
         title: statusCode === 403 ? '会员专享功能' : '加载失败',
@@ -67,6 +77,32 @@ Page({
         success: () => this.goBack(),
       });
     });
+  },
+
+  createGoldInterstitialAd(adUnitId) {
+    if (this._goldInterstitialAd || !wx.createInterstitialAd) return;
+    this._goldInterstitialAd = wx.createInterstitialAd({ adUnitId });
+    this._goldInterstitialAd.onClose(() => { this._goldInterstitialShowing = false; });
+    this._goldInterstitialAd.onError((error) => {
+      this._goldInterstitialShowing = false;
+      console.error('[GoldInterstitialAd]', error);
+    });
+    this.showGoldInterstitialAd();
+  },
+
+  showGoldInterstitialAd() {
+    if (!this._goldInterstitialAd || this._goldInterstitialShowing) return;
+    this._goldInterstitialShowing = true;
+    this._goldInterstitialAd.show().catch((error) => {
+      this._goldInterstitialShowing = false;
+      console.error('[GoldInterstitialAd:show]', error);
+    });
+  },
+
+  refreshGoldFinger() {
+    if (this.data.loading || this.data.refreshing) return;
+    this.showGoldInterstitialAd();
+    this.loadData({ silent: true });
   },
 
   decorateRecord(record) {
@@ -116,6 +152,11 @@ Page({
 
   onAdError() {
     this.setData({ adLoadFailed: true });
+  },
+
+  onUnload() {
+    if (this._goldInterstitialAd && this._goldInterstitialAd.destroy) this._goldInterstitialAd.destroy();
+    this._goldInterstitialAd = null;
   },
 
   goBack() {

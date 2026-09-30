@@ -103,6 +103,7 @@ module.exports = function register(router, HttpError) {
       ['goldRewardedVideoAdUnitId', '金手指激励视频'],
       ['articleAdUnitId', '笔记正文'],
       ['goldFingerAdUnitId', '金手指'],
+      ['goldFingerInterstitialAdUnitId', '金手指页面插屏'],
       ['darkFundsQueryAdUnitId', '暗盘查询'],
       ['profileAdUnitId', '个人中心'],
       ['messageCenterAdUnitId', '消息中心'],

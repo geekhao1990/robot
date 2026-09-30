@@ -29,6 +29,8 @@ module.exports = {
   darkArticleAdUnitId: '',
   // 金手指详情页底部的横幅广告位；留空时显示占位区。
   goldFingerAdUnitId: '',
+  // 金手指详情页进入及手动刷新时展示的插屏广告位。
+  goldFingerInterstitialAdUnitId: '',
   // 暗盘“六位神奇数字”查询页的横幅广告位；留空时显示占位区。
   darkFundsQueryAdUnitId: '',
   // 进入“我”页面时展示的插屏广告位。
