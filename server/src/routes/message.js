@@ -1,7 +1,7 @@
 // server/src/routes/message.js —— 消息：通知 + 私信会话（按用户存储，回传后端）
 const db = require('../db');
 const auth = require('../auth');
-const { notificationsFor, unreadCount, markRead } = require('../notifications');
+const { paginatedNotificationsFor, unreadCount, markRead } = require('../notifications');
 
 // 新用户首次访问时的示例消息模板
 function notifTemplate() {
@@ -97,7 +97,10 @@ module.exports = function register(router, HttpError) {
   router.get('/api/system-notifications', (ctx) => {
     const userId = current(ctx);
     const data = db.get();
-    return { list: notificationsFor(data, userId), unread: unreadCount(data, userId) };
+    return {
+      ...paginatedNotificationsFor(data, userId, ctx.query.page, 10),
+      unread: unreadCount(data, userId),
+    };
   });
 
   router.post('/api/system-notifications/read', (ctx) => {

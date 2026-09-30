@@ -410,8 +410,8 @@ function getSystemNotificationSummary() {
   return request('GET', '/api/system-notifications/summary', { auth: true });
 }
 
-function getSystemNotifications() {
-  return request('GET', '/api/system-notifications', { auth: true });
+function getSystemNotifications(page = 1) {
+  return request('GET', '/api/system-notifications', { auth: true, data: { page } });
 }
 
 function readSystemNotification(id) {

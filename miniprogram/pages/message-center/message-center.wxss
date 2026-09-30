@@ -1,5 +1,6 @@
 .page { min-height: 100vh; padding: 0 24rpx 40rpx; color: #222; background: #f6f6f6; box-sizing: border-box; }
 .message-ad-slot { padding-top: 20rpx; overflow: hidden; border-radius: 16rpx; }
+.message-ad-bottom { padding-top: 28rpx; }
 .message-head { display: flex; align-items: center; justify-content: space-between; height: 96rpx; }
 .head-title { font-size: 30rpx; font-weight: 750; }
 .message-list { overflow: hidden; background: #fff; border-radius: 20rpx; }
@@ -16,5 +17,9 @@
 .message-content { display: -webkit-box; margin-top: 10rpx; overflow: hidden; color: #888; font-size: 23rpx; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .unread-dot { position: absolute; top: 24rpx; left: 18rpx; width: 13rpx; height: 13rpx; background: #ff2442; border-radius: 50%; }
 .arrow { margin-left: 14rpx; color: #bbb; font-size: 38rpx; font-weight: 300; }
+.message-pagination { display: flex; align-items: center; justify-content: space-between; min-height: 104rpx; padding: 0 20rpx; color: #666; }
+.page-button { display: flex; align-items: center; justify-content: center; min-width: 120rpx; min-height: 68rpx; font-size: 25rpx; }
+.page-button.disabled { color: #ccc; }
+.page-number { color: #999; font-size: 24rpx; }
 .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 65vh; color: #aaa; font-size: 26rpx; }
 .empty-icon { display: flex; align-items: center; justify-content: center; width: 100rpx; height: 100rpx; margin-bottom: 20rpx; color: #ff2442; font-size: 44rpx; background: #fff; border-radius: 50%; }

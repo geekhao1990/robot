@@ -22,4 +22,12 @@
       <view class="arrow">›</view>
     </view>
   </view>
+  <view wx:if="{{!loading && list.length}}" class="message-pagination">
+    <view class="page-button {{page <= 1 ? 'disabled' : ''}}" data-page="{{page - 1}}" bindtap="changePage">上一页</view>
+    <view class="page-number">第 {{page}} / {{totalPages}} 页</view>
+    <view class="page-button {{page >= totalPages ? 'disabled' : ''}}" data-page="{{page + 1}}" bindtap="changePage">下一页</view>
+  </view>
+  <view wx:if="{{!loading && list.length && messageCenterAdUnitId && !messageCenterBottomAdLoadFailed}}" class="message-ad-slot message-ad-bottom">
+    <ad unit-id="{{messageCenterAdUnitId}}" binderror="onMessageCenterBottomAdError" />
+  </view>
 </view>

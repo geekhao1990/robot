@@ -33,6 +33,22 @@ function notificationsFor(data, userId) {
   return storeFor(data, userId).slice().sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
 }
 
+function paginatedNotificationsFor(data, userId, requestedPage = 1, pageSize = 10) {
+  const notifications = notificationsFor(data, userId);
+  const size = Math.max(1, Number.parseInt(pageSize, 10) || 10);
+  const total = notifications.length;
+  const totalPages = Math.max(1, Math.ceil(total / size));
+  const page = Math.min(Math.max(1, Number.parseInt(requestedPage, 10) || 1), totalPages);
+  const start = (page - 1) * size;
+  return {
+    list: notifications.slice(start, start + size),
+    page,
+    pageSize: size,
+    total,
+    totalPages,
+  };
+}
+
 function unreadCount(data, userId) {
   return storeFor(data, userId).filter((item) => !Number(item.readAt)).length;
 }
@@ -70,6 +86,7 @@ function notifyFollowersOfNote(data, note) {
 module.exports = {
   pushNotification,
   notificationsFor,
+  paginatedNotificationsFor,
   unreadCount,
   markRead,
   notifyFollowersOfNote,

@@ -26,23 +26,33 @@ Page({
     loading: true,
     list: [],
     unread: 0,
+    page: 1,
+    totalPages: 1,
+    total: 0,
     messageCenterAdUnitId: /^adunit-/i.test(String(config.messageCenterAdUnitId || '')) ? String(config.messageCenterAdUnitId) : '',
     messageCenterAdLoadFailed: false,
+    messageCenterBottomAdLoadFailed: false,
   },
 
   onLoad() {
     if (!store.isLogin()) return wx.redirectTo({ url: '/pages/login/login' });
     api.getAppSettings().then((settings) => {
       const id = String((settings && settings.messageCenterAdUnitId) || config.messageCenterAdUnitId || '');
-      this.setData({ messageCenterAdUnitId: /^adunit-/i.test(id) ? id : '', messageCenterAdLoadFailed: false });
+      this.setData({
+        messageCenterAdUnitId: /^adunit-/i.test(id) ? id : '',
+        messageCenterAdLoadFailed: false,
+        messageCenterBottomAdLoadFailed: false,
+      });
     });
     this.load();
   },
   onMessageCenterAdError() { this.setData({ messageCenterAdLoadFailed: true }); },
+  onMessageCenterBottomAdError() { this.setData({ messageCenterBottomAdLoadFailed: true }); },
 
-  load() {
+  load(page = 1) {
+    if (this.data.loading && this._loadedOnce) return Promise.resolve();
     this.setData({ loading: true });
-    return api.getSystemNotifications()
+    return api.getSystemNotifications(page)
       .then((result) => {
         const list = ((result && result.list) || []).map((item) => ({
           ...item,
@@ -50,10 +60,23 @@ Page({
           iconText: ICON_TEXT[item.type] || '信',
           timeText: formatTime(item.createdAt),
         }));
-        this.setData({ list, unread: Number(result && result.unread) || 0 });
+        this._loadedOnce = true;
+        this.setData({
+          list,
+          unread: Number(result && result.unread) || 0,
+          page: Number(result && result.page) || 1,
+          totalPages: Number(result && result.totalPages) || 1,
+          total: Number(result && result.total) || 0,
+        });
       })
       .catch(() => wx.showToast({ title: '消息加载失败', icon: 'none' }))
       .finally(() => this.setData({ loading: false }));
+  },
+
+  changePage(e) {
+    const page = Number(e.currentTarget.dataset.page);
+    if (!Number.isInteger(page) || page < 1 || page > this.data.totalPages || page === this.data.page) return;
+    this.load(page);
   },
 
   openMessage(e) {
