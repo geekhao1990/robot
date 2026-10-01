@@ -659,7 +659,7 @@
 .close-summary div:first-child { border-radius:7px 0 0 7px; }
 .close-summary div:last-child { border-radius:0 7px 7px 0; }
 .close-summary span { color:#777; font-size:15px; font-weight:400; }
-.close-summary b { font-size:17px; font-weight:500; transform:scaleX(.88); }
+.close-summary b { font-size:17px; font-weight:800; transform:scaleX(.88); }
 .money-up { color:#e53935!important; }
 .money-down { color:#08a045!important; }
 .close-chart { position:relative; display:flex; align-items:flex-end; justify-content:space-around; min-height:170px; padding-top:18px; border-bottom:1px solid #eee; }
@@ -672,9 +672,9 @@
 .close-bar-column i.up { background:linear-gradient(#ff776f,#e53935); }
 .close-bar-column i.down { background:linear-gradient(#38c777,#08a045); }
 .close-bar-column span { margin:6px 0 -22px; color:#999; font-size:10px; }
-.close-day-chart .close-bar-column span { margin-top:16px; color:#555; font-size:14px; font-weight:400; }
+.close-day-chart .close-bar-column span { margin-top:30px; color:#555; font-size:14px; font-weight:400; }
 .close-table-scroll { width:100%; overflow-x:auto; }
 .close-table { width:100%; min-width:520px; border-collapse:collapse; }
-.close-table th,.close-table td { padding:11px 8px; font-size:12px; text-align:center; border-top:1px solid #f0f0f0; white-space:nowrap; }
+.close-table th,.close-table td { padding:11px 5px; font-size:14px; text-align:center; border-top:1px solid #f0f0f0; white-space:nowrap; }
 .close-table th { color:#999; }
 .close-disclaimer { padding:4px 18px 30px; color:#aaa; font-size:11px; line-height:1.6; text-align:center; }
