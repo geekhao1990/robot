@@ -659,7 +659,7 @@
 .close-summary div:first-child { border-radius:7px 0 0 7px; }
 .close-summary div:last-child { border-radius:0 7px 7px 0; }
 .close-summary span { color:#777; font-size:14px; font-weight:400; }
-.close-summary b { font-family:"PingFang SC","Microsoft YaHei",Arial,sans-serif; font-size:14px; font-weight:700; line-height:1; transform:scaleX(.86); }
+.close-summary b { font-family:"PingFang SC","Microsoft YaHei",Arial,sans-serif; font-size:16px; font-weight:700; line-height:1; transform:scaleX(.86); }
 .money-up { color:#e53935!important; }
 .money-down { color:#08a045!important; }
 .close-chart { position:relative; display:flex; align-items:flex-end; justify-content:space-around; min-height:170px; padding-top:18px; border-bottom:1px solid #eee; }
