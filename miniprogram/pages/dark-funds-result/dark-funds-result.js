@@ -44,6 +44,14 @@ function marketStockCode(code) {
   return `${/^[569]/.test(value) ? 'sh' : 'sz'}${value}`;
 }
 
+function hybridStockName(name, initials) {
+  const stockName = String(name || '').trim();
+  const letters = String(initials || '').replace(/[^a-z]/gi, '').toUpperCase();
+  if (!stockName) return letters;
+  if (stockName.length <= 2 || !letters) return stockName;
+  return `${stockName.slice(0, 2)}${letters.slice(2) || stockName.slice(2)}`;
+}
+
 function createMockCloseResult() {
   const days = [
     { tradeDate: '2026-09-30', main: -279681505.83274597, grey: -70262426.83274597, listed: -209419079, super_large: -146578422.84490156, large: -133103082.9878444, middle: -18850426.15509844, small: 298531931.9878445 },
@@ -129,7 +137,7 @@ Page({
       ...formatGroup(row, ['main', 'grey', 'listed']),
       ...formatGroup(row, ['super_large', 'large', 'middle', 'small']),
     }));
-    result.displayName = String(result.stockInitials || result.stockName || '').toUpperCase();
+    result.displayName = hybridStockName(result.stockName, result.stockInitials);
     result.displayCode = marketStockCode(result.stockCode);
     this.trends = { trend3: rolling(days, 3), trend5: rolling(days, 5) };
     this.setData({ loading: false, result, unitLabel: unit.label, summary, dayBars, rows });
