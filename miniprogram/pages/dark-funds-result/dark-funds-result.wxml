@@ -16,9 +16,8 @@
       <block wx:if="{{fundView === 'main'}}">
         <view class="chart-inline-title">
           <view class="chart-title-mark"></view>
-          <text>主力流向（{{unitLabel}}）</text>
+          <text>主力流向({{unitLabel}})</text>
           <view class="chart-title-arrow"></view>
-          <view class="chart-title-info">i</view>
         </view>
         <view class="summary-grid">
           <view wx:for="{{summary}}" wx:key="label" class="summary-item"><text>{{item.label}}</text><text class="summary-value {{item.positive ? 'up' : 'down'}}">{{item.text}}</text></view>
