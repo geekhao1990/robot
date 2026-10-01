@@ -460,7 +460,7 @@ function createWebMockCloseResult() {
     { tradeDate:'2026-09-22',main:-861658891.3149973,grey:-242033011.31499732,listed:-619625880,super_large:-617310498.8877808,large:-244348392.4272165,middle:-63311021.112219155,small:924969912.4272175 },
     { tradeDate:'2026-09-21',main:22542169.263435997,grey:17156209.263435997,listed:5385960,super_large:12113368.197681013,large:10428801.065754985,middle:-100601528.197681,small:78059358.93424496 },
   ];
-  return { type:'close_snapshot', stockCode:'600105', stockName:'永鼎股份', tradeDate:'2026-09-30', versionKey:'2026-09-30Tclose', versionLabel:'收盘', kind:'close', updatedAt:'2026-09-30T16:41:05+08:00', debit:true, balanceAfter:2, unlimited:false, expiresAt:null, summary:{ sevenDayMain:-3688507912.0996294, greyTotal:-1226508474.0996292, listedTotal:-2461999438 }, days };
+  return { type:'close_snapshot', stockCode:'600105', stockName:'永鼎股份', stockInitials:'YDGF', tradeDate:'2026-09-30', versionKey:'2026-09-30Tclose', versionLabel:'收盘', kind:'close', updatedAt:'2026-09-30T16:41:05+08:00', debit:true, balanceAfter:2, unlimited:false, expiresAt:null, summary:{ sevenDayMain:-3688507912.0996294, greyTotal:-1226508474.0996292, listedTotal:-2461999438 }, days };
 }
 
 submitDark = async function submitDarkWithLookup(requestedMode = 'close') {
@@ -512,7 +512,12 @@ function closeMoneyUnit(days) {
 
 function closeMoney(value, unit) {
   const number = (Number(value) || 0) / unit.divisor;
-  return `${number > 0 ? '+' : ''}${number.toFixed(2)}`;
+  return number.toFixed(2);
+}
+
+function closeMarketCode(code) {
+  const value = String(code || '').replace(/^(sh|sz)/i, '');
+  return `${/^[569]/.test(value) ? 'sh' : 'sz'}${value}`;
 }
 
 function closeRolling(days, size) {
@@ -535,7 +540,7 @@ function closeDayChartHtml(latest, unit) {
     { date: '散户流入', value: -(Number(latest.main) || 0) },
   ];
   const max = Math.max(...points.map((item) => Math.abs(item.value)), 1);
-  return `<div class="close-chart close-day-chart">${points.map((item) => `<div class="close-bar-column"><small class="${item.value >= 0 ? 'money-up' : 'money-down'}">${closeMoney(item.value, unit)}</small><i class="${item.value >= 0 ? 'up' : 'down'}" style="height:${Math.max(12, Math.round(Math.abs(item.value) / max * 112))}px"></i><span>${escapeHtml(item.date)}</span></div>`).join('')}</div>`;
+  return `<div class="close-chart close-day-chart">${points.map((item) => `<div class="close-bar-column"><small class="${item.value >= 0 ? 'money-up' : 'money-down'}">${closeMoney(item.value, unit)}</small><i class="${item.value >= 0 ? 'up' : 'down'}" style="height:${Math.max(12, Math.round(Math.abs(item.value) / max * 140))}px"></i><span>${escapeHtml(item.date)}</span></div>`).join('')}</div>`;
 }
 
 function closeTableHtml(rows, unit, detail = false) {
@@ -548,14 +553,15 @@ function closeTableHtml(rows, unit, detail = false) {
 function renderCloseDarkResult(order) {
   const result = order && order.snapshot && order.snapshot.result;
   if (!result || result.type !== 'close_snapshot' || !Array.isArray(result.days) || !result.days.length) return toast('盘后数据不存在');
-  const unit = closeMoneyUnit(result.days);
-  const latest = result.days[result.days.length - 1];
+  const days = result.days.slice().sort((a, b) => String(a.tradeDate).localeCompare(String(b.tradeDate)));
+  const unit = closeMoneyUnit(days);
+  const latest = days[days.length - 1];
   state.route = 'dark-result';
   setChrome();
-  const rolling3 = closeRolling(result.days, 3);
-  const rolling5 = closeRolling(result.days, 5);
+  const rolling3 = closeRolling(days, 3);
+  const rolling5 = closeRolling(days, 5);
   const main = Number(latest.main) || 0;
-  app.innerHTML = `<div class="close-result-page"><header class="page-nav"><button class="back" data-action="back">‹</button><div class="nav-title">盘后暗盘</div></header><section class="close-result-hero"><div><strong>${escapeHtml(result.stockName)}</strong><span>${escapeHtml(result.stockCode)}</span></div><small>${escapeHtml(result.tradeDate)} · ${escapeHtml(result.versionLabel || '收盘')}</small></section><section class="close-result-card"><h3>当日资金 <small>单位：${unit.label}</small></h3><div class="close-summary"><div><span>主力净流入</span><b class="${main >= 0 ? 'money-up' : 'money-down'}">${closeMoney(main, unit)}</b></div><div><span>散户流入</span><b class="${-main >= 0 ? 'money-up' : 'money-down'}">${closeMoney(-main, unit)}</b></div></div>${closeDayChartHtml(latest, unit)}</section>${rolling3.length ? `<section class="close-result-card"><h3>3日暗盘滚动</h3>${closeChartHtml(result.days, 3, unit)}</section>` : ''}${rolling5.length ? `<section class="close-result-card"><h3>5日暗盘滚动</h3>${closeChartHtml(result.days, 5, unit)}</section>` : ''}<section class="close-result-card"><h3>资金明细</h3>${closeTableHtml(result.days, unit)}</section><section class="close-result-card"><h3>分单明细</h3>${closeTableHtml(result.days, unit, true)}</section><p class="close-disclaimer">数据来自互联网，仅供参考，不构成投资建议</p></div>`;
+  app.innerHTML = `<div class="close-result-page"><header class="page-nav"><button class="back" data-action="back">‹</button><div class="nav-title">盘后暗盘</div></header><section class="close-result-hero"><div><strong>${escapeHtml(String(result.stockInitials || result.stockName || '').toUpperCase())}</strong><span>${escapeHtml(closeMarketCode(result.stockCode))}</span></div><small>${escapeHtml(result.tradeDate)} · ${escapeHtml(result.versionLabel || '收盘')}</small></section><section class="close-result-card"><h3 class="close-flow-title"><i></i><span>主力流向（${unit.label}）</span><b></b><em>i</em></h3><div class="close-summary"><div><span>主力净流入</span><b class="${main >= 0 ? 'money-up' : 'money-down'}">${closeMoney(main, unit)}</b></div><div><span>散户流入</span><b class="${-main >= 0 ? 'money-up' : 'money-down'}">${closeMoney(-main, unit)}</b></div></div>${closeDayChartHtml(latest, unit)}</section>${rolling3.length ? `<section class="close-result-card"><h3>3日暗盘滚动</h3>${closeChartHtml(days, 3, unit)}</section>` : ''}${rolling5.length ? `<section class="close-result-card"><h3>5日暗盘滚动</h3>${closeChartHtml(days, 5, unit)}</section>` : ''}<section class="close-result-card"><h3>资金明细</h3>${closeTableHtml(days, unit)}</section><section class="close-result-card"><h3>分单明细</h3>${closeTableHtml(days, unit, true)}</section><p class="close-disclaimer">数据来自互联网，仅供参考，不构成投资建议</p></div>`;
 }
 
 openOrder = async function openDarkOrderByResultType(id, ready) {

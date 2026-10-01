@@ -12,7 +12,7 @@ function chooseUnit(values) {
 
 function formatByUnit(value, unit, suffix = false) {
   const number = (Number(value) || 0) / unit.divisor;
-  return `${number > 0 ? '+' : ''}${number.toFixed(unit.digits)}${suffix ? unit.suffix : ''}`;
+  return `${number.toFixed(unit.digits)}${suffix ? unit.suffix : ''}`;
 }
 
 function formatGroup(row, keys) {
@@ -35,9 +35,14 @@ function withBars(items) {
   const max = Math.max(...items.map((item) => Math.abs(item.value)), 1);
   return items.map((item) => ({
     ...item,
-    height: Math.max(12, Math.round(Math.abs(item.value) / max * 170)),
+    height: Math.max(12, Math.round(Math.abs(item.value) / max * 230)),
     positive: item.value >= 0,
   }));
+}
+
+function marketStockCode(code) {
+  const value = String(code || '').replace(/^(sh|sz)/i, '');
+  return `${/^[569]/.test(value) ? 'sh' : 'sz'}${value}`;
 }
 
 function createMockCloseResult() {
@@ -54,6 +59,7 @@ function createMockCloseResult() {
     type: 'close_snapshot',
     stockCode: '600105',
     stockName: '永鼎股份',
+    stockInitials: 'YDGF',
     tradeDate: '2026-09-30',
     versionKey: '2026-09-30Tclose',
     versionLabel: '收盘',
@@ -124,6 +130,8 @@ Page({
       ...formatGroup(row, ['main', 'grey', 'listed']),
       ...formatGroup(row, ['super_large', 'large', 'middle', 'small']),
     }));
+    result.displayName = String(result.stockInitials || result.stockName || '').toUpperCase();
+    result.displayCode = marketStockCode(result.stockCode);
     this.trends = { trend3: rolling(days, 3), trend5: rolling(days, 5) };
     this.setData({ loading: false, result, unitLabel: unit.label, summary, dayBars, rows });
   },
