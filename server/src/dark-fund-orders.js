@@ -146,6 +146,26 @@ function activateDarkFundOrder(data, order, collectorResult, readyAt = Date.now(
   return true;
 }
 
+function activateCloseDarkFundOrder(order, closeResult, readyAt = Date.now()) {
+  order.status = 'READY';
+  order.readyAt = readyAt;
+  order.viewedAt = 0;
+  order.callbackAt = readyAt;
+  order.closeResult = closeResult;
+  order.snapshot = {
+    version: 1,
+    product: '盘后暗盘',
+    resultType: 'close_snapshot',
+    stockCode: order.stockCode,
+    stockName: closeResult.stockName,
+    tradeDate: closeResult.tradeDate,
+    compactTradeDate: compactDate(closeResult.tradeDate),
+    generatedAt: readyAt,
+    result: closeResult,
+  };
+  return true;
+}
+
 function attachDarkFundImages(data, order, images) {
   if (!Array.isArray(images) || images.length !== 2) return false;
   if (order.collectorResult) order.collectorResult.images = images.slice();
@@ -194,6 +214,9 @@ function publicDarkFundOrder(order) {
   return {
     id: order.id,
     stockCode: order.stockCode,
+    queryMode: order.queryMode || 'intraday',
+    querySource: order.querySource || 'collector',
+    resultType: order.snapshot && order.snapshot.resultType || 'article',
     tradeDate: order.tradeDate,
     compactTradeDate: compactDate(order.tradeDate),
     amount: order.amount,
@@ -218,6 +241,7 @@ function publicDarkFundOrder(order) {
 module.exports = {
   attachDarkFundImages,
   activateDarkFundOrder,
+  activateCloseDarkFundOrder,
   normalizeCollectorResult,
   publicDarkFundOrder,
   refreshDarkFundOrderResult,

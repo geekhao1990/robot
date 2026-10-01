@@ -1,0 +1,55 @@
+<view class="page">
+  <view wx:if="{{loading}}" class="loading"><view class="spinner"></view><text>数据加载中</text></view>
+  <view wx:elif="{{error}}" class="error">{{error}}</view>
+  <block wx:else>
+    <view class="card hero">
+      <view><text class="stock-name">{{result.stockName}}</text><text class="stock-code">{{result.stockCode}}</text></view>
+      <view class="trade-date">{{result.tradeDate}} · {{result.versionLabel}}</view>
+    </view>
+    <view class="card fund-card">
+      <view class="section-heading"><view class="heading-mark"></view><text>暗盘资金</text></view>
+      <view class="segment-control">
+        <view class="segment {{fundView === 'main' ? 'active' : ''}}" data-view="main" bindtap="switchFundView">1日暗盘</view>
+        <view class="segment {{fundView === 'trend3' ? 'active' : ''}}" data-view="trend3" bindtap="switchFundView">3日暗盘</view>
+        <view class="segment {{fundView === 'trend5' ? 'active' : ''}}" data-view="trend5" bindtap="switchFundView">5日暗盘</view>
+      </view>
+      <block wx:if="{{fundView === 'main'}}">
+        <view class="chart-inline-title">主力流向（{{unitLabel}}）</view>
+        <view class="summary-grid">
+          <view wx:for="{{summary}}" wx:key="label" class="summary-item"><text>{{item.label}}</text><text class="summary-value {{item.positive ? 'up' : 'down'}}">{{item.text}}</text></view>
+        </view>
+        <view class="flow-chart">
+          <view class="zero-line"></view>
+          <view class="flow-columns">
+            <view wx:for="{{dayBars}}" wx:key="label" class="flow-column">
+              <view wx:if="{{item.positive}}" class="flow-stack positive" style="bottom:50%"><text class="flow-value up">{{item.text}}</text><view class="flow-bar bar-up" style="height:{{item.height}}rpx"></view></view>
+              <view wx:else class="flow-stack negative" style="top:50%"><view class="flow-bar bar-down" style="height:{{item.height}}rpx"></view><text class="flow-value down">{{item.text}}</text></view>
+              <text class="flow-name">{{item.label}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+      <block wx:else>
+        <view class="trend-summary"><text>{{trendMetricLabel}}</text><text class="trend-value {{trendMetricPositive ? 'up' : 'down'}}">{{trendMetricText}}</text></view>
+        <canvas wx:if="{{trendHasData}}" type="2d" id="trendCanvas" class="trend-canvas"></canvas>
+        <view wx:else class="trend-empty">历史数据不足，暂时无法绘制该周期</view>
+      </block>
+    </view>
+    <view class="card detail-card">
+      <view class="detail-title">近7日资金情况</view>
+      <view class="segment-control">
+        <view class="segment {{detailView === 'core' ? 'active' : ''}}" data-view="core" bindtap="switchDetailView">主力资金</view>
+        <view class="segment {{detailView === 'orders' ? 'active' : ''}}" data-view="orders" bindtap="switchDetailView">资金结构</view>
+      </view>
+      <view wx:if="{{detailView === 'core'}}" class="table core-table">
+        <view class="tr th"><text>日期</text><text>主力净流入</text><text>暗盘</text><text>明盘</text></view>
+        <view wx:for="{{rows}}" wx:key="tradeDate" class="tr"><text>{{item.displayDate}}</text><text class="{{item.main >= 0 ? 'up' : 'down'}}">{{item.mainText}}</text><text class="{{item.grey >= 0 ? 'up' : 'down'}}">{{item.greyText}}</text><text class="{{item.listed >= 0 ? 'up' : 'down'}}">{{item.listedText}}</text></view>
+      </view>
+      <view wx:else class="table orders-table">
+        <view class="tr th"><text>日期</text><text>特大单</text><text>大单</text><text>中单</text><text>小单</text></view>
+        <view wx:for="{{rows}}" wx:key="tradeDate" class="tr"><text>{{item.displayDate}}</text><text class="{{item.super_large >= 0 ? 'up' : 'down'}}">{{item.super_largeText}}</text><text class="{{item.large >= 0 ? 'up' : 'down'}}">{{item.largeText}}</text><text class="{{item.middle >= 0 ? 'up' : 'down'}}">{{item.middleText}}</text><text class="{{item.small >= 0 ? 'up' : 'down'}}">{{item.smallText}}</text></view>
+      </view>
+    </view>
+    <view class="disclaimer">数据来自互联网，仅供参考，不构成投资建议</view>
+  </block>
+</view>

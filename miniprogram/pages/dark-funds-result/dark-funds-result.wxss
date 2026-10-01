@@ -1,0 +1,46 @@
+.page { min-height: 100vh; padding: 24rpx 24rpx 70rpx; color: #222; background: #f5f6f8; box-sizing: border-box; }
+.loading, .error { display: flex; align-items: center; justify-content: center; gap: 18rpx; min-height: 70vh; color: #999; font-size: 26rpx; }
+.spinner { width: 34rpx; height: 34rpx; border: 4rpx solid #eee; border-top-color: #ff3b30; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.card { margin-bottom: 24rpx; padding: 30rpx; background: #fff; border-radius: 26rpx; box-shadow: 0 8rpx 30rpx rgba(0,0,0,.04); }
+.hero { display: flex; align-items: flex-end; justify-content: space-between; }
+.stock-name { font-size: 38rpx; font-weight: 800; }
+.stock-code { margin-left: 14rpx; color: #999; font-size: 23rpx; }
+.trade-date { color: #999; font-size: 22rpx; }
+.section-heading { display: flex; align-items: center; gap: 16rpx; margin: 2rpx 0 24rpx; font-size: 36rpx; font-weight: 800; }
+.heading-mark { width: 8rpx; height: 44rpx; background: #ff3b30; border-radius: 999rpx; }
+.segment-control { display: flex; gap: 6rpx; margin-bottom: 22rpx; padding: 7rpx; background: #f2f3f5; border: 2rpx solid #dfe3e8; border-radius: 16rpx; }
+.segment { display: flex; flex: 1; align-items: center; justify-content: center; min-height: 70rpx; color: #64748b; font-size: 26rpx; font-weight: 700; border-radius: 12rpx; }
+.segment.active { color: #111; background: #fff; box-shadow: 0 2rpx 10rpx rgba(0,0,0,.10); }
+.chart-inline-title { margin: 8rpx 0 20rpx; color: #333; font-size: 28rpx; font-weight: 650; }
+.summary-grid { display: flex; padding: 25rpx 16rpx; background: #f7f7f7; border-radius: 22rpx; }
+.summary-item { display: flex; flex: 1; flex-direction: column; align-items: center; gap: 8rpx; color: #777; font-size: 23rpx; }
+.summary-value { font-size: 30rpx; }
+.up { color: #ff3b30!important; }
+.down { color: #00a84f!important; }
+.flow-chart { position: relative; height: 480rpx; margin-top: 28rpx; padding: 0 20rpx; }
+.zero-line { position: absolute; top: 50%; right: 18rpx; left: 18rpx; height: 2rpx; background: #cfd3d8; }
+.flow-columns { position: relative; z-index: 1; display: flex; height: 100%; }
+.flow-column { position: relative; display: flex; flex: 1; justify-content: center; height: 100%; }
+.flow-stack { position: absolute; display: flex; flex-direction: column; align-items: center; }
+.flow-bar { width: 64rpx; min-height: 12rpx; }
+.bar-up { background: #ff3b30; border-radius: 9rpx 9rpx 0 0; }
+.bar-down { background: #00b85a; border-radius: 0 0 9rpx 9rpx; }
+.flow-value { padding: 10rpx 0; font-size: 20rpx; white-space: nowrap; }
+.flow-name { position: absolute; bottom: 0; color: #666; font-size: 24rpx; white-space: nowrap; }
+.trend-summary { display: flex; flex-direction: column; align-items: center; gap: 8rpx; margin: 14rpx 0 4rpx; padding: 22rpx 16rpx; color: #777; font-size: 23rpx; background: #f7f7f7; border-radius: 22rpx; }
+.trend-value { font-size: 31rpx; font-weight: 750; }
+.trend-canvas { width: 100%; height: 500rpx; margin-top: 8rpx; }
+.trend-empty { display: flex; align-items: center; justify-content: center; min-height: 360rpx; color: #aaa; font-size: 24rpx; }
+.detail-title { margin-bottom: 20rpx; font-size: 34rpx; font-weight: 800; }
+.detail-card { padding-right: 0; padding-left: 0; overflow: hidden; }
+.detail-card > .detail-title, .detail-card > .segment-control { margin-right: 30rpx; margin-left: 30rpx; }
+.table { width: 100%; border: 2rpx solid #dfe3e8; border-radius: 14rpx; box-sizing: border-box; }
+.tr { display: flex; min-height: 78rpx; border-top: 1rpx solid #e6e8eb; }
+.tr:first-child { border-top: 0; }
+.tr text { display: flex; flex: 1; align-items: center; justify-content: flex-end; min-width: 0; padding: 0 8rpx; font-size: 20rpx; text-align: right; box-sizing: border-box; }
+.tr text:first-child { flex: .72; justify-content: flex-start; padding-left: 14rpx; color: #111!important; text-align: left; }
+.tr.th { color: #475569; font-weight: 750; background: #f3f4f6; }
+.tr.th text { color: #475569!important; }
+.orders-table .tr text { font-size: 18rpx; }
+.disclaimer { padding: 8rpx 20rpx 40rpx; color: #aaa; font-size: 20rpx; line-height: 1.7; text-align: center; }

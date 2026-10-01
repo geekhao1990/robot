@@ -8,6 +8,15 @@
 
   <view wx:if="{{tab === 'query'}}" class="query-page">
     <view class="query-card">
+      <view class="query-mode-switch">
+        <view class="query-mode {{queryMode === 'close' ? 'active' : ''}}" data-mode="close" bindtap="switchQueryMode">盘后查询</view>
+        <view class="query-mode {{queryMode === 'intraday' ? 'active' : ''}}" data-mode="intraday" bindtap="switchQueryMode">盘中查询</view>
+      </view>
+      <view wx:if="{{queryMode === 'close'}}" class="close-source-switch">
+        <view class="source-option {{closeSource === 'web' ? 'active' : ''}}" data-source="web" bindtap="switchCloseSource">网页数据（默认）</view>
+        <view class="source-option {{closeSource === 'collector' ? 'active' : ''}}" data-source="collector" bindtap="switchCloseSource">使用采集器</view>
+      </view>
+      <view class="mode-hint">{{queryMode === 'intraday' ? '盘中查询仅使用采集器' : (closeSource === 'web' ? '查询盘后数据和图表，不生成文章' : '使用采集器生成完整结果')}}</view>
       <view class="code-box">
         <input class="code-input" type="number" maxlength="6" value="{{stockCode}}" bindinput="onCodeInput" focus />
       </view>
@@ -46,6 +55,7 @@
       <view wx:for="{{orders}}" wx:key="id" class="order-card" data-id="{{item.id}}" bindtap="openOrder">
         <view class="order-main">
           <view class="order-code">{{item.stockCode}}</view>
+          <view class="order-type">{{item.queryMode === 'close' ? (item.querySource === 'web' ? '盘后网页' : '盘后采集器') : '盘中采集器'}}</view>
           <view class="order-query-time">查询时间：{{item.queryTimeText}}</view>
         </view>
         <view class="order-side {{item.ready ? 'ready' : 'pending'}} {{item.failed ? 'failed' : ''}}"><text>{{item.statusText}}</text><text wx:if="{{item.ready}}" class="arrow">›</text></view>

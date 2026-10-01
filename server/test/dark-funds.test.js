@@ -36,6 +36,12 @@ function setup(options = {}) {
     '../auth': { userIdFor: (token) => token === 'Bearer u2' ? 'u2' : (token === 'Bearer u1' ? 'u1' : ''), isAdmin: (token) => token === 'admin' },
     '../membership': require('../src/membership'), '../util': require('../src/util'),
     '../trading-date': require('../src/trading-date'), '../dark-fund-orders': require('../src/dark-fund-orders'),
+    '../dark-fund-close': {
+      fetchCloseDarkFund: async () => {
+        if (options.closeResult) return options.closeResult;
+        throw Object.assign(new Error('盘后数据接口尚未配置，可改用采集器查询'), { status: 503 });
+      },
+    },
     '../collector-client': collector, '../collector-images': collectorImages,
     '../notifications': require('../src/notifications'),
   };
@@ -116,6 +122,7 @@ test('online membership payment routes are removed', () => {
       '../membership': require('../src/membership'),
       '../trading-date': require('../src/trading-date'),
       '../dark-fund-orders': require('../src/dark-fund-orders'),
+      '../dark-fund-close': require('../src/dark-fund-close'),
       '../collector-client': { callbackAuthorized: () => false, dispatchStockAnalysis: async () => ({}) },
       '../collector-images': { persistCollectorImages: () => [] },
       '../notifications': require('../src/notifications'),
@@ -177,6 +184,31 @@ test('same user and request_id returns the original order without consuming quot
   assert.equal(data.darkFundOrders.length, 1);
   assert.equal(data.users[0].darkFundRemaining, 1);
   await assert.rejects(call('POST', '/api/dark-funds/orders', { stockCode: '600106', request_id: body.request_id }), { status: 409 });
+});
+
+test('盘后网页查询直接生成数据图表快照且不创建文章', async () => {
+  const closeResult = require('../src/dark-fund-close').normalizeCloseDarkFund(require('../src/dark-fund-close').SAMPLE_CLOSE_PAYLOAD, '600105');
+  const { data, call } = setup({ closeResult });
+  const created = await call('POST', '/api/dark-funds/orders', {
+    stockCode: '600105', request_id: 'df_close_web_20260930', query_mode: 'close', source: 'web',
+  });
+  assert.equal(created.ready, true);
+  assert.equal(created.resultType, 'close_snapshot');
+  assert.equal(created.queryMode, 'close');
+  assert.equal(created.querySource, 'web');
+  assert.equal(data.notes.length, 0);
+  assert.equal(data.users[0].darkFundRemaining, 1);
+  const viewed = await call('GET', `/api/dark-funds/orders/${created.orderId}`);
+  assert.equal(viewed.snapshot.result.stockName, '永鼎股份');
+});
+
+test('盘后接口未配置时不创建工单也不扣次数', async () => {
+  const { data, call } = setup();
+  await assert.rejects(call('POST', '/api/dark-funds/orders', {
+    stockCode: '600105', request_id: 'df_close_missing_source', query_mode: 'close', source: 'web',
+  }), { status: 503 });
+  assert.equal(data.darkFundOrders.length, 0);
+  assert.equal(data.users[0].darkFundRemaining, 2);
 });
 
 test('invalid or failed collector results do not silently complete an order', async () => {

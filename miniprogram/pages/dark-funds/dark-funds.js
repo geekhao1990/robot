@@ -23,6 +23,8 @@ Page({
     stockSuggestion: null,
     stockLookupLoading: false,
     stockLookupError: '',
+    queryMode: 'close',
+    closeSource: 'web',
     tradeDate: '',
     compactTradeDate: '',
     remaining: 0,
@@ -78,6 +80,13 @@ Page({
     this.setData({ tab });
     if (tab === 'history') this.loadOrders(false, 1);
   },
+  switchQueryMode(e) {
+    const queryMode = e.currentTarget.dataset.mode === 'intraday' ? 'intraday' : 'close';
+    this.setData({ queryMode });
+  },
+  switchCloseSource(e) {
+    this.setData({ closeSource: e.currentTarget.dataset.source === 'collector' ? 'collector' : 'web' });
+  },
   loadTradeDate() {
     this.setData({ dateLoading: true });
     return api.getDarkFundTradeDate()
@@ -132,7 +141,7 @@ Page({
     if (!this.data.compactTradeDate) return wx.showToast({ title: '请稍后重试', icon: 'none' });
     wx.showModal({
       title: '确认查询',
-      content: `是否查询${stockCode}${this.data.stockSuggestion.stockName ? ` ${this.data.stockSuggestion.stockName}` : ''}的${this.data.compactTradeDate}暗盘数据`,
+      content: `是否使用${this.data.queryMode === 'intraday' ? '盘中采集器' : (this.data.closeSource === 'collector' ? '盘后采集器' : '盘后网页数据')}查询${stockCode}${this.data.stockSuggestion.stockName ? ` ${this.data.stockSuggestion.stockName}` : ''}的${this.data.compactTradeDate}暗盘数据`,
       confirmText: '确定',
       success: (result) => {
         if (result.confirm) this.query(stockCode);
@@ -144,14 +153,16 @@ Page({
     this.setData({ querying: true });
     wx.showLoading({ title: '提交中', mask: true });
     const requestId = this.queryRequestId(stockCode);
-    api.createDarkFundOrder(stockCode, requestId)
+    const queryMode = this.data.queryMode;
+    const source = queryMode === 'intraday' ? 'collector' : this.data.closeSource;
+    api.createDarkFundOrder(stockCode, requestId, queryMode, source)
       .then((order) => {
         wx.hideLoading();
         if (!order || !order.orderId) throw new Error('工单提交失败');
         this.setData({ ...this.quotaData(order), waitingText: '等待结果' });
         this.clearQueryRequestId(requestId);
         this.loadOrders(true, 1);
-        wx.showModal({ title: '已提交', content: '等待结果', showCancel: false });
+        wx.showModal({ title: order.ready ? '查询完成' : '已提交', content: order.ready ? '盘后数据已生成，请在历史订单查看' : '等待结果', showCancel: false });
       })
       .catch((error) => {
         wx.hideLoading();
@@ -208,8 +219,16 @@ Page({
     if (!order || !order.ready) return wx.showToast({ title: order && order.failed ? (order.error || '查询失败，次数已退回') : '等待结果', icon: 'none' });
     api.getDarkFundOrder(order.id)
       .then((readyOrder) => {
-        if (!readyOrder || !readyOrder.noteId) throw new Error('查询结果不存在');
+        if (!readyOrder) throw new Error('查询结果不存在');
         this.setData({ historyBadge: Math.max(0, this.data.historyBadge - (order.unread ? 1 : 0)) });
+        if (readyOrder.resultType === 'close_snapshot' && readyOrder.snapshot) {
+          return new Promise((resolve, reject) => wx.navigateTo({
+            url: `/pages/dark-funds-result/dark-funds-result?id=${encodeURIComponent(readyOrder.id)}`,
+            success: resolve,
+            fail: reject,
+          }));
+        }
+        if (!readyOrder.noteId) throw new Error('查询结果不存在');
         return new Promise((resolve, reject) => wx.navigateTo({
           url: `/pages/detail/detail?id=${encodeURIComponent(readyOrder.noteId)}`,
           success: resolve,
@@ -223,11 +242,13 @@ Page({
     const now = Date.now();
     let saved = null;
     try { saved = wx.getStorageSync(key); } catch (error) {}
-    if (saved && saved.stockCode === stockCode && saved.tradeDate === this.data.tradeDate && now - Number(saved.createdAt) < 10 * 60 * 1000) {
+    const queryMode = this.data.queryMode;
+    const source = queryMode === 'intraday' ? 'collector' : this.data.closeSource;
+    if (saved && saved.stockCode === stockCode && saved.tradeDate === this.data.tradeDate && saved.queryMode === queryMode && saved.source === source && now - Number(saved.createdAt) < 10 * 60 * 1000) {
       return saved.requestId;
     }
     const requestId = `df_${now}_${Math.random().toString(36).slice(2, 12)}`;
-    try { wx.setStorageSync(key, { requestId, stockCode, tradeDate: this.data.tradeDate, createdAt: now }); } catch (error) {}
+    try { wx.setStorageSync(key, { requestId, stockCode, tradeDate: this.data.tradeDate, queryMode, source, createdAt: now }); } catch (error) {}
     return requestId;
   },
   clearQueryRequestId(requestId) {

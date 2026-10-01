@@ -284,8 +284,11 @@ function lookupStock(code) {
   return request('GET', '/api/stocks/lookup', { auth: true, data: { code } });
 }
 
-function createDarkFundOrder(stockCode, requestId) {
-  return request('POST', '/api/dark-funds/orders', { auth: true, data: { stockCode, request_id: requestId } });
+function createDarkFundOrder(stockCode, requestId, queryMode = 'intraday', source = 'collector') {
+  return request('POST', '/api/dark-funds/orders', {
+    auth: true,
+    data: { stockCode, request_id: requestId, query_mode: queryMode, source },
+  });
 }
 
 function getDarkFundOrders(page = 1) {

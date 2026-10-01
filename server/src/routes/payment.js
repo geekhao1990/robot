@@ -5,11 +5,13 @@ const { refreshDarkFundQuota, consumeDarkFundQuota, refundDarkFundQuota } = requ
 const { latestTradingDate, compactDate } = require('../trading-date');
 const {
   attachDarkFundImages,
+  activateCloseDarkFundOrder,
   activateDarkFundOrder,
   normalizeCollectorResult,
   publicDarkFundOrder,
   refreshDarkFundOrderResult,
 } = require('../dark-fund-orders');
+const { fetchCloseDarkFund } = require('../dark-fund-close');
 const { callbackAuthorized, dispatchStockAnalysis } = require('../collector-client');
 const { persistCollectorImages } = require('../collector-images');
 const { pushNotification } = require('../notifications');
@@ -59,10 +61,15 @@ module.exports = function register(router, HttpError) {
   router.post('/api/dark-funds/orders', async (ctx) => {
     const user = currentUser(ctx);
     const stockCode = String((ctx.body || {}).stockCode || '').trim();
+    const queryMode = String((ctx.body || {}).query_mode || 'intraday').trim().toLowerCase();
+    const requestedSource = String((ctx.body || {}).source || '').trim().toLowerCase();
+    const querySource = queryMode === 'intraday' ? 'collector' : (requestedSource || 'web');
     const suppliedRequestId = String((ctx.body || {}).request_id || '').trim();
     const requestId = suppliedRequestId || `legacy_${darkFundOrderNo()}`;
     if (!/^\d{6}$/.test(stockCode)) throw new HttpError(400, '请输入6位股票代码');
     if (/^(4|8|92)/.test(stockCode)) throw new HttpError(503, '系统繁忙');
+    if (!['intraday', 'close'].includes(queryMode)) throw new HttpError(400, '查询类型无效');
+    if (!['web', 'collector'].includes(querySource)) throw new HttpError(400, '查询来源无效');
     if (!/^[A-Za-z0-9_-]{12,80}$/.test(requestId)) throw new HttpError(400, '查询请求标识无效');
     if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
     const d = db.get();
@@ -70,17 +77,32 @@ module.exports = function register(router, HttpError) {
     const existing = d.darkFundOrders.find((item) => item.userId === user.id && item.clientRequestId === requestId);
     if (existing) {
       if (existing.stockCode !== stockCode) throw new HttpError(409, '查询请求标识已用于其他股票');
+      if ((existing.queryMode || 'intraday') !== queryMode || (existing.querySource || 'collector') !== querySource) {
+        throw new HttpError(409, '查询请求标识已用于其他查询方式');
+      }
       return orderQuotaResponse(existing, refreshDarkFundQuota(user), true);
+    }
+    const available = refreshDarkFundQuota(user);
+    if (available.total <= 0) throw new HttpError(403, '暗盘资金查询次数已用完');
+    let closeResult = null;
+    if (queryMode === 'close' && querySource === 'web') {
+      try {
+        closeResult = await fetchCloseDarkFund(stockCode);
+      } catch (error) {
+        throw new HttpError(Number(error && error.status) || 502, error && error.message || '盘后数据获取失败');
+      }
     }
     const consumed = consumeDarkFundQuota(user);
     if (!consumed) throw new HttpError(403, '暗盘资金查询次数已用完');
-    const tradeDate = latestTradingDate();
+    const tradeDate = closeResult ? closeResult.tradeDate : latestTradingDate();
     const order = {
       id: darkFundOrderNo(),
       clientRequestId: requestId,
       userId: user.id,
       product: 'dark-funds',
       stockCode,
+      queryMode,
+      querySource,
       tradeDate,
       amount: 0,
       quotaSource: consumed.source,
@@ -88,6 +110,20 @@ module.exports = function register(router, HttpError) {
       createdAt: Date.now(),
     };
     d.darkFundOrders.push(order);
+    if (closeResult) {
+      activateCloseDarkFundOrder(order, closeResult);
+      pushNotification(d, order.userId, {
+        type: 'dark_ready',
+        title: `${order.stockCode}盘后暗盘查询已完成`,
+        content: '盘后数据和图表已经生成，点击查看历史订单',
+        targetType: 'dark_history',
+        targetId: order.id,
+        dedupeKey: `dark-ready:${order.id}`,
+      });
+      db.save();
+      await db.flush();
+      return orderQuotaResponse(order, consumed);
+    }
     db.save();
     await db.flush();
     try {

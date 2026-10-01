@@ -304,7 +304,8 @@ function darkOrdersHtml(orders) {
   return orders.map((order) => {
     const ready = order.ready === true || order.status === 'READY' || order.status === 'SUCCESS';
     const failed = String(order.status).includes('FAILED');
-    return `<article class="order" data-order="${escapeHtml(order.id)}" data-ready="${ready}"><div><strong>${escapeHtml(order.stockCode)}</strong><small>${formatTime(order.createdAt)}</small></div><span class="status ${ready ? 'ready' : ''}">${ready ? '点击查看' : (failed ? '查询失败' : '等待结果')}</span></article>`;
+    const type = order.queryMode === 'close' ? (order.querySource === 'web' ? '盘后网页' : '盘后采集器') : '盘中采集器';
+    return `<article class="order" data-order="${escapeHtml(order.id)}" data-ready="${ready}"><div><strong>${escapeHtml(order.stockCode)}</strong><small>${escapeHtml(type)} · ${formatTime(order.createdAt)}</small></div><span class="status ${ready ? 'ready' : ''}">${ready ? '点击查看' : (failed ? '查询失败' : '等待结果')}</span></article>`;
   }).join('');
 }
 
@@ -460,19 +461,115 @@ submitDark = async function submitDarkWithLookup() {
   }
   const stockName = state.darkStockSuggestion.stockName;
   const dateText = String(document.querySelector('.trade-date')?.textContent || '').replace(/^查询日期[：:]\s*/, '').trim();
-  const description = `${code}${stockName ? ` ${stockName}` : ''}${dateText ? ` 的 ${dateText}` : ''}暗盘数据`;
+  const queryMode = state.darkQueryMode || 'close';
+  const source = queryMode === 'intraday' ? 'collector' : (state.darkCloseSource || 'web');
+  const methodText = queryMode === 'intraday' ? '盘中采集器' : (source === 'web' ? '盘后网页数据' : '盘后采集器');
+  const description = `${methodText}查询 ${code}${stockName ? ` ${stockName}` : ''}${dateText ? ` 的 ${dateText}` : ''}暗盘数据`;
   if (!confirm(`是否查询 ${description}？`)) return;
-  const requestId = darkRequestId(code);
+  const requestId = `web_${Date.now()}_${queryMode}_${source}_${Math.random().toString(36).slice(2, 9)}`;
   try {
-    await api('/api/dark-funds/orders', { method: 'POST', body: JSON.stringify({ stockCode: code, request_id: requestId }) });
+    const order = await api('/api/dark-funds/orders', { method: 'POST', body: JSON.stringify({ stockCode: code, request_id: requestId, query_mode: queryMode, source }) });
     try { localStorage.removeItem('nl_dark_pending_request'); } catch (_) {}
-    toast('工单已提交，请在历史订单查看');
+    toast(order.ready ? '盘后数据已生成' : '工单已提交，请在历史订单查看');
     state.darkHistoryPage = 1;
     renderDark('orders');
   } catch (error) {
     toast(error.message);
   }
 };
+
+const renderDarkQueryModesBase = renderDark;
+renderDark = async function renderDarkQueryModes(mode = 'query') {
+  state.darkQueryMode = state.darkQueryMode || 'close';
+  state.darkCloseSource = state.darkCloseSource || 'web';
+  await renderDarkQueryModesBase(mode);
+  if (mode !== 'query') return;
+  const card = document.querySelector('.query-card');
+  if (!card || card.querySelector('.dark-query-modes')) return;
+  card.insertAdjacentHTML('afterbegin', `<div class="dark-query-modes"><button data-dark-query-mode="close" class="${state.darkQueryMode === 'close' ? 'active' : ''}">盘后查询</button><button data-dark-query-mode="intraday" class="${state.darkQueryMode === 'intraday' ? 'active' : ''}">盘中查询</button></div><div class="dark-close-sources ${state.darkQueryMode === 'close' ? '' : 'hidden'}"><button data-dark-close-source="web" class="${state.darkCloseSource === 'web' ? 'active' : ''}">网页数据（默认）</button><button data-dark-close-source="collector" class="${state.darkCloseSource === 'collector' ? 'active' : ''}">使用采集器</button></div><p class="dark-mode-hint">${state.darkQueryMode === 'intraday' ? '盘中查询仅使用采集器' : (state.darkCloseSource === 'web' ? '查询盘后数据和图表，不生成文章' : '使用采集器生成完整结果')}</p>`);
+};
+
+function closeMoneyUnit(days) {
+  const values = days.flatMap((row) => ['main', 'grey', 'listed'].map((key) => Math.abs(Number(row[key]) || 0)));
+  return Math.max(...values, 0) >= 100000000 ? { divisor: 100000000, label: '亿元' } : { divisor: 10000, label: '万元' };
+}
+
+function closeMoney(value, unit) {
+  const number = (Number(value) || 0) / unit.divisor;
+  return `${number > 0 ? '+' : ''}${number.toFixed(2)}`;
+}
+
+function closeRolling(days, size) {
+  return days.map((row, index) => index + 1 < size ? null : ({
+    date: row.tradeDate.slice(5),
+    value: days.slice(index - size + 1, index + 1).reduce((sum, item) => sum + Number(item.grey || 0), 0),
+  })).filter(Boolean).slice(-7);
+}
+
+function closeChartHtml(days, size, unit) {
+  const points = closeRolling(days, size);
+  const max = Math.max(...points.map((item) => Math.abs(item.value)), 1);
+  return `<div class="close-chart">${points.map((item) => `<div class="close-bar-column"><small class="${item.value >= 0 ? 'money-up' : 'money-down'}">${closeMoney(item.value, unit)}</small><i class="${item.value >= 0 ? 'up' : 'down'}" style="height:${Math.max(12, Math.round(Math.abs(item.value) / max * 112))}px"></i><span>${escapeHtml(item.date)}</span></div>`).join('')}</div>`;
+}
+
+function closeDayChartHtml(latest, unit) {
+  const points = [
+    { date: '主力明盘', value: Number(latest.listed) || 0 },
+    { date: '主力暗盘', value: Number(latest.grey) || 0 },
+    { date: '散户流入', value: -(Number(latest.main) || 0) },
+  ];
+  const max = Math.max(...points.map((item) => Math.abs(item.value)), 1);
+  return `<div class="close-chart close-day-chart">${points.map((item) => `<div class="close-bar-column"><small class="${item.value >= 0 ? 'money-up' : 'money-down'}">${closeMoney(item.value, unit)}</small><i class="${item.value >= 0 ? 'up' : 'down'}" style="height:${Math.max(12, Math.round(Math.abs(item.value) / max * 112))}px"></i><span>${escapeHtml(item.date)}</span></div>`).join('')}</div>`;
+}
+
+function closeTableHtml(rows, unit, detail = false) {
+  const columns = detail
+    ? [['super_large', '超大单'], ['large', '大单'], ['middle', '中单'], ['small', '小单']]
+    : [['main', '主力'], ['grey', '暗盘'], ['listed', '明盘']];
+  return `<div class="close-table-scroll"><table class="close-table"><thead><tr><th>日期</th>${columns.map(([, label]) => `<th>${label}</th>`).join('')}</tr></thead><tbody>${rows.slice().reverse().slice(0, 7).map((row) => `<tr><td>${escapeHtml(row.tradeDate.slice(5))}</td>${columns.map(([key]) => `<td class="${Number(row[key]) >= 0 ? 'money-up' : 'money-down'}">${closeMoney(row[key], unit)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderCloseDarkResult(order) {
+  const result = order && order.snapshot && order.snapshot.result;
+  if (!result || result.type !== 'close_snapshot' || !Array.isArray(result.days) || !result.days.length) return toast('盘后数据不存在');
+  const unit = closeMoneyUnit(result.days);
+  const latest = result.days[result.days.length - 1];
+  state.route = 'dark-result';
+  setChrome();
+  const rolling3 = closeRolling(result.days, 3);
+  const rolling5 = closeRolling(result.days, 5);
+  const main = Number(latest.main) || 0;
+  app.innerHTML = `<div class="close-result-page"><header class="page-nav"><button class="back" data-action="back">‹</button><div class="nav-title">盘后暗盘</div></header><section class="close-result-hero"><div><strong>${escapeHtml(result.stockName)}</strong><span>${escapeHtml(result.stockCode)}</span></div><small>${escapeHtml(result.tradeDate)} · ${escapeHtml(result.versionLabel || '收盘')}</small></section><section class="close-result-card"><h3>当日资金 <small>单位：${unit.label}</small></h3><div class="close-summary"><div><span>主力净流入</span><b class="${main >= 0 ? 'money-up' : 'money-down'}">${closeMoney(main, unit)}</b></div><div><span>散户流入</span><b class="${-main >= 0 ? 'money-up' : 'money-down'}">${closeMoney(-main, unit)}</b></div></div>${closeDayChartHtml(latest, unit)}</section>${rolling3.length ? `<section class="close-result-card"><h3>3日暗盘滚动</h3>${closeChartHtml(result.days, 3, unit)}</section>` : ''}${rolling5.length ? `<section class="close-result-card"><h3>5日暗盘滚动</h3>${closeChartHtml(result.days, 5, unit)}</section>` : ''}<section class="close-result-card"><h3>资金明细</h3>${closeTableHtml(result.days, unit)}</section><section class="close-result-card"><h3>分单明细</h3>${closeTableHtml(result.days, unit, true)}</section><p class="close-disclaimer">数据来自互联网，仅供参考，不构成投资建议</p></div>`;
+}
+
+openOrder = async function openDarkOrderByResultType(id, ready) {
+  if (!ready) return toast('结果尚未就绪');
+  try {
+    const order = await api(`/api/dark-funds/orders/${encodeURIComponent(id)}`);
+    if (order.resultType === 'close_snapshot') {
+      history.pushState({ darkOrder: id }, '', `#dark-result/${encodeURIComponent(id)}`);
+      return renderCloseDarkResult(order);
+    }
+    if (order.noteId) return openNote(order.noteId);
+    return toast('查询结果不存在');
+  } catch (error) {
+    toast(error.message);
+  }
+};
+
+const renderLocationDarkResultBase = renderLocation;
+renderLocation = function renderLocationWithDarkResult() {
+  const hash = (location.hash || '#home').slice(1);
+  if (!hash.startsWith('dark-result/')) return renderLocationDarkResultBase();
+  const id = decodeURIComponent(hash.slice('dark-result/'.length));
+  loading();
+  return api(`/api/dark-funds/orders/${encodeURIComponent(id)}`)
+    .then(renderCloseDarkResult)
+    .catch((error) => { app.innerHTML = `<div class="notice"><strong>盘后结果加载失败</strong>${escapeHtml(error.message || '请稍后重试')}</div>`; });
+};
+window.addEventListener('popstate', () => {
+  if ((location.hash || '').slice(1).startsWith('dark-result/')) renderLocation();
+});
 
 function reserveWebGoldRefreshAttempt() {
   const userId = state.user && state.user.id || 'unknown';
@@ -588,6 +685,16 @@ document.addEventListener('click', (event) => {
 }, true);
 
 document.addEventListener('click', (event) => {
+  const queryMode = event.target.closest('[data-dark-query-mode]');
+  if (queryMode) {
+    state.darkQueryMode = queryMode.dataset.darkQueryMode === 'intraday' ? 'intraday' : 'close';
+    return renderDark('query');
+  }
+  const closeSource = event.target.closest('[data-dark-close-source]');
+  if (closeSource) {
+    state.darkCloseSource = closeSource.dataset.darkCloseSource === 'collector' ? 'collector' : 'web';
+    return renderDark('query');
+  }
   const darkPage = event.target.closest('[data-dark-page]');
   if (darkPage && !darkPage.disabled) {
     const page = Number(darkPage.dataset.darkPage);
