@@ -649,7 +649,7 @@
 .close-result-hero span { margin-left:8px; color:#999; font-size:13px; }
 .close-result-hero small { color:#777; }
 .close-result-card h3 { display:flex; align-items:center; justify-content:space-between; margin:0 0 16px; font-size:17px; }
-.close-result-card h3.close-flow-title { justify-content:flex-start; min-height:32px; color:#222; font-size:20px; font-weight:800; }
+.close-result-card h3.close-flow-title { justify-content:flex-start; min-height:32px; color:#222; font-size:19px; font-weight:800; }
 .close-flow-title>i { width:4px; height:23px; margin-right:10px; background:#ff3b30; }
 .close-flow-title>b { width:0; height:0; margin-left:12px; border-top:8px solid #666; border-right:7px solid transparent; border-left:7px solid transparent; }
 .close-flow-title>em { display:inline-flex; align-items:center; justify-content:center; width:19px; height:19px; margin-left:18px; color:#888; font:700 13px/1 Georgia,serif; font-style:normal; border:2px solid #999; border-radius:50%; box-sizing:border-box; }
@@ -659,21 +659,21 @@
 .close-summary div { display:flex; min-height:90px; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:14px 4px; background:#f6f6f6; }
 .close-summary div:first-child { border-radius:7px 0 0 7px; }
 .close-summary div:last-child { border-radius:0 7px 7px 0; }
-.close-summary span { color:#777; font-size:16px; font-weight:400; }
-.close-summary b { font-size:18px; font-weight:500; }
+.close-summary span { color:#777; font-size:15px; font-weight:400; transform:scaleX(.88); }
+.close-summary b { font-size:17px; font-weight:500; transform:scaleX(.88); }
 .money-up { color:#e53935!important; }
 .money-down { color:#08a045!important; }
 .close-chart { position:relative; display:flex; align-items:flex-end; justify-content:space-around; min-height:170px; padding-top:18px; border-bottom:1px solid #eee; }
 .close-day-chart { min-height:165px; margin-top:14px; font-family:"PingFang SC","Microsoft YaHei",Arial,sans-serif; }
 .close-bar-column { display:flex; flex:1; flex-direction:column; align-items:center; justify-content:flex-end; min-width:46px; }
 .close-bar-column small { width:100%; margin-bottom:5px; overflow:hidden; font-size:10px; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
-.close-day-chart .close-bar-column small { width:44px; overflow:visible; font-size:14px; font-weight:400; }
+.close-day-chart .close-bar-column small { width:44px; overflow:visible; font-size:14px; font-weight:400; transform:scaleX(.86); }
 .close-bar-column i { display:block; width:22px; min-height:12px; border-radius:5px 5px 0 0; }
-.close-day-chart .close-bar-column i { width:34px; border-radius:3px 3px 0 0; }
+.close-day-chart .close-bar-column i { width:18px; border-radius:2px 2px 0 0; }
 .close-bar-column i.up { background:linear-gradient(#ff776f,#e53935); }
 .close-bar-column i.down { background:linear-gradient(#38c777,#08a045); }
 .close-bar-column span { margin:6px 0 -22px; color:#999; font-size:10px; }
-.close-day-chart .close-bar-column span { color:#555; font-size:14px; font-weight:400; }
+.close-day-chart .close-bar-column span { color:#555; font-size:14px; font-weight:400; transform:scaleX(.86); }
 .close-table-scroll { width:100%; overflow-x:auto; }
 .close-table { width:100%; min-width:520px; border-collapse:collapse; }
 .close-table th,.close-table td { padding:11px 8px; font-size:12px; text-align:center; border-top:1px solid #f0f0f0; white-space:nowrap; }
