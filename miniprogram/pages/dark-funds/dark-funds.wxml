@@ -1,8 +1,8 @@
 <view class="page">
   <view class="tabs">
-    <view class="tab {{tab === 'query' ? 'active' : ''}}" data-tab="query" bindtap="switchTab">六位神奇数字</view>
+    <view class="tab {{tab === 'query' ? 'active' : ''}}" data-tab="query" bindtap="switchTab">查暗盘</view>
     <view class="tab {{tab === 'history' ? 'active' : ''}}" data-tab="history" bindtap="switchTab">
-      <text>历史订单</text><text wx:if="{{historyBadge}}" class="history-badge">{{historyBadge}}</text>
+      <text>订单列表</text><text wx:if="{{historyBadge}}" class="history-badge">{{historyBadge}}</text>
     </view>
   </view>
 
@@ -50,7 +50,7 @@
   <view wx:if="{{tab === 'history'}}" class="history-page">
     <view class="history-toolbar"><view>查询记录</view><view class="history-refresh {{historyLoading ? 'disabled' : ''}}" bindtap="refreshOrders">{{historyLoading ? '工单状态刷新中…' : '请手动刷新工单状态'}}</view></view>
     <view wx:if="{{historyLoading}}" class="empty">正在加载...</view>
-    <view wx:elif="{{!orders.length}}" class="empty">暂无历史订单</view>
+    <view wx:elif="{{!orders.length}}" class="empty">暂无订单</view>
     <view wx:else class="order-list">
       <view wx:for="{{orders}}" wx:key="id" class="order-card" data-id="{{item.id}}" bindtap="openOrder">
         <view class="order-main">

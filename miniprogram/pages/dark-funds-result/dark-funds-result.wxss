@@ -8,7 +8,6 @@
 .stock-code { margin-left: 14rpx; color: #999; font-size: 23rpx; }
 .trade-date { color: #999; font-size: 22rpx; }
 .section-heading { display: flex; align-items: center; gap: 16rpx; margin: 2rpx 0 24rpx; font-size: 36rpx; font-weight: 800; }
-.heading-mark { width: 8rpx; height: 44rpx; background: #ff3b30; border-radius: 999rpx; }
 .segment-control { display: flex; gap: 6rpx; margin-bottom: 22rpx; padding: 7rpx; background: #f2f3f5; border: 2rpx solid #dfe3e8; border-radius: 16rpx; }
 .segment { display: flex; flex: 1; align-items: center; justify-content: center; min-height: 70rpx; color: #64748b; font-size: 26rpx; font-weight: 700; border-radius: 12rpx; }
 .segment.active { color: #111; background: #fff; box-shadow: 0 2rpx 10rpx rgba(0,0,0,.10); }
@@ -35,7 +34,8 @@
 .trend-chart-wrap { position: relative; width: 100%; height: 500rpx; margin-top: 8rpx; }
 .trend-canvas { width: 100%; height: 500rpx; }
 .trend-empty { display: flex; align-items: center; justify-content: center; min-height: 360rpx; color: #aaa; font-size: 24rpx; }
-.detail-title { margin-bottom: 20rpx; font-size: 34rpx; font-weight: 800; }
+.detail-title { display: flex; align-items: center; gap: 16rpx; margin-bottom: 20rpx; font-size: 34rpx; font-weight: 800; }
+.detail-title::before { flex: 0 0 8rpx; width: 8rpx; height: 44rpx; content: ''; background: #ff3b30; border-radius: 999rpx; }
 .detail-card { padding-right: 0; padding-left: 0; overflow: hidden; }
 .detail-card > .detail-title, .detail-card > .segment-control { margin-right: 30rpx; margin-left: 30rpx; }
 .table { width: 100%; border: 2rpx solid #dfe3e8; border-radius: 14rpx; box-sizing: border-box; }

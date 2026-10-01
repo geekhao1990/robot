@@ -181,7 +181,7 @@ Page({
         this.setData({ ...this.quotaData(order), waitingText: '等待结果' });
         this.clearQueryRequestId(requestId);
         this.loadOrders(true, 1);
-        wx.showModal({ title: order.ready ? '查询完成' : '已提交', content: order.ready ? '盘后数据已生成，请在历史订单查看' : '等待结果', showCancel: false });
+        wx.showModal({ title: order.ready ? '查询完成' : '已提交', content: order.ready ? '盘后数据已生成，请在订单列表查看' : '等待结果', showCancel: false });
       })
       .catch((error) => {
         wx.hideLoading();

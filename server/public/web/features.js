@@ -489,7 +489,7 @@ submitDark = async function submitDarkWithLookup(requestedMode = 'close') {
   try {
     const order = await api('/api/dark-funds/orders', { method: 'POST', body: JSON.stringify({ stockCode: code, request_id: requestId, query_mode: queryMode, source }) });
     try { localStorage.removeItem('nl_dark_pending_request'); } catch (_) {}
-    toast(order.ready ? '盘后数据已生成' : '工单已提交，请在历史订单查看');
+    toast(order.ready ? '盘后数据已生成' : '工单已提交，请在订单列表查看');
     state.darkHistoryPage = 1;
     renderDark('orders');
   } catch (error) {
@@ -500,6 +500,9 @@ submitDark = async function submitDarkWithLookup(requestedMode = 'close') {
 const renderDarkQueryModesBase = renderDark;
 renderDark = async function renderDarkQueryModes(mode = 'query') {
   await renderDarkQueryModesBase(mode);
+  const darkTabs = document.querySelectorAll('.dark-page .tabs button');
+  if (darkTabs[0]) darkTabs[0].textContent = '查暗盘';
+  if (darkTabs[1]) darkTabs[1].textContent = '订单列表';
   if (mode !== 'query') return;
   const card = document.querySelector('.query-card');
   const actions = card && card.querySelector('.query-actions');
@@ -588,6 +591,14 @@ function renderCloseDarkResult(order) {
   const main = Number(latest.main) || 0;
   app.innerHTML = `<div class="close-result-page"><header class="page-nav"><button class="back" data-action="back">‹</button><div class="nav-title">盘后暗盘</div></header><section class="close-result-hero"><div><strong>${escapeHtml(closeHybridStockName(result.stockName, result.stockInitials))}</strong><span>${escapeHtml(closeMarketCode(result.stockCode))}</span></div><small>${escapeHtml(result.tradeDate)} · ${escapeHtml(result.versionLabel || '收盘')}</small></section><section class="close-result-card"><h3 class="close-flow-title"><i></i><span>主力流向(${unit.label})</span><b></b></h3><div class="close-summary"><div><span>主力净流入</span><b class="${main >= 0 ? 'money-up' : 'money-down'}">${closeMoney(main, unit)}</b></div><div><span>散户流入</span><b class="${-main >= 0 ? 'money-up' : 'money-down'}">${closeMoney(-main, unit)}</b></div></div>${closeDayChartHtml(latest, unit)}</section>${rolling3.length ? `<section class="close-result-card"><h3>3日暗盘滚动</h3>${closeChartHtml(days, 3, unit)}</section>` : ''}${rolling5.length ? `<section class="close-result-card"><h3>5日暗盘滚动</h3>${closeChartHtml(days, 5, unit)}</section>` : ''}<section class="close-result-card"><h3>资金明细</h3>${closeTableHtml(days, unit)}</section><section class="close-result-card"><h3>分单明细</h3>${closeTableHtml(days, unit, true)}</section><p class="close-disclaimer">数据来自互联网，仅供参考，不构成投资建议</p></div>`;
 }
+
+const renderCloseDarkResultDisclaimerBase = renderCloseDarkResult;
+renderCloseDarkResult = function renderCloseDarkResultWithDisclaimer(order) {
+  const output = renderCloseDarkResultDisclaimerBase(order);
+  const disclaimer = document.querySelector('.close-disclaimer');
+  if (disclaimer) disclaimer.textContent = '数据和图表来自互联网，由AI生成，仅供参考，不构成投资建议';
+  return output;
+};
 
 openOrder = async function openDarkOrderByResultType(id, ready) {
   if (!ready) return toast('结果尚未就绪');
