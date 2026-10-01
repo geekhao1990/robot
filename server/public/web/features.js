@@ -466,18 +466,21 @@ function createWebMockCloseResult() {
 submitDark = async function submitDarkWithLookup(requestedMode = 'close') {
   const input = document.querySelector('#stockCode');
   const code = String(input && input.value || '').replace(/\D/g, '');
-  if (!/^\d{6}$/.test(code)) return toast('请输入6位股票代码');
+  if (!/^\d{6}$/.test(code)) return toast('请输入6位代码');
   if (/^(4|8|92)/.test(code)) return toast('系统繁忙');
   if (state.darkStockLookupLoading) return toast('正在确认股票信息');
   if (!state.darkStockSuggestion || state.darkStockSuggestion.stockCode !== code) {
     return toast(state.darkStockLookupError || '请先确认股票代码');
   }
   const stockName = state.darkStockSuggestion.stockName;
-  const dateText = String(document.querySelector('.trade-date')?.textContent || '').replace(/^查询日期[：:]\s*/, '').trim();
+  const displayName = darkQueryStockName(stockName);
+  const dateText = String(state.darkTradeDate || '').trim();
   const queryMode = requestedMode === 'intraday' ? 'intraday' : 'close';
   const source = queryMode === 'intraday' ? 'collector' : 'web';
-  const description = `暗盘${queryMode === 'intraday' ? '实时' : '收盘'}查询 ${code}${stockName ? ` ${stockName}` : ''}${dateText ? `，查询日期 ${dateText}` : ''}`;
-  if (!confirm(`是否查询 ${description}？`)) return;
+  const description = queryMode === 'intraday'
+    ? `是否查询暗盘【盘中】数据：${code}${displayName ? ` ${displayName}` : ''}，查询日期${dateText}`
+    : `是否查询暗盘【盘后】数据：${code}${displayName ? ` ${displayName}` : ''}，查询近7日暗盘数据`;
+  if (!confirm(description)) return;
   if (queryMode === 'close') {
     history.pushState({ darkMock: true }, '', `#dark-result/mock?code=${encodeURIComponent(code)}&name=${encodeURIComponent(stockName || '')}&date=${encodeURIComponent(dateText || '')}`);
     return renderCloseDarkResult({ snapshot: { result: createWebMockCloseResult(code, stockName, dateText) } });
@@ -501,9 +504,23 @@ renderDark = async function renderDarkQueryModes(mode = 'query') {
   const card = document.querySelector('.query-card');
   const actions = card && card.querySelector('.query-actions');
   if (!actions) return;
-  actions.innerHTML = `<button class="primary" data-dark-query-submit="intraday">暗盘实时查询</button><button class="close-query" data-dark-query-submit="close">暗盘收盘查询</button>`;
-  actions.insertAdjacentHTML('afterend', '<div class="dark-contact-row"><button class="contact" data-action="contact">咨询人工</button></div>');
+  const input = card.querySelector('#stockCode');
+  if (input) input.placeholder = '请输入6位代码';
+  const tradeDate = card.querySelector('.trade-date');
+  if (tradeDate) {
+    state.darkTradeDate = String(tradeDate.textContent || '').replace(/^查询日期[：:]\s*/, '').trim();
+    tradeDate.remove();
+  }
+  actions.innerHTML = `<button class="primary" data-dark-query-submit="intraday">暗盘【盘中】查询</button><button class="close-query" data-dark-query-submit="close">暗盘【盘后】查询</button>`;
+  actions.insertAdjacentHTML('afterend', profileServiceActionsHtml().replace('profile-service-actions', 'profile-service-actions dark-service-actions'));
 };
+
+const DARK_STOCK_NAME_INITIALS = { 股:'G',份:'F',科:'K',技:'J',集:'J',团:'T',银:'Y',行:'H',能:'N',源:'Y',实:'S',业:'Y',发:'F',展:'Z',电:'D',子:'Z',生:'S',物:'W',医:'Y',药:'Y',新:'X',材:'C' };
+function darkQueryStockName(name) {
+  const chars = Array.from(String(name || '').trim());
+  if (chars.length <= 2) return chars.join('');
+  return `${chars.slice(0, 2).join('')}${chars.slice(2).map((char) => DARK_STOCK_NAME_INITIALS[char] || char).join('')}`;
+}
 
 function closeMoneyUnit(days) {
   const values = days.flatMap((row) => ['main', 'grey', 'listed'].map((key) => Math.abs(Number(row[key]) || 0)));

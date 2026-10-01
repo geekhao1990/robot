@@ -16,6 +16,17 @@ function formatExpiryDate(timestamp) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+const STOCK_NAME_INITIALS = {
+  股: 'G', 份: 'F', 科: 'K', 技: 'J', 集: 'J', 团: 'T', 银: 'Y', 行: 'H', 能: 'N', 源: 'Y',
+  实: 'S', 业: 'Y', 发: 'F', 展: 'Z', 电: 'D', 子: 'Z', 生: 'S', 物: 'W', 医: 'Y', 药: 'Y', 新: 'X', 材: 'C',
+};
+
+function displayStockName(name) {
+  const chars = Array.from(String(name || '').trim());
+  if (chars.length <= 2) return chars.join('');
+  return `${chars.slice(0, 2).join('')}${chars.slice(2).map((char) => STOCK_NAME_INITIALS[char] || char).join('')}`;
+}
+
 Page({
   data: {
     tab: 'query',
@@ -46,7 +57,10 @@ Page({
     historyAdLoadFailed: false,
     waitingText: '',
     querying: false,
-    contactQrVisible: false,
+    serviceQrVisible: false,
+    serviceQrTitle: '',
+    serviceQrDescription: '',
+    serviceQrImage: '',
   },
   onLoad(options) {
     if (!store.isLogin()) return wx.redirectTo({ url: '/pages/login/login' });
@@ -126,16 +140,20 @@ Page({
     const stockCode = String(this.data.stockCode || '').trim();
     const queryMode = e.currentTarget.dataset.mode === 'intraday' ? 'intraday' : 'close';
     const source = queryMode === 'intraday' ? 'collector' : 'web';
-    if (!/^\d{6}$/.test(stockCode)) return wx.showModal({ title: '无法查询', content: '请输入6位股票代码', showCancel: false });
+    if (!/^\d{6}$/.test(stockCode)) return wx.showModal({ title: '无法查询', content: '请输入6位代码', showCancel: false });
     if (/^(4|8|92)/.test(stockCode)) return wx.showToast({ title: '系统繁忙', icon: 'none' });
     if (this.data.stockLookupLoading) return wx.showToast({ title: '正在确认股票信息', icon: 'none' });
     if (!this.data.stockSuggestion || this.data.stockSuggestion.stockCode !== stockCode) {
       return wx.showToast({ title: this.data.stockLookupError || '请先确认股票代码', icon: 'none' });
     }
     if (!this.data.compactTradeDate) return wx.showToast({ title: '请稍后重试', icon: 'none' });
+    const stockName = displayStockName(this.data.stockSuggestion.stockName);
+    const content = queryMode === 'intraday'
+      ? `是否查询暗盘【盘中】数据：${stockCode}${stockName ? ` ${stockName}` : ''}，查询日期${this.data.compactTradeDate}`
+      : `是否查询暗盘【盘后】数据：${stockCode}${stockName ? ` ${stockName}` : ''}，查询近7日暗盘数据`;
     wx.showModal({
       title: '确认查询',
-      content: `是否进行暗盘${queryMode === 'intraday' ? '实时' : '收盘'}查询：${stockCode}${this.data.stockSuggestion.stockName ? ` ${this.data.stockSuggestion.stockName}` : ''}，查询日期 ${this.data.compactTradeDate}`,
+      content,
       confirmText: '确定',
       success: (result) => {
         if (!result.confirm) return;
@@ -270,17 +288,28 @@ Page({
   onHistoryAdError() {
     this.setData({ historyAdLoadFailed: true });
   },
-  openContactQr() {
-    this.setData({ contactQrVisible: true });
-  },
-  closeContactQr() {
-    this.setData({ contactQrVisible: false });
-  },
-  previewContactQr() {
-    wx.previewImage({
-      current: '/images/enterprise-wechat.jpg',
-      urls: ['/images/enterprise-wechat.jpg'],
+  openEnterpriseWechat() {
+    this.setData({
+      serviceQrVisible: true,
+      serviceQrTitle: '咨询人工',
+      serviceQrDescription: '长按或扫码添加企业微信，进行售前咨询及售后服务',
+      serviceQrImage: '/images/enterprise-wechat.jpg',
     });
+  },
+  openWechatPayment() {
+    this.setData({
+      serviceQrVisible: true,
+      serviceQrTitle: '老客扫码复购',
+      serviceQrDescription: '长按保存或使用微信扫描二维码',
+      serviceQrImage: '/images/wechat-payment.jpg',
+    });
+  },
+  closeServiceQr() {
+    this.setData({ serviceQrVisible: false });
+  },
+  previewServiceQr() {
+    const image = this.data.serviceQrImage;
+    if (image) wx.previewImage({ current: image, urls: [image] });
   },
   noop() {},
   errorText(error) {

@@ -9,7 +9,7 @@
   <view wx:if="{{tab === 'query'}}" class="query-page">
     <view class="query-card">
       <view class="code-box">
-        <input class="code-input" type="number" maxlength="6" value="{{stockCode}}" bindinput="onCodeInput" focus />
+        <input class="code-input" type="number" maxlength="6" value="{{stockCode}}" placeholder="请输入6位代码" bindinput="onCodeInput" focus />
       </view>
       <view wx:if="{{stockLookupLoading || stockSuggestion || stockLookupError}}" class="stock-dropdown">
         <view wx:if="{{stockLookupLoading}}" class="stock-dropdown-tip">正在查询股票名称…</view>
@@ -19,13 +19,19 @@
         </view>
         <view wx:else class="stock-dropdown-error">{{stockLookupError}}</view>
       </view>
-      <view class="trade-date">查询日期：{{compactTradeDate || '获取中...'}}</view>
       <view class="query-actions">
-        <button class="query-button query-button-live" data-mode="intraday" bindtap="prepareQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">暗盘实时查询</button>
-        <button class="query-button query-button-close" data-mode="close" bindtap="prepareQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">暗盘收盘查询</button>
+        <button class="query-button query-button-live" data-mode="intraday" bindtap="prepareQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">暗盘【盘中】查询</button>
+        <button class="query-button query-button-close" data-mode="close" bindtap="prepareQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">暗盘【盘后】查询</button>
       </view>
-      <view class="contact-row">
-        <button class="contact-button" bindtap="openContactQr">咨询人工</button>
+      <view class="service-actions">
+        <view class="service-button" bindtap="openEnterpriseWechat">
+          <view class="service-icon">企</view>
+          <view class="service-copy"><view class="service-title">咨询人工</view><view class="service-description">售前咨询及售后服务</view></view>
+        </view>
+        <view class="service-button" bindtap="openWechatPayment">
+          <view class="service-icon payment">收</view>
+          <view class="service-copy"><view class="service-title">老客扫码复购</view><view class="service-description">微信二维码</view></view>
+        </view>
       </view>
       <view class="quota-summary">
         <view class="remaining-tip">剩余次数：<text>{{remaining}}</text></view>
@@ -65,12 +71,12 @@
     </view>
   </view>
 </view>
-<view wx:if="{{contactQrVisible}}" class="contact-qr-mask" bindtap="closeContactQr">
+<view wx:if="{{serviceQrVisible}}" class="contact-qr-mask" bindtap="closeServiceQr">
   <view class="contact-qr-sheet" catchtap="noop">
     <view class="contact-qr-handle"></view>
-    <view class="contact-qr-title">咨询人工</view>
-    <view class="contact-qr-description">扫码添加企业微信，获取售前咨询及售后服务</view>
-    <image class="contact-qr-image" src="/images/enterprise-wechat.jpg" mode="widthFix" bindtap="previewContactQr" show-menu-by-longpress />
+    <view class="contact-qr-title">{{serviceQrTitle}}</view>
+    <view class="contact-qr-description">{{serviceQrDescription}}</view>
+    <image class="contact-qr-image" src="{{serviceQrImage}}" mode="widthFix" bindtap="previewServiceQr" show-menu-by-longpress />
     <view class="contact-qr-tip">点击查看大图，长按可识别或保存</view>
   </view>
 </view>
