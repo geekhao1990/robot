@@ -1,8 +1,7 @@
 const api = require('../../utils/api');
 
-const RED = '#ff3b30';
-const GREEN = '#00b85a';
 const YELLOW = '#ffe50a';
+const TREND_AREA_GREEN = '#00ff00';
 
 function chooseUnit(values) {
   return values.some((value) => Math.abs(Number(value) || 0) >= 100000000)
@@ -143,6 +142,7 @@ Page({
     const series = this.trends && this.trends[fundView] || [];
     const latest = series.slice().reverse().find((item) => item.value !== null);
     const unit = chooseUnit([latest ? latest.value : 0]);
+    this.trendUnit = unit;
     this.setData({
       fundView,
       trendMetricLabel: `${size}日暗盘净流入`,
@@ -173,12 +173,13 @@ Page({
       context.scale(ratio, ratio);
       const width = target.width;
       const height = target.height;
-      const padding = { left: 48, right: 12, top: 18, bottom: 30 };
+      const padding = { left: 62, right: 12, top: 18, bottom: 30 };
       const plotWidth = width - padding.left - padding.right;
       const plotHeight = height - padding.top - padding.bottom;
       const valid = series.map((item, index) => item.value === null ? null : ({ ...item, index })).filter(Boolean);
       if (!valid.length) return;
       const values = valid.map((item) => item.value);
+      const unit = this.trendUnit || chooseUnit([valid[valid.length - 1].value]);
       let min = Math.min(0, ...values);
       let max = Math.max(0, ...values);
       const span = Math.max(max - min, Math.abs(max), Math.abs(min), 1);
@@ -202,7 +203,7 @@ Page({
         context.stroke();
         context.fillStyle = '#8a9098';
         context.textAlign = 'right';
-        context.fillText(`${(value / 10000).toFixed(0)}`, padding.left - 6, y);
+        context.fillText(formatByUnit(value, unit, true), padding.left - 6, y);
       }
       context.setLineDash([]);
       context.beginPath();
@@ -223,7 +224,7 @@ Page({
       context.rect(padding.left, padding.top, plotWidth, Math.max(0, zeroY - padding.top));
       context.clip();
       areaPath();
-      context.fillStyle = RED;
+      context.fillStyle = TREND_AREA_GREEN;
       context.fill();
       context.restore();
       context.save();
@@ -231,7 +232,7 @@ Page({
       context.rect(padding.left, zeroY, plotWidth, Math.max(0, padding.top + plotHeight - zeroY));
       context.clip();
       areaPath();
-      context.fillStyle = GREEN;
+      context.fillStyle = TREND_AREA_GREEN;
       context.fill();
       context.restore();
       if (valid[0].index > 0) {
