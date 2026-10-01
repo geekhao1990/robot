@@ -2,13 +2,14 @@ const crypto = require('crypto');
 const db = require('../db');
 const auth = require('../auth');
 const { pubUser } = require('../util');
-const { activateService, addManualDarkFundQuota } = require('../membership');
+const { activateService, activateCloseDarkFund, addManualDarkFundQuota } = require('../membership');
 const { pushNotification } = require('../notifications');
 
 const CARD_TYPES = Object.freeze({
   gold: Object.freeze({ type: 'gold', label: '金手指卡', days: 360, quota: 5 }),
   service_month: Object.freeze({ type: 'service_month', label: '服务包月卡', days: 30, quota: 15 }),
   service_year: Object.freeze({ type: 'service_year', label: '服务包年卡', days: 360, quota: 15 }),
+  dark_month: Object.freeze({ type: 'dark_month', label: '暗盘包月卡', days: 30, quota: 0 }),
   dark_1: Object.freeze({ type: 'dark_1', label: '暗盘1次卡', quota: 1 }),
   dark_50: Object.freeze({ type: 'dark_50', label: '暗盘50次卡', quota: 50 }),
   dark_100: Object.freeze({ type: 'dark_100', label: '暗盘100次卡', quota: 100 }),
@@ -38,6 +39,12 @@ module.exports = function register(router, HttpError) {
   const summary = (card) => {
     const { codeHash, ...safe } = card;
     return safe;
+  };
+  const expireAtFor = (user, type) => {
+    if (type === 'gold') return Number(user.goldExpire) || 0;
+    if (type === 'service_month' || type === 'service_year') return Number(user.serviceExpire) || 0;
+    if (type === 'dark_month') return Number(user.darkFundCloseExpire) || 0;
+    return 0;
   };
   router.get('/api/admin/gift-cards', (ctx) => {
     admin(ctx);
@@ -99,7 +106,7 @@ module.exports = function register(router, HttpError) {
       const definition = CARD_TYPES[card.type];
       if (!definition) throw new HttpError(410, '该卡种已停用，请联系管理员更换礼品卡');
       if (card.status !== 'unused') {
-        if (card.status === 'redeemed' && card.redeemedBy === userId) return { alreadyRedeemed: true, type: card.type, label: definition.label, days: definition.days || 0, quota: definition.quota, user: pubUser(user, true) };
+        if (card.status === 'redeemed' && card.redeemedBy === userId) return { alreadyRedeemed: true, type: card.type, label: definition.label, days: definition.days || 0, quota: definition.quota, expireAt: expireAtFor(user, card.type), user: pubUser(user, true) };
         throw new HttpError(409, '该卡密已被使用');
       }
       const oldUser = { ...user };
@@ -113,6 +120,8 @@ module.exports = function register(router, HttpError) {
         user.goldQuotaGiftMigrated = true;
       } else if (card.type === 'service_month' || card.type === 'service_year') {
         activateService(user, card.type, now);
+      } else if (card.type === 'dark_month') {
+        activateCloseDarkFund(user, now);
       } else {
         addManualDarkFundQuota(user, definition.quota, now);
       }
@@ -120,8 +129,10 @@ module.exports = function register(router, HttpError) {
       Object.assign(card, { status: 'redeemed', redeemedBy: userId, redeemedAt: now });
       pushNotification(data, userId, {
         type: 'dark_recharge',
-        title: '暗盘次数充值成功',
-        content: `${definition.label}已生效，当前剩余${Number(user.darkFundRemaining) || 0}次`,
+        title: card.type === 'dark_month' ? '暗盘包月开通成功' : '暗盘次数充值成功',
+        content: card.type === 'dark_month'
+          ? '暗盘包月已生效，30天内可无限次查看盘后暗盘'
+          : `${definition.label}已生效，当前剩余${Number(user.darkFundRemaining) || 0}次`,
         targetType: 'dark_home',
         dedupeKey: `gift-card:${card.id}`,
         createdAt: now,
@@ -133,7 +144,7 @@ module.exports = function register(router, HttpError) {
         else if (data.systemNotifications) delete data.systemNotifications[userId];
         throw error;
       }
-      return { type: card.type, label: definition.label, days: definition.days || 0, quota: definition.quota, user: pubUser(user, true) };
+      return { type: card.type, label: definition.label, days: definition.days || 0, quota: definition.quota, expireAt: expireAtFor(user, card.type), user: pubUser(user, true) };
     });
   });
 };

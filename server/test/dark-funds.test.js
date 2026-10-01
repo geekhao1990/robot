@@ -202,6 +202,29 @@ test('盘后网页查询直接生成数据图表快照且不创建文章', async
   assert.equal(viewed.snapshot.result.stockName, '永鼎股份');
 });
 
+test('暗盘包月只免除盘后查询扣次，盘中查询仍扣减次数', async () => {
+  const closeResult = require('../src/dark-fund-close').normalizeCloseDarkFund(require('../src/dark-fund-close').SAMPLE_CLOSE_PAYLOAD, '600105');
+  const { data, call } = setup({ closeResult });
+  data.users[0].darkFundCloseExpire = Date.now() + 30 * 86400000;
+  data.users[0].darkFundRemaining = 0;
+  data.users[0].darkFundManualRemaining = 0;
+  const close = await call('POST', '/api/dark-funds/orders', {
+    stockCode: '600105', request_id: 'df_close_monthly_20260930', query_mode: 'close', source: 'web',
+  });
+  assert.equal(close.closeMonthlyActive, true);
+  assert.equal(close.remaining, 0);
+  assert.equal(data.users[0].darkFundRemaining, 0);
+  assert.equal(data.darkFundOrders[0].quotaSource, 'close_month');
+
+  data.users[0].darkFundManualRemaining = 1;
+  data.users[0].darkFundRemaining = 1;
+  const intraday = await call('POST', '/api/dark-funds/orders', {
+    stockCode: '600105', request_id: 'df_intraday_monthly_20260930', query_mode: 'intraday', source: 'collector',
+  });
+  assert.equal(intraday.remaining, 0);
+  assert.equal(data.users[0].darkFundRemaining, 0);
+});
+
 test('盘后接口未配置时不创建工单也不扣次数', async () => {
   const { data, call } = setup();
   await assert.rejects(call('POST', '/api/dark-funds/orders', {

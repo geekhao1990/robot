@@ -266,6 +266,7 @@ const GIFT_CARD_LABELS = {
   gold: '金手指卡（360天 + 5次暗盘）',
   service_month: '服务包月卡（30天 + 每30天15次暗盘）',
   service_year: '服务包年卡（360天 + 每30天15次暗盘）',
+  dark_month: '暗盘包月卡（30天盘后无限查询）',
   dark_1: '暗盘1次卡',
   dark_50: '暗盘50次卡',
   dark_100: '暗盘100次卡',
@@ -1263,6 +1264,11 @@ function renderSettings() {
           <div class="hint">历史订单分页控件下方的 Banner 广告位。</div>
         </div>
         <div class="field">
+          <label>暗盘盘后查询插屏广告位 ID</label>
+          <input id="settingDarkFundsCloseInterstitialAdUnitId" value="${esc(settings.darkFundsCloseInterstitialAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+          <div class="hint">每次确认盘后暗盘查询时尝试展示；广告拉取失败不影响查询。</div>
+        </div>
+        <div class="field">
           <label>“我”页面插屏广告位 ID</label>
           <input id="settingProfileAdUnitId" value="${esc(settings.profileAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
         </div>
@@ -1301,6 +1307,7 @@ function saveSettings() {
     goldFingerInterstitialAdUnitId: document.getElementById('settingGoldFingerInterstitialAdUnitId').value.trim(),
     darkFundsQueryAdUnitId: document.getElementById('settingDarkFundsQueryAdUnitId').value.trim(),
     darkFundsHistoryAdUnitId: document.getElementById('settingDarkFundsHistoryAdUnitId').value.trim(),
+    darkFundsCloseInterstitialAdUnitId: document.getElementById('settingDarkFundsCloseInterstitialAdUnitId').value.trim(),
     profileAdUnitId: document.getElementById('settingProfileAdUnitId').value.trim(),
     profileBottomAdUnitId: document.getElementById('settingProfileBottomAdUnitId').value.trim(),
     messageCenterAdUnitId: document.getElementById('settingMessageCenterAdUnitId').value.trim(),

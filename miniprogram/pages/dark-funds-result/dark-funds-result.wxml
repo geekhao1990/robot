@@ -1,5 +1,18 @@
 <view class="page">
-  <view wx:if="{{loading}}" class="loading"><view class="spinner"></view><text>数据加载中</text></view>
+  <view wx:if="{{loading}}" class="result-skeleton">
+    <view class="skeleton-card skeleton-hero"><view class="skeleton-line wide"></view><view class="skeleton-line short"></view></view>
+    <view class="skeleton-card">
+      <view class="skeleton-line title"></view>
+      <view class="skeleton-tabs"><view></view><view></view><view></view></view>
+      <view class="skeleton-summary"><view></view><view></view></view>
+      <view class="skeleton-chart"><view></view><view></view><view></view></view>
+    </view>
+    <view class="skeleton-card skeleton-table">
+      <view class="skeleton-line title"></view>
+      <view class="skeleton-tabs"><view></view><view></view></view>
+      <view wx:for="{{skeletonRows}}" wx:key="*this" class="skeleton-row"><view></view><view></view><view></view><view></view></view>
+    </view>
+  </view>
   <view wx:elif="{{error}}" class="error">{{error}}</view>
   <block wx:else>
     <view class="card hero">

@@ -1,7 +1,7 @@
 // server/src/util.js —— 公共辅助
 
 const { resourceList } = require('./resource-links');
-const { refreshDarkFundQuota, serviceActiveAt } = require('./membership');
+const { refreshDarkFundQuota, serviceActiveAt, closeDarkFundActiveAt } = require('./membership');
 
 function goldAccess(user) {
   return !!(user && (Number(user.goldExpire) > Date.now() || serviceActiveAt(user)));
@@ -31,6 +31,8 @@ function pubUser(user) {
     darkFundServiceRemaining: darkFundQuota.service,
     darkFundServiceExpireAt: darkFundQuota.serviceExpireAt,
     darkFundManualRemaining: darkFundQuota.manual,
+    darkFundCloseMonthlyActive: closeDarkFundActiveAt(user),
+    darkFundCloseExpire: closeDarkFundActiveAt(user) ? Number(user.darkFundCloseExpire) : 0,
   };
 }
 
@@ -63,6 +65,7 @@ function pubSettings(data) {
     goldFingerInterstitialAdUnitId: publicAdUnitId(raw.goldFingerInterstitialAdUnitId),
     darkFundsQueryAdUnitId: publicAdUnitId(raw.darkFundsQueryAdUnitId),
     darkFundsHistoryAdUnitId: publicAdUnitId(raw.darkFundsHistoryAdUnitId),
+    darkFundsCloseInterstitialAdUnitId: publicAdUnitId(raw.darkFundsCloseInterstitialAdUnitId),
     profileAdUnitId: publicAdUnitId(raw.profileAdUnitId),
     profileBottomAdUnitId: publicAdUnitId(raw.profileBottomAdUnitId),
     messageCenterAdUnitId: publicAdUnitId(raw.messageCenterAdUnitId),

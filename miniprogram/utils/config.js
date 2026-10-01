@@ -35,6 +35,8 @@ module.exports = {
   darkFundsQueryAdUnitId: '',
   // 暗盘历史订单分页下方的横幅广告位。
   darkFundsHistoryAdUnitId: '',
+  // 每次盘后暗盘查询时尝试展示的插屏广告位。
+  darkFundsCloseInterstitialAdUnitId: '',
   // 进入“我”页面时展示的插屏广告位。
   profileAdUnitId: '',
   // “我”页面收藏/赞过模块之后的 Banner 广告位。

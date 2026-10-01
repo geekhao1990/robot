@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const db = require('../db');
 const auth = require('../auth');
-const { refreshDarkFundQuota, consumeDarkFundQuota, refundDarkFundQuota } = require('../membership');
+const { refreshDarkFundQuota, consumeDarkFundQuota, refundDarkFundQuota, closeDarkFundActiveAt } = require('../membership');
 const { latestTradingDate, compactDate } = require('../trading-date');
 const {
   attachDarkFundImages,
@@ -20,7 +20,7 @@ function darkFundOrderNo() {
   return `DF${Date.now()}${crypto.randomBytes(5).toString('hex')}`.slice(0, 32);
 }
 
-function orderQuotaResponse(order, quota, duplicate = false) {
+function orderQuotaResponse(order, quota, duplicate = false, user = null) {
   return {
     ...publicDarkFundOrder(order),
     orderId: order.id,
@@ -30,6 +30,8 @@ function orderQuotaResponse(order, quota, duplicate = false) {
     expiringRemaining: quota.service,
     permanentRemaining: quota.manual,
     quotaExpiresAt: quota.serviceExpireAt,
+    closeMonthlyActive: closeDarkFundActiveAt(user),
+    closeMonthlyExpireAt: closeDarkFundActiveAt(user) ? Number(user.darkFundCloseExpire) : 0,
   };
 }
 
@@ -55,6 +57,8 @@ module.exports = function register(router, HttpError) {
       expiringRemaining: quota.service,
       permanentRemaining: quota.manual,
       quotaExpiresAt: quota.serviceExpireAt,
+      closeMonthlyActive: closeDarkFundActiveAt(user),
+      closeMonthlyExpireAt: closeDarkFundActiveAt(user) ? Number(user.darkFundCloseExpire) : 0,
     };
   });
 
@@ -80,10 +84,11 @@ module.exports = function register(router, HttpError) {
       if ((existing.queryMode || 'intraday') !== queryMode || (existing.querySource || 'collector') !== querySource) {
         throw new HttpError(409, '查询请求标识已用于其他查询方式');
       }
-      return orderQuotaResponse(existing, refreshDarkFundQuota(user), true);
+      return orderQuotaResponse(existing, refreshDarkFundQuota(user), true, user);
     }
     const available = refreshDarkFundQuota(user);
-    if (available.total <= 0) throw new HttpError(403, '暗盘资金查询次数已用完');
+    const useCloseMonthly = queryMode === 'close' && closeDarkFundActiveAt(user);
+    if (!useCloseMonthly && available.total <= 0) throw new HttpError(403, '暗盘资金查询次数已用完');
     let closeResult = null;
     if (queryMode === 'close' && querySource === 'web') {
       try {
@@ -92,7 +97,7 @@ module.exports = function register(router, HttpError) {
         throw new HttpError(Number(error && error.status) || 502, error && error.message || '盘后数据获取失败');
       }
     }
-    const consumed = consumeDarkFundQuota(user);
+    const consumed = useCloseMonthly ? { ...available, source: 'close_month' } : consumeDarkFundQuota(user);
     if (!consumed) throw new HttpError(403, '暗盘资金查询次数已用完');
     const tradeDate = closeResult ? closeResult.tradeDate : latestTradingDate();
     const order = {
@@ -122,29 +127,29 @@ module.exports = function register(router, HttpError) {
       });
       db.save();
       await db.flush();
-      return orderQuotaResponse(order, consumed);
+      return orderQuotaResponse(order, consumed, false, user);
     }
     db.save();
     await db.flush();
     try {
       const accepted = await dispatchStockAnalysis(order);
       if (order.status === 'READY' || order.status === 'SUCCESS') {
-        return orderQuotaResponse(order, consumed);
+        return orderQuotaResponse(order, consumed, false, user);
       }
       order.status = 'QUEUED';
       order.dispatchedAt = Date.now();
       order.collectorStatus = accepted.status;
       db.save();
-      return orderQuotaResponse(order, consumed);
+      return orderQuotaResponse(order, consumed, false, user);
     } catch (error) {
       // 极快的缓存结果可能已在接单响应返回前回调成功，不能再覆盖为失败或退次数。
       if (order.status === 'READY' || order.status === 'SUCCESS') {
-        return orderQuotaResponse(order, consumed);
+        return orderQuotaResponse(order, consumed, false, user);
       }
       order.status = 'DISPATCH_FAILED';
       order.dispatchError = error.message;
       order.failedAt = Date.now();
-      if (!order.quotaRefundedAt) {
+      if (!order.quotaRefundedAt && consumed.source !== 'close_month') {
         refundDarkFundQuota(user, consumed.source);
         order.quotaRefundedAt = Date.now();
       }
@@ -235,7 +240,7 @@ module.exports = function register(router, HttpError) {
       order.collectorError = String(body.error || '采集失败').slice(0, 500);
       order.failedAt = Date.now();
       const user = d.users.find((item) => item.id === order.userId);
-      if (user && !order.quotaRefundedAt) {
+      if (user && !order.quotaRefundedAt && order.quotaSource !== 'close_month') {
         refundDarkFundQuota(user, order.quotaSource);
         order.quotaRefundedAt = Date.now();
       }
@@ -255,7 +260,7 @@ module.exports = function register(router, HttpError) {
       order.collectorError = String(error.message || '采集结果校验失败').slice(0, 500);
       order.failedAt = Date.now();
       const user = d.users.find((item) => item.id === order.userId);
-      if (user && !order.quotaRefundedAt) {
+      if (user && !order.quotaRefundedAt && order.quotaSource !== 'close_month') {
         refundDarkFundQuota(user, order.quotaSource);
         order.quotaRefundedAt = Date.now();
       }

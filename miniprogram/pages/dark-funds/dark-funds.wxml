@@ -15,7 +15,7 @@
         <view wx:if="{{stockLookupLoading}}" class="stock-dropdown-tip">正在查询股票名称…</view>
         <view wx:elif="{{stockSuggestion}}" class="stock-option">
           <text class="stock-option-code">{{stockSuggestion.stockCode}}</text>
-          <text class="stock-option-name {{stockSuggestion.matched ? '' : 'unknown'}}">{{stockSuggestion.stockName || '新股或未收录，可继续提交'}}</text>
+          <text class="stock-option-name {{stockSuggestion.matched ? '' : 'unknown'}}">{{stockSuggestion.stockDisplayName || '新股或未收录，可继续提交'}}</text>
         </view>
         <view wx:else class="stock-dropdown-error">{{stockLookupError}}</view>
       </view>
@@ -34,6 +34,7 @@
         </view>
       </view>
       <view class="quota-summary">
+        <view wx:if="{{closeMonthlyActive}}" class="remaining-tip">盘后包月：<text>无限查询</text><text wx:if="{{closeMonthlyExpiryText}}" class="quota-expiry">（有效至 {{closeMonthlyExpiryText}}）</text></view>
         <view class="remaining-tip">剩余次数：<text>{{remaining}}</text></view>
         <view class="quota-details">
           <view><text>30天内到期</text><text>{{expiringRemaining}} 次<text wx:if="{{quotaExpiryText}}" class="quota-expiry">（有效至 {{quotaExpiryText}}）</text></text></view>

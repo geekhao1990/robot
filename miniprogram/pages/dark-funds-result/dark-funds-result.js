@@ -100,6 +100,7 @@ Page({
     trendMetricText: '',
     trendMetricPositive: true,
     trendHasData: false,
+    skeletonRows: [1, 2, 3, 4, 5],
   },
   onLoad(options) {
     if (String(options && options.mock || '') === '1') {

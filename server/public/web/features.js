@@ -329,7 +329,7 @@ function drawDarkStockDropdown() {
   if (state.darkStockSuggestion) {
     const item = state.darkStockSuggestion;
     host.className = 'stock-dropdown visible';
-    host.innerHTML = `<div class="stock-dropdown-row"><strong>${escapeHtml(item.stockCode)}</strong><span>${escapeHtml(item.stockName || '新股或未收录，可继续提交')}</span></div>`;
+    host.innerHTML = `<div class="stock-dropdown-row"><strong>${escapeHtml(item.stockCode)}</strong><span>${escapeHtml(darkQueryStockName(item.stockName) || '新股或未收录，可继续提交')}</span></div>`;
     return;
   }
   host.className = 'stock-dropdown';
@@ -424,7 +424,10 @@ async function refreshDarkOrders(mode) {
 const renderDarkBase = renderDark;
 renderDark = async function renderEventDrivenDark(mode = 'query') {
   stopDarkPolling();
+  const syntheticQuota = state.user && state.user.darkFundCloseMonthlyActive && Number(state.user.darkFundRemaining) <= 0;
+  if (syntheticQuota) state.user.darkFundRemaining = 1;
   await renderDarkBase(mode);
+  if (syntheticQuota && state.user) state.user.darkFundRemaining = 0;
   if (!state.user || !document.querySelector('.dark-page')) return;
   if (mode === 'query') {
     const input = document.querySelector('#stockCode');
@@ -481,14 +484,14 @@ submitDark = async function submitDarkWithLookup(requestedMode = 'close') {
     ? `是否查询暗盘【盘中】数据：${code}${displayName ? ` ${displayName}` : ''}，查询日期${dateText}`
     : `是否查询暗盘【盘后】数据：${code}${displayName ? ` ${displayName}` : ''}，查询近7日暗盘数据`;
   if (!confirm(description)) return;
-  if (queryMode === 'close') {
-    history.pushState({ darkMock: true }, '', `#dark-result/mock?code=${encodeURIComponent(code)}&name=${encodeURIComponent(stockName || '')}&date=${encodeURIComponent(dateText || '')}`);
-    return renderCloseDarkResult({ snapshot: { result: createWebMockCloseResult(code, stockName, dateText) } });
-  }
   const requestId = `web_${Date.now()}_${queryMode}_${source}_${Math.random().toString(36).slice(2, 9)}`;
   try {
     const order = await api('/api/dark-funds/orders', { method: 'POST', body: JSON.stringify({ stockCode: code, request_id: requestId, query_mode: queryMode, source }) });
     try { localStorage.removeItem('nl_dark_pending_request'); } catch (_) {}
+    if (order.ready && order.resultType === 'close_snapshot') {
+      history.pushState({ darkOrder: order.orderId }, '', `#dark-result/${encodeURIComponent(order.orderId)}`);
+      return renderCloseDarkResult(order);
+    }
     toast(order.ready ? '盘后数据已生成' : '工单已提交，请在订单列表查看');
     state.darkHistoryPage = 1;
     renderDark('orders');

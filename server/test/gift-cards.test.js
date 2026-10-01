@@ -93,6 +93,18 @@ test('service packages and dark-fund cards grant distinct permissions', async ()
   assert.equal(data.users[1].courseAccessPermanent, undefined);
 });
 
+test('dark-fund monthly card grants 30 rolling days of unlimited close-query access without adding uses', async () => {
+  const { call, data } = setup();
+  const before = Date.now();
+  const monthly = await call('POST', '/api/admin/gift-cards', { type: 'dark_month', count: 1 });
+  const result = await call('POST', '/api/gift-cards/redeem', { code: monthly.codes[0] }, 'a');
+  assert.equal(result.user.darkFundCloseMonthlyActive, true);
+  assert(result.user.darkFundCloseExpire >= before + 30 * 86400000);
+  assert.equal(result.user.darkFundManualRemaining, 0);
+  assert.equal(result.user.darkFundServiceRemaining, 0);
+  assert.equal(data.users[0].darkFundEnabled, true);
+});
+
 test('month cards are no longer generated or redeemed', async () => {
   const { call, data } = setup();
   await assert.rejects(call('POST', '/api/admin/gift-cards', { type: 'month', count: 1 }), { status: 400 });

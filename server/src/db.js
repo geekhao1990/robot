@@ -21,7 +21,7 @@ const ENTITLEMENT_KEYS = Object.freeze([
   'goldExpire', 'goldQuotaGiftMigrated', 'serviceExpire', 'servicePlan',
   'courseAccessPermanent', 'darkFundEnabled', 'darkFundRemaining',
   'darkFundManualRemaining', 'darkFundServiceRemaining',
-  'darkFundServicePeriodStart', 'darkFundServicePeriodExpire',
+  'darkFundServicePeriodStart', 'darkFundServicePeriodExpire', 'darkFundCloseExpire',
 ]);
 
 const LIFESTYLE_NOTE_UPDATES = Object.freeze({
@@ -402,6 +402,7 @@ function ensureContentTypes() {
       user.darkFundEnabled = false;
       changed = true;
     }
+    if (!Number.isFinite(Number(user.darkFundCloseExpire))) { user.darkFundCloseExpire = 0; changed = true; }
     if (refreshDarkFundQuota(user).changed) changed = true;
     if (typeof user.goldQuotaGiftMigrated !== 'boolean') {
       if (Number(user.goldExpire) > Date.now()) {

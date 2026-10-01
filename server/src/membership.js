@@ -15,6 +15,18 @@ function serviceActiveAt(user, now = Date.now()) {
   return !!(user && Number(user.serviceExpire) > now);
 }
 
+function closeDarkFundActiveAt(user, now = Date.now()) {
+  return !!(user && Number(user.darkFundCloseExpire) > now);
+}
+
+function activateCloseDarkFund(user, now = Date.now()) {
+  if (!user) throw new Error('用户不存在');
+  const base = closeDarkFundActiveAt(user, now) ? Number(user.darkFundCloseExpire) : now;
+  user.darkFundCloseExpire = base + SERVICE_QUOTA_PERIOD_MS;
+  user.darkFundEnabled = true;
+  return user;
+}
+
 function refreshDarkFundQuota(user, now = Date.now()) {
   if (!user) return { total: 0, service: 0, manual: 0, serviceExpireAt: 0, changed: false };
   let changed = false;
@@ -128,6 +140,8 @@ module.exports = {
   SERVICE_QUOTA_PERIOD_MS,
   SERVICE_PLANS,
   serviceActiveAt,
+  closeDarkFundActiveAt,
+  activateCloseDarkFund,
   refreshDarkFundQuota,
   setManualDarkFundQuota,
   addManualDarkFundQuota,

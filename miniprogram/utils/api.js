@@ -171,6 +171,7 @@ function baseAppSettings() {
     goldFingerInterstitialAdUnitId: String(config.goldFingerInterstitialAdUnitId || ''),
     darkFundsQueryAdUnitId: String(config.darkFundsQueryAdUnitId || ''),
     darkFundsHistoryAdUnitId: String(config.darkFundsHistoryAdUnitId || ''),
+    darkFundsCloseInterstitialAdUnitId: String(config.darkFundsCloseInterstitialAdUnitId || ''),
     profileAdUnitId: String(config.profileAdUnitId || ''),
     profileBottomAdUnitId: String(config.profileBottomAdUnitId || ''),
     messageCenterAdUnitId: String(config.messageCenterAdUnitId || ''),
@@ -195,6 +196,9 @@ function normalizeAppSettings(settings, fallback = baseAppSettings()) {
       : fallback.goldFingerInterstitialAdUnitId,
     darkFundsQueryAdUnitId: settings && typeof settings.darkFundsQueryAdUnitId === 'string' ? settings.darkFundsQueryAdUnitId : fallback.darkFundsQueryAdUnitId,
     darkFundsHistoryAdUnitId: settings && typeof settings.darkFundsHistoryAdUnitId === 'string' ? settings.darkFundsHistoryAdUnitId : fallback.darkFundsHistoryAdUnitId,
+    darkFundsCloseInterstitialAdUnitId: settings && typeof settings.darkFundsCloseInterstitialAdUnitId === 'string'
+      ? settings.darkFundsCloseInterstitialAdUnitId
+      : fallback.darkFundsCloseInterstitialAdUnitId,
     profileAdUnitId: settings && typeof settings.profileAdUnitId === 'string' ? settings.profileAdUnitId : fallback.profileAdUnitId,
     profileBottomAdUnitId: settings && typeof settings.profileBottomAdUnitId === 'string'
       ? settings.profileBottomAdUnitId
