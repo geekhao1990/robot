@@ -21,7 +21,7 @@
 .summary-value { font-size: 34rpx; font-weight: 500; }
 .up { color: #ff3b30!important; }
 .down { color: #00a84f!important; }
-.flow-chart { position: relative; height: 600rpx; margin-top: 22rpx; padding: 0 12rpx; }
+.flow-chart { position: relative; width: 100%; height: 330rpx; margin-top: 22rpx; padding: 0 12rpx; font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; box-sizing: border-box; }
 .zero-line { position: absolute; top: 50%; right: 0; left: 0; height: 1rpx; background: #d4d4d4; }
 .flow-columns { position: relative; z-index: 1; display: flex; height: 100%; }
 .flow-column { position: relative; display: flex; flex: 1; justify-content: center; height: 100%; }

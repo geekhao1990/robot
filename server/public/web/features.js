@@ -540,7 +540,7 @@ function closeDayChartHtml(latest, unit) {
     { date: '散户流入', value: -(Number(latest.main) || 0) },
   ];
   const max = Math.max(...points.map((item) => Math.abs(item.value)), 1);
-  return `<div class="close-chart close-day-chart">${points.map((item) => `<div class="close-bar-column"><small class="${item.value >= 0 ? 'money-up' : 'money-down'}">${closeMoney(item.value, unit)}</small><i class="${item.value >= 0 ? 'up' : 'down'}" style="height:${Math.max(12, Math.round(Math.abs(item.value) / max * 140))}px"></i><span>${escapeHtml(item.date)}</span></div>`).join('')}</div>`;
+  return `<div class="close-chart close-day-chart">${points.map((item) => `<div class="close-bar-column"><small class="${item.value >= 0 ? 'money-up' : 'money-down'}">${closeMoney(item.value, unit)}</small><i class="${item.value >= 0 ? 'up' : 'down'}" style="height:${Math.max(12, Math.round(Math.abs(item.value) / max * 112))}px"></i><span>${escapeHtml(item.date)}</span></div>`).join('')}</div>`;
 }
 
 function closeTableHtml(rows, unit, detail = false) {

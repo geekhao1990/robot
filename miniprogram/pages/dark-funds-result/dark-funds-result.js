@@ -35,7 +35,7 @@ function withBars(items) {
   const max = Math.max(...items.map((item) => Math.abs(item.value)), 1);
   return items.map((item) => ({
     ...item,
-    height: Math.max(12, Math.round(Math.abs(item.value) / max * 230)),
+    height: Math.max(12, Math.round(Math.abs(item.value) / max * 120)),
     positive: item.value >= 0,
   }));
 }

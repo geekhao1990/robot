@@ -664,7 +664,7 @@
 .money-up { color:#e53935!important; }
 .money-down { color:#08a045!important; }
 .close-chart { position:relative; display:flex; align-items:flex-end; justify-content:space-around; min-height:170px; padding-top:18px; border-bottom:1px solid #eee; }
-.close-day-chart { margin-top:14px; }
+.close-day-chart { min-height:165px; margin-top:14px; font-family:"PingFang SC","Microsoft YaHei",Arial,sans-serif; }
 .close-bar-column { display:flex; flex:1; flex-direction:column; align-items:center; justify-content:flex-end; min-width:46px; }
 .close-bar-column small { width:100%; margin-bottom:5px; overflow:hidden; font-size:10px; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
 .close-day-chart .close-bar-column small { width:44px; overflow:visible; font-size:14px; font-weight:400; }
