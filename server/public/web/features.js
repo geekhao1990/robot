@@ -450,7 +450,20 @@ renderDark = async function renderEventDrivenDark(mode = 'query') {
   }
 };
 
-submitDark = async function submitDarkWithLookup() {
+function createWebMockCloseResult() {
+  const days = [
+    { tradeDate:'2026-09-30',main:-279681505.83274597,grey:-70262426.83274597,listed:-209419079,super_large:-146578422.84490156,large:-133103082.9878444,middle:-18850426.15509844,small:298531931.9878445 },
+    { tradeDate:'2026-09-29',main:-234428686.71112993,grey:-123071051.71112993,listed:-111357635,super_large:-9165579.480624594,large:-225263107.23050535,middle:-18165255.519375376,small:252593942.2305054 },
+    { tradeDate:'2026-09-28',main:-1342328107.9458745,grey:-605460166.9458745,listed:-736867941,super_large:-734231920.2085357,large:-608096187.7373387,middle:365773509.208536,small:976554598.7373394 },
+    { tradeDate:'2026-09-24',main:-502823098.275403,grey:-159935303.275403,listed:-342887795,super_large:-292457773.44773275,large:-210365324.82767022,middle:-58856301.552267365,small:561679399.8276703 },
+    { tradeDate:'2026-09-23',main:-490129791.2829146,grey:-42902723.28291457,listed:-447227068,super_large:-215148291.9512939,large:-274981499.3316207,middle:43362163.95129384,small:446767627.3316206 },
+    { tradeDate:'2026-09-22',main:-861658891.3149973,grey:-242033011.31499732,listed:-619625880,super_large:-617310498.8877808,large:-244348392.4272165,middle:-63311021.112219155,small:924969912.4272175 },
+    { tradeDate:'2026-09-21',main:22542169.263435997,grey:17156209.263435997,listed:5385960,super_large:12113368.197681013,large:10428801.065754985,middle:-100601528.197681,small:78059358.93424496 },
+  ];
+  return { type:'close_snapshot', stockCode:'600105', stockName:'永鼎股份', tradeDate:'2026-09-30', versionKey:'2026-09-30Tclose', versionLabel:'收盘', kind:'close', updatedAt:'2026-09-30T16:41:05+08:00', debit:true, balanceAfter:2, unlimited:false, expiresAt:null, summary:{ sevenDayMain:-3688507912.0996294, greyTotal:-1226508474.0996292, listedTotal:-2461999438 }, days };
+}
+
+submitDark = async function submitDarkWithLookup(requestedMode = 'close') {
   const input = document.querySelector('#stockCode');
   const code = String(input && input.value || '').replace(/\D/g, '');
   if (!/^\d{6}$/.test(code)) return toast('请输入6位股票代码');
@@ -461,11 +474,14 @@ submitDark = async function submitDarkWithLookup() {
   }
   const stockName = state.darkStockSuggestion.stockName;
   const dateText = String(document.querySelector('.trade-date')?.textContent || '').replace(/^查询日期[：:]\s*/, '').trim();
-  const queryMode = state.darkQueryMode || 'close';
-  const source = queryMode === 'intraday' ? 'collector' : (state.darkCloseSource || 'web');
-  const methodText = queryMode === 'intraday' ? '盘中采集器' : (source === 'web' ? '盘后网页数据' : '盘后采集器');
-  const description = `${methodText}查询 ${code}${stockName ? ` ${stockName}` : ''}${dateText ? ` 的 ${dateText}` : ''}暗盘数据`;
+  const queryMode = requestedMode === 'intraday' ? 'intraday' : 'close';
+  const source = queryMode === 'intraday' ? 'collector' : 'web';
+  const description = `暗盘${queryMode === 'intraday' ? '实时' : '收盘'}查询 ${code}${stockName ? ` ${stockName}` : ''}${dateText ? `，查询日期 ${dateText}` : ''}`;
   if (!confirm(`是否查询 ${description}？`)) return;
+  if (queryMode === 'close') {
+    history.pushState({ darkMock: true }, '', `#dark-result/mock?code=${encodeURIComponent(code)}&name=${encodeURIComponent(stockName || '')}&date=${encodeURIComponent(dateText || '')}`);
+    return renderCloseDarkResult({ snapshot: { result: createWebMockCloseResult(code, stockName, dateText) } });
+  }
   const requestId = `web_${Date.now()}_${queryMode}_${source}_${Math.random().toString(36).slice(2, 9)}`;
   try {
     const order = await api('/api/dark-funds/orders', { method: 'POST', body: JSON.stringify({ stockCode: code, request_id: requestId, query_mode: queryMode, source }) });
@@ -480,13 +496,13 @@ submitDark = async function submitDarkWithLookup() {
 
 const renderDarkQueryModesBase = renderDark;
 renderDark = async function renderDarkQueryModes(mode = 'query') {
-  state.darkQueryMode = state.darkQueryMode || 'close';
-  state.darkCloseSource = state.darkCloseSource || 'web';
   await renderDarkQueryModesBase(mode);
   if (mode !== 'query') return;
   const card = document.querySelector('.query-card');
-  if (!card || card.querySelector('.dark-query-modes')) return;
-  card.insertAdjacentHTML('afterbegin', `<div class="dark-query-modes"><button data-dark-query-mode="close" class="${state.darkQueryMode === 'close' ? 'active' : ''}">盘后查询</button><button data-dark-query-mode="intraday" class="${state.darkQueryMode === 'intraday' ? 'active' : ''}">盘中查询</button></div><div class="dark-close-sources ${state.darkQueryMode === 'close' ? '' : 'hidden'}"><button data-dark-close-source="web" class="${state.darkCloseSource === 'web' ? 'active' : ''}">网页数据（默认）</button><button data-dark-close-source="collector" class="${state.darkCloseSource === 'collector' ? 'active' : ''}">使用采集器</button></div><p class="dark-mode-hint">${state.darkQueryMode === 'intraday' ? '盘中查询仅使用采集器' : (state.darkCloseSource === 'web' ? '查询盘后数据和图表，不生成文章' : '使用采集器生成完整结果')}</p>`);
+  const actions = card && card.querySelector('.query-actions');
+  if (!actions) return;
+  actions.innerHTML = `<button class="primary" data-dark-query-submit="intraday">暗盘实时查询</button><button class="close-query" data-dark-query-submit="close">暗盘收盘查询</button>`;
+  actions.insertAdjacentHTML('afterend', '<div class="dark-contact-row"><button class="contact" data-action="contact">咨询人工</button></div>');
 };
 
 function closeMoneyUnit(days) {
@@ -561,6 +577,11 @@ const renderLocationDarkResultBase = renderLocation;
 renderLocation = function renderLocationWithDarkResult() {
   const hash = (location.hash || '#home').slice(1);
   if (!hash.startsWith('dark-result/')) return renderLocationDarkResultBase();
+  if (hash.startsWith('dark-result/mock')) {
+    const query = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
+    const params = new URLSearchParams(query);
+    return renderCloseDarkResult({ snapshot: { result: createWebMockCloseResult(params.get('code') || '', params.get('name') || '', params.get('date') || '') } });
+  }
   const id = decodeURIComponent(hash.slice('dark-result/'.length));
   loading();
   return api(`/api/dark-funds/orders/${encodeURIComponent(id)}`)
@@ -685,15 +706,11 @@ document.addEventListener('click', (event) => {
 }, true);
 
 document.addEventListener('click', (event) => {
-  const queryMode = event.target.closest('[data-dark-query-mode]');
-  if (queryMode) {
-    state.darkQueryMode = queryMode.dataset.darkQueryMode === 'intraday' ? 'intraday' : 'close';
-    return renderDark('query');
-  }
-  const closeSource = event.target.closest('[data-dark-close-source]');
-  if (closeSource) {
-    state.darkCloseSource = closeSource.dataset.darkCloseSource === 'collector' ? 'collector' : 'web';
-    return renderDark('query');
+  const querySubmit = event.target.closest('[data-dark-query-submit]');
+  if (querySubmit) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return submitDark(querySubmit.dataset.darkQuerySubmit);
   }
   const darkPage = event.target.closest('[data-dark-page]');
   if (darkPage && !darkPage.disabled) {

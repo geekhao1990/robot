@@ -8,15 +8,6 @@
 
   <view wx:if="{{tab === 'query'}}" class="query-page">
     <view class="query-card">
-      <view class="query-mode-switch">
-        <view class="query-mode {{queryMode === 'close' ? 'active' : ''}}" data-mode="close" bindtap="switchQueryMode">盘后查询</view>
-        <view class="query-mode {{queryMode === 'intraday' ? 'active' : ''}}" data-mode="intraday" bindtap="switchQueryMode">盘中查询</view>
-      </view>
-      <view wx:if="{{queryMode === 'close'}}" class="close-source-switch">
-        <view class="source-option {{closeSource === 'web' ? 'active' : ''}}" data-source="web" bindtap="switchCloseSource">网页数据（默认）</view>
-        <view class="source-option {{closeSource === 'collector' ? 'active' : ''}}" data-source="collector" bindtap="switchCloseSource">使用采集器</view>
-      </view>
-      <view class="mode-hint">{{queryMode === 'intraday' ? '盘中查询仅使用采集器' : (closeSource === 'web' ? '查询盘后数据和图表，不生成文章' : '使用采集器生成完整结果')}}</view>
       <view class="code-box">
         <input class="code-input" type="number" maxlength="6" value="{{stockCode}}" bindinput="onCodeInput" focus />
       </view>
@@ -30,8 +21,11 @@
       </view>
       <view class="trade-date">查询日期：{{compactTradeDate || '获取中...'}}</view>
       <view class="query-actions">
-        <button class="query-button" bindtap="prepareQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">查询</button>
-        <button class="contact-button" open-type="contact">联系客服</button>
+        <button class="query-button query-button-live" data-mode="intraday" bindtap="prepareQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">暗盘实时查询</button>
+        <button class="query-button query-button-close" data-mode="close" bindtap="prepareQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">暗盘收盘查询</button>
+      </view>
+      <view class="contact-row">
+        <button class="contact-button" bindtap="openContactQr">咨询人工</button>
       </view>
       <view class="quota-summary">
         <view class="remaining-tip">剩余次数：<text>{{remaining}}</text></view>
@@ -69,5 +63,14 @@
     <view wx:if="{{!historyLoading && orders.length && historyAdUnitId && !historyAdLoadFailed}}" class="history-ad-slot">
       <ad unit-id="{{historyAdUnitId}}" binderror="onHistoryAdError" />
     </view>
+  </view>
+</view>
+<view wx:if="{{contactQrVisible}}" class="contact-qr-mask" bindtap="closeContactQr">
+  <view class="contact-qr-sheet" catchtap="noop">
+    <view class="contact-qr-handle"></view>
+    <view class="contact-qr-title">咨询人工</view>
+    <view class="contact-qr-description">扫码添加企业微信，获取售前咨询及售后服务</view>
+    <image class="contact-qr-image" src="/images/enterprise-wechat.jpg" mode="widthFix" bindtap="previewContactQr" show-menu-by-longpress />
+    <view class="contact-qr-tip">点击查看大图，长按可识别或保存</view>
   </view>
 </view>

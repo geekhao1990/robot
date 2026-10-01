@@ -23,8 +23,6 @@ Page({
     stockSuggestion: null,
     stockLookupLoading: false,
     stockLookupError: '',
-    queryMode: 'close',
-    closeSource: 'web',
     tradeDate: '',
     compactTradeDate: '',
     remaining: 0,
@@ -48,6 +46,7 @@ Page({
     historyAdLoadFailed: false,
     waitingText: '',
     querying: false,
+    contactQrVisible: false,
   },
   onLoad(options) {
     if (!store.isLogin()) return wx.redirectTo({ url: '/pages/login/login' });
@@ -79,13 +78,6 @@ Page({
     if (tab === this.data.tab) return;
     this.setData({ tab });
     if (tab === 'history') this.loadOrders(false, 1);
-  },
-  switchQueryMode(e) {
-    const queryMode = e.currentTarget.dataset.mode === 'intraday' ? 'intraday' : 'close';
-    this.setData({ queryMode });
-  },
-  switchCloseSource(e) {
-    this.setData({ closeSource: e.currentTarget.dataset.source === 'collector' ? 'collector' : 'web' });
   },
   loadTradeDate() {
     this.setData({ dateLoading: true });
@@ -130,8 +122,10 @@ Page({
         if (sequence === this._stockLookupSequence) this.setData({ stockLookupLoading: false });
       });
   },
-  prepareQuery() {
+  prepareQuery(e) {
     const stockCode = String(this.data.stockCode || '').trim();
+    const queryMode = e.currentTarget.dataset.mode === 'intraday' ? 'intraday' : 'close';
+    const source = queryMode === 'intraday' ? 'collector' : 'web';
     if (!/^\d{6}$/.test(stockCode)) return wx.showModal({ title: '无法查询', content: '请输入6位股票代码', showCancel: false });
     if (/^(4|8|92)/.test(stockCode)) return wx.showToast({ title: '系统繁忙', icon: 'none' });
     if (this.data.stockLookupLoading) return wx.showToast({ title: '正在确认股票信息', icon: 'none' });
@@ -141,20 +135,27 @@ Page({
     if (!this.data.compactTradeDate) return wx.showToast({ title: '请稍后重试', icon: 'none' });
     wx.showModal({
       title: '确认查询',
-      content: `是否使用${this.data.queryMode === 'intraday' ? '盘中采集器' : (this.data.closeSource === 'collector' ? '盘后采集器' : '盘后网页数据')}查询${stockCode}${this.data.stockSuggestion.stockName ? ` ${this.data.stockSuggestion.stockName}` : ''}的${this.data.compactTradeDate}暗盘数据`,
+      content: `是否进行暗盘${queryMode === 'intraday' ? '实时' : '收盘'}查询：${stockCode}${this.data.stockSuggestion.stockName ? ` ${this.data.stockSuggestion.stockName}` : ''}，查询日期 ${this.data.compactTradeDate}`,
       confirmText: '确定',
       success: (result) => {
-        if (result.confirm) this.query(stockCode);
+        if (!result.confirm) return;
+        if (queryMode === 'close') return this.openMockCloseResult(stockCode);
+        this.query(stockCode, queryMode, source);
       },
     });
   },
-  query(stockCode) {
+  openMockCloseResult(stockCode) {
+    const stockName = this.data.stockSuggestion && this.data.stockSuggestion.stockName || '';
+    wx.navigateTo({
+      url: `/pages/dark-funds-result/dark-funds-result?mock=1&code=${encodeURIComponent(stockCode)}&name=${encodeURIComponent(stockName)}&date=${encodeURIComponent(this.data.tradeDate || this.data.compactTradeDate || '')}`,
+      fail: () => wx.showToast({ title: '页面打开失败', icon: 'none' }),
+    });
+  },
+  query(stockCode, queryMode, source) {
     if (this.data.querying) return;
     this.setData({ querying: true });
     wx.showLoading({ title: '提交中', mask: true });
-    const requestId = this.queryRequestId(stockCode);
-    const queryMode = this.data.queryMode;
-    const source = queryMode === 'intraday' ? 'collector' : this.data.closeSource;
+    const requestId = this.queryRequestId(stockCode, queryMode, source);
     api.createDarkFundOrder(stockCode, requestId, queryMode, source)
       .then((order) => {
         wx.hideLoading();
@@ -237,13 +238,11 @@ Page({
       })
       .catch((error) => wx.showModal({ title: '加载失败', content: this.errorText(error), showCancel: false }));
   },
-  queryRequestId(stockCode) {
+  queryRequestId(stockCode, queryMode, source) {
     const key = 'dark_fund_pending_request';
     const now = Date.now();
     let saved = null;
     try { saved = wx.getStorageSync(key); } catch (error) {}
-    const queryMode = this.data.queryMode;
-    const source = queryMode === 'intraday' ? 'collector' : this.data.closeSource;
     if (saved && saved.stockCode === stockCode && saved.tradeDate === this.data.tradeDate && saved.queryMode === queryMode && saved.source === source && now - Number(saved.createdAt) < 10 * 60 * 1000) {
       return saved.requestId;
     }
@@ -271,6 +270,19 @@ Page({
   onHistoryAdError() {
     this.setData({ historyAdLoadFailed: true });
   },
+  openContactQr() {
+    this.setData({ contactQrVisible: true });
+  },
+  closeContactQr() {
+    this.setData({ contactQrVisible: false });
+  },
+  previewContactQr() {
+    wx.previewImage({
+      current: '/images/enterprise-wechat.jpg',
+      urls: ['/images/enterprise-wechat.jpg'],
+    });
+  },
+  noop() {},
   errorText(error) {
     return (error && (error.errMsg || (error.data && error.data.error) || error.message)) || '请稍后重试';
   },

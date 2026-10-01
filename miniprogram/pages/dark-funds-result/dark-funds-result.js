@@ -40,6 +40,38 @@ function withBars(items) {
   }));
 }
 
+function createMockCloseResult() {
+  const days = [
+    { tradeDate: '2026-09-30', main: -279681505.83274597, grey: -70262426.83274597, listed: -209419079, super_large: -146578422.84490156, large: -133103082.9878444, middle: -18850426.15509844, small: 298531931.9878445 },
+    { tradeDate: '2026-09-29', main: -234428686.71112993, grey: -123071051.71112993, listed: -111357635, super_large: -9165579.480624594, large: -225263107.23050535, middle: -18165255.519375376, small: 252593942.2305054 },
+    { tradeDate: '2026-09-28', main: -1342328107.9458745, grey: -605460166.9458745, listed: -736867941, super_large: -734231920.2085357, large: -608096187.7373387, middle: 365773509.208536, small: 976554598.7373394 },
+    { tradeDate: '2026-09-24', main: -502823098.275403, grey: -159935303.275403, listed: -342887795, super_large: -292457773.44773275, large: -210365324.82767022, middle: -58856301.552267365, small: 561679399.8276703 },
+    { tradeDate: '2026-09-23', main: -490129791.2829146, grey: -42902723.28291457, listed: -447227068, super_large: -215148291.9512939, large: -274981499.3316207, middle: 43362163.95129384, small: 446767627.3316206 },
+    { tradeDate: '2026-09-22', main: -861658891.3149973, grey: -242033011.31499732, listed: -619625880, super_large: -617310498.8877808, large: -244348392.4272165, middle: -63311021.112219155, small: 924969912.4272175 },
+    { tradeDate: '2026-09-21', main: 22542169.263435997, grey: 17156209.263435997, listed: 5385960, super_large: 12113368.197681013, large: 10428801.065754985, middle: -100601528.197681, small: 78059358.93424496 },
+  ];
+  return {
+    type: 'close_snapshot',
+    stockCode: '600105',
+    stockName: '永鼎股份',
+    tradeDate: '2026-09-30',
+    versionKey: '2026-09-30Tclose',
+    versionLabel: '收盘',
+    kind: 'close',
+    updatedAt: '2026-09-30T16:41:05+08:00',
+    debit: true,
+    balanceAfter: 2,
+    unlimited: false,
+    expiresAt: null,
+    summary: {
+      sevenDayMain: -3688507912.0996294,
+      greyTotal: -1226508474.0996292,
+      listedTotal: -2461999438,
+    },
+    days,
+  };
+}
+
 Page({
   data: {
     loading: true,
@@ -57,36 +89,43 @@ Page({
     trendHasData: false,
   },
   onLoad(options) {
+    if (String(options && options.mock || '') === '1') {
+      this.applyResult(createMockCloseResult(options));
+      return;
+    }
     this.orderId = String(options && options.id || '');
     if (!this.orderId) return this.setData({ loading: false, error: '查询结果不存在' });
     api.getDarkFundOrder(this.orderId)
       .then((order) => {
         const result = order && order.snapshot && order.snapshot.result;
         if (!result || result.type !== 'close_snapshot' || !Array.isArray(result.days) || !result.days.length) throw new Error('盘后数据不存在');
-        const days = result.days.slice().sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
-        result.days = days;
-        const latest = days[days.length - 1];
-        const unit = chooseUnit([latest.main, latest.listed, latest.grey]);
-        const main = Number(latest.main) || 0;
-        const summary = [
-          { label: '主力净流入', value: main },
-          { label: '散户流入', value: -main },
-        ].map((item) => ({ ...item, text: formatByUnit(item.value, unit), positive: item.value >= 0 }));
-        const dayBars = withBars([
-          { label: '主力明盘', value: Number(latest.listed) || 0, text: formatByUnit(latest.listed, unit) },
-          { label: '主力暗盘', value: Number(latest.grey) || 0, text: formatByUnit(latest.grey, unit) },
-          { label: '散户流入', value: -main, text: formatByUnit(-main, unit) },
-        ]);
-        const rows = days.slice().reverse().slice(0, 7).map((row) => ({
-          ...row,
-          displayDate: row.tradeDate.slice(5),
-          ...formatGroup(row, ['main', 'grey', 'listed']),
-          ...formatGroup(row, ['super_large', 'large', 'middle', 'small']),
-        }));
-        this.trends = { trend3: rolling(days, 3), trend5: rolling(days, 5) };
-        this.setData({ loading: false, result, unitLabel: unit.label, summary, dayBars, rows });
+        this.applyResult(result);
       })
       .catch((error) => this.setData({ loading: false, error: error && (error.errMsg || error.message) || '加载失败' }));
+  },
+  applyResult(result) {
+    const days = result.days.slice().sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
+    result.days = days;
+    const latest = days[days.length - 1];
+    const unit = chooseUnit([latest.main, latest.listed, latest.grey]);
+    const main = Number(latest.main) || 0;
+    const summary = [
+      { label: '主力净流入', value: main },
+      { label: '散户流入', value: -main },
+    ].map((item) => ({ ...item, text: formatByUnit(item.value, unit), positive: item.value >= 0 }));
+    const dayBars = withBars([
+      { label: '主力明盘', value: Number(latest.listed) || 0, text: formatByUnit(latest.listed, unit) },
+      { label: '主力暗盘', value: Number(latest.grey) || 0, text: formatByUnit(latest.grey, unit) },
+      { label: '散户流入', value: -main, text: formatByUnit(-main, unit) },
+    ]);
+    const rows = days.slice().reverse().slice(0, 7).map((row) => ({
+      ...row,
+      displayDate: row.tradeDate.slice(5),
+      ...formatGroup(row, ['main', 'grey', 'listed']),
+      ...formatGroup(row, ['super_large', 'large', 'middle', 'small']),
+    }));
+    this.trends = { trend3: rolling(days, 3), trend5: rolling(days, 5) };
+    this.setData({ loading: false, result, unitLabel: unit.label, summary, dayBars, rows });
   },
   switchFundView(event) {
     const fundView = String(event.currentTarget.dataset.view || 'main');
