@@ -52,6 +52,7 @@ const server = http.createServer((req, res) => {
 
   const parsed = url.parse(req.url, true);
   const pathname = parsed.pathname;
+  const hostname = String(req.headers.host || '').split(':')[0].toLowerCase();
 
   if (pathname === '/api/web/wechat/start' && req.method === 'GET') {
     try {
@@ -71,6 +72,7 @@ const server = http.createServer((req, res) => {
   }
 
   // Web 前台；管理后台继续使用 /admin。
+  if (pathname === '/' && hostname === 'm.nankaitechschool.com') return serveFile(res, 'saas', '/index.html');
   if (pathname === '/') { res.writeHead(302, { Location: '/web' }); return res.end(); }
   if (pathname === '/saas' || pathname.startsWith('/saas/')) return serveFile(res, 'saas', pathname.replace(/^\/saas/, ''));
   if (pathname === '/web' || pathname.startsWith('/web/')) return serveFile(res, 'web', pathname.replace(/^\/web/, ''));

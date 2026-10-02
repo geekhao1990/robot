@@ -12,6 +12,7 @@ test('PC SaaS entry is served and uses the shared business APIs', () => {
   const app = fs.readFileSync(path.join(root, 'public', 'saas', 'app.js'), 'utf8');
 
   assert.match(server, /pathname === '\/saas'/);
+  assert.match(server, /hostname === 'm\.nankaitechschool\.com'/);
   assert.match(html, /数据工作台/);
   assert.match(app, /\/api\/web\/login/);
   assert.match(app, /mode==='decision'\?'intraday':'close'/);
