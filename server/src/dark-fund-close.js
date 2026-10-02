@@ -124,17 +124,141 @@ function normalizeCloseDarkFund(payload, expectedCode = '') {
   };
 }
 
-function closeApiUrl(stockCode) {
-  const template = String(process.env.DARK_FUND_CLOSE_API_URL || '').trim();
-  if (!template) return '';
-  if (template.includes('{stockCode}') || template.includes('{stock}')) {
-    return template
-      .replaceAll('{stockCode}', encodeURIComponent(stockCode))
-      .replaceAll('{stock}', encodeURIComponent(`${/^[569]/.test(stockCode) ? 'sh' : 'sz'}${stockCode}`));
+const CLOSE_TASK_PENDING_STATES = new Set(['queued', 'checking_cache', 'fetching_data', 'preparing_result']);
+let closeSession = null;
+let closeLoginPromise = null;
+
+function closeBaseUrl() {
+  return String(process.env.DARK_FUND_CLOSE_API_URL || 'https://fundflow.shiluan.space').trim().replace(/\/+$/, '');
+}
+
+function timeoutMs() {
+  return Math.max(1000, Number(process.env.DARK_FUND_CLOSE_API_TIMEOUT_MS) || 10000);
+}
+
+function requestWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs());
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
+function readSetCookies(headers) {
+  if (headers && typeof headers.getSetCookie === 'function') return headers.getSetCookie();
+  const combined = headers && headers.get && headers.get('set-cookie');
+  return combined ? combined.split(/,(?=\s*[^;,\s]+=)/) : [];
+}
+
+function mergeCookies(jar, headers) {
+  readSetCookies(headers).forEach((line) => {
+    const pair = String(line).split(';', 1)[0];
+    const splitAt = pair.indexOf('=');
+    if (splitAt > 0) jar.set(pair.slice(0, splitAt).trim(), pair.slice(splitAt + 1).trim());
+  });
+}
+
+function cookieHeader(jar) {
+  return Array.from(jar.entries()).map(([key, value]) => `${key}=${value}`).join('; ');
+}
+
+function csrfFromHtml(html) {
+  const matched = String(html || '').match(/<meta\s+name=["']csrf-token["']\s+content=["']([^"']+)["']/i)
+    || String(html || '').match(/<meta\s+content=["']([^"']+)["']\s+name=["']csrf-token["']/i);
+  return matched ? matched[1] : '';
+}
+
+async function loginCloseService() {
+  const username = String(process.env.DARK_FUND_CLOSE_USERNAME || '').trim();
+  const password = String(process.env.DARK_FUND_CLOSE_PASSWORD || '');
+  if (!username || !password) {
+    throw Object.assign(new Error('盘后数据账号尚未配置'), { status: 503 });
   }
-  const url = new URL(template);
-  url.searchParams.set('stock', `${/^[569]/.test(stockCode) ? 'sh' : 'sz'}${stockCode}`);
-  return url.toString();
+  const base = closeBaseUrl();
+  const cookies = new Map();
+  const loginPage = await requestWithTimeout(`${base}/`, { headers: { Accept: 'text/html' } });
+  mergeCookies(cookies, loginPage.headers);
+  const loginHtml = await loginPage.text();
+  const loginCsrf = csrfFromHtml(loginHtml);
+  if (!loginPage.ok || !loginCsrf) throw Object.assign(new Error('盘后数据登录页不可用'), { status: 502 });
+  const body = new URLSearchParams({ username, password, csrf_token: loginCsrf });
+  const loginResponse = await requestWithTimeout(`${base}/login`, {
+    method: 'POST',
+    redirect: 'manual',
+    headers: {
+      Accept: 'text/html,application/xhtml+xml',
+      'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
+      'X-CSRF-Token': loginCsrf,
+      Cookie: cookieHeader(cookies),
+    },
+    body: body.toString(),
+  });
+  mergeCookies(cookies, loginResponse.headers);
+  if (![200, 302, 303].includes(loginResponse.status)) {
+    throw Object.assign(new Error(`盘后数据登录失败（${loginResponse.status}）`), { status: 502 });
+  }
+  const appPage = await requestWithTimeout(`${base}/`, {
+    headers: { Accept: 'text/html', Cookie: cookieHeader(cookies) },
+  });
+  mergeCookies(cookies, appPage.headers);
+  const appHtml = await appPage.text();
+  const csrf = csrfFromHtml(appHtml);
+  if (!appPage.ok || !csrf || /<title>\s*登录\s*-/i.test(appHtml)) {
+    throw Object.assign(new Error('盘后数据账号或密码不正确'), { status: 502 });
+  }
+  return { base, cookies, csrf, createdAt: Date.now() };
+}
+
+async function getCloseSession(force = false) {
+  if (!force && closeSession && Date.now() - closeSession.createdAt < 20 * 60 * 1000) return closeSession;
+  if (!closeLoginPromise) {
+    closeLoginPromise = loginCloseService()
+      .then((session) => { closeSession = session; return session; })
+      .finally(() => { closeLoginPromise = null; });
+  }
+  return closeLoginPromise;
+}
+
+async function closeApiRequest(path, options = {}, retryLogin = true) {
+  const session = await getCloseSession();
+  const headers = {
+    Accept: 'application/json',
+    Cookie: cookieHeader(session.cookies),
+    ...(options.headers || {}),
+  };
+  if (options.method && options.method !== 'GET') headers['X-CSRF-Token'] = session.csrf;
+  const response = await requestWithTimeout(`${session.base}${path}`, { ...options, headers });
+  mergeCookies(session.cookies, response.headers);
+  if (response.status === 401 && retryLogin) {
+    closeSession = null;
+    await getCloseSession(true);
+    return closeApiRequest(path, options, false);
+  }
+  let payload = null;
+  try { payload = await response.json(); } catch (error) { payload = {}; }
+  if (!response.ok) {
+    const message = payload && payload.error ? payload.error : `盘后数据接口返回${response.status}`;
+    throw Object.assign(new Error(message), { status: response.status === 429 ? 429 : 502 });
+  }
+  return payload;
+}
+
+function exactSearchStock(items, stockCode) {
+  if (!Array.isArray(items)) return null;
+  return items.find((item) => stockCodeFrom(item && (item.code || item.stock)) === stockCode) || null;
+}
+
+async function waitCloseTask(taskId) {
+  const pollMs = Math.max(300, Number(process.env.DARK_FUND_CLOSE_POLL_MS) || 800);
+  const deadline = Date.now() + Math.max(5000, Number(process.env.DARK_FUND_CLOSE_TASK_TIMEOUT_MS) || 90000);
+  while (Date.now() < deadline) {
+    const task = await closeApiRequest(`/api/task/${encodeURIComponent(taskId)}`);
+    if (task.state === 'ready') return task.result;
+    if (task.state === 'failed') throw Object.assign(new Error(task.error || '盘后查询任务失败'), { status: 502 });
+    if (!CLOSE_TASK_PENDING_STATES.has(task.state)) {
+      throw Object.assign(new Error(`盘后查询返回未知状态：${task.state || '空'}`), { status: 502 });
+    }
+    await new Promise((resolve) => setTimeout(resolve, pollMs));
+  }
+  throw Object.assign(new Error('盘后查询任务等待超时'), { status: 504 });
 }
 
 async function fetchCloseDarkFund(stockCode) {
@@ -142,27 +266,27 @@ async function fetchCloseDarkFund(stockCode) {
     if (stockCode !== '600105') throw Object.assign(new Error('示例数据仅支持600105'), { status: 503 });
     return normalizeCloseDarkFund(SAMPLE_CLOSE_PAYLOAD, stockCode);
   }
-  const url = closeApiUrl(stockCode);
-  if (!url) throw Object.assign(new Error('盘后数据接口尚未配置，可改用采集器查询'), { status: 503 });
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), Number(process.env.DARK_FUND_CLOSE_API_TIMEOUT_MS) || 10000);
   try {
-    const headers = { Accept: 'application/json' };
-    const token = String(process.env.DARK_FUND_CLOSE_API_TOKEN || '').trim();
-    if (token) headers.Authorization = `Bearer ${token}`;
-    const response = await fetch(url, { headers, signal: controller.signal });
-    if (!response.ok) throw Object.assign(new Error(`盘后数据接口返回${response.status}`), { status: 502 });
-    return normalizeCloseDarkFund(await response.json(), stockCode);
+    const found = exactSearchStock(await closeApiRequest(`/api/search?q=${encodeURIComponent(stockCode)}`), stockCode);
+    if (!found) throw Object.assign(new Error('盘后数据源未找到该股票'), { status: 404 });
+    const stock = String(found.code || found.stock || '').trim();
+    if (!/^(sh|sz|bj)\d{6}$/i.test(stock)) throw Object.assign(new Error('盘后数据源返回的股票代码无效'), { status: 502 });
+    const created = await closeApiRequest('/api/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stock }),
+    });
+    if (!created || !created.task_id) throw Object.assign(new Error('盘后查询未返回任务编号'), { status: 502 });
+    return normalizeCloseDarkFund(await waitCloseTask(created.task_id), stockCode);
   } catch (error) {
     if (error && error.name === 'AbortError') throw Object.assign(new Error('盘后数据接口响应超时'), { status: 504 });
     throw error;
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
 module.exports = {
   SAMPLE_CLOSE_PAYLOAD,
+  exactSearchStock,
   fetchCloseDarkFund,
   normalizeCloseDarkFund,
 };
