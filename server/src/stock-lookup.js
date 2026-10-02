@@ -47,13 +47,16 @@ function lookupStock(code) {
     error.status = 503;
     throw error;
   }
-  const stockName = String(stockMap[value] || '').trim();
+  const entry = stockMap[value];
+  const stockName = String(entry && typeof entry === 'object' ? entry.name : entry || '').trim();
   const initials = stockInitials(stockName);
+  const displayName = String(entry && typeof entry === 'object' ? entry.displayName : '').trim()
+    || stockDisplayName(stockName, initials);
   return {
     stockCode: value,
     stockName,
     stockInitials: initials,
-    stockDisplayName: stockDisplayName(stockName, initials),
+    stockDisplayName: displayName,
     matched: Boolean(stockName),
   };
 }

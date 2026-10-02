@@ -67,8 +67,8 @@ module.exports = function register(router, HttpError) {
     const user = currentUser(ctx);
     const stockCode = String((ctx.body || {}).stockCode || '').trim();
     const queryMode = String((ctx.body || {}).query_mode || 'intraday').trim().toLowerCase();
-    const requestedSource = String((ctx.body || {}).source || '').trim().toLowerCase();
-    const querySource = queryMode === 'intraday' ? 'collector' : (requestedSource || 'web');
+    // 查询通道只由用户点击的查询类型决定。盘后查询绝不允许落到 Windows 采集器。
+    const querySource = queryMode === 'intraday' ? 'collector' : 'web';
     const suppliedRequestId = String((ctx.body || {}).request_id || '').trim();
     const requestId = suppliedRequestId || `legacy_${darkFundOrderNo()}`;
     if (!/^\d{6}$/.test(stockCode)) throw new HttpError(400, '请输入6位股票代码');

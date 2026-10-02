@@ -63,7 +63,9 @@ async function main() {
   all.forEach((row) => {
     const code = String(row && row.f12 || '').trim();
     const name = String(row && row.f14 || '').trim();
-    if (/^\d{6}$/.test(code) && name && name !== '-') map[code] = displayStockName(name);
+    if (/^\d{6}$/.test(code) && name && name !== '-') {
+      map[code] = { name, displayName: displayStockName(name) };
+    }
   });
   const sorted = Object.fromEntries(Object.entries(map).sort(([a], [b]) => a.localeCompare(b)));
   fs.writeFileSync(output, `${JSON.stringify(sorted, null, 2)}\n`, 'utf8');

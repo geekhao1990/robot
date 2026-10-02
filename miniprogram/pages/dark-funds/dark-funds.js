@@ -146,9 +146,15 @@ Page({
         if (sequence === this._stockLookupSequence) this.setData({ stockLookupLoading: false });
       });
   },
-  prepareQuery(e) {
+  prepareIntradayQuery() {
+    return this.prepareQuery('intraday');
+  },
+  prepareCloseQuery() {
+    return this.prepareQuery('close');
+  },
+  prepareQuery(mode) {
     const stockCode = String(this.data.stockCode || '').trim();
-    const queryMode = e.currentTarget.dataset.mode === 'intraday' ? 'intraday' : 'close';
+    const queryMode = mode === 'intraday' ? 'intraday' : 'close';
     const source = queryMode === 'intraday' ? 'collector' : 'web';
     if (!/^\d{6}$/.test(stockCode)) return wx.showModal({ title: '无法查询', content: '请输入6位代码', showCancel: false });
     if (/^(4|8|92)/.test(stockCode)) return wx.showToast({ title: '系统繁忙', icon: 'none' });

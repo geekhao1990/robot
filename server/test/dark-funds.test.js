@@ -8,6 +8,7 @@ const { latestTradingDate } = require('../src/trading-date');
 
 function setup(options = {}) {
   let closeFetchCount = 0;
+  let collectorDispatchCount = 0;
   const data = {
     users: [
       { id: 'u1', name: '查询用户', wxOpenId: 'openid-1', vip: false, darkFundEnabled: true, darkFundRemaining: 2 },
@@ -19,6 +20,7 @@ function setup(options = {}) {
   const collector = {
     callbackAuthorized: (headers) => headers['x-stock-callback-token'] === 'callback-secret',
     dispatchStockAnalysis: async (order) => {
+      collectorDispatchCount += 1;
       if (options.dispatchError) throw Object.assign(new Error('采集机离线'), { status: 502 });
       assert.match(order.tradeDate, /^\d{4}-\d{2}-\d{2}$/);
       assert.equal(typeof order.createdAt, 'number');
@@ -59,7 +61,12 @@ function setup(options = {}) {
     assert(match, `${method} ${url} route missing`);
     return match.handler({ body, headers: { authorization: token, ...extraHeaders }, query, params: match.params, rawBody: '' });
   });
-  return { data, call, closeFetchCount: () => closeFetchCount };
+  return {
+    data,
+    call,
+    closeFetchCount: () => closeFetchCount,
+    collectorDispatchCount: () => collectorDispatchCount,
+  };
 }
 
 function successCallback(order) {
@@ -148,7 +155,7 @@ test('query dispatches immediately and authenticated callback completes it idemp
   assert.equal(quota.permanentRemaining, 2);
   await assert.rejects(call('POST', '/api/dark-funds/orders', { stockCode: '123' }), { status: 400 });
   const created = await call('POST', '/api/dark-funds/orders', { stockCode: '600105' });
-  assert.equal(created.stockName, '永鼎GF');
+  assert.equal(created.stockName, '永鼎股份');
   assert.equal(created.status, 'QUEUED');
   assert.equal(created.ready, false);
   assert.equal(created.remaining, 1);
@@ -192,16 +199,17 @@ test('same user and request_id returns the original order without consuming quot
   await assert.rejects(call('POST', '/api/dark-funds/orders', { stockCode: '600106', request_id: body.request_id }), { status: 409 });
 });
 
-test('盘后网页查询直接生成数据图表快照且不创建文章', async () => {
+test('盘后查询只由查询类型决定且永不连接 Windows 采集器', async () => {
   const closeResult = require('../src/dark-fund-close').normalizeCloseDarkFund(require('../src/dark-fund-close').SAMPLE_CLOSE_PAYLOAD, '600105');
-  const { data, call } = setup({ closeResult });
+  const { data, call, collectorDispatchCount } = setup({ closeResult });
   const created = await call('POST', '/api/dark-funds/orders', {
-    stockCode: '600105', request_id: 'df_close_web_20260930', query_mode: 'close', source: 'web',
+    stockCode: '600105', request_id: 'df_close_web_20260930', query_mode: 'close', source: 'collector',
   });
   assert.equal(created.ready, true);
   assert.equal(created.resultType, 'close_snapshot');
   assert.equal(created.queryMode, 'close');
   assert.equal(created.querySource, 'web');
+  assert.equal(collectorDispatchCount(), 0);
   assert.equal(data.notes.length, 0);
   assert.equal(data.users[0].darkFundRemaining, 1);
   const viewed = await call('GET', `/api/dark-funds/orders/${created.orderId}`);
