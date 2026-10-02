@@ -6,7 +6,7 @@ function formatQueryTime(timestamp) {
   const date = new Date(Number(timestamp) || 0);
   if (!Number.isFinite(date.getTime()) || !Number(timestamp)) return '—';
   const pad = (value) => String(value).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  return `${String(date.getFullYear()).slice(-2)}${pad(date.getMonth() + 1)}${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function formatExpiryDate(timestamp) {

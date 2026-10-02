@@ -37,20 +37,21 @@
 .quota-expiry { color: #aaa; font-size: 19rpx; }
 .query-ad-slot { width: 100%; margin-top: 24rpx; overflow: hidden; border-radius: 12rpx; }
 .waiting-tip { display: flex; align-items: center; justify-content: center; height: 64rpx; margin-top: 24rpx; color: #8a6111; font-size: 25rpx; font-weight: 700; background: #fff7df; border-radius: 14rpx; }
-.history-page { padding: 24rpx; }
+.history-page { padding: 34rpx; }
 .history-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 8rpx 20rpx; color: #333; font-size: 28rpx; font-weight: 700; }
 .history-refresh { padding: 13rpx 24rpx; color: #fff; font-size: 23rpx; font-weight: 700; background: #ff2442; border-radius: 999rpx; box-shadow: 0 6rpx 16rpx rgba(255,36,66,.22); }
 .history-refresh.disabled { opacity: .62; }
 .empty { padding: 160rpx 0; color: #aaa; font-size: 26rpx; text-align: center; }
 .order-list { overflow: hidden; background: #fff; border-radius: 20rpx; }
-.order-card { display: flex; align-items: center; justify-content: space-between; min-height: 116rpx; padding: 0 28rpx; border-bottom: 1rpx solid #eee; }
+.order-card { display: flex; align-items: center; justify-content: space-between; min-height: 116rpx; padding: 0 28rpx; border-bottom: 2rpx solid #d8d8d8; }
 .order-card:last-child { border-bottom: 0; }
-.order-main { min-width: 0; }
+.order-main { min-width: 0; margin-right: 16rpx; flex: 1; }
 .order-stock { display: flex; align-items: baseline; gap: 10rpx; min-width: 0; }
-.order-name { overflow: hidden; color: #222; font-size: 31rpx; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.order-name { overflow: hidden; color: #222; font-size: 27rpx; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
 .order-code { flex: none; color: #999; font-size: 20rpx; font-weight: 400; letter-spacing: 0; }
-.order-query-time { margin-top: 8rpx; color: #aaa; font-size: 20rpx; }
-.order-type { display: inline-flex; margin-top: 8rpx; padding: 4rpx 10rpx; color: #888; font-size: 18rpx; background: #f4f4f4; border-radius: 999rpx; }
+.order-meta { display: flex; align-items: center; gap: 10rpx; min-width: 0; margin-top: 8rpx; }
+.order-query-time { overflow: hidden; color: #999; font-size: 20rpx; text-overflow: ellipsis; white-space: nowrap; }
+.order-type { display: inline-flex; flex: none; padding: 4rpx 10rpx; color: #777; font-size: 18rpx; background: #f1f1f1; border-radius: 999rpx; }
 .order-side { display: flex; align-items: center; gap: 20rpx; color: #555; font-size: 25rpx; }
 .order-side.pending { color: #b07a12; }
 .order-side.ready { color: #ff2442; font-weight: 700; }
