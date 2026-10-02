@@ -168,16 +168,8 @@ Page({
       confirmText: '确定',
       success: (result) => {
         if (!result.confirm) return;
-        if (queryMode === 'close') return this.openMockCloseResult(stockCode);
         return this.query(stockCode, queryMode, source);
       },
-    });
-  },
-  openMockCloseResult(stockCode) {
-    const stockName = this.data.stockSuggestion && this.data.stockSuggestion.stockName || '';
-    wx.navigateTo({
-      url: `/pages/dark-funds-result/dark-funds-result?mock=1&code=${encodeURIComponent(stockCode)}&name=${encodeURIComponent(stockName)}&date=${encodeURIComponent(this.data.tradeDate || this.data.compactTradeDate || '')}`,
-      fail: () => wx.showToast({ title: '页面打开失败', icon: 'none' }),
     });
   },
   query(stockCode, queryMode, source) {

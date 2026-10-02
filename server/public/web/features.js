@@ -456,19 +456,6 @@ renderDark = async function renderEventDrivenDark(mode = 'query') {
   }
 };
 
-function createWebMockCloseResult() {
-  const days = [
-    { tradeDate:'2026-09-30',main:-279681505.83274597,grey:-70262426.83274597,listed:-209419079,super_large:-146578422.84490156,large:-133103082.9878444,middle:-18850426.15509844,small:298531931.9878445 },
-    { tradeDate:'2026-09-29',main:-234428686.71112993,grey:-123071051.71112993,listed:-111357635,super_large:-9165579.480624594,large:-225263107.23050535,middle:-18165255.519375376,small:252593942.2305054 },
-    { tradeDate:'2026-09-28',main:-1342328107.9458745,grey:-605460166.9458745,listed:-736867941,super_large:-734231920.2085357,large:-608096187.7373387,middle:365773509.208536,small:976554598.7373394 },
-    { tradeDate:'2026-09-24',main:-502823098.275403,grey:-159935303.275403,listed:-342887795,super_large:-292457773.44773275,large:-210365324.82767022,middle:-58856301.552267365,small:561679399.8276703 },
-    { tradeDate:'2026-09-23',main:-490129791.2829146,grey:-42902723.28291457,listed:-447227068,super_large:-215148291.9512939,large:-274981499.3316207,middle:43362163.95129384,small:446767627.3316206 },
-    { tradeDate:'2026-09-22',main:-861658891.3149973,grey:-242033011.31499732,listed:-619625880,super_large:-617310498.8877808,large:-244348392.4272165,middle:-63311021.112219155,small:924969912.4272175 },
-    { tradeDate:'2026-09-21',main:22542169.263435997,grey:17156209.263435997,listed:5385960,super_large:12113368.197681013,large:10428801.065754985,middle:-100601528.197681,small:78059358.93424496 },
-  ];
-  return { type:'close_snapshot', stockCode:'600105', stockName:'永鼎股份', stockInitials:'YDGF', tradeDate:'2026-09-30', versionKey:'2026-09-30Tclose', versionLabel:'收盘', kind:'close', updatedAt:'2026-09-30T16:41:05+08:00', debit:true, balanceAfter:2, unlimited:false, expiresAt:null, summary:{ sevenDayMain:-3688507912.0996294, greyTotal:-1226508474.0996292, listedTotal:-2461999438 }, days };
-}
-
 submitDark = async function submitDarkWithLookup(requestedMode = 'close') {
   const input = document.querySelector('#stockCode');
   const code = String(input && input.value || '').replace(/\D/g, '');
@@ -487,10 +474,6 @@ submitDark = async function submitDarkWithLookup(requestedMode = 'close') {
     ? `是否查询暗盘【盘中】数据：${code}${displayName ? ` ${displayName}` : ''}，查询日期${dateText}`
     : `是否查询暗盘【盘后】数据：${code}${displayName ? ` ${displayName}` : ''}，查询近7日暗盘数据`;
   if (!confirm(description)) return;
-  if (queryMode === 'close') {
-    history.pushState({ darkMock: true }, '', `#dark-result/mock?code=${encodeURIComponent(code)}&name=${encodeURIComponent(stockName || '')}&date=${encodeURIComponent(dateText || '')}`);
-    return renderCloseDarkResult({ snapshot: { result: createWebMockCloseResult(code, stockName, dateText) } });
-  }
   const requestId = `web_${Date.now()}_${queryMode}_${source}_${Math.random().toString(36).slice(2, 9)}`;
   try {
     const order = await api('/api/dark-funds/orders', { method: 'POST', body: JSON.stringify({ stockCode: code, request_id: requestId, query_mode: queryMode, source }) });
@@ -545,6 +528,17 @@ function closeMoney(value, unit) {
   return number.toFixed(2);
 }
 
+function closeBalancedMain(row, unit) {
+  const round = (value) => Number(((Number(value) || 0) / unit.divisor).toFixed(2));
+  const main = round(row.main);
+  let listed = round(row.listed);
+  let grey = round(row.grey);
+  const residual = Number((main - listed - grey).toFixed(2));
+  if (Math.abs(listed) >= Math.abs(grey)) listed = Number((listed + residual).toFixed(2));
+  else grey = Number((grey + residual).toFixed(2));
+  return { main, listed, grey };
+}
+
 function closeMarketCode(code) {
   const value = String(code || '').replace(/^(sh|sz)/i, '');
   return `${/^[569]/.test(value) ? 'sh' : 'sz'}${value}`;
@@ -572,20 +566,24 @@ function closeChartHtml(days, size, unit) {
 }
 
 function closeDayChartHtml(latest, unit) {
+  const balanced = closeBalancedMain(latest, unit);
   const points = [
-    { date: '主力明盘', value: Number(latest.listed) || 0 },
-    { date: '主力暗盘', value: Number(latest.grey) || 0 },
+    { date: '主力明盘', value: Number(latest.listed) || 0, text: balanced.listed.toFixed(2) },
+    { date: '主力暗盘', value: Number(latest.grey) || 0, text: balanced.grey.toFixed(2) },
     { date: '散户流入', value: -(Number(latest.main) || 0) },
   ];
   const max = Math.max(...points.map((item) => Math.abs(item.value)), 1);
-  return `<div class="close-chart close-day-chart">${points.map((item) => `<div class="close-bar-column"><small class="${item.value >= 0 ? 'money-up' : 'money-down'}">${closeMoney(item.value, unit)}</small><i class="${item.value >= 0 ? 'up' : 'down'}" style="height:${Math.max(12, Math.round(Math.abs(item.value) / max * 112))}px"></i><span>${escapeHtml(item.date)}</span></div>`).join('')}</div>`;
+  return `<div class="close-chart close-day-chart">${points.map((item) => `<div class="close-bar-column"><small class="${item.value >= 0 ? 'money-up' : 'money-down'}">${item.text || closeMoney(item.value, unit)}</small><i class="${item.value >= 0 ? 'up' : 'down'}" style="height:${Math.max(12, Math.round(Math.abs(item.value) / max * 112))}px"></i><span>${escapeHtml(item.date)}</span></div>`).join('')}</div>`;
 }
 
 function closeTableHtml(rows, unit, detail = false) {
   const columns = detail
     ? [['super_large', '超大单'], ['large', '大单'], ['middle', '中单'], ['small', '小单']]
     : [['main', '主力'], ['grey', '暗盘'], ['listed', '明盘']];
-  return `<div class="close-table-scroll"><table class="close-table"><thead><tr><th>日期</th>${columns.map(([, label]) => `<th>${label}</th>`).join('')}</tr></thead><tbody>${rows.slice().reverse().slice(0, 7).map((row) => `<tr><td>${escapeHtml(row.tradeDate.slice(5))}</td>${columns.map(([key]) => `<td class="${Number(row[key]) >= 0 ? 'money-up' : 'money-down'}">${closeMoney(row[key], unit)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  return `<div class="close-table-scroll"><table class="close-table"><thead><tr><th>日期</th>${columns.map(([, label]) => `<th>${label}</th>`).join('')}</tr></thead><tbody>${rows.slice().reverse().slice(0, 7).map((row) => {
+    const balanced = detail ? null : closeBalancedMain(row, unit);
+    return `<tr><td>${escapeHtml(row.tradeDate.slice(5))}</td>${columns.map(([key]) => `<td class="${Number(row[key]) >= 0 ? 'money-up' : 'money-down'}">${balanced && Object.prototype.hasOwnProperty.call(balanced, key) ? balanced[key].toFixed(2) : closeMoney(row[key], unit)}</td>`).join('')}</tr>`;
+  }).join('')}</tbody></table></div>`;
 }
 
 function renderCloseDarkResult(order) {
@@ -629,11 +627,6 @@ const renderLocationDarkResultBase = renderLocation;
 renderLocation = function renderLocationWithDarkResult() {
   const hash = (location.hash || '#home').slice(1);
   if (!hash.startsWith('dark-result/')) return renderLocationDarkResultBase();
-  if (hash.startsWith('dark-result/mock')) {
-    const query = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : '';
-    const params = new URLSearchParams(query);
-    return renderCloseDarkResult({ snapshot: { result: createWebMockCloseResult(params.get('code') || '', params.get('name') || '', params.get('date') || '') } });
-  }
   const id = decodeURIComponent(hash.slice('dark-result/'.length));
   loading();
   return api(`/api/dark-funds/orders/${encodeURIComponent(id)}`)
