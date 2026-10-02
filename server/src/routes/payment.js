@@ -11,7 +11,7 @@ const {
   publicDarkFundOrder,
   refreshDarkFundOrderResult,
 } = require('../dark-fund-orders');
-const { fetchCloseDarkFund } = require('../dark-fund-close');
+const { fetchCloseDarkFund, isReusableCloseResult } = require('../dark-fund-close');
 const { callbackAuthorized, dispatchStockAnalysis } = require('../collector-client');
 const { persistCollectorImages } = require('../collector-images');
 const { pushNotification } = require('../notifications');
@@ -93,10 +93,18 @@ module.exports = function register(router, HttpError) {
     if (!useCloseMonthly && available.total <= 0) throw new HttpError(403, '暗盘资金查询次数已用完');
     let closeResult = null;
     if (queryMode === 'close' && querySource === 'web') {
-      try {
-        closeResult = await fetchCloseDarkFund(stockCode);
-      } catch (error) {
-        throw new HttpError(Number(error && error.status) || 502, error && error.message || '盘后数据获取失败');
+      const cachedOrder = d.darkFundOrders
+        .filter((item) => ['READY', 'SUCCESS'].includes(item.status) && item.stockCode === stockCode)
+        .sort((a, b) => Number(b.readyAt || b.createdAt || 0) - Number(a.readyAt || a.createdAt || 0))
+        .find((item) => isReusableCloseResult(item.closeResult || (item.snapshot && item.snapshot.result), stockCode));
+      if (cachedOrder) {
+        closeResult = JSON.parse(JSON.stringify(cachedOrder.closeResult || cachedOrder.snapshot.result));
+      } else {
+        try {
+          closeResult = await fetchCloseDarkFund(stockCode);
+        } catch (error) {
+          throw new HttpError(Number(error && error.status) || 502, error && error.message || '盘后数据获取失败');
+        }
       }
     }
     const consumed = useCloseMonthly ? { ...available, source: 'close_month' } : consumeDarkFundQuota(user);
@@ -108,7 +116,7 @@ module.exports = function register(router, HttpError) {
       userId: user.id,
       product: 'dark-funds',
       stockCode,
-      stockName: stockInfo.stockName || '',
+      stockName: closeResult ? closeResult.stockName : (stockInfo.stockName || ''),
       queryMode,
       querySource,
       tradeDate,
@@ -119,6 +127,10 @@ module.exports = function register(router, HttpError) {
     };
     d.darkFundOrders.push(order);
     if (closeResult) {
+      order.closeCacheHit = d.darkFundOrders.some((item) => item !== order
+        && ['READY', 'SUCCESS'].includes(item.status)
+        && item.stockCode === stockCode
+        && isReusableCloseResult(item.closeResult || (item.snapshot && item.snapshot.result), stockCode));
       activateCloseDarkFundOrder(order, closeResult);
       pushNotification(d, order.userId, {
         type: 'dark_ready',

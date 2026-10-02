@@ -77,6 +77,8 @@ const SAMPLE_CLOSE_PAYLOAD = {
   ],
 };
 
+const { isTradingDay } = require('./trading-date');
+
 const MONEY_FIELDS = ['main', 'grey', 'listed', 'super_large', 'large', 'middle', 'small'];
 
 function finiteNumber(value, field) {
@@ -90,38 +92,82 @@ function stockCodeFrom(value) {
   return matched ? matched[1] : '';
 }
 
+function validTradeDate(value) {
+  const date = String(value || '').trim();
+  const parsed = new Date(`${date}T00:00:00Z`);
+  return /^\d{4}-\d{2}-\d{2}$/.test(date)
+    && Number.isFinite(parsed.getTime())
+    && parsed.toISOString().slice(0, 10) === date
+    && isTradingDay(date);
+}
+
+function relativeFundError(main, listed, grey) {
+  const difference = Math.abs(listed + grey - main);
+  const scale = Math.max(Math.abs(main), Math.abs(listed) + Math.abs(grey), 1);
+  return difference / scale;
+}
+
 function normalizeCloseDarkFund(payload, expectedCode = '') {
   if (!payload || typeof payload !== 'object') throw new Error('盘后数据为空');
   const stockCode = stockCodeFrom(payload.stock || payload.stock_code);
   const name = String(payload.name || payload.stock_name || '').trim();
   const tradeDate = String(payload.trade_date || '').trim();
   const versionLabel = String(payload.version_label || '收盘').trim() || '收盘';
+  const kind = String(payload.kind || '').trim().toLowerCase() || 'close';
   if (!/^\d{6}$/.test(stockCode)) throw new Error('股票代码缺失');
   if (expectedCode && stockCode !== expectedCode) throw new Error('盘后数据股票代码不匹配');
   if (!name) throw new Error('股票名称缺失');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(tradeDate)) throw new Error('交易日期格式不正确');
+  if (!validTradeDate(tradeDate)) throw new Error('交易日期格式不正确或不是交易日');
   if (!Array.isArray(payload.days) || !payload.days.length) throw new Error('盘后资金明细为空');
+  if (payload.days.length > 7) throw new Error('盘后资金明细超过7个交易日');
+  const seenDates = new Set();
   const days = payload.days.map((item, index) => {
     const rowDate = String(item && item.trade_date || '').trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(rowDate)) throw new Error(`第${index + 1}条交易日期格式不正确`);
+    if (!validTradeDate(rowDate)) throw new Error(`第${index + 1}条交易日期格式不正确或不是交易日`);
+    if (seenDates.has(rowDate)) throw new Error(`盘后资金明细日期${rowDate}重复`);
+    seenDates.add(rowDate);
     const row = { tradeDate: rowDate };
     MONEY_FIELDS.forEach((field) => { row[field] = finiteNumber(item[field], `${rowDate} ${field}`); });
+    if (relativeFundError(row.main, row.listed, row.grey) > 0.02) {
+      throw new Error(`${rowDate}主力明盘与暗盘加总误差超过2%`);
+    }
     return row;
   }).sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
   const latest = days[days.length - 1];
   if (latest.tradeDate !== tradeDate) throw new Error('交易日期与最新资金明细不一致');
-  const tolerance = Math.max(1, Math.abs(latest.main) * 0.001);
-  if (Math.abs(latest.grey + latest.listed - latest.main) > tolerance) {
-    throw new Error('主力明盘与暗盘加总存在误差');
-  }
   return {
     type: 'close_snapshot',
+    validationVersion: 2,
     stockCode,
     stockName: name,
     tradeDate,
     versionLabel,
+    versionKey: String(payload.version_key || '').trim(),
+    kind,
+    updatedAt: String(payload.updated_at || '').trim(),
     days,
   };
+}
+
+function nextTradingOpenAt(tradeDate) {
+  const cursor = new Date(`${tradeDate}T00:00:00Z`);
+  if (!Number.isFinite(cursor.getTime())) return 0;
+  let next = '';
+  do {
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+    next = cursor.toISOString().slice(0, 10);
+  } while (!isTradingDay(next));
+  // 北京时间09:30等于UTC 01:30。
+  return Date.parse(`${next}T01:30:00Z`);
+}
+
+function isReusableCloseResult(result, stockCode, now = Date.now()) {
+  if (!result || result.type !== 'close_snapshot') return false;
+  if (Number(result.validationVersion) < 2) return false;
+  if (stockCodeFrom(result.stockCode) !== stockCodeFrom(stockCode)) return false;
+  if (String(result.kind || 'close').toLowerCase() !== 'close') return false;
+  const expiresAt = nextTradingOpenAt(result.tradeDate);
+  return expiresAt > 0 && now < expiresAt;
 }
 
 const CLOSE_TASK_PENDING_STATES = new Set(['queued', 'checking_cache', 'fetching_data', 'preparing_result']);
@@ -288,5 +334,8 @@ module.exports = {
   SAMPLE_CLOSE_PAYLOAD,
   exactSearchStock,
   fetchCloseDarkFund,
+  isReusableCloseResult,
+  nextTradingOpenAt,
   normalizeCloseDarkFund,
+  relativeFundError,
 };

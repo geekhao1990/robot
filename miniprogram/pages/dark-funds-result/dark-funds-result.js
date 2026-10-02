@@ -15,6 +15,33 @@ function formatByUnit(value, unit, suffix = false) {
   return `${number.toFixed(unit.digits)}${suffix ? unit.suffix : ''}`;
 }
 
+function roundedUnitValue(value, unit) {
+  const factor = 10 ** unit.digits;
+  const rounded = Math.round(((Number(value) || 0) / unit.divisor) * factor) / factor;
+  return Object.is(rounded, -0) ? 0 : rounded;
+}
+
+function formatRoundedUnit(value, unit, suffix = false) {
+  return `${value.toFixed(unit.digits)}${suffix ? unit.suffix : ''}`;
+}
+
+function balancedMainGroup(row, unit, suffix = false) {
+  const main = roundedUnitValue(row.main, unit);
+  let listed = roundedUnitValue(row.listed, unit);
+  let grey = roundedUnitValue(row.grey, unit);
+  const residual = Number((main - listed - grey).toFixed(unit.digits));
+  if (Math.abs(listed) >= Math.abs(grey)) listed = Number((listed + residual).toFixed(unit.digits));
+  else grey = Number((grey + residual).toFixed(unit.digits));
+  return {
+    mainValue: main,
+    listedValue: listed,
+    greyValue: grey,
+    mainText: formatRoundedUnit(main, unit, suffix),
+    listedText: formatRoundedUnit(listed, unit, suffix),
+    greyText: formatRoundedUnit(grey, unit, suffix),
+  };
+}
+
 function formatGroup(row, keys) {
   const unit = chooseUnit(keys.map((key) => row[key]));
   const output = {};
@@ -157,21 +184,25 @@ Page({
     const latest = days[days.length - 1];
     const unit = chooseUnit([latest.main, latest.listed, latest.grey]);
     const main = Number(latest.main) || 0;
+    const balancedLatest = balancedMainGroup(latest, unit);
     const summary = [
       { label: '主力净流入', value: main },
       { label: '散户流入', value: -main },
     ].map((item) => ({ ...item, text: formatByUnit(item.value, unit), positive: item.value >= 0 }));
     const dayBars = withBars([
-      { label: '主力明盘', value: Number(latest.listed) || 0, text: formatByUnit(latest.listed, unit) },
-      { label: '主力暗盘', value: Number(latest.grey) || 0, text: formatByUnit(latest.grey, unit) },
+      { label: '主力明盘', value: Number(latest.listed) || 0, text: formatRoundedUnit(balancedLatest.listedValue, unit) },
+      { label: '主力暗盘', value: Number(latest.grey) || 0, text: formatRoundedUnit(balancedLatest.greyValue, unit) },
       { label: '散户流入', value: -main, text: formatByUnit(-main, unit) },
     ]);
-    const rows = days.slice().reverse().slice(0, 7).map((row) => ({
-      ...row,
-      displayDate: row.tradeDate.slice(5),
-      ...formatGroup(row, ['main', 'grey', 'listed']),
-      ...formatGroup(row, ['super_large', 'large', 'middle', 'small']),
-    }));
+    const rows = days.slice().reverse().slice(0, 7).map((row) => {
+      const mainUnit = chooseUnit([row.main, row.grey, row.listed]);
+      return {
+        ...row,
+        displayDate: row.tradeDate.slice(5),
+        ...balancedMainGroup(row, mainUnit, true),
+        ...formatGroup(row, ['super_large', 'large', 'middle', 'small']),
+      };
+    });
     result.displayName = hybridStockName(result.stockName, result.stockInitials);
     result.displayCode = marketStockCode(result.stockCode);
     this.trends = { trend3: rolling(days, 3), trend5: rolling(days, 5) };

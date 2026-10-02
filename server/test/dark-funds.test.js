@@ -7,6 +7,7 @@ const { createRouter, HttpError } = require('../src/router');
 const { latestTradingDate } = require('../src/trading-date');
 
 function setup(options = {}) {
+  let closeFetchCount = 0;
   const data = {
     users: [
       { id: 'u1', name: '查询用户', wxOpenId: 'openid-1', vip: false, darkFundEnabled: true, darkFundRemaining: 2 },
@@ -38,9 +39,11 @@ function setup(options = {}) {
     '../trading-date': require('../src/trading-date'), '../dark-fund-orders': require('../src/dark-fund-orders'),
     '../dark-fund-close': {
       fetchCloseDarkFund: async () => {
+        closeFetchCount += 1;
         if (options.closeResult) return options.closeResult;
         throw Object.assign(new Error('盘后数据接口尚未配置，可改用采集器查询'), { status: 503 });
       },
+      isReusableCloseResult: options.isReusableCloseResult || require('../src/dark-fund-close').isReusableCloseResult,
     },
     '../collector-client': collector, '../collector-images': collectorImages,
     '../notifications': require('../src/notifications'),
@@ -56,7 +59,7 @@ function setup(options = {}) {
     assert(match, `${method} ${url} route missing`);
     return match.handler({ body, headers: { authorization: token, ...extraHeaders }, query, params: match.params, rawBody: '' });
   });
-  return { data, call };
+  return { data, call, closeFetchCount: () => closeFetchCount };
 }
 
 function successCallback(order) {
@@ -203,6 +206,21 @@ test('盘后网页查询直接生成数据图表快照且不创建文章', async
   assert.equal(data.users[0].darkFundRemaining, 1);
   const viewed = await call('GET', `/api/dark-funds/orders/${created.orderId}`);
   assert.equal(viewed.snapshot.result.stockName, '永鼎股份');
+});
+
+test('同一股票收盘快照在下个交易日开市前直接命中缓存', async () => {
+  const closeResult = require('../src/dark-fund-close').normalizeCloseDarkFund(require('../src/dark-fund-close').SAMPLE_CLOSE_PAYLOAD, '600105');
+  const { data, call, closeFetchCount } = setup({ closeResult, isReusableCloseResult: () => true });
+  data.users[0].darkFundRemaining = 3;
+  await call('POST', '/api/dark-funds/orders', {
+    stockCode: '600105', request_id: 'df_close_cache_first', query_mode: 'close', source: 'web',
+  });
+  await call('POST', '/api/dark-funds/orders', {
+    stockCode: '600105', request_id: 'df_close_cache_second', query_mode: 'close', source: 'web',
+  });
+  assert.equal(closeFetchCount(), 1);
+  assert.equal(data.darkFundOrders[1].closeCacheHit, true);
+  assert.equal(data.darkFundOrders[1].queryMode, 'close');
 });
 
 test('暗盘包月只免除盘后查询扣次，盘中查询仍扣减次数', async () => {

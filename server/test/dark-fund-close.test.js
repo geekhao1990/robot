@@ -1,6 +1,12 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { SAMPLE_CLOSE_PAYLOAD, exactSearchStock, normalizeCloseDarkFund } = require('../src/dark-fund-close');
+const {
+  SAMPLE_CLOSE_PAYLOAD,
+  exactSearchStock,
+  isReusableCloseResult,
+  nextTradingOpenAt,
+  normalizeCloseDarkFund,
+} = require('../src/dark-fund-close');
 
 test('盘后暗盘 JSON 被标准化为独立快照结果', () => {
   const result = normalizeCloseDarkFund(SAMPLE_CLOSE_PAYLOAD, '600105');
@@ -17,7 +23,24 @@ test('盘后暗盘 JSON 拒绝错股和明暗资金误差', () => {
   assert.throws(() => normalizeCloseDarkFund(SAMPLE_CLOSE_PAYLOAD, '600106'), /代码不匹配/);
   const invalid = JSON.parse(JSON.stringify(SAMPLE_CLOSE_PAYLOAD));
   invalid.days[0].grey = 1;
-  assert.throws(() => normalizeCloseDarkFund(invalid, '600105'), /加总存在误差/);
+  assert.throws(() => normalizeCloseDarkFund(invalid, '600105'), /误差超过2%/);
+});
+
+test('盘后暗盘逐日允许2%以内误差并拒绝任意一天的过大误差', () => {
+  const rounding = JSON.parse(JSON.stringify(SAMPLE_CLOSE_PAYLOAD));
+  rounding.days[2].grey += Math.abs(rounding.days[2].main) * 0.019;
+  assert.doesNotThrow(() => normalizeCloseDarkFund(rounding, '600105'));
+  rounding.days[4].grey += Math.abs(rounding.days[4].main) * 0.021;
+  assert.throws(() => normalizeCloseDarkFund(rounding, '600105'), /误差超过2%/);
+});
+
+test('收盘结果缓存持续到下一个交易日开市前', () => {
+  const result = normalizeCloseDarkFund(SAMPLE_CLOSE_PAYLOAD, '600105');
+  const openAt = nextTradingOpenAt(result.tradeDate);
+  assert.equal(openAt, Date.parse('2026-10-08T01:30:00Z'));
+  assert.equal(isReusableCloseResult(result, '600105', openAt - 1), true);
+  assert.equal(isReusableCloseResult(result, '600105', openAt), false);
+  assert.equal(isReusableCloseResult(result, '600106', openAt - 1), false);
 });
 
 test('盘后搜索结果按六位代码精确匹配', () => {
