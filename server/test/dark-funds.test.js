@@ -239,8 +239,26 @@ test('同一股票收盘快照在下个交易日开市前直接命中缓存', as
     stockCode: '600105', request_id: 'df_close_cache_second', query_mode: 'close', source: 'web',
   });
   assert.equal(closeFetchCount(), 1);
+  assert.equal(data.darkFundCloseCache['600105'].result.stockCode, '600105');
   assert.equal(data.darkFundOrders[1].closeCacheHit, true);
   assert.equal(data.darkFundOrders[1].queryMode, 'close');
+});
+
+test('盘后缓存独立于订单列表保存并可直接复用', async () => {
+  const closeResult = require('../src/dark-fund-close').normalizeCloseDarkFund(require('../src/dark-fund-close').SAMPLE_CLOSE_PAYLOAD, '600105');
+  const { data, call, closeFetchCount } = setup({ closeResult, isReusableCloseResult: () => true });
+  data.users[0].darkFundRemaining = 3;
+  await call('POST', '/api/dark-funds/orders/close', {
+    stockCode: '600105', request_id: 'df_close_cache_store',
+  });
+  data.darkFundOrders = [];
+  const cached = await call('POST', '/api/dark-funds/orders/close', {
+    stockCode: '600105', request_id: 'df_close_cache_reuse',
+  });
+  assert.equal(closeFetchCount(), 1);
+  assert.equal(cached.queryMode, 'close');
+  assert.equal(cached.querySource, 'web');
+  assert.equal(data.darkFundOrders[0].closeCacheHit, true);
 });
 
 test('暗盘包月只免除盘后查询扣次，盘中查询仍扣减次数', async () => {

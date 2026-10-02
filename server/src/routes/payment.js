@@ -17,6 +17,38 @@ const { persistCollectorImages } = require('../collector-images');
 const { pushNotification } = require('../notifications');
 const { lookupStock } = require('../stock-lookup');
 
+// 同一股票的并发盘后请求共用一次上游任务，避免重复扣减上游次数。
+const pendingCloseQueries = new Map();
+
+function fetchCloseDarkFundOnce(stockCode) {
+  if (pendingCloseQueries.has(stockCode)) return pendingCloseQueries.get(stockCode);
+  const request = Promise.resolve()
+    .then(() => fetchCloseDarkFund(stockCode))
+    .finally(() => pendingCloseQueries.delete(stockCode));
+  pendingCloseQueries.set(stockCode, request);
+  return request;
+}
+
+function cachedCloseResult(data, stockCode) {
+  const entry = data.darkFundCloseCache && data.darkFundCloseCache[stockCode];
+  const result = entry && (entry.result || entry);
+  if (!result || !isReusableCloseResult(result, stockCode)) return null;
+  return JSON.parse(JSON.stringify(result));
+}
+
+function storeCloseResult(data, stockCode, result) {
+  data.darkFundCloseCache = data.darkFundCloseCache && typeof data.darkFundCloseCache === 'object'
+    ? data.darkFundCloseCache
+    : {};
+  data.darkFundCloseCache[stockCode] = {
+    stockCode,
+    versionKey: String(result.versionKey || ''),
+    tradeDate: String(result.tradeDate || ''),
+    cachedAt: Date.now(),
+    result: JSON.parse(JSON.stringify(result)),
+  };
+}
+
 function darkFundOrderNo() {
   return `DF${Date.now()}${crypto.randomBytes(5).toString('hex')}`.slice(0, 32);
 }
@@ -92,16 +124,25 @@ module.exports = function register(router, HttpError) {
     const useCloseMonthly = queryMode === 'close' && closeDarkFundActiveAt(user);
     if (!useCloseMonthly && available.total <= 0) throw new HttpError(403, '暗盘资金查询次数已用完');
     let closeResult = null;
+    let closeCacheHit = false;
     if (queryMode === 'close' && querySource === 'web') {
-      const cachedOrder = d.darkFundOrders
-        .filter((item) => ['READY', 'SUCCESS'].includes(item.status) && item.stockCode === stockCode)
-        .sort((a, b) => Number(b.readyAt || b.createdAt || 0) - Number(a.readyAt || a.createdAt || 0))
-        .find((item) => isReusableCloseResult(item.closeResult || (item.snapshot && item.snapshot.result), stockCode));
-      if (cachedOrder) {
-        closeResult = JSON.parse(JSON.stringify(cachedOrder.closeResult || cachedOrder.snapshot.result));
-      } else {
+      closeResult = cachedCloseResult(d, stockCode);
+      closeCacheHit = Boolean(closeResult);
+      if (!closeResult) {
+        const cachedOrder = d.darkFundOrders
+          .filter((item) => ['READY', 'SUCCESS'].includes(item.status) && item.stockCode === stockCode)
+          .sort((a, b) => Number(b.readyAt || b.createdAt || 0) - Number(a.readyAt || a.createdAt || 0))
+          .find((item) => isReusableCloseResult(item.closeResult || (item.snapshot && item.snapshot.result), stockCode));
+        if (cachedOrder) {
+          closeResult = JSON.parse(JSON.stringify(cachedOrder.closeResult || cachedOrder.snapshot.result));
+          closeCacheHit = true;
+          storeCloseResult(d, stockCode, closeResult);
+        }
+      }
+      if (!closeResult) {
         try {
-          closeResult = await fetchCloseDarkFund(stockCode);
+          closeResult = await fetchCloseDarkFundOnce(stockCode);
+          storeCloseResult(d, stockCode, closeResult);
         } catch (error) {
           throw new HttpError(Number(error && error.status) || 502, error && error.message || '盘后数据获取失败');
         }
@@ -130,10 +171,7 @@ module.exports = function register(router, HttpError) {
     };
     d.darkFundOrders.push(order);
     if (closeResult) {
-      order.closeCacheHit = d.darkFundOrders.some((item) => item !== order
-        && ['READY', 'SUCCESS'].includes(item.status)
-        && item.stockCode === stockCode
-        && isReusableCloseResult(item.closeResult || (item.snapshot && item.snapshot.result), stockCode));
+      order.closeCacheHit = closeCacheHit;
       activateCloseDarkFundOrder(order, closeResult);
       pushNotification(d, order.userId, {
         type: 'dark_ready',
