@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#d91520">
+  <title>指标仓库 · 数据工作台</title>
+  <link rel="stylesheet" href="/saas/style.css?v=2026100201">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">指</span><div><strong>指标仓库</strong><small>DATA WORKBENCH</small></div></div>
+      <nav id="nav">
+        <button data-view="dashboard" class="active"><i>⌂</i>工作台</button>
+        <button data-view="close"><i>收</i>盘后查询</button>
+        <button data-view="decision" id="decisionNav" class="hidden"><i>策</i>决策先锋</button>
+        <button data-view="orders"><i>单</i>订单列表</button>
+        <button data-view="gold"><i>金</i>金手指</button>
+      </nav>
+      <div class="sidebar-foot"><a href="/web">移动版 Web</a><a href="/admin">管理后台</a></div>
+    </aside>
+    <section class="workspace">
+      <header class="topbar">
+        <div><h1 id="pageTitle">数据工作台</h1><p id="marketClock"></p></div>
+        <div id="account" class="account"></div>
+      </header>
+      <main id="main"><div class="loading"><i></i><span>正在载入工作台</span></div></main>
+    </section>
+  </div>
+  <div id="toast" class="toast"></div>
+  <div id="modal"></div>
+  <script src="/saas/app.js?v=2026100201" defer></script>
+</body>
+</html>
