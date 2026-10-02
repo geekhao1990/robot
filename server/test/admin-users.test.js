@@ -150,3 +150,15 @@ test('admin controls dark fund entry and can set exact remaining quota', async (
   const closed = await call('PUT', '/api/admin/users/u1/dark-funds', { action: 'cancel' });
   assert.equal(closed.darkFundEnabled, false);
 });
+
+test('admin controls decision pioneer independently from close queries', async () => {
+  const { data, call } = setup();
+  await assert.rejects(call('PUT', '/api/admin/users/u1/decision-pioneer', { action: 'open' }), { status: 409 });
+  data.users[0].darkFundEnabled = true;
+  await assert.rejects(call('PUT', '/api/admin/users/u1/decision-pioneer', { action: 'open' }, ''), { status: 401 });
+  const opened = await call('PUT', '/api/admin/users/u1/decision-pioneer', { action: 'open' });
+  assert.equal(opened.decisionPioneerEnabled, true);
+  await assert.rejects(call('PUT', '/api/admin/users/u1/decision-pioneer', { action: 'open' }), { status: 409 });
+  const closed = await call('PUT', '/api/admin/users/u1/decision-pioneer', { action: 'cancel' });
+  assert.equal(closed.decisionPioneerEnabled, false);
+});

@@ -20,8 +20,8 @@
         <view wx:else class="stock-dropdown-error">{{stockLookupError}}</view>
       </view>
       <view class="query-actions">
-        <button class="query-button query-button-live" bindtap="prepareIntradayQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">暗盘【盘中】查询</button>
-        <button class="query-button query-button-close" bindtap="prepareCloseQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">暗盘【盘后】查询</button>
+        <button wx:if="{{decisionPioneerEnabled}}" class="query-button query-button-live" bindtap="prepareIntradayQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">决策先锋</button>
+        <button class="query-button query-button-close" bindtap="prepareCloseQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">盘后查询</button>
       </view>
       <view class="quota-summary">
         <view wx:if="{{closeMonthlyActive}}" class="remaining-tip">盘后包月：<text>无限查询</text><text wx:if="{{closeMonthlyExpiryText}}" class="quota-expiry">（有效至 {{closeMonthlyExpiryText}}）</text></view>
@@ -49,7 +49,7 @@
   </view>
 
   <view wx:if="{{tab === 'history'}}" class="history-page">
-    <view class="history-toolbar"><view>查询记录</view><view class="history-refresh {{historyLoading ? 'disabled' : ''}}" bindtap="refreshOrders">{{historyLoading ? '工单状态刷新中…' : '请手动刷新工单状态'}}</view></view>
+    <view class="history-toolbar"><view>查询记录</view><view class="history-refresh {{historyLoading ? 'disabled' : ''}}" bindtap="refreshOrders">{{historyLoading ? '刷新中…' : '手动刷新'}}</view></view>
     <view wx:if="{{historyLoading}}" class="empty">正在加载...</view>
     <view wx:elif="{{!orders.length}}" class="empty">暂无订单</view>
     <view wx:else class="order-list">

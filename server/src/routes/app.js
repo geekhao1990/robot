@@ -297,6 +297,7 @@ module.exports = function register(router, HttpError) {
         courseAccessPermanent: false,
         official: false,
         darkFundEnabled: false,
+        decisionPioneerEnabled: false,
         darkFundRemaining: 0,
         darkFundManualRemaining: 0,
         darkFundServiceRemaining: 0,

@@ -27,6 +27,7 @@ function pubUser(user) {
     goldAccess: goldAccess(user),
     serviceActive: serviceActiveAt(user),
     darkFundEnabled: user.darkFundEnabled === true,
+    decisionPioneerEnabled: user.decisionPioneerEnabled === true,
     darkFundRemaining: darkFundQuota.total,
     darkFundServiceRemaining: darkFundQuota.service,
     darkFundServiceExpireAt: darkFundQuota.serviceExpireAt,

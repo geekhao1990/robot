@@ -67,6 +67,7 @@ Page({
     timeText: '',
     resourceLabel: '点击领取',
     isDarkFundNote: false,
+    canShareNote: false,
     darkParagraphs: [],
     darkArticleAdUnitId: /^adunit-/i.test(String(config.darkArticleAdUnitId || ''))
       ? String(config.darkArticleAdUnitId)
@@ -120,10 +121,14 @@ Page({
     const authorId = note.authorId || (note.author && note.author.id);
     const user = store.getUser();
     const isOwnNote = !!(user && authorId && user.id === authorId);
+    const canShareNote = !this.data.isDarkFundNote && !!(user && user.official === true);
     this.setData({
       isOwnNote,
+      canShareNote,
       followed: !isOwnNote && store.isFollowed(authorId),
     });
+    if (!canShareNote && wx.hideShareMenu) wx.hideShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+    else if (canShareNote && wx.showShareMenu) wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
   },
 
   loadInviteCode() {
@@ -164,6 +169,7 @@ Page({
       const authorId = note.authorId || (note.author && note.author.id);
       const user = store.getUser();
       const isOwnNote = !!(user && authorId && user.id === authorId);
+      const canShareNote = !darkFundNote && !!(user && user.official === true);
       this._imageRatios = {};
       this.setData({
         note,
@@ -173,6 +179,7 @@ Page({
         collectText: formatCount(note.collects),
         timeText: fromNow(note.time),
         isDarkFundNote: darkFundNote,
+        canShareNote,
         darkParagraphs: darkFundNote ? darkArticleParagraphs(note, content) : [],
         resourceLabel: darkFundNote ? '查询暗盘' : '点击领取',
         articleAdLoadFailed: false,
@@ -180,7 +187,7 @@ Page({
         followed: !isOwnNote && store.isFollowed(authorId),
         pageRenderLoading: pageImageIndexes.length > 0,
       }, () => {
-        if (darkFundNote && wx.hideShareMenu) {
+        if (!canShareNote && wx.hideShareMenu) {
           wx.hideShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
         } else if (wx.showShareMenu) {
           wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
@@ -471,6 +478,7 @@ Page({
     });
   },
   onShareAppMessage() {
+    if (!this.data.canShareNote) return {};
     const note = this.data.note || {};
     const inviteCode = this.data.inviteCode || '';
     const query = [`id=${encodeURIComponent(note.id || this.noteId || '')}`];

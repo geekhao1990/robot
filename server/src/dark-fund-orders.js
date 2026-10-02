@@ -22,6 +22,7 @@ function ensureDarkFundAuthor(data) {
       courseAccessPermanent: false,
       official: true,
       darkFundEnabled: false,
+      decisionPioneerEnabled: false,
       darkFundRemaining: 0,
       darkFundManualRemaining: 0,
       darkFundServiceRemaining: 0,

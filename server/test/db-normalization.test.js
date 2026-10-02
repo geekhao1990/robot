@@ -6,7 +6,7 @@ test('dark orders, entitlements and reactions are split out of the legacy app_st
   const source = {
     users: [{
       id: 'u1', name: '用户', goldExpire: 123, serviceExpire: 456, servicePlan: 'service_month',
-      darkFundEnabled: true, darkFundRemaining: 3, darkFundManualRemaining: 1,
+      darkFundEnabled: true, decisionPioneerEnabled: true, darkFundRemaining: 3, darkFundManualRemaining: 1,
       darkFundServiceRemaining: 2, darkFundServicePeriodStart: 100, darkFundServicePeriodExpire: 200,
     }],
     userState: { u1: { likes: { n1: 10 }, collects: { n2: 20 }, follows: { u2: 30 } } },
@@ -21,6 +21,7 @@ test('dark orders, entitlements and reactions are split out of the legacy app_st
   assert.deepEqual(appState.userState.u1, { follows: { u2: 30 } });
   assert.equal(normalized.orders[0].clientRequestId, 'request_123456');
   assert.equal(normalized.entitlements[0].goldExpire, 123);
+  assert.equal(normalized.entitlements[0].decisionPioneerEnabled, true);
   assert.deepEqual(normalized.reactions.map((item) => [item.noteId, item.liked, item.collected]), [
     ['n1', true, false], ['n2', false, true],
   ]);

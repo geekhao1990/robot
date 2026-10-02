@@ -11,7 +11,7 @@ function setup(options = {}) {
   let collectorDispatchCount = 0;
   const data = {
     users: [
-      { id: 'u1', name: '查询用户', wxOpenId: 'openid-1', vip: false, darkFundEnabled: true, darkFundRemaining: 2 },
+      { id: 'u1', name: '查询用户', wxOpenId: 'openid-1', vip: false, darkFundEnabled: true, decisionPioneerEnabled: true, darkFundRemaining: 2 },
       { id: 'u2', name: '其他用户', wxOpenId: 'openid-2', vip: false, darkFundEnabled: false, darkFundRemaining: 0 },
     ],
     notes: [], paymentOrders: [], darkFundOrders: [],
@@ -363,4 +363,20 @@ test('dark fund entry is hidden by default and exhausted quota blocks query', as
   await assert.rejects(call('GET', '/api/dark-funds/trade-date', {}, 'Bearer u2'), { status: 403 });
   data.users[0].darkFundRemaining = 0;
   await assert.rejects(call('POST', '/api/dark-funds/orders', { stockCode: '600105' }), { status: 403 });
+});
+
+test('决策先锋需要独立权限且不影响盘后查询', async () => {
+  const { data, call } = setup({
+    closeResult: require('../src/dark-fund-close').normalizeCloseDarkFund(require('../src/dark-fund-close').SAMPLE_CLOSE_PAYLOAD, '600105'),
+  });
+  data.users[0].decisionPioneerEnabled = false;
+  const tradeDate = await call('GET', '/api/dark-funds/trade-date');
+  assert.equal(tradeDate.decisionPioneerEnabled, false);
+  await assert.rejects(call('POST', '/api/dark-funds/orders/intraday', {
+    stockCode: '600105', request_id: 'decision_disabled_001',
+  }), { status: 403 });
+  const close = await call('POST', '/api/dark-funds/orders/close', {
+    stockCode: '600105', request_id: 'close_without_decision_001',
+  });
+  assert.equal(close.ready, true);
 });

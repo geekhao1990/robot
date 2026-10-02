@@ -64,7 +64,7 @@ function createUser(unionid, profile) {
     desc: '这个人很懒，什么都没留下', fans: 0, follows: 0, likes: 0,
     goldExpire: 0, goldQuotaGiftMigrated: true,
     serviceExpire: 0, servicePlan: '', courseAccessPermanent: false,
-    official: false, darkFundEnabled: false, darkFundRemaining: 0,
+    official: false, darkFundEnabled: false, decisionPioneerEnabled: false, darkFundRemaining: 0,
     darkFundManualRemaining: 0, darkFundServiceRemaining: 0, darkFundServiceMonth: '',
     createdAt: Date.now(), tags: ['new', 'web-wechat'],
   };

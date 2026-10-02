@@ -48,6 +48,7 @@ Page({
     quotaExpiryText: '',
     closeMonthlyActive: false,
     closeMonthlyExpiryText: '',
+    decisionPioneerEnabled: false,
     queryAdUnitId: /^adunit-/i.test(String(config.darkFundsQueryAdUnitId || ''))
       ? String(config.darkFundsQueryAdUnitId)
       : '',
@@ -166,8 +167,8 @@ Page({
     const stockName = this.data.stockSuggestion.stockDisplayName
       || displayStockName(this.data.stockSuggestion.stockName, this.data.stockSuggestion.stockInitials);
     const content = queryMode === 'intraday'
-      ? `是否查询暗盘【盘中】数据：${stockCode}${stockName ? ` ${stockName}` : ''}，查询日期${this.data.compactTradeDate}`
-      : `是否查询暗盘【盘后】数据：${stockCode}${stockName ? ` ${stockName}` : ''}，查询近7日暗盘数据`;
+      ? `是否使用决策先锋查询：${stockCode}${stockName ? ` ${stockName}` : ''}，查询日期${this.data.compactTradeDate}`
+      : `是否查询盘后数据：${stockCode}${stockName ? ` ${stockName}` : ''}，查询近7日暗盘数据`;
     wx.showModal({
       title: '确认查询',
       content,
@@ -198,7 +199,7 @@ Page({
       .catch((error) => {
         wx.hideLoading();
         if (error && Number(error.statusCode) >= 400 && Number(error.statusCode) < 500) this.clearQueryRequestId(requestId);
-        wx.showModal({ title: '查询失败', content: this.errorText(error), showCancel: false });
+        wx.showModal({ title: '查询失败', content: '请稍后再试', showCancel: false });
       })
       .finally(() => this.setData({ querying: false }));
   },
@@ -218,7 +219,7 @@ Page({
             failed,
             stockDisplayName: item.stockDisplayName || displayStockName(item.stockName, item.stockInitials),
             marketStockCode: marketStockCode(item.stockCode),
-            queryTypeText: item.queryMode === 'close' ? '盘后查询' : '盘中查询',
+            queryTypeText: item.queryMode === 'close' ? '盘后查询' : '决策先锋',
             queryTimeText: formatQueryTime(item.createdAt),
             statusText: ready ? '点击查看' : (failed ? '查询失败' : '等待结果'),
           };
@@ -247,6 +248,18 @@ Page({
   },
   refreshOrders() {
     if (this.data.historyLoading) return;
+    const now = Date.now();
+    const key = 'dark_fund_history_refresh_times';
+    let refreshTimes = [];
+    try {
+      const saved = wx.getStorageSync(key);
+      refreshTimes = (Array.isArray(saved) ? saved : []).filter((time) => now - Number(time) < 60 * 1000);
+    } catch (error) {}
+    if (refreshTimes.length >= 2) {
+      return wx.showToast({ title: '请稍后再试', icon: 'none' });
+    }
+    refreshTimes.push(now);
+    try { wx.setStorageSync(key, refreshTimes); } catch (error) {}
     this.loadOrders(false, 1)
       .then(() => wx.showToast({ title: '订单已刷新', icon: 'success', duration: 1000 }));
   },
@@ -256,7 +269,7 @@ Page({
   },
   openOrder(e) {
     const order = this.data.orders.find((item) => item.id === e.currentTarget.dataset.id);
-    if (!order || !order.ready) return wx.showToast({ title: order && order.failed ? (order.error || '查询失败，次数已退回') : '等待结果', icon: 'none' });
+    if (!order || !order.ready) return wx.showToast({ title: order && order.failed ? '请稍后再试' : '等待结果', icon: 'none' });
     api.getDarkFundOrder(order.id)
       .then((readyOrder) => {
         if (!readyOrder) throw new Error('查询结果不存在');
@@ -303,6 +316,7 @@ Page({
       quotaExpiryText: formatExpiryDate(result && result.quotaExpiresAt),
       closeMonthlyActive: result && result.closeMonthlyActive === true,
       closeMonthlyExpiryText: formatExpiryDate(result && result.closeMonthlyExpireAt),
+      decisionPioneerEnabled: result && result.decisionPioneerEnabled === true,
     };
   },
   onUnload() {
@@ -340,6 +354,7 @@ Page({
   },
   noop() {},
   errorText(error) {
-    return (error && (error.errMsg || (error.data && error.data.error) || error.message)) || '请稍后重试';
+    const message = (error && (error.errMsg || (error.data && error.data.error) || error.message)) || '';
+    return /require\s*:?\s*ok/i.test(String(message)) ? '请稍后再试' : (message || '请稍后再试');
   },
 });

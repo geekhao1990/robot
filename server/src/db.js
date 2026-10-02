@@ -19,7 +19,7 @@ let lastReactionsSignature = null;
 
 const ENTITLEMENT_KEYS = Object.freeze([
   'goldExpire', 'goldQuotaGiftMigrated', 'serviceExpire', 'servicePlan',
-  'courseAccessPermanent', 'darkFundEnabled', 'darkFundRemaining',
+  'courseAccessPermanent', 'darkFundEnabled', 'decisionPioneerEnabled', 'darkFundRemaining',
   'darkFundManualRemaining', 'darkFundServiceRemaining',
   'darkFundServicePeriodStart', 'darkFundServicePeriodExpire', 'darkFundCloseExpire',
 ]);
@@ -400,6 +400,10 @@ function ensureContentTypes() {
     }
     if (typeof user.darkFundEnabled !== 'boolean') {
       user.darkFundEnabled = false;
+      changed = true;
+    }
+    if (typeof user.decisionPioneerEnabled !== 'boolean') {
+      user.decisionPioneerEnabled = false;
       changed = true;
     }
     if (!Number.isFinite(Number(user.darkFundCloseExpire))) { user.darkFundCloseExpire = 0; changed = true; }

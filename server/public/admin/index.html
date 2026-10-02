@@ -567,6 +567,7 @@ function drawUsers() {
     const goldActive = Number(u.goldExpire) > Date.now();
     const serviceActive = Number(u.serviceExpire) > Date.now();
     const darkFundActive = u.darkFundEnabled === true;
+    const decisionPioneerActive = u.decisionPioneerEnabled === true;
     const goldStatus = goldActive
       ? `<span class="tag vip">金手指卡 · 至 ${fmtDate(u.goldExpire)}</span>`
       : (u.goldExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
@@ -575,7 +576,7 @@ function drawUsers() {
       ? `<span class="tag vip">${serviceName} · 至 ${fmtDate(u.serviceExpire)}</span>`
       : (u.serviceExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
     const darkFundStatus = darkFundActive
-      ? `<span class="tag vip">已开通 · 剩余 ${Math.max(0, Number(u.darkFundRemaining) || 0)} 次</span><div class="hint">服务包 ${Math.max(0, Number(u.darkFundServiceRemaining) || 0)} · 永久 ${Math.max(0, Number(u.darkFundManualRemaining) || 0)}</div>`
+      ? `<span class="tag vip">盘后查询已开通 · 剩余 ${Math.max(0, Number(u.darkFundRemaining) || 0)} 次</span><div class="hint">服务包 ${Math.max(0, Number(u.darkFundServiceRemaining) || 0)} · 永久 ${Math.max(0, Number(u.darkFundManualRemaining) || 0)}</div><div style="margin-top:6px">${decisionPioneerActive ? '<span class="tag vip">决策先锋已开通</span>' : '<span class="tag">决策先锋未开通</span>'}</div>`
       : '<span class="tag">未开通</span>';
     return `
       <tr>
@@ -599,6 +600,8 @@ function drawUsers() {
           <button class="btn-sm del" ${serviceActive ? '' : 'disabled'} onclick='cancelService("${u.id}")'>取消服务包</button>
           <button class="btn-sm" ${darkFundActive ? 'disabled' : ''} onclick='setDarkFunds("${u.id}","open")'>开通暗盘资金</button>
           <button class="btn-sm del" ${darkFundActive ? '' : 'disabled'} onclick='setDarkFunds("${u.id}","cancel")'>关闭暗盘资金</button>
+          <button class="btn-sm" ${darkFundActive && !decisionPioneerActive ? '' : 'disabled'} onclick='setDecisionPioneer("${u.id}","open")'>开通决策先锋</button>
+          <button class="btn-sm del" ${decisionPioneerActive ? '' : 'disabled'} onclick='setDecisionPioneer("${u.id}","cancel")'>关闭决策先锋</button>
           <button class="btn-sm" onclick='setDarkFundQuota("${u.id}")'>设置查询次数</button>
           <button class="btn-sm" onclick='editUser("${u.id}")'>编辑</button>
         </td>
@@ -680,6 +683,13 @@ function setDarkFunds(id, action) {
   if (!confirm(`确定为该用户「${label}」吗？`)) return;
   api('/api/admin/users/' + id + '/dark-funds', { method: 'PUT', body: JSON.stringify({ action }) })
     .then(() => { showAdminToast(action === 'open' ? '暗盘资金已开通' : '暗盘资金已关闭'); renderUsers(); })
+    .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
+}
+function setDecisionPioneer(id, action) {
+  const label = action === 'open' ? '开通决策先锋' : '关闭决策先锋';
+  if (!confirm(`确定为该用户「${label}」吗？`)) return;
+  api('/api/admin/users/' + id + '/decision-pioneer', { method: 'PUT', body: JSON.stringify({ action }) })
+    .then(() => { showAdminToast(action === 'open' ? '决策先锋已开通' : '决策先锋已关闭'); renderUsers(); })
     .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
 }
 function setDarkFundQuota(id) {
@@ -1224,7 +1234,7 @@ function renderSettings() {
         <div class="field">
           <label>盘后暗盘数据源网址</label>
           <input id="settingDarkFundCloseApiUrl" value="${esc(settings.darkFundCloseApiUrl || '')}" placeholder="https://fundflow.shiluan.space" autocomplete="url" />
-          <div class="hint">用于暗盘【盘后】查询；盘中查询仍使用 Windows 采集器。</div>
+          <div class="hint">用于盘后查询；决策先锋仍使用 Windows 采集器。</div>
         </div>
         <div class="field">
           <label>盘后暗盘数据源账号</label>

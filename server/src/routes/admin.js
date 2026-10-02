@@ -596,6 +596,7 @@ module.exports = function register(router, HttpError) {
       courseAccessPermanent: false,
       official: b.official === true,
       darkFundEnabled: false,
+      decisionPioneerEnabled: false,
       darkFundRemaining: 0,
       darkFundManualRemaining: 0,
       darkFundServiceRemaining: 0,
@@ -762,6 +763,28 @@ module.exports = function register(router, HttpError) {
         targetType: 'dark_home',
         dedupeKey: `admin-dark-quota:${user.id}:${remaining}:${Date.now()}`,
       });
+    }
+    db.save();
+    return user;
+  });
+
+  // “决策先锋”是盘中采集器查询的独立权限，不随暗盘盘后权限自动开通。
+  router.put('/api/admin/users/:id/decision-pioneer', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    const user = d.users.find((u) => u.id === ctx.params.id);
+    if (!user) throw new HttpError(404, '用户不存在');
+    const action = String((ctx.body || {}).action || '');
+    const active = user.decisionPioneerEnabled === true;
+    if (action === 'open') {
+      if (active) throw new HttpError(409, '该用户已开通决策先锋');
+      if (user.darkFundEnabled !== true) throw new HttpError(409, '请先开通暗盘资金入口');
+      user.decisionPioneerEnabled = true;
+    } else if (action === 'cancel') {
+      if (!active) throw new HttpError(409, '该用户未开通决策先锋');
+      user.decisionPioneerEnabled = false;
+    } else {
+      throw new HttpError(400, 'action 须为 open/cancel');
     }
     db.save();
     return user;
