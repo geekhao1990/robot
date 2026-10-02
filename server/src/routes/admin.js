@@ -8,6 +8,7 @@ const { normalizeResourceLinks } = require('../resource-links');
 const crypto = require('crypto');
 const goldFingerSync = require('../gold-finger-sync');
 const { notifyFollowersOfNote, pushNotification } = require('../notifications');
+const { URL } = require('url');
 
 module.exports = function register(router, HttpError) {
   const baseCategories = Object.values(TYPE_LABELS);
@@ -82,11 +83,21 @@ module.exports = function register(router, HttpError) {
   });
 
   // ---------- 功能设置 ----------
+  const adminCloseSettings = (data) => {
+    const settings = data.settings || {};
+    return {
+      darkFundCloseApiUrl: String(settings.darkFundCloseApiUrl || process.env.DARK_FUND_CLOSE_API_URL || 'https://fundflow.shiluan.space').trim(),
+      darkFundCloseUsername: String(settings.darkFundCloseUsername || process.env.DARK_FUND_CLOSE_USERNAME || '').trim(),
+      darkFundClosePasswordConfigured: !!(settings.darkFundClosePassword || process.env.DARK_FUND_CLOSE_PASSWORD),
+    };
+  };
+
   router.get('/api/admin/settings', (ctx) => {
     requireAuth(ctx);
     const d = db.get();
     return {
       ...pubSettings(d),
+      ...adminCloseSettings(d),
       hotSearch: Array.isArray(d.hotSearch) ? d.hotSearch : [],
     };
   });
@@ -133,14 +144,34 @@ module.exports = function register(router, HttpError) {
     if (!d.notes.some((n) => n.id === b.featuredNoteId && n.type === 'gold')) {
       throw new HttpError(400, '请选择金手指类型的入口笔记');
     }
+    const oldSettings = d.settings || {};
+    const urlSupplied = Object.prototype.hasOwnProperty.call(b, 'darkFundCloseApiUrl');
+    const usernameSupplied = Object.prototype.hasOwnProperty.call(b, 'darkFundCloseUsername');
+    const passwordSupplied = Object.prototype.hasOwnProperty.call(b, 'darkFundClosePassword');
+    const darkFundCloseApiUrl = String(urlSupplied ? b.darkFundCloseApiUrl : oldSettings.darkFundCloseApiUrl || '').trim().replace(/\/+$/, '');
+    const darkFundCloseUsername = String(usernameSupplied ? b.darkFundCloseUsername : oldSettings.darkFundCloseUsername || '').trim();
+    if (darkFundCloseApiUrl) {
+      let parsed;
+      try { parsed = new URL(darkFundCloseApiUrl); } catch (_) { throw new HttpError(400, '请输入有效的盘后数据源网址'); }
+      if (!['http:', 'https:'].includes(parsed.protocol) || darkFundCloseApiUrl.length > 500) {
+        throw new HttpError(400, '盘后数据源网址必须是有效的 HTTP 或 HTTPS 地址');
+      }
+    }
+    if (darkFundCloseUsername.length > 128) throw new HttpError(400, '盘后数据源账号不能超过128个字符');
+    const enteredPassword = passwordSupplied ? String(b.darkFundClosePassword || '') : '';
+    if (enteredPassword.length > 512) throw new HttpError(400, '盘后数据源密码不能超过512个字符');
+    const darkFundClosePassword = enteredPassword || oldSettings.darkFundClosePassword || '';
     d.settings = {
       rewardedAdEnabled: !!(adUnits.rewardedVideoAdUnitId || adUnits.goldRewardedVideoAdUnitId),
       ...adUnits,
       featuredNoteId: b.featuredNoteId,
+      darkFundCloseApiUrl,
+      darkFundCloseUsername,
+      darkFundClosePassword,
     };
     d.hotSearch = hotSearch;
     db.save();
-    return { ...pubSettings(d), hotSearch };
+    return { ...pubSettings(d), ...adminCloseSettings(d), hotSearch };
   });
 
   // ---------- 独立金手指每日数据 ----------

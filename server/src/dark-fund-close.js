@@ -79,6 +79,7 @@ const SAMPLE_CLOSE_PAYLOAD = {
 
 const { isTradingDay } = require('./trading-date');
 const { stockInitials } = require('./stock-lookup');
+const db = require('./db');
 
 const MONEY_FIELDS = ['main', 'grey', 'listed', 'super_large', 'large', 'middle', 'small'];
 
@@ -176,8 +177,13 @@ const CLOSE_TASK_PENDING_STATES = new Set(['queued', 'checking_cache', 'fetching
 let closeSession = null;
 let closeLoginPromise = null;
 
-function closeBaseUrl() {
-  return String(process.env.DARK_FUND_CLOSE_API_URL || 'https://fundflow.shiluan.space').trim().replace(/\/+$/, '');
+function closeConfig() {
+  const settings = (db.get() && db.get().settings) || {};
+  const base = String(settings.darkFundCloseApiUrl || process.env.DARK_FUND_CLOSE_API_URL || 'https://fundflow.shiluan.space')
+    .trim().replace(/\/+$/, '');
+  const username = String(settings.darkFundCloseUsername || process.env.DARK_FUND_CLOSE_USERNAME || '').trim();
+  const password = String(settings.darkFundClosePassword || process.env.DARK_FUND_CLOSE_PASSWORD || '');
+  return { base, username, password, key: `${base}\n${username}\n${password}` };
 }
 
 function timeoutMs() {
@@ -214,13 +220,11 @@ function csrfFromHtml(html) {
   return matched ? matched[1] : '';
 }
 
-async function loginCloseService() {
-  const username = String(process.env.DARK_FUND_CLOSE_USERNAME || '').trim();
-  const password = String(process.env.DARK_FUND_CLOSE_PASSWORD || '');
+async function loginCloseService(config = closeConfig()) {
+  const { base, username, password } = config;
   if (!username || !password) {
     throw Object.assign(new Error('盘后数据账号尚未配置'), { status: 503 });
   }
-  const base = closeBaseUrl();
   const cookies = new Map();
   const loginPage = await requestWithTimeout(`${base}/`, { headers: { Accept: 'text/html' } });
   mergeCookies(cookies, loginPage.headers);
@@ -252,13 +256,15 @@ async function loginCloseService() {
   if (!appPage.ok || !csrf || /<title>\s*登录\s*-/i.test(appHtml)) {
     throw Object.assign(new Error('盘后数据账号或密码不正确'), { status: 502 });
   }
-  return { base, cookies, csrf, createdAt: Date.now() };
+  return { base, cookies, csrf, createdAt: Date.now(), configKey: config.key };
 }
 
 async function getCloseSession(force = false) {
-  if (!force && closeSession && Date.now() - closeSession.createdAt < 20 * 60 * 1000) return closeSession;
+  const config = closeConfig();
+  if (!force && closeSession && closeSession.configKey === config.key && Date.now() - closeSession.createdAt < 20 * 60 * 1000) return closeSession;
+  if (closeSession && closeSession.configKey !== config.key) closeSession = null;
   if (!closeLoginPromise) {
-    closeLoginPromise = loginCloseService()
+    closeLoginPromise = loginCloseService(config)
       .then((session) => { closeSession = session; return session; })
       .finally(() => { closeLoginPromise = null; });
   }

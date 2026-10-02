@@ -90,6 +90,34 @@ test('legacy VIP administration endpoint is removed', async () => {
   await assert.rejects(call('PUT', '/api/admin/users/u1/vip', { plan: 'month' }), /handler/);
 });
 
+test('admin can maintain close data source without exposing or clearing its password', async () => {
+  const { data, call } = setup();
+  data.notes.push({ id: 'gold-entry', type: 'gold' });
+  data.settings = { featuredNoteId: 'gold-entry' };
+  const payload = {
+    rewardedAdEnabled: true,
+    featuredNoteId: 'gold-entry',
+    hotSearch: [],
+    darkFundCloseApiUrl: 'https://fundflow.shiluan.space/',
+    darkFundCloseUsername: ' test15 ',
+    darkFundClosePassword: 'test-password',
+  };
+  await assert.rejects(call('PUT', '/api/admin/settings', payload, ''), { status: 401 });
+  const saved = await call('PUT', '/api/admin/settings', payload);
+  assert.equal(data.settings.darkFundCloseApiUrl, 'https://fundflow.shiluan.space');
+  assert.equal(data.settings.darkFundCloseUsername, 'test15');
+  assert.equal(data.settings.darkFundClosePassword, 'test-password');
+  assert.equal(saved.darkFundClosePasswordConfigured, true);
+  assert.equal(Object.prototype.hasOwnProperty.call(saved, 'darkFundClosePassword'), false);
+
+  const kept = await call('PUT', '/api/admin/settings', { ...payload, darkFundClosePassword: '' });
+  assert.equal(data.settings.darkFundClosePassword, 'test-password');
+  assert.equal(kept.darkFundClosePasswordConfigured, true);
+  const fetched = await call('GET', '/api/admin/settings');
+  assert.equal(fetched.darkFundCloseUsername, 'test15');
+  assert.equal(Object.prototype.hasOwnProperty.call(fetched, 'darkFundClosePassword'), false);
+});
+
 test('admin can save a trimmed user remark with a length limit', async () => {
   const { data, call } = setup();
   await assert.rejects(call('PUT', '/api/admin/users/u1', { remark: '重点客户' }, ''), { status: 401 });
