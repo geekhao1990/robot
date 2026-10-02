@@ -305,7 +305,7 @@ function darkOrdersHtml(orders) {
     const ready = order.ready === true || order.status === 'READY' || order.status === 'SUCCESS';
     const failed = String(order.status).includes('FAILED');
     const type = order.queryMode === 'close' ? '盘后查询' : '盘中查询';
-    const name = darkQueryStockName(order.stockName);
+    const name = order.stockDisplayName || darkQueryStockName(order.stockName);
     const marketCode = `${/^[569]/.test(String(order.stockCode || '')) ? 'sh' : 'sz'}${order.stockCode || ''}`;
     return `<article class="order" data-order="${escapeHtml(order.id)}" data-ready="${ready}"><div><div class="order-stock-name">${name ? `<strong>${escapeHtml(name)}</strong>` : ''}<span>${escapeHtml(marketCode)}</span></div><small>${escapeHtml(type)} · ${formatTime(order.createdAt)}</small></div><span class="status ${ready ? 'ready' : ''}">${ready ? '点击查看' : (failed ? '查询失败' : '等待结果')}</span></article>`;
   }).join('');
@@ -331,7 +331,7 @@ function drawDarkStockDropdown() {
   if (state.darkStockSuggestion) {
     const item = state.darkStockSuggestion;
     host.className = 'stock-dropdown visible';
-    host.innerHTML = `<div class="stock-dropdown-row"><strong>${escapeHtml(item.stockCode)}</strong><span>${escapeHtml(darkQueryStockName(item.stockName) || '新股或未收录，可继续提交')}</span></div>`;
+    host.innerHTML = `<div class="stock-dropdown-row"><strong>${escapeHtml(item.stockCode)}</strong><span>${escapeHtml(item.stockDisplayName || darkQueryStockName(item.stockName) || '新股或未收录，可继续提交')}</span></div>`;
     return;
   }
   host.className = 'stock-dropdown';
@@ -359,6 +359,7 @@ async function lookupWebStock(rawCode) {
     state.darkStockSuggestion = {
       stockCode: String(result.stockCode || stockCode),
       stockName: String(result.stockName || ''),
+      stockDisplayName: String(result.stockDisplayName || ''),
     };
   } catch (error) {
     if (sequence !== state.darkStockLookupSequence) return;
@@ -478,7 +479,7 @@ submitDark = async function submitDarkWithLookup(requestedMode = 'close') {
     return toast(state.darkStockLookupError || '请先确认股票代码');
   }
   const stockName = state.darkStockSuggestion.stockName;
-  const displayName = darkQueryStockName(stockName);
+  const displayName = state.darkStockSuggestion.stockDisplayName || darkQueryStockName(stockName);
   const dateText = String(state.darkTradeDate || '').trim();
   const queryMode = requestedMode === 'intraday' ? 'intraday' : 'close';
   const source = queryMode === 'intraday' ? 'collector' : 'web';

@@ -1,4 +1,26 @@
 const stockMap = require('../data/stock-map.json');
+const { pinyin } = require('pinyin-pro');
+
+function stockInitials(name) {
+  const value = String(name || '').trim();
+  if (!value) return '';
+  return pinyin(value, { pattern: 'first', toneType: 'none', type: 'array' })
+    .map((item) => /^[a-z]$/i.test(item) ? item.toUpperCase() : item)
+    .join('');
+}
+
+function stockDisplayName(name, initials = stockInitials(name)) {
+  const chars = Array.from(String(name || '').trim());
+  const letters = Array.from(String(initials || ''));
+  let chineseCount = 0;
+  return chars.map((char, index) => {
+    if (!/[\u3400-\u9fff]/u.test(char)) return char;
+    chineseCount += 1;
+    if (chineseCount <= 2) return char;
+    const initial = letters[index];
+    return /^[a-z]$/i.test(initial || '') ? initial.toUpperCase() : char;
+  }).join('');
+}
 
 function isBeijingStockCode(code) {
   const value = String(code || '').trim();
@@ -26,7 +48,14 @@ function lookupStock(code) {
     throw error;
   }
   const stockName = String(stockMap[value] || '').trim();
-  return { stockCode: value, stockName, matched: Boolean(stockName) };
+  const initials = stockInitials(stockName);
+  return {
+    stockCode: value,
+    stockName,
+    stockInitials: initials,
+    stockDisplayName: stockDisplayName(stockName, initials),
+    matched: Boolean(stockName),
+  };
 }
 
-module.exports = { isBeijingStockCode, lookupStock, marketFor };
+module.exports = { isBeijingStockCode, lookupStock, marketFor, stockDisplayName, stockInitials };

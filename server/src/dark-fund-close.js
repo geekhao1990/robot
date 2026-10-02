@@ -78,6 +78,7 @@ const SAMPLE_CLOSE_PAYLOAD = {
 };
 
 const { isTradingDay } = require('./trading-date');
+const { stockInitials } = require('./stock-lookup');
 
 const MONEY_FIELDS = ['main', 'grey', 'listed', 'super_large', 'large', 'middle', 'small'];
 
@@ -140,6 +141,7 @@ function normalizeCloseDarkFund(payload, expectedCode = '') {
     validationVersion: 2,
     stockCode,
     stockName: name,
+    stockInitials: stockInitials(name),
     tradeDate,
     versionLabel,
     versionKey: String(payload.version_key || '').trim(),

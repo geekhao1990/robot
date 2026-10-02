@@ -16,15 +16,16 @@ function formatExpiryDate(timestamp) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-const STOCK_NAME_INITIALS = {
-  股: 'G', 份: 'F', 科: 'K', 技: 'J', 集: 'J', 团: 'T', 银: 'Y', 行: 'H', 能: 'N', 源: 'Y',
-  实: 'S', 业: 'Y', 发: 'F', 展: 'Z', 电: 'D', 子: 'Z', 生: 'S', 物: 'W', 医: 'Y', 药: 'Y', 新: 'X', 材: 'C',
-};
-
-function displayStockName(name) {
+function displayStockName(name, initials = '') {
   const chars = Array.from(String(name || '').trim());
-  if (chars.length <= 2) return chars.join('');
-  return `${chars.slice(0, 2).join('')}${chars.slice(2).map((char) => STOCK_NAME_INITIALS[char] || char).join('')}`;
+  const letters = Array.from(String(initials || ''));
+  let chineseCount = 0;
+  return chars.map((char, index) => {
+    if (!/[\u3400-\u9fff]/u.test(char)) return char;
+    chineseCount += 1;
+    if (chineseCount <= 2) return char;
+    return /^[a-z]$/i.test(letters[index] || '') ? letters[index].toUpperCase() : char;
+  }).join('');
 }
 
 function marketStockCode(code) {
@@ -130,7 +131,8 @@ Page({
           stockSuggestion: {
             stockCode: String(result.stockCode || stockCode),
             stockName: String(result.stockName || ''),
-            stockDisplayName: displayStockName(result.stockName || ''),
+            stockInitials: String(result.stockInitials || ''),
+            stockDisplayName: String(result.stockDisplayName || '') || displayStockName(result.stockName || '', result.stockInitials),
             matched: result.matched === true,
           },
           stockLookupError: '',
@@ -155,7 +157,8 @@ Page({
       return wx.showToast({ title: this.data.stockLookupError || '请先确认股票代码', icon: 'none' });
     }
     if (!this.data.compactTradeDate) return wx.showToast({ title: '请稍后重试', icon: 'none' });
-    const stockName = displayStockName(this.data.stockSuggestion.stockName);
+    const stockName = this.data.stockSuggestion.stockDisplayName
+      || displayStockName(this.data.stockSuggestion.stockName, this.data.stockSuggestion.stockInitials);
     const content = queryMode === 'intraday'
       ? `是否查询暗盘【盘中】数据：${stockCode}${stockName ? ` ${stockName}` : ''}，查询日期${this.data.compactTradeDate}`
       : `是否查询暗盘【盘后】数据：${stockCode}${stockName ? ` ${stockName}` : ''}，查询近7日暗盘数据`;
@@ -215,7 +218,7 @@ Page({
             ...item,
             ready,
             failed,
-            stockDisplayName: displayStockName(item.stockName),
+            stockDisplayName: item.stockDisplayName || displayStockName(item.stockName, item.stockInitials),
             marketStockCode: marketStockCode(item.stockCode),
             queryTypeText: item.queryMode === 'close' ? '盘后查询' : '盘中查询',
             queryTimeText: formatQueryTime(item.createdAt),
