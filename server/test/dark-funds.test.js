@@ -148,7 +148,7 @@ test('query dispatches immediately and authenticated callback completes it idemp
   assert.equal(quota.permanentRemaining, 2);
   await assert.rejects(call('POST', '/api/dark-funds/orders', { stockCode: '123' }), { status: 400 });
   const created = await call('POST', '/api/dark-funds/orders', { stockCode: '600105' });
-  assert.equal(created.stockName, '永鼎股份');
+  assert.equal(created.stockName, '永鼎GF');
   assert.equal(created.status, 'QUEUED');
   assert.equal(created.ready, false);
   assert.equal(created.remaining, 1);

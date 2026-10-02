@@ -1,9 +1,23 @@
 const fs = require('fs');
 const path = require('path');
+const { pinyin } = require('pinyin-pro');
 
 const PAGE_SIZE = 100;
 const CONCURRENCY = 5;
 const output = path.join(__dirname, '../data/stock-map.json');
+
+function displayStockName(name) {
+  const value = String(name || '').trim();
+  const initials = pinyin(value, { pattern: 'first', toneType: 'none', type: 'array' });
+  let chineseCount = 0;
+  return Array.from(value).map((char, index) => {
+    if (!/[\u3400-\u9fff]/u.test(char)) return char;
+    chineseCount += 1;
+    if (chineseCount <= 2) return char;
+    const initial = initials[index];
+    return /^[a-z]$/i.test(initial) ? initial.toUpperCase() : char;
+  }).join('');
+}
 
 function requestUrl(page) {
   const params = new URLSearchParams({
@@ -49,7 +63,7 @@ async function main() {
   all.forEach((row) => {
     const code = String(row && row.f12 || '').trim();
     const name = String(row && row.f14 || '').trim();
-    if (/^\d{6}$/.test(code) && name && name !== '-') map[code] = name;
+    if (/^\d{6}$/.test(code) && name && name !== '-') map[code] = displayStockName(name);
   });
   const sorted = Object.fromEntries(Object.entries(map).sort(([a], [b]) => a.localeCompare(b)));
   fs.writeFileSync(output, `${JSON.stringify(sorted, null, 2)}\n`, 'utf8');
