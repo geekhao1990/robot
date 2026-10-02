@@ -15,6 +15,7 @@ const { fetchCloseDarkFund } = require('../dark-fund-close');
 const { callbackAuthorized, dispatchStockAnalysis } = require('../collector-client');
 const { persistCollectorImages } = require('../collector-images');
 const { pushNotification } = require('../notifications');
+const { lookupStock } = require('../stock-lookup');
 
 function darkFundOrderNo() {
   return `DF${Date.now()}${crypto.randomBytes(5).toString('hex')}`.slice(0, 32);
@@ -76,6 +77,7 @@ module.exports = function register(router, HttpError) {
     if (!['web', 'collector'].includes(querySource)) throw new HttpError(400, '查询来源无效');
     if (!/^[A-Za-z0-9_-]{12,80}$/.test(requestId)) throw new HttpError(400, '查询请求标识无效');
     if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
+    const stockInfo = lookupStock(stockCode);
     const d = db.get();
     d.darkFundOrders = Array.isArray(d.darkFundOrders) ? d.darkFundOrders : [];
     const existing = d.darkFundOrders.find((item) => item.userId === user.id && item.clientRequestId === requestId);
@@ -106,6 +108,7 @@ module.exports = function register(router, HttpError) {
       userId: user.id,
       product: 'dark-funds',
       stockCode,
+      stockName: stockInfo.stockName || '',
       queryMode,
       querySource,
       tradeDate,

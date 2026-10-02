@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { lookupStock } = require('./stock-lookup');
 const { compactDate } = require('./trading-date');
 
 const DARK_FUND_AUTHOR_ID = 'u1787979756047';
@@ -211,9 +212,13 @@ function refreshDarkFundOrderResult(data, order, result) {
 
 function publicDarkFundOrder(order) {
   const ready = order.status === 'READY' || order.status === 'SUCCESS';
+  const snapshotResult = order.snapshot && order.snapshot.result;
+  let mappedStockName = '';
+  try { mappedStockName = lookupStock(order.stockCode).stockName; } catch (error) {}
   return {
     id: order.id,
     stockCode: order.stockCode,
+    stockName: order.stockName || (snapshotResult && snapshotResult.stockName) || (order.collectorResult && order.collectorResult.stockName) || mappedStockName,
     queryMode: order.queryMode || 'intraday',
     querySource: order.querySource || 'collector',
     resultType: order.snapshot && order.snapshot.resultType || 'article',

@@ -44,6 +44,7 @@ function setup(options = {}) {
     },
     '../collector-client': collector, '../collector-images': collectorImages,
     '../notifications': require('../src/notifications'),
+    '../stock-lookup': require('../src/stock-lookup'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/payment.js'), 'utf8'), {
     module: mod, require: (id) => dependencyMap[id] || require(id), process,
@@ -126,6 +127,7 @@ test('online membership payment routes are removed', () => {
       '../collector-client': { callbackAuthorized: () => false, dispatchStockAnalysis: async () => ({}) },
       '../collector-images': { persistCollectorImages: () => [] },
       '../notifications': require('../src/notifications'),
+      '../stock-lookup': require('../src/stock-lookup'),
     }[id] || require(id)),
     process,
   });
@@ -143,6 +145,7 @@ test('query dispatches immediately and authenticated callback completes it idemp
   assert.equal(quota.permanentRemaining, 2);
   await assert.rejects(call('POST', '/api/dark-funds/orders', { stockCode: '123' }), { status: 400 });
   const created = await call('POST', '/api/dark-funds/orders', { stockCode: '600105' });
+  assert.equal(created.stockName, '永鼎股份');
   assert.equal(created.status, 'QUEUED');
   assert.equal(created.ready, false);
   assert.equal(created.remaining, 1);

@@ -27,6 +27,11 @@ function displayStockName(name) {
   return `${chars.slice(0, 2).join('')}${chars.slice(2).map((char) => STOCK_NAME_INITIALS[char] || char).join('')}`;
 }
 
+function marketStockCode(code) {
+  const value = String(code || '').replace(/^(sh|sz)/i, '');
+  return `${/^[569]/.test(value) ? 'sh' : 'sz'}${value}`;
+}
+
 Page({
   data: {
     tab: 'query',
@@ -217,7 +222,16 @@ Page({
         const normalized = rows.map((item) => {
           const ready = item.ready === true || item.status === 'READY' || item.status === 'SUCCESS';
           const failed = item.status === 'FAILED' || item.status === 'DISPATCH_FAILED';
-          return { ...item, ready, failed, queryTimeText: formatQueryTime(item.createdAt), statusText: ready ? '点击查看' : (failed ? '查询失败' : '等待结果') };
+          return {
+            ...item,
+            ready,
+            failed,
+            stockDisplayName: displayStockName(item.stockName),
+            marketStockCode: marketStockCode(item.stockCode),
+            queryTypeText: item.queryMode === 'close' ? '盘后查询' : '盘中查询',
+            queryTimeText: formatQueryTime(item.createdAt),
+            statusText: ready ? '点击查看' : (failed ? '查询失败' : '等待结果'),
+          };
         });
         const unread = Array.isArray(result)
           ? normalized.filter((item) => item.ready && item.unread).length

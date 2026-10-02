@@ -304,8 +304,10 @@ function darkOrdersHtml(orders) {
   return orders.map((order) => {
     const ready = order.ready === true || order.status === 'READY' || order.status === 'SUCCESS';
     const failed = String(order.status).includes('FAILED');
-    const type = order.queryMode === 'close' ? (order.querySource === 'web' ? '盘后网页' : '盘后采集器') : '盘中采集器';
-    return `<article class="order" data-order="${escapeHtml(order.id)}" data-ready="${ready}"><div><strong>${escapeHtml(order.stockCode)}</strong><small>${escapeHtml(type)} · ${formatTime(order.createdAt)}</small></div><span class="status ${ready ? 'ready' : ''}">${ready ? '点击查看' : (failed ? '查询失败' : '等待结果')}</span></article>`;
+    const type = order.queryMode === 'close' ? '盘后查询' : '盘中查询';
+    const name = darkQueryStockName(order.stockName);
+    const marketCode = `${/^[569]/.test(String(order.stockCode || '')) ? 'sh' : 'sz'}${order.stockCode || ''}`;
+    return `<article class="order" data-order="${escapeHtml(order.id)}" data-ready="${ready}"><div><div class="order-stock-name">${name ? `<strong>${escapeHtml(name)}</strong>` : ''}<span>${escapeHtml(marketCode)}</span></div><small>${escapeHtml(type)} · ${formatTime(order.createdAt)}</small></div><span class="status ${ready ? 'ready' : ''}">${ready ? '点击查看' : (failed ? '查询失败' : '等待结果')}</span></article>`;
   }).join('');
 }
 

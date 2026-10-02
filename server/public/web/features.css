@@ -679,3 +679,6 @@
 .close-table th { color:#999; }
 .close-table tbody td { font-family:"PingFang SC","Microsoft YaHei",Arial,sans-serif; font-size:14px; font-weight:700; line-height:1; }
 .close-disclaimer { padding:4px 18px 30px; color:#aaa; font-size:11px; line-height:1.6; text-align:center; }
+.order-stock-name { display:flex; align-items:baseline; gap:6px; min-width:0; }
+.order-stock-name strong { overflow:hidden; font-size:16px; letter-spacing:1px; text-overflow:ellipsis; white-space:nowrap; }
+.order-stock-name span { flex:none; color:#999; font-size:10px; font-weight:400; letter-spacing:0; }
