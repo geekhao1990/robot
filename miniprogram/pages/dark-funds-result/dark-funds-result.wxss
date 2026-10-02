@@ -59,12 +59,12 @@
 .table { width: 100%; border: 2rpx solid #dfe3e8; border-radius: 14rpx; box-sizing: border-box; }
 .tr { display: flex; min-height: 78rpx; border-top: 1rpx solid #e6e8eb; }
 .tr:first-child { border-top: 0; }
-.tr text { display: flex; flex: 1; align-items: center; justify-content: flex-end; min-width: 0; padding: 0 6rpx; font-size: 28rpx; text-align: right; box-sizing: border-box; }
-.tr text:first-child { flex: .72; justify-content: flex-start; padding-left: 14rpx; color: #111!important; text-align: left; }
+.tr text { display: flex; flex: 1; align-items: center; justify-content: center; min-width: 0; padding: 0 6rpx; font-size: 28rpx; text-align: center; box-sizing: border-box; }
+.tr text:first-child { flex: .72; justify-content: center; color: #111!important; text-align: center; }
 .tr.th { color: #475569; font-weight: 750; background: #f3f4f6; }
 .tr.th text { color: #475569!important; }
 .tr.th text, .tr.th text:first-child { justify-content: center; padding-right: 4rpx; padding-left: 4rpx; text-align: center; }
 .orders-table .tr text { padding-right: 3rpx; padding-left: 3rpx; font-size: 26rpx; }
-.orders-table .tr text:first-child { padding-left: 6rpx; }
+.orders-table .tr text:first-child { padding-right: 3rpx; padding-left: 3rpx; }
 .tr:not(.th) text { font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; font-size: 27rpx; font-weight: 700; line-height: 1; transform: scaleX(.86); }
 .disclaimer { padding: 8rpx 20rpx 40rpx; color: #aaa; font-size: 20rpx; line-height: 1.7; text-align: center; }
