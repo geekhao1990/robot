@@ -172,6 +172,7 @@ function baseAppSettings() {
     darkFundsQueryAdUnitId: String(config.darkFundsQueryAdUnitId || ''),
     darkFundsHistoryAdUnitId: String(config.darkFundsHistoryAdUnitId || ''),
     darkFundsCloseInterstitialAdUnitId: String(config.darkFundsCloseInterstitialAdUnitId || ''),
+    darkFundsCloseBannerAdUnitId: String(config.darkFundsCloseBannerAdUnitId || ''),
     profileAdUnitId: String(config.profileAdUnitId || ''),
     profileBottomAdUnitId: String(config.profileBottomAdUnitId || ''),
     messageCenterAdUnitId: String(config.messageCenterAdUnitId || ''),
@@ -199,6 +200,9 @@ function normalizeAppSettings(settings, fallback = baseAppSettings()) {
     darkFundsCloseInterstitialAdUnitId: settings && typeof settings.darkFundsCloseInterstitialAdUnitId === 'string'
       ? settings.darkFundsCloseInterstitialAdUnitId
       : fallback.darkFundsCloseInterstitialAdUnitId,
+    darkFundsCloseBannerAdUnitId: settings && typeof settings.darkFundsCloseBannerAdUnitId === 'string'
+      ? settings.darkFundsCloseBannerAdUnitId
+      : fallback.darkFundsCloseBannerAdUnitId,
     profileAdUnitId: settings && typeof settings.profileAdUnitId === 'string' ? settings.profileAdUnitId : fallback.profileAdUnitId,
     profileBottomAdUnitId: settings && typeof settings.profileBottomAdUnitId === 'string'
       ? settings.profileBottomAdUnitId

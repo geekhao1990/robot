@@ -87,7 +87,6 @@ Page({
         queryAdLoadFailed: false,
         historyAdLoadFailed: false,
       });
-      this.setupCloseInterstitial(settings && settings.darkFundsCloseInterstitialAdUnitId);
     });
     this.loadTradeDate();
   },
@@ -166,9 +165,7 @@ Page({
       confirmText: '确定',
       success: (result) => {
         if (!result.confirm) return;
-        if (queryMode === 'close') {
-          return this.showCloseInterstitial().finally(() => this.openMockCloseResult(stockCode));
-        }
+        if (queryMode === 'close') return this.openMockCloseResult(stockCode);
         return this.query(stockCode, queryMode, source);
       },
     });
@@ -179,21 +176,6 @@ Page({
       url: `/pages/dark-funds-result/dark-funds-result?mock=1&code=${encodeURIComponent(stockCode)}&name=${encodeURIComponent(stockName)}&date=${encodeURIComponent(this.data.tradeDate || this.data.compactTradeDate || '')}`,
       fail: () => wx.showToast({ title: '页面打开失败', icon: 'none' }),
     });
-  },
-  setupCloseInterstitial(value) {
-    const adUnitId = String(value || config.darkFundsCloseInterstitialAdUnitId || '');
-    if (!/^adunit-/i.test(adUnitId) || typeof wx.createInterstitialAd !== 'function') return;
-    if (this.closeInterstitialAd && this.closeInterstitialAd.destroy) this.closeInterstitialAd.destroy();
-    try { this.closeInterstitialAd = wx.createInterstitialAd({ adUnitId }); } catch (error) { this.closeInterstitialAd = null; }
-  },
-  showCloseInterstitial() {
-    const ad = this.closeInterstitialAd;
-    if (!ad || typeof ad.show !== 'function') return Promise.resolve(false);
-    return Promise.resolve(ad.show())
-      .then(() => true)
-      .catch(() => (typeof ad.load === 'function'
-        ? Promise.resolve(ad.load()).then(() => ad.show()).then(() => true).catch(() => false)
-        : false));
   },
   query(stockCode, queryMode, source) {
     if (this.data.querying) return;

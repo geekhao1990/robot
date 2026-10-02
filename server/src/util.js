@@ -66,6 +66,7 @@ function pubSettings(data) {
     darkFundsQueryAdUnitId: publicAdUnitId(raw.darkFundsQueryAdUnitId),
     darkFundsHistoryAdUnitId: publicAdUnitId(raw.darkFundsHistoryAdUnitId),
     darkFundsCloseInterstitialAdUnitId: publicAdUnitId(raw.darkFundsCloseInterstitialAdUnitId),
+    darkFundsCloseBannerAdUnitId: publicAdUnitId(raw.darkFundsCloseBannerAdUnitId),
     profileAdUnitId: publicAdUnitId(raw.profileAdUnitId),
     profileBottomAdUnitId: publicAdUnitId(raw.profileBottomAdUnitId),
     messageCenterAdUnitId: publicAdUnitId(raw.messageCenterAdUnitId),

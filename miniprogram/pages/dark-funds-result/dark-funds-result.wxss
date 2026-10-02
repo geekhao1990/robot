@@ -53,6 +53,7 @@
 .trend-empty { display: flex; align-items: center; justify-content: center; min-height: 360rpx; color: #aaa; font-size: 24rpx; }
 .detail-title { display: flex; align-items: center; gap: 16rpx; margin-bottom: 20rpx; font-size: 34rpx; font-weight: 800; }
 .detail-title::before { flex: 0 0 8rpx; width: 8rpx; height: 44rpx; content: ''; background: #ff3b30; border-radius: 999rpx; }
+.close-banner-ad { min-height: 0; margin: 0 0 24rpx; overflow: hidden; border-radius: 18rpx; }
 .detail-card { padding-right: 0; padding-left: 0; overflow: hidden; }
 .detail-card > .detail-title, .detail-card > .segment-control { margin-right: 30rpx; margin-left: 30rpx; }
 .table { width: 100%; border: 2rpx solid #dfe3e8; border-radius: 14rpx; box-sizing: border-box; }

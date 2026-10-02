@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const config = require('../../utils/config');
 
 const YELLOW = '#ffe50a';
 const TREND_AREA_GREEN = '#00ff00';
@@ -100,9 +101,14 @@ Page({
     trendMetricText: '',
     trendMetricPositive: true,
     trendHasData: false,
+    closeBannerAdUnitId: /^adunit-/i.test(String(config.darkFundsCloseBannerAdUnitId || ''))
+      ? String(config.darkFundsCloseBannerAdUnitId)
+      : '',
+    closeBannerAdLoadFailed: false,
     skeletonRows: [1, 2, 3, 4, 5],
   },
   onLoad(options) {
+    this.loadCloseAds();
     if (String(options && options.mock || '') === '1') {
       this.applyResult(createMockCloseResult(options));
       return;
@@ -116,6 +122,34 @@ Page({
         this.applyResult(result);
       })
       .catch((error) => this.setData({ loading: false, error: error && (error.errMsg || error.message) || '加载失败' }));
+  },
+  loadCloseAds() {
+    api.getAppSettings().then((settings) => {
+      const bannerId = String((settings && settings.darkFundsCloseBannerAdUnitId) || config.darkFundsCloseBannerAdUnitId || '');
+      const interstitialId = String((settings && settings.darkFundsCloseInterstitialAdUnitId) || config.darkFundsCloseInterstitialAdUnitId || '');
+      this.setData({
+        closeBannerAdUnitId: /^adunit-/i.test(bannerId) ? bannerId : '',
+        closeBannerAdLoadFailed: false,
+      });
+      this.showCloseInterstitial(interstitialId);
+    }).catch(() => {});
+  },
+  showCloseInterstitial(adUnitId) {
+    if (!/^adunit-/i.test(String(adUnitId || '')) || typeof wx.createInterstitialAd !== 'function') return;
+    try {
+      const ad = wx.createInterstitialAd({ adUnitId });
+      this.closeInterstitialAd = ad;
+      Promise.resolve(ad.show()).catch(() => (typeof ad.load === 'function'
+        ? Promise.resolve(ad.load()).then(() => ad.show()).catch(() => {})
+        : undefined));
+    } catch (error) {}
+  },
+  onCloseBannerAdError() {
+    this.setData({ closeBannerAdLoadFailed: true });
+  },
+  onUnload() {
+    if (this.closeInterstitialAd && typeof this.closeInterstitialAd.destroy === 'function') this.closeInterstitialAd.destroy();
+    this.closeInterstitialAd = null;
   },
   applyResult(result) {
     const days = result.days.slice().sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));

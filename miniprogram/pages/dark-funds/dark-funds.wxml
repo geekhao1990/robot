@@ -23,6 +23,14 @@
         <button class="query-button query-button-live" data-mode="intraday" bindtap="prepareQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">暗盘【盘中】查询</button>
         <button class="query-button query-button-close" data-mode="close" bindtap="prepareQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">暗盘【盘后】查询</button>
       </view>
+      <view class="quota-summary">
+        <view wx:if="{{closeMonthlyActive}}" class="remaining-tip">盘后包月：<text>无限查询</text><text wx:if="{{closeMonthlyExpiryText}}" class="quota-expiry">（有效至 {{closeMonthlyExpiryText}}）</text></view>
+        <view class="remaining-tip">剩余次数：<text>{{remaining}}</text></view>
+        <view class="quota-details">
+          <view><text>30天内到期</text><text>{{expiringRemaining}} 次<text wx:if="{{quotaExpiryText}}" class="quota-expiry">（有效至 {{quotaExpiryText}}）</text></text></view>
+          <view><text>长期有效</text><text>{{permanentRemaining}} 次</text></view>
+        </view>
+      </view>
       <view class="service-actions">
         <view class="service-button" bindtap="openEnterpriseWechat">
           <view class="service-icon">企</view>
@@ -31,14 +39,6 @@
         <view class="service-button" bindtap="openWechatPayment">
           <view class="service-icon payment">收</view>
           <view class="service-copy"><view class="service-title">老客扫码复购</view><view class="service-description">微信二维码</view></view>
-        </view>
-      </view>
-      <view class="quota-summary">
-        <view wx:if="{{closeMonthlyActive}}" class="remaining-tip">盘后包月：<text>无限查询</text><text wx:if="{{closeMonthlyExpiryText}}" class="quota-expiry">（有效至 {{closeMonthlyExpiryText}}）</text></view>
-        <view class="remaining-tip">剩余次数：<text>{{remaining}}</text></view>
-        <view class="quota-details">
-          <view><text>30天内到期</text><text>{{expiringRemaining}} 次<text wx:if="{{quotaExpiryText}}" class="quota-expiry">（有效至 {{quotaExpiryText}}）</text></text></view>
-          <view><text>长期有效</text><text>{{permanentRemaining}} 次</text></view>
         </view>
       </view>
       <view wx:if="{{queryAdUnitId && !queryAdLoadFailed}}" class="query-ad-slot">

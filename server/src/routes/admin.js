@@ -107,6 +107,7 @@ module.exports = function register(router, HttpError) {
       ['darkFundsQueryAdUnitId', '暗盘查询'],
       ['darkFundsHistoryAdUnitId', '暗盘历史订单'],
       ['darkFundsCloseInterstitialAdUnitId', '暗盘盘后查询插屏'],
+      ['darkFundsCloseBannerAdUnitId', '暗盘盘后结果页'],
       ['profileAdUnitId', '个人中心'],
       ['profileBottomAdUnitId', '个人中心末尾'],
       ['messageCenterAdUnitId', '消息中心'],

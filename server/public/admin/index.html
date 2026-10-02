@@ -1266,7 +1266,12 @@ function renderSettings() {
         <div class="field">
           <label>暗盘盘后查询插屏广告位 ID</label>
           <input id="settingDarkFundsCloseInterstitialAdUnitId" value="${esc(settings.darkFundsCloseInterstitialAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
-          <div class="hint">每次确认盘后暗盘查询时尝试展示；广告拉取失败不影响查询。</div>
+          <div class="hint">进入盘后暗盘结果页时尝试展示；广告拉取失败不影响查看。</div>
+        </div>
+        <div class="field">
+          <label>暗盘盘后结果页 Banner 广告位 ID</label>
+          <input id="settingDarkFundsCloseBannerAdUnitId" value="${esc(settings.darkFundsCloseBannerAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+          <div class="hint">展示在“近7日资金情况”上方，广告拉取失败时不显示。</div>
         </div>
         <div class="field">
           <label>“我”页面插屏广告位 ID</label>
@@ -1308,6 +1313,7 @@ function saveSettings() {
     darkFundsQueryAdUnitId: document.getElementById('settingDarkFundsQueryAdUnitId').value.trim(),
     darkFundsHistoryAdUnitId: document.getElementById('settingDarkFundsHistoryAdUnitId').value.trim(),
     darkFundsCloseInterstitialAdUnitId: document.getElementById('settingDarkFundsCloseInterstitialAdUnitId').value.trim(),
+    darkFundsCloseBannerAdUnitId: document.getElementById('settingDarkFundsCloseBannerAdUnitId').value.trim(),
     profileAdUnitId: document.getElementById('settingProfileAdUnitId').value.trim(),
     profileBottomAdUnitId: document.getElementById('settingProfileBottomAdUnitId').value.trim(),
     messageCenterAdUnitId: document.getElementById('settingMessageCenterAdUnitId').value.trim(),

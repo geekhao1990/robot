@@ -37,6 +37,8 @@ module.exports = {
   darkFundsHistoryAdUnitId: '',
   // 每次盘后暗盘查询时尝试展示的插屏广告位。
   darkFundsCloseInterstitialAdUnitId: '',
+  // 盘后暗盘结果页“近7日资金情况”上方的 Banner 广告位。
+  darkFundsCloseBannerAdUnitId: '',
   // 进入“我”页面时展示的插屏广告位。
   profileAdUnitId: '',
   // “我”页面收藏/赞过模块之后的 Banner 广告位。

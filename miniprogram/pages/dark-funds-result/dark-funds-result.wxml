@@ -54,6 +54,9 @@
         <view wx:else class="trend-empty">历史数据不足，暂时无法绘制该周期</view>
       </block>
     </view>
+    <view wx:if="{{closeBannerAdUnitId && !closeBannerAdLoadFailed}}" class="close-banner-ad">
+      <ad unit-id="{{closeBannerAdUnitId}}" binderror="onCloseBannerAdError" />
+    </view>
     <view class="card detail-card">
       <view class="detail-title">近7日资金情况</view>
       <view class="segment-control">
