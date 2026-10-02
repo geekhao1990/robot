@@ -20,4 +20,5 @@ test('PC SaaS entry is served and uses the shared business APIs', () => {
   assert.match(payment, /\/api\/dark-funds\/orders\/intraday/);
   assert.match(app, /\/api\/gold-finger\/latest/);
   assert.match(app, /nl_web_token/);
+  assert.match(app, /https:\/\/app\.nankaitechschool\.com/);
 });
