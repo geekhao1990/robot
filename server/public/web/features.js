@@ -486,6 +486,10 @@ submitDark = async function submitDarkWithLookup(requestedMode = 'close') {
     ? `是否查询暗盘【盘中】数据：${code}${displayName ? ` ${displayName}` : ''}，查询日期${dateText}`
     : `是否查询暗盘【盘后】数据：${code}${displayName ? ` ${displayName}` : ''}，查询近7日暗盘数据`;
   if (!confirm(description)) return;
+  if (queryMode === 'close') {
+    history.pushState({ darkMock: true }, '', `#dark-result/mock?code=${encodeURIComponent(code)}&name=${encodeURIComponent(stockName || '')}&date=${encodeURIComponent(dateText || '')}`);
+    return renderCloseDarkResult({ snapshot: { result: createWebMockCloseResult(code, stockName, dateText) } });
+  }
   const requestId = `web_${Date.now()}_${queryMode}_${source}_${Math.random().toString(36).slice(2, 9)}`;
   try {
     const order = await api('/api/dark-funds/orders', { method: 'POST', body: JSON.stringify({ stockCode: code, request_id: requestId, query_mode: queryMode, source }) });
