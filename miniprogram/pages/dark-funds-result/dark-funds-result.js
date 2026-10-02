@@ -2,6 +2,7 @@ const api = require('../../utils/api');
 const config = require('../../utils/config');
 
 const YELLOW = '#ffe50a';
+const TREND_AREA_RED = '#ff0000';
 const TREND_AREA_GREEN = '#00ff00';
 
 function chooseUnit(values) {
@@ -298,7 +299,7 @@ Page({
       context.rect(padding.left, padding.top, plotWidth, Math.max(0, zeroY - padding.top));
       context.clip();
       areaPath();
-      context.fillStyle = TREND_AREA_GREEN;
+      context.fillStyle = TREND_AREA_RED;
       context.fill();
       context.restore();
       context.save();
