@@ -476,7 +476,7 @@ submitDark = async function submitDarkWithLookup(requestedMode = 'close') {
   if (!confirm(description)) return;
   const requestId = `web_${Date.now()}_${queryMode}_${source}_${Math.random().toString(36).slice(2, 9)}`;
   try {
-    const order = await api('/api/dark-funds/orders', { method: 'POST', body: JSON.stringify({ stockCode: code, request_id: requestId, query_mode: queryMode, source }) });
+    const order = await api(`/api/dark-funds/orders/${queryMode}`, { method: 'POST', body: JSON.stringify({ stockCode: code, request_id: requestId }) });
     try { localStorage.removeItem('nl_dark_pending_request'); } catch (_) {}
     if (order.ready && order.resultType === 'close_snapshot') {
       history.pushState({ darkOrder: order.orderId }, '', `#dark-result/${encodeURIComponent(order.orderId)}`);

@@ -63,10 +63,10 @@ module.exports = function register(router, HttpError) {
     };
   });
 
-  router.post('/api/dark-funds/orders', async (ctx) => {
+  const createDarkFundOrder = async (ctx, forcedQueryMode = '') => {
     const user = currentUser(ctx);
     const stockCode = String((ctx.body || {}).stockCode || '').trim();
-    const queryMode = String((ctx.body || {}).query_mode || 'intraday').trim().toLowerCase();
+    const queryMode = forcedQueryMode || String((ctx.body || {}).query_mode || 'intraday').trim().toLowerCase();
     // 查询通道只由用户点击的查询类型决定。盘后查询绝不允许落到 Windows 采集器。
     const querySource = queryMode === 'intraday' ? 'collector' : 'web';
     const suppliedRequestId = String((ctx.body || {}).request_id || '').trim();
@@ -106,6 +106,9 @@ module.exports = function register(router, HttpError) {
           throw new HttpError(Number(error && error.status) || 502, error && error.message || '盘后数据获取失败');
         }
       }
+    }
+    if (queryMode === 'close' && !closeResult) {
+      throw new HttpError(502, '盘后数据未生成，已阻止连接 Windows 采集器');
     }
     const consumed = useCloseMonthly ? { ...available, source: 'close_month' } : consumeDarkFundQuota(user);
     if (!consumed) throw new HttpError(403, '暗盘资金查询次数已用完');
@@ -171,7 +174,12 @@ module.exports = function register(router, HttpError) {
       db.save();
       throw error;
     }
-  });
+  };
+
+  // 两个独立入口从路由层固定查询类型，避免请求体缺失或旧客户端字段串线。
+  router.post('/api/dark-funds/orders/intraday', (ctx) => createDarkFundOrder(ctx, 'intraday'));
+  router.post('/api/dark-funds/orders/close', (ctx) => createDarkFundOrder(ctx, 'close'));
+  router.post('/api/dark-funds/orders', (ctx) => createDarkFundOrder(ctx));
 
   router.get('/api/dark-funds/orders', (ctx) => {
     const user = currentUser(ctx);

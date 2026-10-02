@@ -293,9 +293,11 @@ function lookupStock(code) {
 }
 
 function createDarkFundOrder(stockCode, requestId, queryMode = 'intraday', source = 'collector') {
-  return request('POST', '/api/dark-funds/orders', {
+  const mode = queryMode === 'close' ? 'close' : 'intraday';
+  return request('POST', `/api/dark-funds/orders/${mode}`, {
     auth: true,
-    data: { stockCode, request_id: requestId, query_mode: queryMode, source },
+    data: { stockCode, request_id: requestId },
+    timeout: mode === 'close' ? 100000 : 10000,
   });
 }
 

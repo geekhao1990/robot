@@ -216,6 +216,18 @@ test('盘后查询只由查询类型决定且永不连接 Windows 采集器', as
   assert.equal(viewed.snapshot.result.stockName, '永鼎股份');
 });
 
+test('盘后独立接口忽略错误请求字段并且永不连接采集器', async () => {
+  const closeResult = require('../src/dark-fund-close').normalizeCloseDarkFund(require('../src/dark-fund-close').SAMPLE_CLOSE_PAYLOAD, '600105');
+  const { call, collectorDispatchCount } = setup({ closeResult });
+  const created = await call('POST', '/api/dark-funds/orders/close', {
+    stockCode: '600105', request_id: 'df_close_dedicated_route', query_mode: 'intraday', source: 'collector',
+  });
+  assert.equal(created.ready, true);
+  assert.equal(created.queryMode, 'close');
+  assert.equal(created.querySource, 'web');
+  assert.equal(collectorDispatchCount(), 0);
+});
+
 test('同一股票收盘快照在下个交易日开市前直接命中缓存', async () => {
   const closeResult = require('../src/dark-fund-close').normalizeCloseDarkFund(require('../src/dark-fund-close').SAMPLE_CLOSE_PAYLOAD, '600105');
   const { data, call, closeFetchCount } = setup({ closeResult, isReusableCloseResult: () => true });
