@@ -46,6 +46,7 @@ function setup(options = {}) {
         throw Object.assign(new Error('盘后数据接口尚未配置，可改用采集器查询'), { status: 503 });
       },
       isReusableCloseResult: options.isReusableCloseResult || require('../src/dark-fund-close').isReusableCloseResult,
+      nextTradingOpenAt: require('../src/dark-fund-close').nextTradingOpenAt,
     },
     '../collector-client': collector, '../collector-images': collectorImages,
     '../notifications': require('../src/notifications'),
@@ -259,6 +260,29 @@ test('盘后缓存独立于订单列表保存并可直接复用', async () => {
   assert.equal(cached.queryMode, 'close');
   assert.equal(cached.querySource, 'web');
   assert.equal(data.darkFundOrders[0].closeCacheHit, true);
+});
+
+test('15点后的盘中结果缓存到下个交易日开市前并跳过采集器', async () => {
+  const { data, call, collectorDispatchCount } = setup();
+  data.users[0].darkFundRemaining = 3;
+  const first = await call('POST', '/api/dark-funds/orders/intraday', {
+    stockCode: '600105', request_id: 'df_intraday_after_close_first',
+  });
+  const firstOrder = data.darkFundOrders.find((item) => item.id === first.orderId);
+  firstOrder.createdAt = Date.parse('2026-09-30T07:01:00Z');
+  assert.equal(collectorDispatchCount(), 1);
+  await call('POST', '/api/stock-analysis/callback', successCallback(firstOrder), '', { 'x-stock-callback-token': 'callback-secret' });
+  assert.equal(data.darkFundIntradayCache['600105'].result.stockCode, '600105');
+
+  const second = await call('POST', '/api/dark-funds/orders/intraday', {
+    stockCode: '600105', request_id: 'df_intraday_after_close_cached',
+  });
+  assert.equal(second.ready, true);
+  assert.equal(second.queryMode, 'intraday');
+  assert.equal(second.querySource, 'collector');
+  assert.equal(second.source, 'cache');
+  assert.equal(collectorDispatchCount(), 1);
+  assert.equal(data.darkFundOrders.at(-1).intradayCacheHit, true);
 });
 
 test('暗盘包月只免除盘后查询扣次，盘中查询仍扣减次数', async () => {

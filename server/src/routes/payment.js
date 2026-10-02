@@ -11,7 +11,7 @@ const {
   publicDarkFundOrder,
   refreshDarkFundOrderResult,
 } = require('../dark-fund-orders');
-const { fetchCloseDarkFund, isReusableCloseResult } = require('../dark-fund-close');
+const { fetchCloseDarkFund, isReusableCloseResult, nextTradingOpenAt } = require('../dark-fund-close');
 const { callbackAuthorized, dispatchStockAnalysis } = require('../collector-client');
 const { persistCollectorImages } = require('../collector-images');
 const { pushNotification } = require('../notifications');
@@ -47,6 +47,38 @@ function storeCloseResult(data, stockCode, result) {
     cachedAt: Date.now(),
     result: JSON.parse(JSON.stringify(result)),
   };
+}
+
+function beijingMinutes(timestamp) {
+  const date = new Date(Number(timestamp) + 8 * 3600 * 1000);
+  return date.getUTCHours() * 60 + date.getUTCMinutes();
+}
+
+function cachedIntradayResult(data, stockCode, now = Date.now()) {
+  const entry = data.darkFundIntradayCache && data.darkFundIntradayCache[stockCode];
+  const result = entry && entry.result;
+  if (!entry || !result || String(entry.stockCode || '') !== stockCode) return null;
+  if (String(result.tradingDate || '') !== String(entry.tradeDate || '')) return null;
+  const expiresAt = Number(entry.expiresAt) || nextTradingOpenAt(entry.tradeDate);
+  if (!expiresAt || now >= expiresAt) return null;
+  return JSON.parse(JSON.stringify(result));
+}
+
+function storeIntradayResult(data, order, result) {
+  if (!order || order.queryMode !== 'intraday' || beijingMinutes(order.createdAt) < 15 * 60) return false;
+  const expiresAt = nextTradingOpenAt(result.tradingDate);
+  if (!expiresAt || expiresAt <= Date.now()) return false;
+  data.darkFundIntradayCache = data.darkFundIntradayCache && typeof data.darkFundIntradayCache === 'object'
+    ? data.darkFundIntradayCache
+    : {};
+  data.darkFundIntradayCache[order.stockCode] = {
+    stockCode: order.stockCode,
+    tradeDate: result.tradingDate,
+    cachedAt: Date.now(),
+    expiresAt,
+    result: JSON.parse(JSON.stringify(result)),
+  };
+  return true;
 }
 
 function darkFundOrderNo() {
@@ -125,6 +157,7 @@ module.exports = function register(router, HttpError) {
     if (!useCloseMonthly && available.total <= 0) throw new HttpError(403, '暗盘资金查询次数已用完');
     let closeResult = null;
     let closeCacheHit = false;
+    let intradayResult = null;
     if (queryMode === 'close' && querySource === 'web') {
       closeResult = cachedCloseResult(d, stockCode);
       closeCacheHit = Boolean(closeResult);
@@ -151,6 +184,7 @@ module.exports = function register(router, HttpError) {
     if (queryMode === 'close' && !closeResult) {
       throw new HttpError(502, '盘后数据未生成，已阻止连接 Windows 采集器');
     }
+    if (queryMode === 'intraday') intradayResult = cachedIntradayResult(d, stockCode);
     const consumed = useCloseMonthly ? { ...available, source: 'close_month' } : consumeDarkFundQuota(user);
     if (!consumed) throw new HttpError(403, '暗盘资金查询次数已用完');
     const tradeDate = closeResult ? closeResult.tradeDate : latestTradingDate();
@@ -177,6 +211,23 @@ module.exports = function register(router, HttpError) {
         type: 'dark_ready',
         title: `${order.stockCode}盘后暗盘查询已完成`,
         content: '盘后数据和图表已经生成，点击查看历史订单',
+        targetType: 'dark_history',
+        targetId: order.id,
+        dedupeKey: `dark-ready:${order.id}`,
+      });
+      db.save();
+      await db.flush();
+      return orderQuotaResponse(order, consumed, false, user);
+    }
+    if (intradayResult) {
+      intradayResult.orderId = order.id;
+      intradayResult.source = 'cache';
+      order.intradayCacheHit = true;
+      activateDarkFundOrder(d, order, intradayResult);
+      pushNotification(d, order.userId, {
+        type: 'dark_ready',
+        title: `${order.stockCode}盘中暗盘查询已完成`,
+        content: '已使用收盘后的盘中缓存生成结果，点击查看订单列表',
         targetType: 'dark_history',
         targetId: order.id,
         dedupeKey: `dark-ready:${order.id}`,
@@ -273,6 +324,7 @@ module.exports = function register(router, HttpError) {
           }
           const result = normalizeCollectorResult({ ...body, image_urls: imageUrls }, order);
           refreshDarkFundOrderResult(d, order, result);
+          storeIntradayResult(d, order, result);
         } catch (error) {
           throw new HttpError(400, error.message);
         }
@@ -329,6 +381,7 @@ module.exports = function register(router, HttpError) {
       throw new HttpError(400, error.message);
     }
     activateDarkFundOrder(d, order, result);
+    storeIntradayResult(d, order, result);
     pushNotification(d, order.userId, {
       type: 'dark_ready',
       title: `${order.stockCode}暗盘查询已完成`,
