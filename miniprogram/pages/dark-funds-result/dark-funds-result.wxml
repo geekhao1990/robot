@@ -16,9 +16,11 @@
   <view wx:elif="{{error}}" class="error">{{error}}</view>
   <block wx:else>
     <view class="card hero">
-      <view><text class="stock-name">{{result.displayName}}</text><text class="stock-code">{{result.displayCode}}</text></view>
-      <view class="hero-meta">
+      <view class="hero-main-row">
+        <view class="hero-stock"><text class="stock-name">{{result.displayName}}</text><text class="stock-code">{{result.displayCode}}</text></view>
         <view class="trade-date">{{result.tradeDate}} · {{result.versionLabel}}</view>
+      </view>
+      <view class="hero-action-row">
         <button class="hero-poster-button" loading="{{posterGenerating}}" disabled="{{posterGenerating}}" bindtap="generateSharePoster">生成分享图</button>
       </view>
     </view>

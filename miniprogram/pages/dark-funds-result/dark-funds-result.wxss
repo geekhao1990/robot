@@ -20,12 +20,14 @@
 .skeleton-row view { flex: 1; height: 28rpx; }
 @keyframes skeleton-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 .card { margin-bottom: 24rpx; padding: 30rpx; background: #fff; border-radius: 26rpx; box-shadow: 0 8rpx 30rpx rgba(0,0,0,.04); }
-.hero { display: flex; align-items: flex-end; justify-content: space-between; }
+.hero { display: flex; flex-direction: column; align-items: stretch; }
+.hero-main-row { display: flex; align-items: baseline; justify-content: space-between; gap: 18rpx; width: 100%; }
+.hero-stock { min-width: 0; white-space: nowrap; }
 .stock-name { font-size: 38rpx; font-weight: 800; }
 .stock-code { margin-left: 14rpx; color: #999; font-size: 23rpx; }
-.trade-date { color: #999; font-size: 22rpx; }
-.hero-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 14rpx; }
-.hero-poster-button { display: flex; align-items: center; justify-content: center; height: 56rpx; margin: 0; padding: 0 22rpx; color: #fff; font-size: 22rpx; font-weight: 700; line-height: 1; background: linear-gradient(100deg, #df1e2f, #ff4550); border-radius: 28rpx; box-shadow: 0 8rpx 20rpx rgba(223,30,47,.2); }
+.trade-date { flex: none; color: #999; font-size: 22rpx; white-space: nowrap; }
+.hero-action-row { width: 100%; margin-top: 22rpx; }
+.hero-poster-button { display: flex; align-items: center; justify-content: center; width: 100%; height: 64rpx; margin: 0; padding: 0 22rpx; color: #fff; font-size: 24rpx; font-weight: 700; line-height: 1; background: linear-gradient(100deg, #df1e2f, #ff4550); border-radius: 32rpx; box-shadow: 0 8rpx 20rpx rgba(223,30,47,.2); }
 .hero-poster-button::after { border: 0; }
 .hero-poster-button[disabled] { color: rgba(255,255,255,.78); background: #d96770; }
 .section-heading { display: flex; align-items: center; gap: 16rpx; margin: 2rpx 0 24rpx; font-size: 36rpx; font-weight: 800; }
