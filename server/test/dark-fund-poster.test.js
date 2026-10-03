@@ -15,7 +15,7 @@ test('share poster exposes exact 1-day dark fund and masks rolling totals', () =
   };
   const metrics = posterMetrics(result);
   assert.equal(metrics.stockName, '永鼎股份');
-  assert.equal(metrics.day1Text, '-7026万');
+  assert.equal(metrics.day1Text, '-7026.2万');
   assert.match(metrics.day3Text, /^-x\.xx亿$/);
   assert.match(metrics.day5Text, /^-xx\.xx亿$/);
   assert.equal(/\d/.test(metrics.day3Text), false);
@@ -26,4 +26,21 @@ test('share poster amount formatting preserves direction, scale and unit', () =>
   assert.equal(maskedAmount(915000000), '+x.xx亿');
   assert.equal(maskedAmount(-91500000), '-xxxx万');
   assert.equal(maskedAmount(0), 'x万');
+});
+
+test('share poster reuses the exact numbers already rendered by the page bars', () => {
+  const result = {
+    stockName: '永鼎股份', stockCode: '600105', tradeDate: '2026-09-30',
+    days: [{ tradeDate: '2026-09-30', grey: -70262426, listed: -209419079, main: -279681505 }],
+  };
+  const metrics = posterMetrics(result, {
+    unitLabel: '万元',
+    dayBars: [
+      { text: '-20941.9' },
+      { text: '-7026.2' },
+      { text: '27968.2' },
+    ],
+  });
+  assert.equal(metrics.day1Text, '-7026.2万');
+  assert.deepEqual(metrics.barTexts, ['-20941.9', '-7026.2', '27968.2']);
 });

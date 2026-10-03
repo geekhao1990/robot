@@ -351,7 +351,10 @@ Page({
         canvas.width = width;
         canvas.height = height;
         const context = canvas.getContext('2d');
-        const metrics = posterMetrics(this.data.result);
+        const metrics = posterMetrics(this.data.result, {
+          unitLabel: this.data.unitLabel,
+          dayBars: this.data.dayBars,
+        });
         Promise.all([
           this.loadPosterImage(canvas, ['/images/dark-share-bg-v2.jpg', '../../images/dark-share-bg-v2.jpg'], '分享图背景'),
           this.loadPosterImage(canvas, ['/images/indicator-warehouse-mini-code.jpg', '../../images/indicator-warehouse-mini-code.jpg'], '小程序码'),
@@ -486,7 +489,7 @@ Page({
     bars.forEach((bar, index) => {
       const x = 145 + index * 215, barHeight = Math.max(18, Math.round(Math.abs(bar.value) / maximum * 125));
       context.fillStyle = valueColor(bar.value); roundRect(x - 24, bar.value >= 0 ? zeroY - barHeight : zeroY, 48, barHeight, 5); context.fill();
-      fillText(exactAmount(bar.value), x, bar.value >= 0 ? zeroY - barHeight - 25 : zeroY + barHeight + 25, 20, valueColor(bar.value), '700', 'center');
+      fillText(metrics.barTexts[index] || exactAmount(bar.value), x, bar.value >= 0 ? zeroY - barHeight - 25 : zeroY + barHeight + 25, 20, valueColor(bar.value), '700', 'center');
       fillText(bar.label, x, 985, 21, '#d7dee6', '400', 'center');
     });
     roundRect(34, 1070, 682, 212, 24); context.fillStyle = 'rgba(13,21,29,.94)'; context.fill(); context.strokeStyle = 'rgba(255,57,64,.35)'; context.stroke();
