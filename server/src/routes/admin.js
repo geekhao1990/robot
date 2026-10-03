@@ -9,8 +9,8 @@ const crypto = require('crypto');
 const goldFingerSync = require('../gold-finger-sync');
 const { notifyFollowersOfNote, pushNotification } = require('../notifications');
 const { URL } = require('url');
-const { fetchCloseDarkFund } = require('../dark-fund-close');
-const { generateRanking, latestRanking, publicRanking } = require('../dark-fund-ranking');
+const { latestRanking, publicRanking } = require('../dark-fund-ranking');
+const darkFundRankingSync = require('../dark-fund-ranking-sync');
 
 module.exports = function register(router, HttpError) {
   const baseCategories = Object.values(TYPE_LABELS);
@@ -179,25 +179,19 @@ module.exports = function register(router, HttpError) {
   // ---------- 今日收盘暗盘榜 ----------
   router.get('/api/admin/dark-fund-ranking', (ctx) => {
     requireAuth(ctx);
-    return publicRanking(latestRanking(db.get())) || { empty: true };
+    return {
+      ranking: publicRanking(latestRanking(db.get())),
+      sync: darkFundRankingSync.getStatus(),
+    };
   });
 
   router.post('/api/admin/dark-fund-ranking/generate', async (ctx) => {
     requireAuth(ctx);
-    const body = ctx.body || {};
-    let payload = body.payload;
-    if (!payload && body.jsonText) {
-      try { payload = JSON.parse(String(body.jsonText)); } catch (error) { throw new HttpError(400, '热榜 JSON 格式错误'); }
-    }
-    const tradeDate = require('../trading-date').latestTradingDate();
-    let ranking;
     try {
-      ranking = await generateRanking({ data: db.get(), payload, tradeDate, fetchClose: fetchCloseDarkFund });
+      return await darkFundRankingSync.manualSync();
     } catch (error) {
       throw new HttpError(Number(error && error.status) || 502, error && error.message || '今日暗盘榜生成失败');
     }
-    db.save();
-    return publicRanking(ranking);
   });
 
   // ---------- 独立金手指每日数据 ----------

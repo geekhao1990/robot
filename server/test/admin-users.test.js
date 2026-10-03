@@ -25,6 +25,7 @@ function setup() {
     '../notifications': require('../src/notifications'),
     '../dark-fund-close': require('../src/dark-fund-close'),
     '../dark-fund-ranking': require('../src/dark-fund-ranking'),
+    '../dark-fund-ranking-sync': { getStatus: () => ({ enabled: true, running: false, schedule: '16:35', state: null }), manualSync: async () => ({ tradeDate: '2026-09-30' }) },
     '../trading-date': require('../src/trading-date'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/admin.js'), 'utf8'), {
@@ -53,6 +54,15 @@ test('admin gold entitlement enforces open and cancel states', async () => {
   assert.equal(cancelled.goldExpire, 0);
   assert.equal(data.users[0].goldExpire, 0);
   await assert.rejects(call('PUT', '/api/admin/users/u1/gold', { action: 'cancel' }), { status: 409 });
+});
+
+test('admin dark-fund ranking uses direct automatic source without JSON input', async () => {
+  const { call } = setup();
+  const status = await call('GET', '/api/admin/dark-fund-ranking');
+  assert.equal(status.ranking, null);
+  assert.equal(status.sync.schedule, '16:35');
+  const generated = await call('POST', '/api/admin/dark-fund-ranking/generate');
+  assert.equal(generated.tradeDate, '2026-09-30');
 });
 
 test('admin can set a custom service package expiry date for legacy subscribers', async () => {

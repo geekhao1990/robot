@@ -2,6 +2,46 @@ const { isReusableCloseResult } = require('./dark-fund-close');
 const { lookupStock } = require('./stock-lookup');
 
 const MAX_CANDIDATES = 30;
+const THS_HOT_LIST_URL = 'https://dq.10jqka.com.cn/fuyao/hot_list_data/out/hot_list/v1/stock?list_type=normal&stock_type=a&type=day';
+
+function normalizeThsHotListResponse(payload) {
+  const rows = payload && payload.data && payload.data.stock_list;
+  if (Number(payload && payload.status_code) !== 0 || !Array.isArray(rows) || !rows.length) {
+    throw Object.assign(new Error('同花顺热榜接口未返回股票列表'), { status: 502 });
+  }
+  return {
+    source: '同花顺热榜-24小时',
+    fetchedAt: Date.now(),
+    stocks: rows.slice(0, MAX_CANDIDATES).map((item, index) => ({
+      stockCode: String(item && item.code || '').trim(),
+      stockName: String(item && item.name || '').trim(),
+      rank: Number(item && item.order) || index + 1,
+    })),
+  };
+}
+
+async function fetchThsHotList({ timeoutMs = 15000, fetchImpl = globalThis.fetch } = {}) {
+  if (typeof fetchImpl !== 'function') throw Object.assign(new Error('当前 Node 环境不支持网络请求'), { status: 500 });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetchImpl(THS_HOT_LIST_URL, {
+      headers: {
+        Accept: 'application/json, text/plain, */*',
+        Referer: 'https://eq.10jqka.com.cn/',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36',
+      },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw Object.assign(new Error(`同花顺热榜请求失败（HTTP ${response.status}）`), { status: 502 });
+    return normalizeThsHotListResponse(await response.json());
+  } catch (error) {
+    if (error && error.name === 'AbortError') throw Object.assign(new Error('同花顺热榜请求超时'), { status: 504 });
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 function candidateRows(payload) {
   if (Array.isArray(payload)) return payload;
@@ -138,4 +178,13 @@ function latestRanking(data) {
   return rankings[date] || null;
 }
 
-module.exports = { MAX_CANDIDATES, generateRanking, latestRanking, normalizeCandidates, publicRanking };
+module.exports = {
+  MAX_CANDIDATES,
+  THS_HOT_LIST_URL,
+  fetchThsHotList,
+  generateRanking,
+  latestRanking,
+  normalizeCandidates,
+  normalizeThsHotListResponse,
+  publicRanking,
+};

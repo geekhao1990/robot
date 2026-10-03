@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { generateRanking, normalizeCandidates, publicRanking } = require('../src/dark-fund-ranking');
+const { fetchThsHotList, generateRanking, normalizeCandidates, normalizeThsHotListResponse, publicRanking } = require('../src/dark-fund-ranking');
+const { chinaMinutes, parseSchedule } = require('../src/dark-fund-ranking-sync');
 
 function closeResult(stockCode, stockName, tradeDate, grey) {
   return {
@@ -20,6 +21,32 @@ test('hot-list candidates are deduplicated and validated through the stock map',
   ] });
   assert.deepEqual(rows.map((item) => item.stockCode), ['600105', '600159']);
   assert.equal(rows[0].stockDisplayName, '永鼎GF');
+});
+
+test('THS hot-list response is converted to ranking candidates', async () => {
+  const source = normalizeThsHotListResponse({
+    status_code: 0,
+    data: { stock_list: [
+      { code: '600105', name: '永鼎股份', order: 1 },
+      { code: '600159', name: '大龙地产', order: 2 },
+    ] },
+  });
+  assert.equal(source.source, '同花顺热榜-24小时');
+  assert.deepEqual(source.stocks.map((item) => item.stockCode), ['600105', '600159']);
+  const fetched = await fetchThsHotList({
+    fetchImpl: async (url, options) => {
+      assert.match(url, /10jqka\.com\.cn/);
+      assert.match(options.headers.Referer, /10jqka/);
+      return { ok: true, json: async () => ({ status_code: 0, data: { stock_list: [{ code: '600105', name: '永鼎股份', order: 1 }] } }) };
+    },
+  });
+  assert.equal(fetched.stocks[0].stockCode, '600105');
+});
+
+test('daily ranking scheduler uses Beijing time and a configurable post-close slot', () => {
+  assert.equal(parseSchedule('16:35'), 16 * 60 + 35);
+  assert.equal(parseSchedule('bad-value'), 16 * 60 + 35);
+  assert.equal(chinaMinutes(Date.parse('2026-09-30T08:35:00Z')), 16 * 60 + 35);
 });
 
 test('daily ranking reuses same-day close cache and sorts inflow/outflow', async () => {
