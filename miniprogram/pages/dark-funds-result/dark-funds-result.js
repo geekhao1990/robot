@@ -371,7 +371,7 @@ Page({
             success: ({ tempFilePath }) => {
               wx.hideLoading();
               this.setData({ posterGenerating: false, posterPath: tempFilePath });
-              wx.previewImage({ current: tempFilePath, urls: [tempFilePath] });
+              this.openShareImageMenu(tempFilePath);
             },
             fail: () => this.finishPosterError('生成分享图失败'),
           });
@@ -422,6 +422,16 @@ Page({
     wx.hideLoading();
     this.setData({ posterGenerating: false });
     wx.showToast({ title: message, icon: 'none' });
+  },
+  openShareImageMenu(path) {
+    if (typeof wx.showShareImageMenu !== 'function') {
+      wx.previewImage({ current: path, urls: [path] });
+      return;
+    }
+    wx.showShareImageMenu({
+      path,
+      fail: () => wx.previewImage({ current: path, urls: [path] }),
+    });
   },
   previewSharePoster() {
     if (!this.data.posterPath) return this.generateSharePoster();
