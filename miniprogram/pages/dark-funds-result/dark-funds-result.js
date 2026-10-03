@@ -451,6 +451,26 @@ Page({
       context.font = `${weight} ${size}px "Microsoft YaHei", sans-serif`;
       context.fillStyle = color; context.textAlign = align; context.textBaseline = 'middle'; context.fillText(String(text), x, y);
     };
+    const drawArtTitle = () => {
+      context.save();
+      context.translate(48, 96);
+      context.transform(1, 0, -0.13, 1, 0, 0);
+      context.textAlign = 'left'; context.textBaseline = 'middle';
+      context.font = '900 68px "Microsoft YaHei", "Arial Black", sans-serif';
+      context.lineJoin = 'bevel'; context.lineWidth = 3;
+      context.shadowColor = 'rgba(0,0,0,.88)'; context.shadowBlur = 9; context.shadowOffsetX = 7; context.shadowOffsetY = 8;
+      const whiteMetal = context.createLinearGradient(0, -38, 0, 38);
+      whiteMetal.addColorStop(0, '#ffffff'); whiteMetal.addColorStop(.42, '#fdfdfd'); whiteMetal.addColorStop(.53, '#aeb5bd'); whiteMetal.addColorStop(.72, '#ffffff'); whiteMetal.addColorStop(1, '#858d96');
+      context.strokeStyle = '#111820'; context.strokeText('暗盘', 0, 0); context.fillStyle = whiteMetal; context.fillText('暗盘', 0, 0);
+      const firstWidth = context.measureText('暗盘').width + 4;
+      const redMetal = context.createLinearGradient(0, -38, 0, 38);
+      redMetal.addColorStop(0, '#ff5a5f'); redMetal.addColorStop(.42, '#ff3339'); redMetal.addColorStop(.55, '#a70d18'); redMetal.addColorStop(.72, '#ff343b'); redMetal.addColorStop(1, '#830812');
+      context.strokeStyle = '#3a0509'; context.strokeText('追踪', firstWidth, 0); context.fillStyle = redMetal; context.fillText('追踪', firstWidth, 0);
+      context.shadowColor = 'transparent'; context.lineWidth = 1.2; context.strokeStyle = 'rgba(255,255,255,.5)';
+      context.beginPath(); context.moveTo(4, -22); context.lineTo(firstWidth - 4, -22); context.stroke();
+      context.strokeStyle = 'rgba(255,130,130,.55)'; context.beginPath(); context.moveTo(firstWidth + 4, -22); context.lineTo(firstWidth + context.measureText('追踪').width - 5, -22); context.stroke();
+      context.restore();
+    };
     const valueColor = (value) => Number(value) >= 0 ? '#ff4148' : '#00e4a8';
     const imageRatio = assets.backgroundImage.width / assets.backgroundImage.height;
     const targetRatio = width / height;
@@ -462,7 +482,7 @@ Page({
     const shade = context.createLinearGradient(0, 0, 0, height);
     shade.addColorStop(0, 'rgba(0,0,0,.12)'); shade.addColorStop(.42, 'rgba(0,0,0,.28)'); shade.addColorStop(1, 'rgba(0,0,0,.36)');
     context.fillStyle = shade; context.fillRect(0, 0, width, height);
-    fillText('暗盘追踪', 48, 86, 58, '#ffffff', '800');
+    drawArtTitle();
     fillText('主力资金 · 先人一步', 50, 142, 23, '#d5dbe3', '400');
     context.fillStyle = '#ef343b'; context.fillRect(48, 174, 654, 3);
     roundRect(34, 205, 682, 840, 26); context.fillStyle = 'rgba(5,12,18,.90)'; context.fill(); context.strokeStyle = 'rgba(255,55,62,.55)'; context.lineWidth = 2; context.stroke();
@@ -508,11 +528,16 @@ Page({
     fillText('暗盘数据小程序', 254, 1096, 31, '#fff', '800');
     fillText('实时追踪主力资金动向', 254, 1137, 20, '#d0d6dd');
     fillText('把握市场先机', 254, 1168, 20, '#d0d6dd');
-    const callToAction = context.createLinearGradient(254, 1190, 690, 1248);
-    callToAction.addColorStop(0, '#ff343d'); callToAction.addColorStop(1, '#df1d2b');
-    roundRect(252, 1190, 438, 58, 15); context.fillStyle = callToAction; context.fill();
-    fillText('长按识别小程序码，查看个股暗盘数据', 270, 1219, 17, '#fff', '500');
-    fillText('›', 672, 1218, 31, '#fff', '400', 'center');
+    const callToAction = context.createLinearGradient(250, 1190, 692, 1248);
+    callToAction.addColorStop(0, '#ff4b50'); callToAction.addColorStop(.45, '#ff3039'); callToAction.addColorStop(1, '#c91422');
+    context.save(); context.shadowColor = 'rgba(255,35,47,.68)'; context.shadowBlur = 16; context.shadowOffsetY = 4;
+    roundRect(250, 1188, 442, 62, 17); context.fillStyle = callToAction; context.fill(); context.restore();
+    roundRect(250, 1188, 442, 62, 17); context.strokeStyle = 'rgba(255,150,154,.8)'; context.lineWidth = 1.5; context.stroke();
+    const ctaHighlight = context.createLinearGradient(0, 1189, 0, 1210); ctaHighlight.addColorStop(0, 'rgba(255,255,255,.25)'); ctaHighlight.addColorStop(1, 'rgba(255,255,255,0)');
+    roundRect(255, 1193, 432, 23, 12); context.fillStyle = ctaHighlight; context.fill();
+    fillText('长按识别小程序码，查看个股暗盘数据', 270, 1219, 18, '#fff', '600');
+    context.beginPath(); context.arc(666, 1219, 15, 0, Math.PI * 2); context.fillStyle = 'rgba(90,0,7,.24)'; context.fill();
+    fillText('›', 667, 1217, 30, '#fff', '600', 'center');
     fillText('数据来自互联网，仅供参考，不构成投资建议', 375, 1310, 16, '#647180', '400', 'center');
   },
 });

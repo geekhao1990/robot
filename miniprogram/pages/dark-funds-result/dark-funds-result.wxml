@@ -21,7 +21,7 @@
         <view class="trade-date">{{result.tradeDate}} · {{result.versionLabel}}</view>
       </view>
       <view class="hero-action-row">
-        <button class="hero-poster-button" loading="{{posterGenerating}}" disabled="{{posterGenerating}}" bindtap="generateSharePoster">生成分享图</button>
+        <view class="hero-poster-button {{posterGenerating ? 'disabled' : ''}}" hover-class="hero-poster-button-hover" bindtap="generateSharePoster">{{posterGenerating ? '生成中' : '生成分享图'}}</view>
       </view>
     </view>
     <view class="card fund-card">
