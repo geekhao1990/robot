@@ -524,13 +524,32 @@ Page({
     });
     roundRect(34, 1062, 682, 226, 24); context.fillStyle = 'rgba(13,17,24,.94)'; context.fill(); context.strokeStyle = 'rgba(255,57,64,.42)'; context.stroke();
     context.save();
-    context.globalAlpha = .28;
-    [20, 32, 48, 70, 94].forEach((barHeight, index) => {
-      context.fillStyle = '#ff2f39';
-      context.fillRect(570 + index * 24, 1152 - barHeight, 13, barHeight);
+    const chartGlow = context.createRadialGradient(648, 1084, 4, 648, 1084, 108);
+    chartGlow.addColorStop(0, 'rgba(255,35,46,.34)'); chartGlow.addColorStop(1, 'rgba(255,35,46,0)');
+    context.fillStyle = chartGlow; context.fillRect(520, 1065, 180, 116);
+    context.globalAlpha = .25; context.lineWidth = 1;
+    [1082, 1112, 1142, 1172].forEach((y) => {
+      context.strokeStyle = '#ad4650'; context.beginPath(); context.moveTo(526, y); context.lineTo(696, y); context.stroke();
     });
-    context.strokeStyle = '#ff313b'; context.lineWidth = 5; context.beginPath(); context.moveTo(560, 1142); context.lineTo(680, 1074); context.stroke();
-    context.beginPath(); context.moveTo(680, 1074); context.lineTo(663, 1078); context.moveTo(680, 1074); context.lineTo(673, 1091); context.stroke();
+    [535, 575, 615, 655, 695].forEach((x) => {
+      context.strokeStyle = '#71323a'; context.beginPath(); context.moveTo(x, 1072); context.lineTo(x, 1174); context.stroke();
+    });
+    context.globalAlpha = .9;
+    [
+      { x: 540, high: 1127, low: 1160, top: 1138, bottom: 1152, color: '#00d7a0' },
+      { x: 565, high: 1118, low: 1151, top: 1127, bottom: 1144, color: '#ff3b43' },
+      { x: 590, high: 1125, low: 1155, top: 1133, bottom: 1147, color: '#00d7a0' },
+      { x: 615, high: 1099, low: 1140, top: 1109, bottom: 1132, color: '#ff3b43' },
+      { x: 640, high: 1084, low: 1125, top: 1094, bottom: 1118, color: '#ff3b43' },
+      { x: 665, high: 1071, low: 1109, top: 1080, bottom: 1102, color: '#ff3b43' },
+    ].forEach((candle) => {
+      context.strokeStyle = candle.color; context.lineWidth = 2; context.beginPath(); context.moveTo(candle.x, candle.high); context.lineTo(candle.x, candle.low); context.stroke();
+      context.fillStyle = candle.color; roundRect(candle.x - 6, candle.top, 12, Math.max(5, candle.bottom - candle.top), 2); context.fill();
+    });
+    context.globalAlpha = 1; context.strokeStyle = '#ff343e'; context.lineWidth = 3;
+    context.shadowColor = 'rgba(255,35,46,.9)'; context.shadowBlur = 10;
+    context.beginPath(); context.moveTo(532, 1152); context.bezierCurveTo(565, 1138, 580, 1147, 603, 1129); context.bezierCurveTo(626, 1110, 651, 1093, 686, 1074); context.stroke();
+    context.shadowColor = 'transparent'; context.fillStyle = '#ff343e'; context.beginPath(); context.moveTo(686, 1074); context.lineTo(671, 1077); context.lineTo(681, 1089); context.closePath(); context.fill();
     context.restore();
     roundRect(54, 1090, 148, 148, 16); context.fillStyle = '#fff'; context.fill();
     context.drawImage(assets.qrImage, 60, 1096, 136, 136);
