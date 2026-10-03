@@ -352,31 +352,44 @@ Page({
         canvas.height = height;
         const context = canvas.getContext('2d');
         const metrics = posterMetrics(this.data.result);
-        this.drawSharePoster(context, metrics, width, height);
-        wx.canvasToTempFilePath({
-          canvas,
-          width,
-          height,
-          destWidth: width,
-          destHeight: height,
-          fileType: 'png',
-          quality: 1,
-          success: ({ tempFilePath }) => {
-            wx.hideLoading();
-            this.setData({ posterGenerating: false, posterPath: tempFilePath });
-            wx.showModal({
-              title: '分享图已生成',
-              content: '保存到相册后，可发送到群聊、朋友或用于短视频素材。',
-              confirmText: '保存图片',
-              cancelText: '先预览',
-              success: (choice) => choice.confirm ? this.saveSharePoster() : this.previewSharePoster(),
-            });
-          },
-          fail: () => this.finishPosterError('生成分享图失败'),
-        });
+        Promise.all([
+          this.loadPosterImage(canvas, '/images/dark-share-bg-v2.jpg'),
+          this.loadPosterImage(canvas, `${config.baseUrl}/api/share/miniprogram-code`),
+        ]).then(([backgroundImage, qrImage]) => {
+          this.drawSharePoster(context, metrics, width, height, { backgroundImage, qrImage });
+          wx.canvasToTempFilePath({
+            canvas,
+            width,
+            height,
+            destWidth: width,
+            destHeight: height,
+            fileType: 'png',
+            quality: 1,
+            success: ({ tempFilePath }) => {
+              wx.hideLoading();
+              this.setData({ posterGenerating: false, posterPath: tempFilePath });
+              wx.previewImage({ current: tempFilePath, urls: [tempFilePath] });
+            },
+            fail: () => this.finishPosterError('生成分享图失败'),
+          });
+        }).catch(() => this.finishPosterError('分享图素材加载失败'));
       } catch (error) {
         this.finishPosterError('生成分享图失败');
       }
+    });
+  },
+  loadPosterImage(canvas, source) {
+    return new Promise((resolve, reject) => {
+      wx.getImageInfo({
+        src: source,
+        success: ({ path }) => {
+          const image = canvas.createImage();
+          image.onload = () => resolve(image);
+          image.onerror = reject;
+          image.src = path;
+        },
+        fail: reject,
+      });
     });
   },
   finishPosterError(message) {
@@ -400,7 +413,7 @@ Page({
       },
     });
   },
-  drawSharePoster(context, metrics, width, height) {
+  drawSharePoster(context, metrics, width, height, assets) {
     const roundRect = (x, y, w, h, r) => {
       context.beginPath();
       context.moveTo(x + r, y); context.lineTo(x + w - r, y); context.quadraticCurveTo(x + w, y, x + w, y + r);
@@ -413,13 +426,16 @@ Page({
       context.fillStyle = color; context.textAlign = align; context.textBaseline = 'middle'; context.fillText(String(text), x, y);
     };
     const valueColor = (value) => Number(value) >= 0 ? '#ff4148' : '#00e4a8';
-    const background = context.createLinearGradient(0, 0, width, height);
-    background.addColorStop(0, '#071018'); background.addColorStop(.52, '#13090c'); background.addColorStop(1, '#05080d');
-    context.fillStyle = background; context.fillRect(0, 0, width, height);
-    context.globalAlpha = .18;
-    for (let x = -100; x < width + 100; x += 44) { context.strokeStyle = x % 88 ? '#b51e28' : '#30485b'; context.beginPath(); context.moveTo(x, 0); context.lineTo(x + 280, height); context.stroke(); }
-    context.globalAlpha = 1;
-    const glow = context.createRadialGradient(610, 130, 10, 610, 130, 300); glow.addColorStop(0, 'rgba(255,35,45,.38)'); glow.addColorStop(1, 'rgba(255,35,45,0)'); context.fillStyle = glow; context.fillRect(300, 0, 450, 430);
+    const imageRatio = assets.backgroundImage.width / assets.backgroundImage.height;
+    const targetRatio = width / height;
+    const sourceWidth = imageRatio > targetRatio ? assets.backgroundImage.height * targetRatio : assets.backgroundImage.width;
+    const sourceHeight = imageRatio > targetRatio ? assets.backgroundImage.height : assets.backgroundImage.width / targetRatio;
+    const sourceX = (assets.backgroundImage.width - sourceWidth) / 2;
+    const sourceY = (assets.backgroundImage.height - sourceHeight) / 2;
+    context.drawImage(assets.backgroundImage, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, width, height);
+    const shade = context.createLinearGradient(0, 0, 0, height);
+    shade.addColorStop(0, 'rgba(0,0,0,.12)'); shade.addColorStop(.42, 'rgba(0,0,0,.28)'); shade.addColorStop(1, 'rgba(0,0,0,.36)');
+    context.fillStyle = shade; context.fillRect(0, 0, width, height);
     fillText('暗盘追踪', 48, 86, 58, '#ffffff', '800');
     fillText('主力资金 · 先人一步', 50, 142, 23, '#d5dbe3', '400');
     context.fillStyle = '#ef343b'; context.fillRect(48, 174, 654, 3);
@@ -451,10 +467,12 @@ Page({
       fillText(bar.label, x, 985, 21, '#d7dee6', '400', 'center');
     });
     roundRect(34, 1070, 682, 212, 24); context.fillStyle = 'rgba(13,21,29,.94)'; context.fill(); context.strokeStyle = 'rgba(255,57,64,.35)'; context.stroke();
-    roundRect(62, 1102, 104, 104, 18); context.fillStyle = '#e9373e'; context.fill(); fillText('指', 114, 1155, 58, '#fff', '800', 'center');
-    fillText('指标仓库小程序', 194, 1127, 32, '#fff', '800');
-    fillText('实时追踪主力资金动向', 194, 1172, 21, '#c0cad5');
-    fillText('微信搜索「指标仓库」查看个股暗盘数据', 194, 1210, 18, '#ff8589');
+    roundRect(56, 1092, 132, 132, 16); context.fillStyle = '#fff'; context.fill();
+    context.drawImage(assets.qrImage, 62, 1098, 120, 120);
+    context.strokeStyle = 'rgba(255,255,255,.22)'; context.beginPath(); context.moveTo(211, 1099); context.lineTo(211, 1226); context.stroke();
+    fillText('指标仓库小程序', 236, 1124, 32, '#fff', '800');
+    fillText('实时追踪主力资金动向', 236, 1170, 21, '#c0cad5');
+    fillText('长按识别小程序码，查看个股暗盘数据', 236, 1210, 18, '#ff8589');
     fillText('数据来自互联网，仅供参考，不构成投资建议', 375, 1310, 16, '#647180', '400', 'center');
   },
 });

@@ -24,6 +24,10 @@
 .stock-name { font-size: 38rpx; font-weight: 800; }
 .stock-code { margin-left: 14rpx; color: #999; font-size: 23rpx; }
 .trade-date { color: #999; font-size: 22rpx; }
+.hero-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 14rpx; }
+.hero-poster-button { display: flex; align-items: center; justify-content: center; height: 56rpx; margin: 0; padding: 0 22rpx; color: #fff; font-size: 22rpx; font-weight: 700; line-height: 1; background: linear-gradient(100deg, #df1e2f, #ff4550); border-radius: 28rpx; box-shadow: 0 8rpx 20rpx rgba(223,30,47,.2); }
+.hero-poster-button::after { border: 0; }
+.hero-poster-button[disabled] { color: rgba(255,255,255,.78); background: #d96770; }
 .section-heading { display: flex; align-items: center; gap: 16rpx; margin: 2rpx 0 24rpx; font-size: 36rpx; font-weight: 800; }
 .segment-control { display: flex; gap: 6rpx; margin-bottom: 22rpx; padding: 7rpx; background: #f2f3f5; border: 2rpx solid #dfe3e8; border-radius: 16rpx; }
 .segment { display: flex; flex: 1; align-items: center; justify-content: center; min-height: 70rpx; color: #64748b; font-size: 26rpx; font-weight: 700; border-radius: 12rpx; }
@@ -68,10 +72,4 @@
 .orders-table .tr text:first-child { padding-right: 3rpx; padding-left: 3rpx; }
 .tr:not(.th) text { font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; font-size: 27rpx; font-weight: 700; line-height: 1; transform: scaleX(.86); }
 .disclaimer { padding: 8rpx 20rpx 40rpx; color: #aaa; font-size: 20rpx; line-height: 1.7; text-align: center; }
-.poster-actions { display: flex; gap: 14rpx; margin: 12rpx 0 24rpx; }
-.poster-button, .poster-preview { display: flex; align-items: center; justify-content: center; height: 88rpx; margin: 0; border-radius: 44rpx; font-size: 28rpx; font-weight: 750; line-height: 1; }
-.poster-button { flex: 1; color: #fff; background: linear-gradient(100deg, #df1e2f, #ff4550); box-shadow: 0 12rpx 30rpx rgba(223,30,47,.24); }
-.poster-button::after, .poster-preview::after { border: 0; }
-.poster-button[disabled] { color: rgba(255,255,255,.78); background: #d96770; }
-.poster-preview { width: 116rpx; padding: 0; color: #d92436; background: #fff; border: 2rpx solid #e44a58; }
 .share-poster-canvas { position: fixed; left: -2000px; top: 0; width: 750px; height: 1334px; pointer-events: none; }

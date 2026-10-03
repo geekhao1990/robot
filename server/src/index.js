@@ -9,6 +9,7 @@ const { handleUpload } = require('./upload');
 const audit = require('./audit');
 const goldFingerSync = require('./gold-finger-sync');
 const webWechatLogin = require('./web-wechat-login');
+const { miniProgramCode } = require('./miniprogram-code');
 
 const router = createRouter();
 require('./routes/public')(router, HttpError);
@@ -70,6 +71,14 @@ const server = http.createServer((req, res) => {
         res.end();
       })
       .catch((error) => sendJson(res, error.status || 500, { error: error.message || '微信登录失败' }));
+  }
+  if (pathname === '/api/share/miniprogram-code' && req.method === 'GET') {
+    return miniProgramCode()
+      .then((image) => {
+        res.writeHead(200, { 'Content-Type': image.contentType, 'Cache-Control': 'public, max-age=86400' });
+        res.end(image.buffer);
+      })
+      .catch((error) => sendJson(res, error.status || 502, { error: error.message || '生成小程序码失败' }));
   }
 
   // Web 前台；管理后台继续使用 /admin。
