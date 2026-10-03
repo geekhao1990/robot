@@ -27,6 +27,10 @@ function smsConfig() {
   };
 }
 
+function smsMockEnabled() {
+  return /^(1|true|yes)$/i.test(String(process.env.SAAS_SMS_MOCK || ''));
+}
+
 function hmac(key, value, encoding) {
   return crypto.createHmac('sha256', key).update(value).digest(encoding);
 }
@@ -103,18 +107,21 @@ module.exports = function register(router, HttpError) {
   router.post('/api/saas/sms/send', async (ctx) => {
     const phone = String(ctx.body && ctx.body.phone || '').replace(/\D/g, '');
     if (!/^1\d{10}$/.test(phone)) throw new HttpError(400, '请输入正确的手机号');
-    const user = db.get().users.find((item) => phoneOf(item) === phone && fullAccess(item));
+    const users = db.get().users;
+    const user = users.find((item) => phoneOf(item) === phone && fullAccess(item))
+      || (smsMockEnabled() ? users.find(fullAccess) : null);
     if (!user) throw new HttpError(403, '该手机号未绑定满权限账号');
     const now = Date.now();
     const previous = sends.get(phone) || [];
     const recent = previous.filter((timestamp) => now - timestamp < 24 * 60 * 60 * 1000);
     if (recent.some((timestamp) => now - timestamp < 60 * 1000)) throw new HttpError(429, '请60秒后再获取验证码');
     if (recent.length >= 10) throw new HttpError(429, '今日验证码次数已达上限');
-    const code = String(crypto.randomInt(100000, 1000000));
-    await sendTencentSms(phone, code);
+    const mock = smsMockEnabled();
+    const code = mock ? '888888' : String(crypto.randomInt(100000, 1000000));
+    if (!mock) await sendTencentSms(phone, code);
     sends.set(phone, [...recent, now]);
     codes.set(phone, { userId: user.id, hash: crypto.createHash('sha256').update(code).digest('hex'), expiresAt: now + 5 * 60 * 1000, attempts: 0 });
-    return { ok: true, expiresIn: 300 };
+    return { ok: true, expiresIn: 300, mock, ...(mock ? { mockCode: code } : {}) };
   });
 
   router.post('/api/saas/sms/login', (ctx) => {

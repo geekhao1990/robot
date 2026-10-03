@@ -6,7 +6,7 @@ const path = require('node:path');
 const { createRouter, HttpError } = require('../src/router');
 const password = require('../src/user-password');
 
-function setup() {
+function setup(mock = false) {
   const full = { id: 'full-user', name: '满权限用户', phone: '13800138000', darkFundEnabled: true, decisionPioneerEnabled: true, goldExpire: Date.now() + 86400000 };
   const partial = { id: 'partial-user', name: '普通用户', darkFundEnabled: true, decisionPioneerEnabled: false, goldExpire: Date.now() + 86400000 };
   password.setPassword(full, 'safe-pass-123');
@@ -17,7 +17,8 @@ function setup() {
   const mod = { exports: {} };
   const dependencies = { '../db': db, '../auth': auth, '../util': require('../src/util'), '../user-password': password };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/saas-auth.js'), 'utf8'), {
-    module: mod, require: (id) => dependencies[id] || require(id), process, fetch,
+    module: mod, require: (id) => dependencies[id] || require(id),
+    process: { env: { ...process.env, ...(mock ? { SAAS_SMS_MOCK: 'true' } : {}) } }, fetch,
   });
   const router = createRouter();
   mod.exports(router, HttpError);
@@ -41,4 +42,13 @@ test('SaaS SMS route validates bound full-access phone before provider configura
   const { call } = setup();
   await assert.rejects(call('POST', '/api/saas/sms/send', { phone: '13900139000' }), { status: 403 });
   await assert.rejects(call('POST', '/api/saas/sms/send', { phone: '13800138000' }), { status: 503 });
+});
+
+test('SaaS SMS mock mode auto-issues the demo code to a full-access account', async () => {
+  const { call } = setup(true);
+  const sent = await call('POST', '/api/saas/sms/send', { phone: '13900139000' });
+  assert.equal(sent.mock, true);
+  assert.equal(sent.mockCode, '888888');
+  const loggedIn = await call('POST', '/api/saas/sms/login', { phone: '13900139000', code: '888888' });
+  assert.equal(loggedIn.token, 'token:full-user');
 });
