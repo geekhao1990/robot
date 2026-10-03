@@ -354,7 +354,7 @@ Page({
         const metrics = posterMetrics(this.data.result);
         Promise.all([
           this.loadPosterImage(canvas, '/images/dark-share-bg-v2.jpg'),
-          this.loadPosterImage(canvas, `${config.baseUrl}/api/share/miniprogram-code`),
+          this.loadPosterImage(canvas, '/images/indicator-warehouse-mini-code.jpg'),
         ]).then(([backgroundImage, qrImage]) => {
           this.drawSharePoster(context, metrics, width, height, { backgroundImage, qrImage });
           wx.canvasToTempFilePath({
