@@ -490,15 +490,29 @@ Page({
       const x = 145 + index * 215, barHeight = Math.max(18, Math.round(Math.abs(bar.value) / maximum * 125));
       context.fillStyle = valueColor(bar.value); roundRect(x - 24, bar.value >= 0 ? zeroY - barHeight : zeroY, 48, barHeight, 5); context.fill();
       fillText(metrics.barTexts[index] || exactAmount(bar.value), x, bar.value >= 0 ? zeroY - barHeight - 25 : zeroY + barHeight + 25, 20, valueColor(bar.value), '700', 'center');
-      fillText(bar.label, x, 985, 21, '#d7dee6', '400', 'center');
+      fillText(bar.label, x, 1005, 21, '#d7dee6', '400', 'center');
     });
-    roundRect(34, 1070, 682, 212, 24); context.fillStyle = 'rgba(13,21,29,.94)'; context.fill(); context.strokeStyle = 'rgba(255,57,64,.35)'; context.stroke();
-    roundRect(56, 1092, 132, 132, 16); context.fillStyle = '#fff'; context.fill();
-    context.drawImage(assets.qrImage, 62, 1098, 120, 120);
-    context.strokeStyle = 'rgba(255,255,255,.22)'; context.beginPath(); context.moveTo(211, 1099); context.lineTo(211, 1226); context.stroke();
-    fillText('指标仓库小程序', 236, 1124, 32, '#fff', '800');
-    fillText('实时追踪主力资金动向', 236, 1170, 21, '#c0cad5');
-    fillText('长按识别小程序码，查看个股暗盘数据', 236, 1210, 18, '#ff8589');
+    roundRect(34, 1062, 682, 226, 24); context.fillStyle = 'rgba(13,17,24,.94)'; context.fill(); context.strokeStyle = 'rgba(255,57,64,.42)'; context.stroke();
+    context.save();
+    context.globalAlpha = .28;
+    [20, 32, 48, 70, 94].forEach((barHeight, index) => {
+      context.fillStyle = '#ff2f39';
+      context.fillRect(570 + index * 24, 1152 - barHeight, 13, barHeight);
+    });
+    context.strokeStyle = '#ff313b'; context.lineWidth = 5; context.beginPath(); context.moveTo(560, 1142); context.lineTo(680, 1074); context.stroke();
+    context.beginPath(); context.moveTo(680, 1074); context.lineTo(663, 1078); context.moveTo(680, 1074); context.lineTo(673, 1091); context.stroke();
+    context.restore();
+    roundRect(54, 1090, 148, 148, 16); context.fillStyle = '#fff'; context.fill();
+    context.drawImage(assets.qrImage, 60, 1096, 136, 136);
+    context.strokeStyle = 'rgba(255,255,255,.24)'; context.lineWidth = 1; context.beginPath(); context.moveTo(226, 1092); context.lineTo(226, 1248); context.stroke();
+    fillText('暗盘数据小程序', 254, 1096, 31, '#fff', '800');
+    fillText('实时追踪主力资金动向', 254, 1137, 20, '#d0d6dd');
+    fillText('把握市场先机', 254, 1168, 20, '#d0d6dd');
+    const callToAction = context.createLinearGradient(254, 1190, 690, 1248);
+    callToAction.addColorStop(0, '#ff343d'); callToAction.addColorStop(1, '#df1d2b');
+    roundRect(252, 1190, 438, 58, 15); context.fillStyle = callToAction; context.fill();
+    fillText('长按识别小程序码，查看个股暗盘数据', 270, 1219, 17, '#fff', '500');
+    fillText('›', 672, 1218, 31, '#fff', '400', 'center');
     fillText('数据来自互联网，仅供参考，不构成投资建议', 375, 1310, 16, '#647180', '400', 'center');
   },
 });
