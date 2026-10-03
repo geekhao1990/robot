@@ -353,8 +353,8 @@ Page({
         const context = canvas.getContext('2d');
         const metrics = posterMetrics(this.data.result);
         Promise.all([
-          this.loadPosterImage(canvas, '/images/dark-share-bg-v2.jpg'),
-          this.loadPosterImage(canvas, '/images/indicator-warehouse-mini-code.jpg'),
+          this.loadPosterImage(canvas, ['/images/dark-share-bg-v2.jpg', '../../images/dark-share-bg-v2.jpg'], '分享图背景'),
+          this.loadPosterImage(canvas, ['/images/indicator-warehouse-mini-code.jpg', '../../images/indicator-warehouse-mini-code.jpg'], '小程序码'),
         ]).then(([backgroundImage, qrImage]) => {
           this.drawSharePoster(context, metrics, width, height, { backgroundImage, qrImage });
           wx.canvasToTempFilePath({
@@ -372,24 +372,47 @@ Page({
             },
             fail: () => this.finishPosterError('生成分享图失败'),
           });
-        }).catch(() => this.finishPosterError('分享图素材加载失败'));
+        }).catch((error) => this.finishPosterError(error && error.message || '分享图素材加载失败'));
       } catch (error) {
         this.finishPosterError('生成分享图失败');
       }
     });
   },
-  loadPosterImage(canvas, source) {
+  loadPosterImage(canvas, sources, label) {
     return new Promise((resolve, reject) => {
-      wx.getImageInfo({
-        src: source,
-        success: ({ path }) => {
-          const image = canvas.createImage();
-          image.onload = () => resolve(image);
-          image.onerror = reject;
-          image.src = path;
-        },
-        fail: reject,
-      });
+      let settled = false;
+      const finish = (image) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(image);
+      };
+      const fail = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(new Error(`${label}加载失败`));
+      };
+      const load = (source, index) => {
+        const image = canvas.createImage();
+        image.onload = () => finish(image);
+        image.onerror = () => {
+          if (index + 1 < sources.length) return load(sources[index + 1], index + 1);
+          wx.getImageInfo({
+            src: sources[0],
+            success: ({ path }) => {
+              const fallbackImage = canvas.createImage();
+              fallbackImage.onload = () => finish(fallbackImage);
+              fallbackImage.onerror = fail;
+              fallbackImage.src = path;
+            },
+            fail,
+          });
+        };
+        image.src = source;
+      };
+      const timer = setTimeout(fail, 8000);
+      load(sources[0], 0);
     });
   },
   finishPosterError(message) {
