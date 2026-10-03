@@ -584,6 +584,7 @@ module.exports = function register(router, HttpError) {
       id: 'u' + Date.now(),
       name: b.name || '新用户',
       avatar: b.avatar || 'https://app.nankaitechschool.com/assets/avatars/author-1.jpg',
+      phone: /^1\d{10}$/.test(String(b.phone || '').replace(/\D/g, '')) ? String(b.phone).replace(/\D/g, '') : '',
       desc: b.desc || '',
       remark: String(b.remark || '').trim().slice(0, 200),
       fans: b.fans || 0,
@@ -617,6 +618,14 @@ module.exports = function register(router, HttpError) {
     if (Object.prototype.hasOwnProperty.call(update, 'remark')) {
       update.remark = String(update.remark || '').trim();
       if (update.remark.length > 200) throw new HttpError(400, '备注最多200个字符');
+    }
+    if (Object.prototype.hasOwnProperty.call(update, 'phone')) {
+      update.phone = String(update.phone || '').replace(/\D/g, '');
+      if (update.phone && !/^1\d{10}$/.test(update.phone)) throw new HttpError(400, '请输入正确的手机号');
+      if (update.phone && d.users.some((user) => user.id !== ctx.params.id && String(user.phone || '').replace(/\D/g, '') === update.phone)) {
+        throw new HttpError(409, '该手机号已绑定其他用户');
+      }
+      update.phoneBoundAt = update.phone ? Date.now() : 0;
     }
     if (Object.prototype.hasOwnProperty.call(update, 'official')) update.official = update.official === true;
     if (update.official === false && d.notes.some((n) => n.authorId === ctx.params.id)) {

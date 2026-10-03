@@ -14,11 +14,14 @@ test('PC SaaS entry is served and uses the shared business APIs', () => {
   assert.match(server, /pathname === '\/saas'/);
   assert.match(server, /hostname === 'm\.nankaitechschool\.com'/);
   assert.match(html, /数据工作台/);
-  assert.match(app, /\/api\/web\/login/);
+  assert.match(app, /\/api\/saas\/login/);
+  assert.match(app, /\/api\/saas\/sms\/login/);
   assert.match(app, /mode==='decision'\?'intraday':'close'/);
   assert.match(payment, /\/api\/dark-funds\/orders\/close/);
   assert.match(payment, /\/api\/dark-funds\/orders\/intraday/);
   assert.match(app, /\/api\/gold-finger\/latest/);
-  assert.match(app, /nl_web_token/);
+  assert.match(app, /nl_saas_token/);
   assert.match(app, /https:\/\/app\.nankaitechschool\.com/);
+  assert.doesNotMatch(html, /data-view="orders"/);
+  assert.doesNotMatch(html, /data-view="close"/);
 });

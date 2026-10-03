@@ -582,7 +582,7 @@ function drawUsers() {
       <tr>
         <td>${start + i + 1}</td>
         <td>${esc(u.name)}</td>
-        <td>${esc(u.phone || '未绑定')}</td>
+        <td><input class="user-remark-input" inputmode="numeric" maxlength="11" value="${esc(u.phone || '')}" data-original="${esc(u.phone || '')}" placeholder="绑定手机号" onkeydown="if(event.key==='Enter')this.blur()" onblur='saveUserPhone("${u.id}",this)' /></td>
         <td>
           ${Array.isArray(u.tags) && u.tags.includes('new') ? '<span class="tag new">新用户</span>' : ''}
           <div class="hint">${esc(u.id)}</div>
@@ -637,6 +637,24 @@ function saveUserRemark(id, input) {
     .catch((error) => {
       showAdminToast(error.message || '备注保存失败', 'error');
     })
+    .finally(() => { input.disabled = false; });
+}
+
+function saveUserPhone(id, input) {
+  const phone = String(input.value || '').replace(/\D/g, '').slice(0, 11);
+  const original = String(input.dataset.original || '');
+  input.value = phone;
+  if (phone === original || input.disabled) return;
+  if (phone && !/^1\d{10}$/.test(phone)) { input.value = original; return showAdminToast('请输入正确的手机号', 'error'); }
+  input.disabled = true;
+  api('/api/admin/users/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify({ phone }) })
+    .then((user) => {
+      input.dataset.original = phone;
+      const local = _users.find((item) => item.id === id);
+      if (local) local.phone = user.phone || phone;
+      showAdminToast(phone ? '登录手机号已绑定' : '登录手机号已清除');
+    })
+    .catch((error) => { input.value = original; showAdminToast(error.message || '手机号保存失败', 'error'); })
     .finally(() => { input.disabled = false; });
 }
 

@@ -3,33 +3,52 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#d91520">
-  <title>指标仓库 · 数据工作台</title>
-  <link rel="stylesheet" href="/saas/style.css?v=2026100202">
+  <meta name="theme-color" content="#071120">
+  <title>指标仓库 · 金融数据 SaaS</title>
+  <link rel="stylesheet" href="/saas/style.css?v=2026100301">
 </head>
 <body>
-  <div class="shell">
+  <section id="loginScreen" class="login-screen">
+    <div class="login-visual">
+      <div class="visual-grid"></div>
+      <div class="login-brand"><span>指</span><div><b>指标仓库</b><small>FINANCIAL INTELLIGENCE</small></div></div>
+      <div class="visual-copy"><em>SMART CAPITAL PLATFORM</em><h1>洞察资金流向<br>辅助数据决策</h1><p>暗盘数据、决策先锋与金手指信号的一体化金融数据工作台</p></div>
+      <div class="market-tape"><i></i><span>资金数据实时连接</span><b>ONLINE</b></div>
+    </div>
+    <div class="login-panel">
+      <form id="loginForm" class="login-card">
+        <div class="login-title"><small>WELCOME BACK</small><h2>登录数据工作台</h2><p>仅向已开通完整权限的用户开放</p></div>
+        <div class="login-tabs"><button type="button" class="active" data-login-tab="sms">手机验证码</button><button type="button" data-login-tab="password">账号密码</button></div>
+        <div id="smsFields" class="login-fields">
+          <label>手机号码</label><input id="loginPhone" inputmode="tel" maxlength="11" placeholder="请输入绑定的手机号">
+          <label>短信验证码</label><div class="code-row"><input id="loginCode" inputmode="numeric" maxlength="6" placeholder="6位验证码"><button type="button" id="sendCode" data-action="send-code">获取验证码</button></div>
+        </div>
+        <div id="passwordFields" class="login-fields hidden">
+          <label>用户 ID</label><input id="loginId" autocomplete="username" placeholder="请输入用户 ID">
+          <label>登录密码</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="请输入密码">
+        </div>
+        <button id="loginSubmit" class="login-submit" type="submit">安全登录</button>
+        <div class="login-foot"><span>数据加密传输</span><span>多端权益同步</span><span>企业级权限控制</span></div>
+      </form>
+    </div>
+  </section>
+
+  <div id="shell" class="shell hidden">
     <aside class="sidebar">
-      <div class="brand"><span class="brand-mark">指</span><div><strong>指标仓库</strong><small>DATA WORKBENCH</small></div></div>
+      <div class="brand"><span class="brand-mark">指</span><div><strong>指标仓库</strong><small>FINANCIAL SaaS</small></div></div>
       <nav id="nav">
         <button data-view="dashboard" class="active"><i>⌂</i>工作台</button>
-        <button data-view="close"><i>收</i>盘后查询</button>
-        <button data-view="decision" id="decisionNav" class="hidden"><i>策</i>决策先锋</button>
-        <button data-view="orders"><i>单</i>订单列表</button>
+        <button data-view="dark"><i>策</i>暗盘</button>
         <button data-view="gold"><i>金</i>金手指</button>
       </nav>
-      <div class="sidebar-foot"><a href="https://app.nankaitechschool.com/web">移动版 Web</a><a href="https://app.nankaitechschool.com/admin">管理后台</a></div>
+      <div class="system-state"><span></span><div><b>数据服务正常</b><small>共享业务数据源</small></div></div>
     </aside>
     <section class="workspace">
-      <header class="topbar">
-        <div><h1 id="pageTitle">数据工作台</h1><p id="marketClock"></p></div>
-        <div id="account" class="account"></div>
-      </header>
-      <main id="main"><div class="loading"><i></i><span>正在载入工作台</span></div></main>
+      <header class="topbar"><div><h1 id="pageTitle">智慧工作台</h1><p id="marketClock"></p></div><div id="account" class="account"></div></header>
+      <main id="main"><div class="loading"><i></i><span>正在载入智慧工作台</span></div></main>
     </section>
   </div>
   <div id="toast" class="toast"></div>
-  <div id="modal"></div>
-  <script src="/saas/app.js?v=2026100202" defer></script>
+  <script src="/saas/app.js?v=2026100301" defer></script>
 </body>
 </html>

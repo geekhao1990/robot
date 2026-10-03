@@ -127,6 +127,14 @@ test('admin can save a trimmed user remark with a length limit', async () => {
   await assert.rejects(call('PUT', '/api/admin/users/u1', { remark: 'a'.repeat(201) }), { status: 400 });
 });
 
+test('admin can bind a unique phone number for SaaS SMS login', async () => {
+  const { data, call } = setup();
+  const updated = await call('PUT', '/api/admin/users/u1', { phone: '138 0013 8000' });
+  assert.equal(updated.phone, '13800138000');
+  assert.equal(data.users[0].phone, '13800138000');
+  await assert.rejects(call('PUT', '/api/admin/users/u1', { phone: '123' }), { status: 400 });
+});
+
 test('only admin can inspect dark fund query records', async () => {
   const { data, call } = setup();
   data.darkFundOrders.push({ id: 'DF1', userId: 'u1', status: 'SUCCESS', snapshot: { note: { title: '私有快照' } }, createdAt: 1 });
