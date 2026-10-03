@@ -1,5 +1,6 @@
 const api = require('../../utils/api');
 const config = require('../../utils/config');
+const store = require('../../utils/store');
 const { exactAmount, posterMetrics } = require('../../utils/dark-fund-poster');
 
 const YELLOW = '#ffe50a';
@@ -136,9 +137,12 @@ Page({
     closeBannerAdLoadFailed: false,
     posterGenerating: false,
     posterPath: '',
+    isOfficial: false,
     skeletonRows: [1, 2, 3, 4, 5],
   },
   onLoad(options) {
+    const currentUser = store.getUser();
+    this.setData({ isOfficial: !!(currentUser && currentUser.official === true) });
     this.loadCloseAds();
     if (String(options && options.mock || '') === '1') {
       this.applyResult(createMockCloseResult(options));
@@ -337,8 +341,9 @@ Page({
       series.forEach((item, index) => context.fillText(item.date, xAt(index), height - 12));
     });
   },
-  generateSharePoster() {
+  generateSharePoster(event) {
     if (this.data.posterGenerating || !this.data.result) return;
+    const withoutQr = String(event && event.currentTarget && event.currentTarget.dataset.noQr || '') === 'true';
     this.setData({ posterGenerating: true });
     wx.showLoading({ title: '正在生成', mask: true });
     wx.createSelectorQuery().in(this).select('#sharePosterCanvas').fields({ node: true, size: true }).exec((queryResult) => {
@@ -357,9 +362,11 @@ Page({
         });
         Promise.all([
           this.loadPosterImage(canvas, ['/images/dark-share-bg-v2.jpg', '../../images/dark-share-bg-v2.jpg'], '分享图背景'),
-          this.loadPosterImage(canvas, ['/images/indicator-warehouse-mini-code.jpg', '../../images/indicator-warehouse-mini-code.jpg'], '小程序码'),
+          withoutQr
+            ? Promise.resolve(null)
+            : this.loadPosterImage(canvas, ['/images/indicator-warehouse-mini-code.jpg', '../../images/indicator-warehouse-mini-code.jpg'], '小程序码'),
         ]).then(([backgroundImage, qrImage]) => {
-          this.drawSharePoster(context, metrics, width, height, { backgroundImage, qrImage });
+          this.drawSharePoster(context, metrics, width, height, { backgroundImage, qrImage, withoutQr });
           wx.canvasToTempFilePath({
             canvas,
             width,
@@ -551,22 +558,27 @@ Page({
     context.beginPath(); context.moveTo(532, 1152); context.bezierCurveTo(565, 1138, 580, 1147, 603, 1129); context.bezierCurveTo(626, 1110, 651, 1093, 686, 1074); context.stroke();
     context.shadowColor = 'transparent'; context.fillStyle = '#ff343e'; context.beginPath(); context.moveTo(686, 1074); context.lineTo(671, 1077); context.lineTo(681, 1089); context.closePath(); context.fill();
     context.restore();
-    roundRect(54, 1090, 148, 148, 16); context.fillStyle = '#fff'; context.fill();
-    context.drawImage(assets.qrImage, 60, 1096, 136, 136);
-    context.strokeStyle = 'rgba(255,255,255,.24)'; context.lineWidth = 1; context.beginPath(); context.moveTo(226, 1092); context.lineTo(226, 1248); context.stroke();
-    fillText('“指标仓库”小程序', 254, 1096, 29, '#fff', '800');
-    fillText('查询暗盘和金手指', 254, 1139, 21, '#d0d6dd', '600');
-    fillText('实时追踪主力资金动向', 254, 1168, 18, '#9faab6');
-    const callToAction = context.createLinearGradient(250, 1190, 692, 1248);
+    const footerTextX = assets.withoutQr ? 64 : 254;
+    if (!assets.withoutQr) {
+      roundRect(54, 1090, 148, 148, 16); context.fillStyle = '#fff'; context.fill();
+      context.drawImage(assets.qrImage, 60, 1096, 136, 136);
+      context.strokeStyle = 'rgba(255,255,255,.24)'; context.lineWidth = 1; context.beginPath(); context.moveTo(226, 1092); context.lineTo(226, 1248); context.stroke();
+    }
+    fillText('“指标仓库”小程序', footerTextX, 1096, 29, '#fff', '800');
+    fillText('查询暗盘和金手指', footerTextX, 1139, 21, '#d0d6dd', '600');
+    fillText('实时追踪主力资金动向', footerTextX, 1168, 18, '#9faab6');
+    const ctaX = assets.withoutQr ? 62 : 250;
+    const ctaWidth = assets.withoutQr ? 630 : 442;
+    const callToAction = context.createLinearGradient(ctaX, 1190, ctaX + ctaWidth, 1248);
     callToAction.addColorStop(0, '#ff4b50'); callToAction.addColorStop(.45, '#ff3039'); callToAction.addColorStop(1, '#c91422');
     context.save(); context.shadowColor = 'rgba(255,35,47,.68)'; context.shadowBlur = 16; context.shadowOffsetY = 4;
-    roundRect(250, 1188, 442, 62, 17); context.fillStyle = callToAction; context.fill(); context.restore();
-    roundRect(250, 1188, 442, 62, 17); context.strokeStyle = 'rgba(255,150,154,.8)'; context.lineWidth = 1.5; context.stroke();
+    roundRect(ctaX, 1188, ctaWidth, 62, 17); context.fillStyle = callToAction; context.fill(); context.restore();
+    roundRect(ctaX, 1188, ctaWidth, 62, 17); context.strokeStyle = 'rgba(255,150,154,.8)'; context.lineWidth = 1.5; context.stroke();
     const ctaHighlight = context.createLinearGradient(0, 1189, 0, 1210); ctaHighlight.addColorStop(0, 'rgba(255,255,255,.25)'); ctaHighlight.addColorStop(1, 'rgba(255,255,255,0)');
-    roundRect(255, 1193, 432, 23, 12); context.fillStyle = ctaHighlight; context.fill();
-    fillText('长按识别小程序码，查看个股暗盘数据', 270, 1219, 18, '#fff', '600');
-    context.beginPath(); context.arc(666, 1219, 15, 0, Math.PI * 2); context.fillStyle = 'rgba(90,0,7,.24)'; context.fill();
-    fillText('›', 667, 1217, 30, '#fff', '600', 'center');
+    roundRect(ctaX + 5, 1193, ctaWidth - 10, 23, 12); context.fillStyle = ctaHighlight; context.fill();
+    fillText(assets.withoutQr ? '分享暗盘数据，关注“指标仓库”小程序' : '长按识别小程序码，查看个股暗盘数据', ctaX + 20, 1219, 18, '#fff', '600');
+    context.beginPath(); context.arc(ctaX + ctaWidth - 26, 1219, 15, 0, Math.PI * 2); context.fillStyle = 'rgba(90,0,7,.24)'; context.fill();
+    fillText('›', ctaX + ctaWidth - 25, 1217, 30, '#fff', '600', 'center');
     fillText('数据来自互联网，仅供参考，不构成投资建议', 375, 1310, 16, '#647180', '400', 'center');
   },
 });

@@ -22,8 +22,12 @@
       </view>
       <view class="hero-action-row">
         <view class="hero-poster-button {{posterGenerating ? 'disabled' : ''}}" hover-class="hero-poster-button-hover" bindtap="generateSharePoster">
-          <view class="hero-share-icon"><view class="share-line share-line-top"></view><view class="share-line share-line-bottom"></view><view class="share-dot share-dot-left"></view><view class="share-dot share-dot-top"></view><view class="share-dot share-dot-bottom"></view></view>
+          <view class="hero-share-icon"></view>
           <text>{{posterGenerating ? '生成中' : '生成分享图'}}</text>
+        </view>
+        <view wx:if="{{isOfficial}}" class="hero-poster-button official-poster-button {{posterGenerating ? 'disabled' : ''}}" data-no-qr="true" hover-class="hero-poster-button-hover" bindtap="generateSharePoster">
+          <view class="hero-share-icon"></view>
+          <text>{{posterGenerating ? '生成中' : '无二维码分享图'}}</text>
         </view>
       </view>
     </view>
