@@ -1242,12 +1242,22 @@ function deleteCategory(name) {
 
 // 功能设置
 function renderSettings() {
-  Promise.all([api('/api/admin/settings'), api('/api/admin/notes')]).then(([settings, notes]) => {
+  Promise.all([api('/api/admin/settings'), api('/api/admin/notes'), api('/api/admin/dark-fund-ranking')]).then(([settings, notes, ranking]) => {
     const noteOptions = notes.filter((n) => n.type === 'gold').map((n) => `
       <option value="${esc(n.id)}" ${n.id === settings.featuredNoteId ? 'selected' : ''}>
         ${esc(n.title)}（${esc(n.author && n.author.name)}）
       </option>`).join('');
     document.getElementById('content').innerHTML = `
+      <div class="card" style="max-width:640px;margin-bottom:20px;border-left:4px solid #ff2442">
+        <h3>今日收盘暗盘榜</h3>
+        <div class="hint" style="margin:8px 0 14px">先在服务器手动运行 Python 热榜脚本，把生成的 JSON 粘贴到这里。系统会批量查询盘后数据；当天已有 close 缓存的股票不会重复请求上游。</div>
+        <div class="field">
+          <label>同花顺热榜候选 JSON（最多30只）</label>
+          <textarea id="darkFundRankingJson" style="min-height:220px;font-family:Consolas,monospace" placeholder='{"stocks":[{"stockCode":"600105"}]}'></textarea>
+        </div>
+        <div id="darkFundRankingStatus" class="hint">${ranking && !ranking.empty ? `当前榜单：${esc(ranking.tradeDate || '—')}，成功 ${Number(ranking.successCount) || 0}/${Number(ranking.candidateCount) || 0}，命中缓存 ${Number(ranking.cacheHitCount) || 0}` : '当前尚未生成榜单'}</div>
+        <button id="darkFundRankingButton" class="btn-primary" style="margin-top:14px" onclick="generateDarkFundRanking()">生成今日暗盘榜</button>
+      </div>
       <div class="card" style="max-width:640px">
         <div class="field">
           <label>盘后暗盘数据源网址</label>
@@ -1341,6 +1351,32 @@ function renderSettings() {
         <button class="btn-primary" onclick="saveSettings()">保存设置</button>
       </div>`;
   });
+}
+
+function generateDarkFundRanking() {
+  const textarea = document.getElementById('darkFundRankingJson');
+  const button = document.getElementById('darkFundRankingButton');
+  const status = document.getElementById('darkFundRankingStatus');
+  const jsonText = textarea ? textarea.value.trim() : '';
+  if (!jsonText) return showAdminToast('请先粘贴热榜 JSON', 'error');
+  try { JSON.parse(jsonText); } catch (error) { return showAdminToast('热榜 JSON 格式错误', 'error'); }
+  if (button.disabled) return;
+  button.disabled = true;
+  button.textContent = '批量查询中…';
+  status.textContent = '正在复用当日缓存并查询尚未缓存的股票，请勿关闭页面。';
+  api('/api/admin/dark-fund-ranking/generate', { method: 'POST', body: JSON.stringify({ jsonText }) })
+    .then((result) => {
+      status.textContent = `榜单已更新：${result.tradeDate}，成功 ${result.successCount}/${result.candidateCount}，命中缓存 ${result.cacheHitCount}，失败 ${(result.failed || []).length}`;
+      showAdminToast('今日收盘暗盘榜已更新');
+    })
+    .catch((error) => {
+      status.textContent = error.message || '榜单生成失败';
+      showAdminToast(error.message || '榜单生成失败', 'error');
+    })
+    .finally(() => {
+      button.disabled = false;
+      button.textContent = '生成今日暗盘榜';
+    });
 }
 
 function saveSettings() {

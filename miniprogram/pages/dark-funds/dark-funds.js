@@ -33,6 +33,15 @@ function marketStockCode(code) {
   return `${/^[569]/.test(value) ? 'sh' : 'sz'}${value}`;
 }
 
+function formatRankingAmount(value) {
+  const number = Number(value) || 0;
+  const unit = Math.abs(number) >= 100000000
+    ? { divisor: 100000000, suffix: '亿', digits: 2 }
+    : { divisor: 10000, suffix: '万', digits: 1 };
+  const amount = number / unit.divisor;
+  return `${amount > 0 ? '+' : ''}${amount.toFixed(unit.digits)}${unit.suffix}`;
+}
+
 Page({
   data: {
     tab: 'query',
@@ -64,6 +73,9 @@ Page({
     historyTotal: 0,
     historyBadge: 0,
     historyAdLoadFailed: false,
+    rankingLoading: false,
+    rankingEmpty: true,
+    ranking: { inflow: [], outflow: [] },
     isOfficial: false,
     querying: false,
     serviceQrVisible: false,
@@ -78,7 +90,8 @@ Page({
       wx.showModal({ title: '暂不可用', content: '暗盘资金入口尚未开通', showCancel: false, complete: () => wx.navigateBack() });
       return;
     }
-    const tab = options && options.tab === 'history' ? 'history' : 'query';
+    const requestedTab = String(options && options.tab || '');
+    const tab = ['ranking', 'history'].includes(requestedTab) ? requestedTab : 'query';
     this.setData({ tab, isOfficial: user.official === true });
     api.getAppSettings().then((settings) => {
       const id = String((settings && settings.darkFundsQueryAdUnitId) || config.darkFundsQueryAdUnitId || '');
@@ -91,6 +104,7 @@ Page({
       });
     });
     this.loadTradeDate();
+    if (tab === 'ranking') this.loadRanking();
   },
   onShow() {
     if (!store.isLogin()) return;
@@ -101,6 +115,44 @@ Page({
     if (tab === this.data.tab) return;
     this.setData({ tab });
     if (tab === 'history') this.loadOrders(false, 1);
+    if (tab === 'ranking') this.loadRanking();
+  },
+  loadRanking() {
+    if (this._rankingRequesting) return Promise.resolve();
+    this._rankingRequesting = true;
+    this.setData({ rankingLoading: true });
+    return api.getDarkFundRanking()
+      .then((result) => {
+        if (!result || result.empty) return this.setData({ rankingEmpty: true, ranking: { inflow: [], outflow: [] } });
+        const decorate = (item) => ({
+          ...item,
+          marketStockCode: marketStockCode(item.stockCode),
+          greyText: formatRankingAmount(item.grey),
+        });
+        this.setData({
+          rankingEmpty: false,
+          ranking: {
+            ...result,
+            inflow: (result.inflow || []).map(decorate),
+            outflow: (result.outflow || []).map(decorate),
+          },
+        });
+      })
+      .catch(() => this.setData({ rankingEmpty: true, ranking: { inflow: [], outflow: [] } }))
+      .finally(() => {
+        this._rankingRequesting = false;
+        this.setData({ rankingLoading: false });
+      });
+  },
+  openRankingResult(e) {
+    const stockCode = String(e.currentTarget.dataset.code || '');
+    if (!/^\d{6}$/.test(stockCode)) return;
+    wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?ranking=${stockCode}` });
+  },
+  shareRankingResult(e) {
+    const stockCode = String(e.currentTarget.dataset.code || '');
+    if (!/^\d{6}$/.test(stockCode)) return;
+    wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?ranking=${stockCode}&poster=qr` });
   },
   loadTradeDate() {
     this.setData({ dateLoading: true });
@@ -222,7 +274,6 @@ Page({
             queryTypeText: item.queryMode === 'close' ? '盘后查询' : '决策先锋',
             queryTimeText: formatQueryTime(item.createdAt),
             statusText: ready ? '点击查看' : (failed ? '查询失败' : '处理中'),
-            canNoQrPoster: this.data.isOfficial && ready && item.queryMode === 'close',
           };
         });
         const unread = Array.isArray(result)
@@ -265,7 +316,11 @@ Page({
       .then(() => wx.showToast({ title: '订单已刷新', icon: 'success', duration: 1000 }));
   },
   onPullDownRefresh() {
-    Promise.all([this.loadTradeDate(), this.loadOrders(true, this.data.tab === 'history' ? this.data.historyPage : 1)])
+    Promise.all([
+      this.loadTradeDate(),
+      this.loadOrders(true, this.data.tab === 'history' ? this.data.historyPage : 1),
+      this.data.tab === 'ranking' ? this.loadRanking() : Promise.resolve(),
+    ])
       .finally(() => wx.stopPullDownRefresh());
   },
   openOrder(e) {
@@ -290,13 +345,6 @@ Page({
         }));
       })
       .catch((error) => wx.showModal({ title: '加载失败', content: this.errorText(error), showCancel: false }));
-  },
-  generateNoQrPoster(e) {
-    const order = this.data.orders.find((item) => item.id === e.currentTarget.dataset.id);
-    if (!this.data.isOfficial || !order || !order.ready || order.queryMode !== 'close') return;
-    wx.navigateTo({
-      url: `/pages/dark-funds-result/dark-funds-result?id=${encodeURIComponent(order.id)}&poster=noqr`,
-    });
   },
   queryRequestId(stockCode, queryMode, source) {
     const key = 'dark_fund_pending_request';

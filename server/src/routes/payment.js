@@ -16,6 +16,7 @@ const { callbackAuthorized, dispatchStockAnalysis } = require('../collector-clie
 const { persistCollectorImages } = require('../collector-images');
 const { pushNotification } = require('../notifications');
 const { lookupStock } = require('../stock-lookup');
+const { latestRanking, publicRanking } = require('../dark-fund-ranking');
 
 // 同一股票的并发盘后请求共用一次上游任务，避免重复扣减上游次数。
 const pendingCloseQueries = new Map();
@@ -127,6 +128,22 @@ module.exports = function register(router, HttpError) {
       closeMonthlyExpireAt: closeDarkFundActiveAt(user) ? Number(user.darkFundCloseExpire) : 0,
       decisionPioneerEnabled: user.decisionPioneerEnabled === true,
     };
+  });
+
+  router.get('/api/dark-funds/ranking', (ctx) => {
+    const user = currentUser(ctx);
+    if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
+    return publicRanking(latestRanking(db.get())) || { empty: true, inflow: [], outflow: [] };
+  });
+
+  router.get('/api/dark-funds/ranking/:stockCode', (ctx) => {
+    const user = currentUser(ctx);
+    if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
+    const stockCode = String(ctx.params.stockCode || '').replace(/^(sh|sz)/i, '');
+    const ranking = latestRanking(db.get());
+    const result = ranking && ranking.results && ranking.results[stockCode];
+    if (!result) throw new HttpError(404, '榜单数据不存在');
+    return { tradeDate: ranking.tradeDate, result: JSON.parse(JSON.stringify(result)) };
   });
 
   const createDarkFundOrder = async (ctx, forcedQueryMode = '') => {

@@ -1,9 +1,39 @@
 <view class="page">
   <view class="tabs">
     <view class="tab {{tab === 'query' ? 'active' : ''}}" data-tab="query" bindtap="switchTab">查暗盘</view>
+    <view class="tab {{tab === 'ranking' ? 'active' : ''}}" data-tab="ranking" bindtap="switchTab">今日暗盘榜</view>
     <view class="tab {{tab === 'history' ? 'active' : ''}}" data-tab="history" bindtap="switchTab">
       <text>订单列表</text><text wx:if="{{historyBadge}}" class="history-badge">{{historyBadge}}</text>
     </view>
+  </view>
+
+  <view wx:if="{{tab === 'ranking'}}" class="ranking-page">
+    <view wx:if="{{rankingLoading}}" class="ranking-loading">正在加载收盘暗盘榜…</view>
+    <view wx:elif="{{rankingEmpty}}" class="ranking-empty">今日收盘暗盘榜尚未生成</view>
+    <block wx:else>
+      <view class="ranking-head"><view><text class="ranking-title">收盘暗盘榜</text><text class="ranking-date">{{ranking.tradeDate}}</text></view><text class="ranking-source">同花顺热榜候选</text></view>
+      <view class="ranking-section">
+        <view class="ranking-section-title inflow">暗盘流入前五</view>
+        <view wx:for="{{ranking.inflow}}" wx:key="stockCode" class="ranking-row" data-code="{{item.stockCode}}" bindtap="openRankingResult">
+          <text class="ranking-number">{{index + 1}}</text>
+          <view class="ranking-stock"><text>{{item.stockDisplayName}}</text><text>{{item.marketStockCode}}</text></view>
+          <text class="ranking-value up">{{item.greyText}}</text>
+          <view class="ranking-share" data-code="{{item.stockCode}}" catchtap="shareRankingResult"><view class="ranking-share-icon"></view><text>生成分享图</text></view>
+        </view>
+        <view wx:if="{{!ranking.inflow.length}}" class="ranking-list-empty">暂无净流入股票</view>
+      </view>
+      <view class="ranking-section">
+        <view class="ranking-section-title outflow">暗盘流出前五</view>
+        <view wx:for="{{ranking.outflow}}" wx:key="stockCode" class="ranking-row" data-code="{{item.stockCode}}" bindtap="openRankingResult">
+          <text class="ranking-number">{{index + 1}}</text>
+          <view class="ranking-stock"><text>{{item.stockDisplayName}}</text><text>{{item.marketStockCode}}</text></view>
+          <text class="ranking-value down">{{item.greyText}}</text>
+          <view class="ranking-share" data-code="{{item.stockCode}}" catchtap="shareRankingResult"><view class="ranking-share-icon"></view><text>生成分享图</text></view>
+        </view>
+        <view wx:if="{{!ranking.outflow.length}}" class="ranking-list-empty">暂无净流出股票</view>
+      </view>
+      <view class="ranking-tip">仅统计收盘暗盘数据；榜单显示最近一次已生成的交易日结果</view>
+    </block>
   </view>
 
   <view wx:if="{{tab === 'query'}}" class="query-page">
@@ -55,7 +85,6 @@
       <view wx:for="{{orders}}" wx:key="id" class="order-card" data-id="{{item.id}}" bindtap="openOrder">
         <view class="order-main">
           <view class="order-stock"><text wx:if="{{item.stockDisplayName}}" class="order-name">{{item.stockDisplayName}}</text><text class="order-code">{{item.marketStockCode}}</text></view>
-          <view wx:if="{{item.canNoQrPoster}}" class="order-poster-link" data-id="{{item.id}}" catchtap="generateNoQrPoster"><view class="order-poster-icon"></view><text>无二维码分享图</text></view>
           <view class="order-meta"><view class="order-type">{{item.queryTypeText}}</view><view class="order-query-time">查询时间：{{item.queryTimeText}}</view></view>
         </view>
         <view class="order-side {{item.ready ? 'ready' : 'pending'}} {{item.failed ? 'failed' : ''}}"><text>{{item.statusText}}</text><text wx:if="{{item.ready}}" class="arrow">›</text></view>

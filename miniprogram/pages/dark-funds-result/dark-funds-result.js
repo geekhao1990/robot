@@ -143,11 +143,24 @@ Page({
   onLoad(options) {
     const currentUser = store.getUser();
     const isOfficial = !!(currentUser && currentUser.official === true);
-    this.autoPosterWithoutQr = isOfficial && String(options && options.poster || '') === 'noqr';
+    const requestedPoster = String(options && options.poster || '');
+    this.autoPosterWithoutQr = isOfficial && requestedPoster === 'noqr';
+    this.autoPosterWithQr = requestedPoster === 'qr';
     this.setData({ isOfficial });
     this.loadCloseAds();
     if (String(options && options.mock || '') === '1') {
       this.applyResult(createMockCloseResult(options));
+      return;
+    }
+    const rankingStockCode = String(options && options.ranking || '').replace(/\D/g, '').slice(0, 6);
+    if (rankingStockCode) {
+      api.getDarkFundRankingResult(rankingStockCode)
+        .then((payload) => {
+          const result = payload && payload.result;
+          if (!result || result.type !== 'close_snapshot' || !Array.isArray(result.days) || !result.days.length) throw new Error('榜单数据不存在');
+          this.applyResult(result);
+        })
+        .catch((error) => this.setData({ loading: false, error: error && (error.errMsg || error.message) || '加载失败' }));
       return;
     }
     this.orderId = String(options && options.id || '');
@@ -217,9 +230,13 @@ Page({
     result.displayCode = marketStockCode(result.stockCode);
     this.trends = { trend3: rolling(days, 3), trend5: rolling(days, 5) };
     this.setData({ loading: false, result, unitLabel: unit.label, summary, dayBars, rows }, () => {
-      if (!this.autoPosterWithoutQr) return;
-      this.autoPosterWithoutQr = false;
-      wx.nextTick(() => this.generateSharePoster({ currentTarget: { dataset: { noQr: 'true' } } }));
+      if (this.autoPosterWithoutQr) {
+        this.autoPosterWithoutQr = false;
+        wx.nextTick(() => this.generateSharePoster({ currentTarget: { dataset: { noQr: 'true' } } }));
+      } else if (this.autoPosterWithQr) {
+        this.autoPosterWithQr = false;
+        wx.nextTick(() => this.generateSharePoster({ currentTarget: { dataset: {} } }));
+      }
     });
   },
   switchFundView(event) {

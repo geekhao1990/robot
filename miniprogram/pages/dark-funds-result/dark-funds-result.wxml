@@ -21,6 +21,10 @@
         <view class="trade-date">{{result.tradeDate}} · {{result.versionLabel}}</view>
       </view>
       <view class="hero-action-row">
+        <view wx:if="{{isOfficial}}" class="hero-poster-button hero-poster-button-secondary {{posterGenerating ? 'disabled' : ''}}" hover-class="hero-poster-button-hover" data-no-qr="true" bindtap="generateSharePoster">
+          <view class="hero-share-icon hero-share-icon-red"></view>
+          <text>无二维码分享图</text>
+        </view>
         <view class="hero-poster-button {{posterGenerating ? 'disabled' : ''}}" hover-class="hero-poster-button-hover" bindtap="generateSharePoster">
           <view class="hero-share-icon"></view>
           <text>{{posterGenerating ? '生成中' : '生成分享图'}}</text>

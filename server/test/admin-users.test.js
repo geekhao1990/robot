@@ -23,6 +23,9 @@ function setup() {
     '../dark-fund-orders': require('../src/dark-fund-orders'),
     '../gold-finger-sync': { getStatus: () => ({ enabled: false, configured: false, running: false, schedule: [], state: null }), manualSync: async () => ({}) },
     '../notifications': require('../src/notifications'),
+    '../dark-fund-close': require('../src/dark-fund-close'),
+    '../dark-fund-ranking': require('../src/dark-fund-ranking'),
+    '../trading-date': require('../src/trading-date'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/admin.js'), 'utf8'), {
     module: mod,

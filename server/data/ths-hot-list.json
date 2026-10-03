@@ -1,0 +1,186 @@
+{
+  "source": "同花顺热榜-24小时",
+  "fetchedAt": "2026-10-03T14:58:09.898260+00:00",
+  "stocks": [
+    {
+      "rank": 1,
+      "stockCode": "601127",
+      "stockName": "赛力斯",
+      "stockDisplayName": "赛力S"
+    },
+    {
+      "rank": 2,
+      "stockCode": "001246",
+      "stockName": "N力勤",
+      "stockDisplayName": "N力勤"
+    },
+    {
+      "rank": 3,
+      "stockCode": "000678",
+      "stockName": "襄阳轴承",
+      "stockDisplayName": "襄阳ZC"
+    },
+    {
+      "rank": 4,
+      "stockCode": "002487",
+      "stockName": "大金重工",
+      "stockDisplayName": "大金ZG"
+    },
+    {
+      "rank": 5,
+      "stockCode": "000002",
+      "stockName": "万  科Ａ",
+      "stockDisplayName": "万  科Ａ"
+    },
+    {
+      "rank": 6,
+      "stockCode": "002242",
+      "stockName": "九阳股份",
+      "stockDisplayName": "九阳GF"
+    },
+    {
+      "rank": 7,
+      "stockCode": "600825",
+      "stockName": "新华传媒",
+      "stockDisplayName": "新华CM"
+    },
+    {
+      "rank": 8,
+      "stockCode": "300308",
+      "stockName": "中际旭创",
+      "stockDisplayName": "中际XC"
+    },
+    {
+      "rank": 9,
+      "stockCode": "600418",
+      "stockName": "江淮汽车",
+      "stockDisplayName": "江淮QC"
+    },
+    {
+      "rank": 10,
+      "stockCode": "688836",
+      "stockName": "宇树科技-W",
+      "stockDisplayName": "宇树KJ-W"
+    },
+    {
+      "rank": 11,
+      "stockCode": "600127",
+      "stockName": "金健米业",
+      "stockDisplayName": "金健MY"
+    },
+    {
+      "rank": 12,
+      "stockCode": "601091",
+      "stockName": "沈鼓集团",
+      "stockDisplayName": "沈鼓JT"
+    },
+    {
+      "rank": 13,
+      "stockCode": "600664",
+      "stockName": "哈药股份",
+      "stockDisplayName": "哈药GF"
+    },
+    {
+      "rank": 14,
+      "stockCode": "300750",
+      "stockName": "宁德时代",
+      "stockDisplayName": "宁德SD"
+    },
+    {
+      "rank": 15,
+      "stockCode": "603259",
+      "stockName": "药明康德",
+      "stockDisplayName": "药明KD"
+    },
+    {
+      "rank": 16,
+      "stockCode": "301190",
+      "stockName": "善水科技",
+      "stockDisplayName": "善水KJ"
+    },
+    {
+      "rank": 17,
+      "stockCode": "000011",
+      "stockName": "深物业A",
+      "stockDisplayName": "深物YA"
+    },
+    {
+      "rank": 18,
+      "stockCode": "688825",
+      "stockName": "长鑫科技",
+      "stockDisplayName": "长鑫KJ"
+    },
+    {
+      "rank": 19,
+      "stockCode": "002074",
+      "stockName": "国轩高科",
+      "stockDisplayName": "国轩GK"
+    },
+    {
+      "rank": 20,
+      "stockCode": "603200",
+      "stockName": "上海洗霸",
+      "stockDisplayName": "上海XB"
+    },
+    {
+      "rank": 21,
+      "stockCode": "600519",
+      "stockName": "贵州茅台",
+      "stockDisplayName": "贵州MT"
+    },
+    {
+      "rank": 22,
+      "stockCode": "600059",
+      "stockName": "古越龙山",
+      "stockDisplayName": "古越LS"
+    },
+    {
+      "rank": 23,
+      "stockCode": "603986",
+      "stockName": "兆易创新",
+      "stockDisplayName": "兆易CX"
+    },
+    {
+      "rank": 24,
+      "stockCode": "600276",
+      "stockName": "恒瑞医药",
+      "stockDisplayName": "恒瑞YY"
+    },
+    {
+      "rank": 25,
+      "stockCode": "002866",
+      "stockName": "传艺科技",
+      "stockDisplayName": "传艺KJ"
+    },
+    {
+      "rank": 26,
+      "stockCode": "601811",
+      "stockName": "新华文轩",
+      "stockDisplayName": "新华WX"
+    },
+    {
+      "rank": 27,
+      "stockCode": "600487",
+      "stockName": "亨通光电",
+      "stockDisplayName": "亨通GD"
+    },
+    {
+      "rank": 28,
+      "stockCode": "000993",
+      "stockName": "闽东电力",
+      "stockDisplayName": "闽东DL"
+    },
+    {
+      "rank": 29,
+      "stockCode": "300207",
+      "stockName": "欣旺达",
+      "stockDisplayName": "欣旺D"
+    },
+    {
+      "rank": 30,
+      "stockCode": "000504",
+      "stockName": "南华生物",
+      "stockDisplayName": "南华SW"
+    }
+  ]
+}

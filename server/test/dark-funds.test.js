@@ -51,6 +51,7 @@ function setup(options = {}) {
     '../collector-client': collector, '../collector-images': collectorImages,
     '../notifications': require('../src/notifications'),
     '../stock-lookup': require('../src/stock-lookup'),
+    '../dark-fund-ranking': require('../src/dark-fund-ranking'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/payment.js'), 'utf8'), {
     module: mod, require: (id) => dependencyMap[id] || require(id), process,
@@ -139,6 +140,7 @@ test('online membership payment routes are removed', () => {
       '../collector-images': { persistCollectorImages: () => [] },
       '../notifications': require('../src/notifications'),
       '../stock-lookup': require('../src/stock-lookup'),
+      '../dark-fund-ranking': require('../src/dark-fund-ranking'),
     }[id] || require(id)),
     process,
   });
