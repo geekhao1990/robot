@@ -68,3 +68,10 @@
 .orders-table .tr text:first-child { padding-right: 3rpx; padding-left: 3rpx; }
 .tr:not(.th) text { font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; font-size: 27rpx; font-weight: 700; line-height: 1; transform: scaleX(.86); }
 .disclaimer { padding: 8rpx 20rpx 40rpx; color: #aaa; font-size: 20rpx; line-height: 1.7; text-align: center; }
+.poster-actions { display: flex; gap: 14rpx; margin: 12rpx 0 24rpx; }
+.poster-button, .poster-preview { display: flex; align-items: center; justify-content: center; height: 88rpx; margin: 0; border-radius: 44rpx; font-size: 28rpx; font-weight: 750; line-height: 1; }
+.poster-button { flex: 1; color: #fff; background: linear-gradient(100deg, #df1e2f, #ff4550); box-shadow: 0 12rpx 30rpx rgba(223,30,47,.24); }
+.poster-button::after, .poster-preview::after { border: 0; }
+.poster-button[disabled] { color: rgba(255,255,255,.78); background: #d96770; }
+.poster-preview { width: 116rpx; padding: 0; color: #d92436; background: #fff; border: 2rpx solid #e44a58; }
+.share-poster-canvas { position: fixed; left: -2000px; top: 0; width: 750px; height: 1334px; pointer-events: none; }

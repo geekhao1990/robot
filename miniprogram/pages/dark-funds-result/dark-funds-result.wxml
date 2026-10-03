@@ -72,6 +72,12 @@
         <view wx:for="{{rows}}" wx:key="tradeDate" class="tr"><text>{{item.displayDate}}</text><text class="{{item.super_large >= 0 ? 'up' : 'down'}}">{{item.super_largeText}}</text><text class="{{item.large >= 0 ? 'up' : 'down'}}">{{item.largeText}}</text><text class="{{item.middle >= 0 ? 'up' : 'down'}}">{{item.middleText}}</text><text class="{{item.small >= 0 ? 'up' : 'down'}}">{{item.smallText}}</text></view>
       </view>
     </view>
+    <view class="poster-actions">
+      <button class="poster-button" loading="{{posterGenerating}}" disabled="{{posterGenerating}}" bindtap="generateSharePoster">{{posterGenerating ? '正在生成分享图' : '一键生成分享图'}}</button>
+      <button wx:if="{{posterPath}}" class="poster-preview" bindtap="previewSharePoster">预览</button>
+      <button wx:if="{{posterPath}}" class="poster-preview" bindtap="saveSharePoster">保存</button>
+    </view>
     <view class="disclaimer">数据和图表来自互联网，由AI生成，仅供参考，不构成投资建议</view>
+    <canvas type="2d" id="sharePosterCanvas" class="share-poster-canvas"></canvas>
   </block>
 </view>

@@ -1,0 +1,29 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { exactAmount, maskedAmount, posterMetrics } = require('../../miniprogram/utils/dark-fund-poster');
+
+test('share poster exposes exact 1-day dark fund and masks rolling totals', () => {
+  const result = {
+    stockName: '永鼎股份', stockCode: '600105', tradeDate: '2026-09-30',
+    days: [
+      { tradeDate: '2026-09-26', grey: -605460166 },
+      { tradeDate: '2026-09-27', grey: -159935303 },
+      { tradeDate: '2026-09-28', grey: -42902723 },
+      { tradeDate: '2026-09-29', grey: -123071051 },
+      { tradeDate: '2026-09-30', grey: -70262426, listed: -209419079, main: -279681505 },
+    ],
+  };
+  const metrics = posterMetrics(result);
+  assert.equal(metrics.stockName, '永鼎股份');
+  assert.equal(metrics.day1Text, '-7026万');
+  assert.match(metrics.day3Text, /^-x\.xx亿$/);
+  assert.match(metrics.day5Text, /^-xx\.xx亿$/);
+  assert.equal(/\d/.test(metrics.day3Text), false);
+});
+
+test('share poster amount formatting preserves direction, scale and unit', () => {
+  assert.equal(exactAmount(915000000), '+9.15亿');
+  assert.equal(maskedAmount(915000000), '+x.xx亿');
+  assert.equal(maskedAmount(-91500000), '-xxxx万');
+  assert.equal(maskedAmount(0), 'x万');
+});

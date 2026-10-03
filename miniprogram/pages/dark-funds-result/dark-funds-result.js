@@ -1,5 +1,6 @@
 const api = require('../../utils/api');
 const config = require('../../utils/config');
+const { exactAmount, posterMetrics } = require('../../utils/dark-fund-poster');
 
 const YELLOW = '#ffe50a';
 const TREND_AREA_RED = '#ff0000';
@@ -133,6 +134,8 @@ Page({
       ? String(config.darkFundsCloseBannerAdUnitId)
       : '',
     closeBannerAdLoadFailed: false,
+    posterGenerating: false,
+    posterPath: '',
     skeletonRows: [1, 2, 3, 4, 5],
   },
   onLoad(options) {
@@ -333,5 +336,125 @@ Page({
       context.textAlign = 'center';
       series.forEach((item, index) => context.fillText(item.date, xAt(index), height - 12));
     });
+  },
+  generateSharePoster() {
+    if (this.data.posterGenerating || !this.data.result) return;
+    this.setData({ posterGenerating: true });
+    wx.showLoading({ title: '正在生成', mask: true });
+    wx.createSelectorQuery().in(this).select('#sharePosterCanvas').fields({ node: true, size: true }).exec((queryResult) => {
+      const target = queryResult && queryResult[0];
+      if (!target || !target.node) return this.finishPosterError('画布初始化失败');
+      try {
+        const canvas = target.node;
+        const width = 750;
+        const height = 1334;
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        const metrics = posterMetrics(this.data.result);
+        this.drawSharePoster(context, metrics, width, height);
+        wx.canvasToTempFilePath({
+          canvas,
+          width,
+          height,
+          destWidth: width,
+          destHeight: height,
+          fileType: 'png',
+          quality: 1,
+          success: ({ tempFilePath }) => {
+            wx.hideLoading();
+            this.setData({ posterGenerating: false, posterPath: tempFilePath });
+            wx.showModal({
+              title: '分享图已生成',
+              content: '保存到相册后，可发送到群聊、朋友或用于短视频素材。',
+              confirmText: '保存图片',
+              cancelText: '先预览',
+              success: (choice) => choice.confirm ? this.saveSharePoster() : this.previewSharePoster(),
+            });
+          },
+          fail: () => this.finishPosterError('生成分享图失败'),
+        });
+      } catch (error) {
+        this.finishPosterError('生成分享图失败');
+      }
+    });
+  },
+  finishPosterError(message) {
+    wx.hideLoading();
+    this.setData({ posterGenerating: false });
+    wx.showToast({ title: message, icon: 'none' });
+  },
+  previewSharePoster() {
+    if (!this.data.posterPath) return this.generateSharePoster();
+    wx.previewImage({ current: this.data.posterPath, urls: [this.data.posterPath] });
+  },
+  saveSharePoster() {
+    if (!this.data.posterPath) return this.generateSharePoster();
+    wx.saveImageToPhotosAlbum({
+      filePath: this.data.posterPath,
+      success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
+      fail: (error) => {
+        const denied = /auth deny|auth denied/i.test(String(error && error.errMsg || ''));
+        if (!denied) return wx.showToast({ title: '保存失败', icon: 'none' });
+        wx.showModal({ title: '需要相册权限', content: '请在设置中允许保存图片到相册。', confirmText: '去设置', success: (choice) => { if (choice.confirm) wx.openSetting(); } });
+      },
+    });
+  },
+  drawSharePoster(context, metrics, width, height) {
+    const roundRect = (x, y, w, h, r) => {
+      context.beginPath();
+      context.moveTo(x + r, y); context.lineTo(x + w - r, y); context.quadraticCurveTo(x + w, y, x + w, y + r);
+      context.lineTo(x + w, y + h - r); context.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      context.lineTo(x + r, y + h); context.quadraticCurveTo(x, y + h, x, y + h - r);
+      context.lineTo(x, y + r); context.quadraticCurveTo(x, y, x + r, y); context.closePath();
+    };
+    const fillText = (text, x, y, size, color = '#fff', weight = '400', align = 'left') => {
+      context.font = `${weight} ${size}px "Microsoft YaHei", sans-serif`;
+      context.fillStyle = color; context.textAlign = align; context.textBaseline = 'middle'; context.fillText(String(text), x, y);
+    };
+    const valueColor = (value) => Number(value) >= 0 ? '#ff4148' : '#00e4a8';
+    const background = context.createLinearGradient(0, 0, width, height);
+    background.addColorStop(0, '#071018'); background.addColorStop(.52, '#13090c'); background.addColorStop(1, '#05080d');
+    context.fillStyle = background; context.fillRect(0, 0, width, height);
+    context.globalAlpha = .18;
+    for (let x = -100; x < width + 100; x += 44) { context.strokeStyle = x % 88 ? '#b51e28' : '#30485b'; context.beginPath(); context.moveTo(x, 0); context.lineTo(x + 280, height); context.stroke(); }
+    context.globalAlpha = 1;
+    const glow = context.createRadialGradient(610, 130, 10, 610, 130, 300); glow.addColorStop(0, 'rgba(255,35,45,.38)'); glow.addColorStop(1, 'rgba(255,35,45,0)'); context.fillStyle = glow; context.fillRect(300, 0, 450, 430);
+    fillText('暗盘追踪', 48, 86, 58, '#ffffff', '800');
+    fillText('主力资金 · 先人一步', 50, 142, 23, '#d5dbe3', '400');
+    context.fillStyle = '#ef343b'; context.fillRect(48, 174, 654, 3);
+    roundRect(34, 205, 682, 840, 26); context.fillStyle = 'rgba(5,12,18,.90)'; context.fill(); context.strokeStyle = 'rgba(255,55,62,.55)'; context.lineWidth = 2; context.stroke();
+    fillText(metrics.stockName, 62, 266, 46, '#fff', '800');
+    fillText(metrics.stockCode, 690, 270, 22, '#b8c2cf', '400', 'right');
+    fillText(`${metrics.tradeDate} 收盘暗盘数据`, 63, 312, 21, '#aab7c6');
+    roundRect(52, 350, 418, 246, 20); context.fillStyle = 'rgba(0,64,54,.28)'; context.fill(); context.strokeStyle = 'rgba(0,228,168,.34)'; context.stroke();
+    fillText('1日暗盘', 78, 397, 33, '#fff', '700');
+    fillText(metrics.day1Text, 78, 476, 70, valueColor(metrics.day1), '800');
+    fillText(metrics.day1 >= 0 ? '今日暗盘资金净流入' : '今日暗盘资金净流出', 78, 552, 22, '#b6cbd2');
+    [['3日暗盘净流入', metrics.day3Text, metrics.day3], ['5日暗盘净流入', metrics.day5Text, metrics.day5]].forEach((item, index) => {
+      const y = 350 + index * 123; roundRect(488, y, 208, 108, 15); context.fillStyle = 'rgba(19,28,35,.92)'; context.fill(); context.strokeStyle = 'rgba(255,255,255,.08)'; context.stroke();
+      fillText(item[0], 510, y + 31, 18, '#dce3ea'); fillText(item[1], 510, y + 75, 32, valueColor(item[2]), '700');
+    });
+    fillText('1日暗盘资金截图', 62, 644, 27, '#fff', '700');
+    fillText('(单位：万元)', 62, 680, 17, '#a8b4c1');
+    const bars = [
+      { label: '主力明盘', value: Number(metrics.latest.listed) || 0 },
+      { label: '主力暗盘', value: Number(metrics.latest.grey) || 0 },
+      { label: '散户流入', value: -(Number(metrics.latest.main) || 0) },
+    ];
+    const maximum = Math.max(...bars.map((item) => Math.abs(item.value)), 1), zeroY = 826;
+    context.strokeStyle = '#89949f'; context.lineWidth = 1; context.beginPath(); context.moveTo(65, zeroY); context.lineTo(685, zeroY); context.stroke();
+    bars.forEach((bar, index) => {
+      const x = 145 + index * 215, barHeight = Math.max(18, Math.round(Math.abs(bar.value) / maximum * 125));
+      context.fillStyle = valueColor(bar.value); roundRect(x - 24, bar.value >= 0 ? zeroY - barHeight : zeroY, 48, barHeight, 5); context.fill();
+      fillText(exactAmount(bar.value), x, bar.value >= 0 ? zeroY - barHeight - 25 : zeroY + barHeight + 25, 20, valueColor(bar.value), '700', 'center');
+      fillText(bar.label, x, 985, 21, '#d7dee6', '400', 'center');
+    });
+    roundRect(34, 1070, 682, 212, 24); context.fillStyle = 'rgba(13,21,29,.94)'; context.fill(); context.strokeStyle = 'rgba(255,57,64,.35)'; context.stroke();
+    roundRect(62, 1102, 104, 104, 18); context.fillStyle = '#e9373e'; context.fill(); fillText('指', 114, 1155, 58, '#fff', '800', 'center');
+    fillText('指标仓库小程序', 194, 1127, 32, '#fff', '800');
+    fillText('实时追踪主力资金动向', 194, 1172, 21, '#c0cad5');
+    fillText('微信搜索「指标仓库」查看个股暗盘数据', 194, 1210, 18, '#ff8589');
+    fillText('数据来自互联网，仅供参考，不构成投资建议', 375, 1310, 16, '#647180', '400', 'center');
   },
 });
