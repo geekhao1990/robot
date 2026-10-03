@@ -25,10 +25,6 @@
           <view class="hero-share-icon"></view>
           <text>{{posterGenerating ? '生成中' : '生成分享图'}}</text>
         </view>
-        <view wx:if="{{isOfficial}}" class="hero-poster-button official-poster-button {{posterGenerating ? 'disabled' : ''}}" data-no-qr="true" hover-class="hero-poster-button-hover" bindtap="generateSharePoster">
-          <view class="hero-share-icon"></view>
-          <text>{{posterGenerating ? '生成中' : '无二维码分享图'}}</text>
-        </view>
       </view>
     </view>
     <view class="card fund-card">

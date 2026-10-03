@@ -44,7 +44,6 @@
       <view wx:if="{{queryAdUnitId && !queryAdLoadFailed}}" class="query-ad-slot">
         <ad unit-id="{{queryAdUnitId}}" binderror="onQueryAdError" />
       </view>
-      <view wx:if="{{waitingText}}" class="waiting-tip">{{waitingText}}</view>
     </view>
   </view>
 
@@ -56,6 +55,7 @@
       <view wx:for="{{orders}}" wx:key="id" class="order-card" data-id="{{item.id}}" bindtap="openOrder">
         <view class="order-main">
           <view class="order-stock"><text wx:if="{{item.stockDisplayName}}" class="order-name">{{item.stockDisplayName}}</text><text class="order-code">{{item.marketStockCode}}</text></view>
+          <view wx:if="{{item.canNoQrPoster}}" class="order-poster-link" data-id="{{item.id}}" catchtap="generateNoQrPoster"><view class="order-poster-icon"></view><text>无二维码分享图</text></view>
           <view class="order-meta"><view class="order-type">{{item.queryTypeText}}</view><view class="order-query-time">查询时间：{{item.queryTimeText}}</view></view>
         </view>
         <view class="order-side {{item.ready ? 'ready' : 'pending'}} {{item.failed ? 'failed' : ''}}"><text>{{item.statusText}}</text><text wx:if="{{item.ready}}" class="arrow">›</text></view>

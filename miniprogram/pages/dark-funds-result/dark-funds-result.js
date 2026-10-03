@@ -142,7 +142,9 @@ Page({
   },
   onLoad(options) {
     const currentUser = store.getUser();
-    this.setData({ isOfficial: !!(currentUser && currentUser.official === true) });
+    const isOfficial = !!(currentUser && currentUser.official === true);
+    this.autoPosterWithoutQr = isOfficial && String(options && options.poster || '') === 'noqr';
+    this.setData({ isOfficial });
     this.loadCloseAds();
     if (String(options && options.mock || '') === '1') {
       this.applyResult(createMockCloseResult(options));
@@ -214,7 +216,11 @@ Page({
     result.displayName = hybridStockName(result.stockName, result.stockInitials);
     result.displayCode = marketStockCode(result.stockCode);
     this.trends = { trend3: rolling(days, 3), trend5: rolling(days, 5) };
-    this.setData({ loading: false, result, unitLabel: unit.label, summary, dayBars, rows });
+    this.setData({ loading: false, result, unitLabel: unit.label, summary, dayBars, rows }, () => {
+      if (!this.autoPosterWithoutQr) return;
+      this.autoPosterWithoutQr = false;
+      wx.nextTick(() => this.generateSharePoster({ currentTarget: { dataset: { noQr: 'true' } } }));
+    });
   },
   switchFundView(event) {
     const fundView = String(event.currentTarget.dataset.view || 'main');

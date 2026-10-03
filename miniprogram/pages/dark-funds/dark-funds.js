@@ -64,7 +64,7 @@ Page({
     historyTotal: 0,
     historyBadge: 0,
     historyAdLoadFailed: false,
-    waitingText: '',
+    isOfficial: false,
     querying: false,
     serviceQrVisible: false,
     serviceQrTitle: '',
@@ -79,7 +79,7 @@ Page({
       return;
     }
     const tab = options && options.tab === 'history' ? 'history' : 'query';
-    this.setData({ tab });
+    this.setData({ tab, isOfficial: user.official === true });
     api.getAppSettings().then((settings) => {
       const id = String((settings && settings.darkFundsQueryAdUnitId) || config.darkFundsQueryAdUnitId || '');
       const historyId = String((settings && settings.darkFundsHistoryAdUnitId) || config.darkFundsHistoryAdUnitId || '');
@@ -188,13 +188,13 @@ Page({
       .then((order) => {
         wx.hideLoading();
         if (!order || !order.orderId) throw new Error('工单提交失败');
-        this.setData({ ...this.quotaData(order), waitingText: '等待结果' });
+        this.setData({ ...this.quotaData(order) });
         this.clearQueryRequestId(requestId);
         this.loadOrders(true, 1);
         if (order.ready && order.resultType === 'close_snapshot') {
           return wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?id=${encodeURIComponent(order.orderId)}` });
         }
-        wx.showModal({ title: order.ready ? '查询完成' : '已提交', content: order.ready ? '盘后数据已生成，请在订单列表查看' : '等待结果', showCancel: false });
+        wx.showModal({ title: order.ready ? '查询完成' : '已提交', content: order.ready ? '盘后数据已生成，请在订单列表查看' : '工单处理中，请到订单列表手动刷新状态', showCancel: false });
       })
       .catch((error) => {
         wx.hideLoading();
@@ -221,7 +221,8 @@ Page({
             marketStockCode: marketStockCode(item.stockCode),
             queryTypeText: item.queryMode === 'close' ? '盘后查询' : '决策先锋',
             queryTimeText: formatQueryTime(item.createdAt),
-            statusText: ready ? '点击查看' : (failed ? '查询失败' : '等待结果'),
+            statusText: ready ? '点击查看' : (failed ? '查询失败' : '处理中'),
+            canNoQrPoster: this.data.isOfficial && ready && item.queryMode === 'close',
           };
         });
         const unread = Array.isArray(result)
@@ -269,7 +270,7 @@ Page({
   },
   openOrder(e) {
     const order = this.data.orders.find((item) => item.id === e.currentTarget.dataset.id);
-    if (!order || !order.ready) return wx.showToast({ title: order && order.failed ? '请稍后再试' : '等待结果', icon: 'none' });
+    if (!order || !order.ready) return wx.showToast({ title: order && order.failed ? '请稍后再试' : '处理中，请稍后刷新', icon: 'none' });
     api.getDarkFundOrder(order.id)
       .then((readyOrder) => {
         if (!readyOrder) throw new Error('查询结果不存在');
@@ -289,6 +290,13 @@ Page({
         }));
       })
       .catch((error) => wx.showModal({ title: '加载失败', content: this.errorText(error), showCancel: false }));
+  },
+  generateNoQrPoster(e) {
+    const order = this.data.orders.find((item) => item.id === e.currentTarget.dataset.id);
+    if (!this.data.isOfficial || !order || !order.ready || order.queryMode !== 'close') return;
+    wx.navigateTo({
+      url: `/pages/dark-funds-result/dark-funds-result?id=${encodeURIComponent(order.id)}&poster=noqr`,
+    });
   },
   queryRequestId(stockCode, queryMode, source) {
     const key = 'dark_fund_pending_request';

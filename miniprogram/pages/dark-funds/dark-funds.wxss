@@ -36,7 +36,6 @@
 .quota-details > view { display: flex; align-items: center; justify-content: space-between; min-height: 40rpx; }
 .quota-expiry { color: #aaa; font-size: 19rpx; }
 .query-ad-slot { width: 100%; margin-top: 24rpx; overflow: hidden; border-radius: 12rpx; }
-.waiting-tip { display: flex; align-items: center; justify-content: center; height: 64rpx; margin-top: 24rpx; color: #8a6111; font-size: 25rpx; font-weight: 700; background: #fff7df; border-radius: 14rpx; }
 .history-page { padding: 34rpx; }
 .history-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 0 8rpx 20rpx; color: #333; font-size: 28rpx; font-weight: 700; }
 .history-refresh { padding: 13rpx 24rpx; color: #fff; font-size: 23rpx; font-weight: 700; background: #ff2442; border-radius: 999rpx; box-shadow: 0 6rpx 16rpx rgba(255,36,66,.22); }
@@ -49,6 +48,8 @@
 .order-stock { display: flex; align-items: baseline; gap: 10rpx; min-width: 0; }
 .order-name { overflow: hidden; color: #222; font-size: 27rpx; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
 .order-code { flex: none; color: #999; font-size: 20rpx; font-weight: 400; letter-spacing: 0; }
+.order-poster-link { display: inline-flex; align-items: center; gap: 7rpx; min-height: 38rpx; margin-top: 7rpx; padding: 0 12rpx; color: #d92436; font-size: 20rpx; font-weight: 700; background: #fff2f4; border: 1rpx solid #ffc7cf; border-radius: 999rpx; }
+.order-poster-icon { width: 23rpx; height: 23rpx; background: center / 100% 100% no-repeat url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZDkyNDM2IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PHBhdGggZD0iTTQgMTJ2N2ExIDEgMCAwIDAgMSAxaDE0YTEgMSAwIDAgMCAxLTF2LTciLz48cGF0aCBkPSJNMTIgM3YxMiIvPjxwYXRoIGQ9Ik03LjUgNy41TDEyIDNsNC41IDQuNSIvPjwvc3ZnPg=="); }
 .order-meta { display: flex; align-items: center; gap: 10rpx; min-width: 0; margin-top: 8rpx; }
 .order-query-time { overflow: hidden; color: #999; font-size: 20rpx; text-overflow: ellipsis; white-space: nowrap; }
 .order-type { display: inline-flex; flex: none; padding: 4rpx 10rpx; color: #777; font-size: 18rpx; background: #f1f1f1; border-radius: 999rpx; }
