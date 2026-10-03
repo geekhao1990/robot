@@ -554,9 +554,9 @@ Page({
     roundRect(54, 1090, 148, 148, 16); context.fillStyle = '#fff'; context.fill();
     context.drawImage(assets.qrImage, 60, 1096, 136, 136);
     context.strokeStyle = 'rgba(255,255,255,.24)'; context.lineWidth = 1; context.beginPath(); context.moveTo(226, 1092); context.lineTo(226, 1248); context.stroke();
-    fillText('暗盘数据小程序', 254, 1096, 31, '#fff', '800');
-    fillText('实时追踪主力资金动向', 254, 1137, 20, '#d0d6dd');
-    fillText('把握市场先机', 254, 1168, 20, '#d0d6dd');
+    fillText('“指标仓库”小程序', 254, 1096, 29, '#fff', '800');
+    fillText('查询暗盘和金手指', 254, 1139, 21, '#d0d6dd', '600');
+    fillText('实时追踪主力资金动向', 254, 1168, 18, '#9faab6');
     const callToAction = context.createLinearGradient(250, 1190, 692, 1248);
     callToAction.addColorStop(0, '#ff4b50'); callToAction.addColorStop(.45, '#ff3039'); callToAction.addColorStop(1, '#c91422');
     context.save(); context.shadowColor = 'rgba(255,35,47,.68)'; context.shadowBlur = 16; context.shadowOffsetY = 4;
