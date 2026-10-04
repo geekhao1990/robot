@@ -550,7 +550,7 @@ Page({
       const x = 145 + index * 215, barHeight = Math.max(18, Math.round(Math.abs(bar.value) / maximum * 125));
       context.fillStyle = valueColor(bar.value); roundRect(x - 24, bar.value >= 0 ? zeroY - barHeight : zeroY, 48, barHeight, 5); context.fill();
       fillText(metrics.barTexts[index] || exactAmount(bar.value), x, bar.value >= 0 ? zeroY - barHeight - 25 : zeroY + barHeight + 25, 20, valueColor(bar.value), '700', 'center');
-      fillText(bar.label, x, 1005, 21, '#d7dee6', '400', 'center');
+      fillText(bar.label, x, 1015, 21, '#d7dee6', '400', 'center');
     });
     roundRect(34, 1062, 682, 226, 24); context.fillStyle = 'rgba(13,17,24,.94)'; context.fill(); context.strokeStyle = 'rgba(255,57,64,.42)'; context.stroke();
     context.save();
