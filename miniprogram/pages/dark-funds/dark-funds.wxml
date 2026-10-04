@@ -53,18 +53,20 @@
         <button wx:if="{{decisionPioneerEnabled}}" class="query-button query-button-live" bindtap="prepareIntradayQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">决策先锋</button>
         <button class="query-button query-button-close" bindtap="prepareCloseQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">盘后查询</button>
       </view>
-      <view class="quota-summary">
-        <view wx:if="{{closeMonthlyActive}}" class="remaining-tip">盘后包月：<text>无限查询</text><text wx:if="{{closeMonthlyExpiryText}}" class="quota-expiry">（有效至 {{closeMonthlyExpiryText}}）</text></view>
-        <view class="remaining-tip">剩余次数：<text>{{remaining}}</text></view>
-        <view class="quota-details">
-          <view><text>30天内到期</text><text>{{expiringRemaining}} 次<text wx:if="{{quotaExpiryText}}" class="quota-expiry">（有效至 {{quotaExpiryText}}）</text></text></view>
-          <view><text>长期有效</text><text>{{permanentRemaining}} 次</text></view>
+      <view class="query-benefits-row">
+        <view class="quota-summary">
+          <view wx:if="{{closeMonthlyActive}}" class="remaining-tip">盘后包月：<text>无限查询</text><text wx:if="{{closeMonthlyExpiryText}}" class="quota-expiry">（有效至 {{closeMonthlyExpiryText}}）</text></view>
+          <view class="remaining-tip">剩余次数：<text>{{remaining}}</text></view>
+          <view class="quota-details">
+            <view><text>30天内到期</text><text>{{expiringRemaining}} 次<text wx:if="{{quotaExpiryText}}" class="quota-expiry">（有效至 {{quotaExpiryText}}）</text></text></view>
+            <view><text>长期有效</text><text>{{permanentRemaining}} 次</text></view>
+          </view>
         </view>
-      </view>
-      <view class="service-actions">
-        <view class="service-button" bindtap="openEnterpriseWechat">
-          <view class="service-icon">企</view>
-          <view class="service-copy"><view class="service-title">企业微信</view><view class="service-description">添加企业微信购买更优惠</view></view>
+        <view class="service-actions">
+          <view class="service-button" bindtap="openEnterpriseWechat">
+            <view class="service-icon">企</view>
+            <view class="service-copy"><view class="service-title">企业微信</view><view class="service-description">添加企业微信购买更优惠</view></view>
+          </view>
         </view>
       </view>
       <view wx:if="{{queryAdUnitId && !queryAdLoadFailed}}" class="query-ad-slot">
