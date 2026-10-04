@@ -411,7 +411,7 @@ Page({
     text('本期点金', 70, 286, 24, '#9da3ae');
     text(fingerText, 70, 360, 78, fingerColor, '900');
     text(record.trend === 'down' ? '趋势：下跌' : '趋势：上涨', 72, 429, 29, record.trend === 'down' ? '#20d6a2' : '#ff5b55', '700');
-    text(`水位：${Number(record.position) || 0}%`, 678, 429, 29, '#fff', '700', 'right');
+    text(`仓位：${Number(record.position) || 0}%`, 678, 429, 29, '#fff', '700', 'right');
 
     const cards = [
       { label: '阳谱', value: `${yang}%`, color: '#ff625b' },
@@ -439,7 +439,7 @@ Page({
     text('阳谱', 312, historyTop + 50, 21, '#9ca1ab', '400', 'center');
     text('阴谱', 430, historyTop + 50, 21, '#9ca1ab', '400', 'center');
     text('点金', 548, historyTop + 50, 21, '#9ca1ab', '400', 'center');
-    text('水位', 668, historyTop + 50, 21, '#9ca1ab', '400', 'right');
+    text('仓位', 668, historyTop + 50, 21, '#9ca1ab', '400', 'right');
     records.forEach((item, index) => {
       const y = historyTop + 102 + index * 58;
       context.strokeStyle = 'rgba(255,255,255,.08)';
