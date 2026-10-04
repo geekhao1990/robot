@@ -306,14 +306,14 @@ Page({
       try {
         const canvas = target.node;
         const width = 750;
-        const height = 1334;
+        const height = 1440;
         canvas.width = width;
         canvas.height = height;
         const context = canvas.getContext('2d');
         Promise.all([
           this.loadPosterImage(canvas, ['/images/dark-share-bg-v2.jpg', '../../images/dark-share-bg-v2.jpg']),
           this.loadPosterImage(canvas, ['/images/indicator-warehouse-mini-code.jpg', '../../images/indicator-warehouse-mini-code.jpg']),
-          this.loadPosterImage(canvas, ['/images/profile-dark-funds.png', '../../images/profile-dark-funds.png']),
+          this.loadPosterImage(canvas, ['/images/gold-share-dark-funds.png', '../../images/gold-share-dark-funds.png']),
         ])
           .then(([backgroundImage, qrImage, darkFundImage]) => {
             this.drawGoldSharePoster(context, width, height, { backgroundImage, qrImage, darkFundImage });
@@ -417,65 +417,74 @@ Page({
     context.fillStyle = shade;
     context.fillRect(0, 0, width, height);
 
-    text('指标仓库', 52, 92, 43, '#fff', '900');
-    text(record.date || '--', 692, 112, 25, '#fff', '700', 'right');
-    text('盘中金手指数据', 56, 154, 28, '#e8e9ed', '600');
-    context.fillStyle = record.finger === 'silver' ? '#dfe6ef' : '#e5b944';
-    context.fillRect(54, 207, 642, 3);
+    artText(fingerText, 222, 94, 92);
+    text(record.date || '--', 515, 112, 25, '#fff', '700');
+    text('把握市场情绪 · 抢先一步', 54, 164, 27, '#f2f2f4', '600');
+    context.fillStyle = '#e8383f';
+    context.fillRect(52, 192, 646, 3);
 
-    roundRect(38, 228, 674, 310, 28);
-    context.fillStyle = 'rgba(5,10,18,.88)';
+    roundRect(30, 210, 690, 190, 28);
+    context.fillStyle = 'rgba(9,7,10,.82)';
     context.fill();
-    context.strokeStyle = record.finger === 'silver' ? 'rgba(222,231,242,.48)' : 'rgba(228,180,77,.48)';
+    context.strokeStyle = 'rgba(239,51,59,.72)';
     context.lineWidth = 2;
     context.stroke();
-    artText(headline, width / 2, 348, headline.length > 6 ? 66 : 94);
-    roundRect(270, 440, 210, 62, 31);
-    context.fillStyle = record.finger === 'silver' ? 'rgba(223,232,243,.16)' : 'rgba(231,184,69,.18)';
+    artText(headline, width / 2, 286, headline.length > 6 ? 62 : 88);
+    roundRect(486, 330, 196, 48, 24);
+    context.fillStyle = 'rgba(100,18,22,.72)';
     context.fill();
-    context.strokeStyle = record.finger === 'silver' ? 'rgba(235,242,250,.65)' : 'rgba(244,207,112,.7)';
-    context.lineWidth = 2;
-    context.stroke();
-    text(`指标 · ${fingerText}`, width / 2, 471, 29, fingerColor, '800', 'center');
+    text(`指标 · ${fingerText}`, 584, 354, 22, fingerColor, '700', 'center');
 
-    roundRect(38, 568, 674, 410, 28);
+    roundRect(30, 420, 690, 280, 28);
     context.fillStyle = 'rgba(5,10,18,.9)';
     context.fill();
-    context.strokeStyle = record.finger === 'silver' ? 'rgba(222,231,242,.34)' : 'rgba(228,180,77,.34)';
+    context.strokeStyle = 'rgba(239,51,59,.55)';
     context.stroke();
-    text('趋势：？', 72, 632, 42, '#ff5b55', '900');
-    text('仓位：？', 678, 632, 42, '#fff', '900', 'right');
+    text('▮▮ 市场情绪', 58, 466, 32, '#fff', '900');
+    roundRect(500, 442, 180, 48, 24);
+    context.fillStyle = 'rgba(96,18,22,.75)';
+    context.fill();
+    text(`${fingerText} · 情绪分析`, 590, 466, 20, '#f5d9da', '600', 'center');
 
     const cards = [
       { label: '阳谱', value: `${yang}%`, color: '#ff625b' },
       { label: '阴谱', value: `${yin}%`, color: '#2ad6a3' },
     ];
     cards.forEach((item, index) => {
-      const x = 72 + index * 302;
-      roundRect(x, 694, 278, 150, 18);
-      context.fillStyle = 'rgba(255,255,255,.055)';
+      const x = 52 + index * 326;
+      roundRect(x, 510, 310, 122, 18);
+      context.fillStyle = index === 0 ? 'rgba(74,13,17,.7)' : 'rgba(4,55,47,.72)';
       context.fill();
-      text(item.label, x + 24, 738, 30, '#c4c7ce', '700');
-      text(item.value, x + 24, 800, 58, item.color, '900');
+      context.strokeStyle = index === 0 ? 'rgba(239,59,64,.45)' : 'rgba(23,196,151,.42)';
+      context.stroke();
+      text(item.label, x + 28, 548, 27, '#f4f4f5', '700');
+      text(item.value, x + 28, 596, 48, item.color, '900');
     });
 
     if (warning) {
-      roundRect(60, 874, 630, 72, 18);
+      roundRect(52, 646, 646, 40, 14);
       context.fillStyle = yang >= 75 ? 'rgba(104,22,24,.88)' : 'rgba(4,67,54,.88)';
       context.fill();
-      text(warning, width / 2, 910, 26, yang >= 75 ? '#ffb4ae' : '#84f3d1', '700', 'center');
+      text(warning, width / 2, 666, 20, yang >= 75 ? '#ffb4ae' : '#84f3d1', '700', 'center');
     }
 
-    roundRect(30, 1010, 690, 256, 26);
-    context.fillStyle = 'rgba(5,10,18,.9)';
+    roundRect(30, 720, 690, 465, 26);
+    context.fillStyle = 'rgba(250,250,250,.98)';
     context.fill();
-    context.strokeStyle = 'rgba(235,55,55,.42)';
+    context.strokeStyle = 'rgba(239,51,59,.52)';
     context.stroke();
-    if (assets.qrImage) context.drawImage(assets.qrImage, 54, 1046, 184, 184);
-    text('查看实时金手指和暗盘资金', 270, 1086, 32, '#fff', '900');
-    text('搜索“指标仓库”小程序', 270, 1152, 31, '#f0c96b', '800');
-    if (assets.darkFundImage) context.drawImage(assets.darkFundImage, 610, 1170, 76, 76);
-    text('数据来自互联网，仅供参考，不构成投资建议', width / 2, 1312, 17, '#777d88', '400', 'center');
+    if (assets.darkFundImage) context.drawImage(assets.darkFundImage, 42, 732, 666, 441);
+
+    roundRect(30, 1205, 690, 190, 26);
+    context.fillStyle = 'rgba(8,10,16,.92)';
+    context.fill();
+    context.strokeStyle = 'rgba(235,55,55,.48)';
+    context.stroke();
+    if (assets.qrImage) context.drawImage(assets.qrImage, 52, 1223, 154, 154);
+    text('查看实时金手指和暗盘资金', 238, 1252, 30, '#fff', '900');
+    text('搜索“指标仓库”小程序', 238, 1310, 28, '#f0c96b', '800');
+    text('长按识别小程序码', 238, 1357, 21, '#e4676e', '600');
+    text('数据来自互联网，仅供参考，不构成投资建议', width / 2, 1422, 17, '#777d88', '400', 'center');
   },
 
   onUnload() {
