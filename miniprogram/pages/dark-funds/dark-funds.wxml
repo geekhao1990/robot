@@ -50,7 +50,7 @@
         <view wx:else class="stock-dropdown-error">{{stockLookupError}}</view>
       </view>
       <view class="query-actions">
-        <button wx:if="{{decisionPioneerEnabled}}" class="query-button query-button-live" bindtap="prepareIntradayQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">决策先锋</button>
+        <button wx:if="{{decisionPioneerEnabled}}" class="query-button query-button-live" bindtap="prepareIntradayQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">决策拼单</button>
         <button class="query-button query-button-close" bindtap="prepareCloseQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">盘后查询</button>
       </view>
       <view class="query-benefits-row">

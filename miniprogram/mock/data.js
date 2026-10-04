@@ -40,7 +40,7 @@ const rawNotes = [
     id: 'n3', authorId: 'u3', category: '金手指', type: 'gold',
     title: '金手指｜领取与使用说明', ratio: 1.5,
     images: ['gold-finger1', 'gold-finger2'],
-    content: '金手指使用说明。点击主图或下方「点击领取」，开通会员后查看每日数据。',
+    content: '金手指使用说明。点击主图或下方「查看金手指」，开通后查看每日数据。',
     tags: ['金手指', '领取说明'], likes: 42, collects: 28, time: 5, video: false,
   },
   {

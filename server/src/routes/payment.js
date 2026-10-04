@@ -154,7 +154,7 @@ module.exports = function register(router, HttpError) {
     if (!/^[A-Za-z0-9_-]{12,80}$/.test(requestId)) throw new HttpError(400, '查询请求标识无效');
     if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
     if (queryMode === 'intraday' && user.decisionPioneerEnabled !== true) {
-      throw new HttpError(403, '决策先锋尚未开通');
+      throw new HttpError(403, '决策拼单尚未开通');
     }
     const stockInfo = lookupStock(stockCode);
     const d = db.get();
@@ -241,8 +241,8 @@ module.exports = function register(router, HttpError) {
       activateDarkFundOrder(d, order, intradayResult);
       pushNotification(d, order.userId, {
         type: 'dark_ready',
-        title: `${order.stockCode}决策先锋查询已完成`,
-        content: '已使用收盘后的决策先锋缓存生成结果，点击查看订单列表',
+        title: `${order.stockCode}决策拼单查询已完成`,
+        content: '已使用收盘后的决策拼单缓存生成结果，点击查看订单列表',
         targetType: 'dark_history',
         targetId: order.id,
         dedupeKey: `dark-ready:${order.id}`,

@@ -182,7 +182,7 @@ Page({
         isDarkFundNote: darkFundNote,
         canShareNote,
         darkParagraphs: darkFundNote ? darkArticleParagraphs(note, content) : [],
-        resourceLabel: darkFundNote ? '查询暗盘' : '点击领取',
+        resourceLabel: darkFundNote ? '查询暗盘' : (note.type === 'gold' ? '查看金手指' : '点击领取'),
         articleAdLoadFailed: false,
         isOwnNote,
         followed: !isOwnNote && store.isFollowed(authorId),
@@ -341,7 +341,7 @@ Page({
         if (!result || result.status !== 'SUCCESS') {
           return wx.showModal({
             title: '支付处理中',
-            content: '支付结果正在确认，请稍后重新点击领取。',
+            content: '支付结果正在确认，请稍后重新点击“查看金手指”。',
             showCancel: false,
           });
         }

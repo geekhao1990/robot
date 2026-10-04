@@ -805,7 +805,7 @@ module.exports = function register(router, HttpError) {
     return user;
   });
 
-  // “决策先锋”是盘中采集器查询的独立权限，不随暗盘盘后权限自动开通。
+  // “决策拼单”是盘中采集器查询的独立权限，不随暗盘盘后权限自动开通。
   router.put('/api/admin/users/:id/decision-pioneer', (ctx) => {
     requireAuth(ctx);
     const d = db.get();
@@ -814,11 +814,11 @@ module.exports = function register(router, HttpError) {
     const action = String((ctx.body || {}).action || '');
     const active = user.decisionPioneerEnabled === true;
     if (action === 'open') {
-      if (active) throw new HttpError(409, '该用户已开通决策先锋');
+      if (active) throw new HttpError(409, '该用户已开通决策拼单');
       if (user.darkFundEnabled !== true) throw new HttpError(409, '请先开通暗盘资金入口');
       user.decisionPioneerEnabled = true;
     } else if (action === 'cancel') {
-      if (!active) throw new HttpError(409, '该用户未开通决策先锋');
+      if (!active) throw new HttpError(409, '该用户未开通决策拼单');
       user.decisionPioneerEnabled = false;
     } else {
       throw new HttpError(400, 'action 须为 open/cancel');

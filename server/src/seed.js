@@ -47,7 +47,7 @@ function note(o) {
 const notes = [
   note({ id: 'n1', authorId: 'u4', type: 'ad', title: '周末慢早餐｜给自己半小时的仪式感', ratio: 1.3, images: ['slow-breakfast', 'weekend-coffee'], content: '周末不用赶时间，给自己做一份慢早餐。热一杯牛奶、煎个鸡蛋，再把窗帘拉开，普通的一天也会变得很柔软。', tags: ['慢早餐', '生活记录', '周末'], likes: 58, collects: 26, hours: 1 }),
   note({ id: 'n2', authorId: 'u2', type: 'ad', title: '十分钟收纳桌面，工作心情都变好了', ratio: 0.8, images: ['tidy-desk'], content: '不需要买很多收纳工具：把每天都要用的东西留在手边，其他物品收进抽屉。下班前花十分钟整理，第二天打开电脑会轻松很多。', tags: ['桌面收纳', '居家办公', '生活小技巧'], likes: 43, collects: 31, hours: 3 }),
-  note({ id: 'n3', authorId: 'u4', category: '金手指', type: 'gold', visible: false, title: '金手指｜领取与使用说明', ratio: 1.15, images: ['gold1', 'gold2'], content: '点击主图或下方「点击领取」，开通会员后查看每日金手指数据。', tags: ['金手指', '领取说明'], likes: 42, collects: 28, hours: 4 }),
+  note({ id: 'n3', authorId: 'u4', category: '金手指', type: 'gold', visible: false, title: '金手指｜查看与使用说明', ratio: 1.15, images: ['gold1', 'gold2'], content: '点击主图或下方「查看金手指」，开通后查看每日金手指数据。', tags: ['金手指', '使用说明'], likes: 42, collects: 28, hours: 4 }),
   note({ id: 'n4', authorId: 'u6', title: '通勤包里一直带着的五样小物', ratio: 1.0, images: ['commute-bag', 'daily-essentials'], content: '一把折叠伞、一支润唇膏、耳机、小水杯和纸巾。都是不贵的小东西，但每天出门时都能带来一点踏实感。', tags: ['通勤日常', '好物分享', '生活方式'], likes: 67, collects: 38, hours: 8 }),
   note({ id: 'n5', authorId: 'u2', title: '下班后的热汤面，简单但很治愈', ratio: 1.25, images: ['noodle-soup', 'home-dinner'], content: '冰箱里常备鸡蛋和青菜，十分钟煮一碗热汤面。认真吃完晚饭，再慢慢收拾厨房，就是我的下班仪式。', tags: ['一人食', '下班日常', '简单料理'], likes: 52, collects: 29, hours: 12 }),
   note({ id: 'n6', authorId: 'u1', title: '耳机用了三个月，通勤体验分享', ratio: 0.9, images: ['commute-headphones'], content: '通勤路上最离不开的就是耳机。降噪够用、佩戴轻松，地铁里听播客也很清楚。适合想提升通勤幸福感的人。', tags: ['通勤好物', '数码日常', '耳机'], likes: 34, collects: 22, hours: 20 }),
