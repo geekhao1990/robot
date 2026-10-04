@@ -65,7 +65,7 @@
 .ranking-funds { display: flex; gap: 14rpx; padding: 0 24rpx 22rpx 82rpx; }
 .ranking-funds > view { display: flex; flex: 1; min-width: 0; align-items: baseline; justify-content: space-between; gap: 12rpx; padding: 13rpx 4rpx; background: transparent; border-radius: 0; }
 .ranking-funds > view > text:first-child { color: #777; font-size: 26rpx; font-weight: 600; white-space: nowrap; }
-.ranking-funds > view > text:last-child { overflow: hidden; font-size: 30rpx; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.ranking-funds > view > text:last-child { overflow: hidden; font-size: 24rpx; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
 .ranking-snapshot { margin: 0 22rpx 24rpx; padding: 24rpx 20rpx 28rpx; background: #fafafa; border: 1rpx solid #e5e5e5; border-radius: 16rpx; }
 .ranking-snapshot-head { color: #333; font-size: 30rpx; font-weight: 850; }
 .ranking-snapshot-summary { display: flex; gap: 16rpx; margin-top: 20rpx; padding: 22rpx 12rpx; background: #f1f2f3; border-radius: 12rpx; }

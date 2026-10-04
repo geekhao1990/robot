@@ -370,7 +370,7 @@ Page({
     const yang = Number(record.yang) || 0;
     const yin = Number(record.yin) || 0;
     const fingerText = record.finger === 'silver' ? '银手指' : '金手指';
-    const headline = record.finger === 'silver' ? '倒车接人' : '行情反转还是反弹';
+    const headline = record.finger === 'silver' ? '是倒车接人还是调整开始？' : '准备进攻还是诱多发套？';
     const fingerColor = record.finger === 'silver' ? '#eef3fa' : '#f4cf70';
     const warning = yang >= 75
       ? '阳谱接近80：警惕风险，随时可能调整'
@@ -429,7 +429,9 @@ Page({
     context.strokeStyle = 'rgba(239,51,59,.72)';
     context.lineWidth = 2;
     context.stroke();
-    artText(headline, width / 2, 286, headline.length > 6 ? 62 : 88);
+    artText(headline, width / 2, 274, 54);
+    text('趋势：？', 66, 354, 27, '#ff7671', '800');
+    text('仓位：？成', 302, 354, 27, '#f3f3f5', '800');
     roundRect(486, 330, 196, 48, 24);
     context.fillStyle = 'rgba(100,18,22,.72)';
     context.fill();
