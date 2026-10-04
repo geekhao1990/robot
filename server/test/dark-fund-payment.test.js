@@ -74,9 +74,9 @@ test('dark-fund 10-use topup charges 6 yuan and credits exactly 10 permanent use
   const { data, call, paymentInputs } = setup({ amount: 600 });
   const created = await call('POST', '/api/dark-funds/topup-orders', { sku: 'dark_fund_10' });
   assert.equal(created.amount, 600);
-  assert.equal(paymentInputs[0].description, '暗盘加油包（10次）');
+  assert.equal(paymentInputs[0].description, '充值暗盘次数（10次）');
   assert.equal(paymentInputs[0].merchantGoodsId, 'dark_fund_10');
-  assert.equal(paymentInputs[0].goodsName, '暗盘查询10次加油包');
+  assert.equal(paymentInputs[0].goodsName, '暗盘查询次数充值10次');
   const first = await call('GET', `/api/dark-funds/topup-orders/${created.orderId}`);
   const second = await call('GET', `/api/dark-funds/topup-orders/${created.orderId}`);
   assert.equal(first.status, 'SUCCESS');

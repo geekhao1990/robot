@@ -12,10 +12,10 @@ const PRODUCTS = Object.freeze({
     id: 'dark_fund_once', amount: 99, quota: 1, prefix: 'DFP', description: '暗盘单次查询', goodsName: '暗盘单次查询',
   }),
   dark_fund_10: Object.freeze({
-    id: 'dark_fund_10', amount: 600, quota: 10, prefix: 'DF10', description: '暗盘加油包（10次）', goodsName: '暗盘查询10次加油包',
+    id: 'dark_fund_10', amount: 600, quota: 10, prefix: 'DF10', description: '充值暗盘次数（10次）', goodsName: '暗盘查询次数充值10次',
   }),
   dark_fund_100: Object.freeze({
-    id: 'dark_fund_100', amount: 5000, quota: 100, prefix: 'DF100', description: '暗盘加油包（100次）', goodsName: '暗盘查询100次加油包',
+    id: 'dark_fund_100', amount: 5000, quota: 100, prefix: 'DF100', description: '充值暗盘次数（100次）', goodsName: '暗盘查询次数充值100次',
   }),
   gold_year: Object.freeze({
     id: 'gold_year', amount: 990, prefix: 'GYP', description: '开通金手指（1年）', goodsName: '金手指年卡（360天）',
@@ -65,7 +65,7 @@ function activateOrder(data, order, transactionId) {
     }
     : {
       type: 'dark_recharge',
-      title: order.product === PRODUCTS.dark_fund_once.id ? '暗盘查询次数到账' : '暗盘加油包到账',
+      title: '暗盘查询次数到账',
       content: `${(order.amount / 100).toFixed(2)}元购买成功，已增加${product.quota}次长期有效暗盘查询。`,
       targetType: 'dark_history',
       dedupeKey: `dark-fund-payment:${order.id}`,
@@ -161,7 +161,7 @@ module.exports = function register(router, HttpError) {
   router.post('/api/dark-funds/topup-orders', (ctx) => {
     const sku = String((ctx.body || {}).sku || '').trim();
     const product = [PRODUCTS.dark_fund_10, PRODUCTS.dark_fund_100].find((item) => item.id === sku);
-    if (!product) throw new HttpError(400, '请选择有效的暗盘加油包');
+    if (!product) throw new HttpError(400, '请选择有效的暗盘次数套餐');
     return createOrder(ctx, product);
   });
   router.get('/api/dark-funds/topup-orders/:id', (ctx) => {
