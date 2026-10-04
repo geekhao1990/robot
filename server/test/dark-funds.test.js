@@ -33,6 +33,11 @@ function setup(options = {}) {
       'https://app.nankaitechschool.com/uploads/guide.jpg',
     ],
   };
+  const fetchCloseStub = async () => {
+    closeFetchCount += 1;
+    if (options.closeResult) return options.closeResult;
+    throw Object.assign(new Error('盘后数据接口尚未配置，可改用采集器查询'), { status: 503 });
+  };
   const mod = { exports: {} };
   const dependencyMap = {
     '../db': db,
@@ -40,14 +45,11 @@ function setup(options = {}) {
     '../membership': require('../src/membership'), '../util': require('../src/util'),
     '../trading-date': require('../src/trading-date'), '../dark-fund-orders': require('../src/dark-fund-orders'),
     '../dark-fund-close': {
-      fetchCloseDarkFund: async () => {
-        closeFetchCount += 1;
-        if (options.closeResult) return options.closeResult;
-        throw Object.assign(new Error('盘后数据接口尚未配置，可改用采集器查询'), { status: 503 });
-      },
+      fetchCloseDarkFund: fetchCloseStub,
       isReusableCloseResult: options.isReusableCloseResult || require('../src/dark-fund-close').isReusableCloseResult,
       nextTradingOpenAt: require('../src/dark-fund-close').nextTradingOpenAt,
     },
+    '../dark-fund-close-queue': { requestCloseDarkFund: fetchCloseStub },
     '../collector-client': collector, '../collector-images': collectorImages,
     '../notifications': require('../src/notifications'),
     '../stock-lookup': require('../src/stock-lookup'),
@@ -136,6 +138,7 @@ test('online membership payment routes are removed', () => {
       '../trading-date': require('../src/trading-date'),
       '../dark-fund-orders': require('../src/dark-fund-orders'),
       '../dark-fund-close': require('../src/dark-fund-close'),
+      '../dark-fund-close-queue': { requestCloseDarkFund: async () => ({}) },
       '../collector-client': { callbackAuthorized: () => false, dispatchStockAnalysis: async () => ({}) },
       '../collector-images': { persistCollectorImages: () => [] },
       '../notifications': require('../src/notifications'),

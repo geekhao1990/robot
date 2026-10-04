@@ -1,9 +1,9 @@
 const db = require('./db');
-const { fetchCloseDarkFund } = require('./dark-fund-close');
+const { requestCloseDarkFund } = require('./dark-fund-close-queue');
 const { fetchThsHotList, generateRanking, publicRanking } = require('./dark-fund-ranking');
 const { chinaToday, isTradingDay, latestTradingDate } = require('./trading-date');
 
-const DEFAULT_SCHEDULE_MINUTES = 16 * 60 + 35;
+const DEFAULT_SCHEDULE_MINUTES = 15 * 60 + 30;
 const CHECK_INTERVAL_MS = 60 * 1000;
 const RETRY_INTERVAL_MS = 5 * 60 * 1000;
 let timer = null;
@@ -24,7 +24,7 @@ function parseSchedule(value) {
 }
 
 function scheduleMinutes() {
-  return parseSchedule(process.env.DARK_FUND_RANKING_SCHEDULE || '16:35');
+  return parseSchedule(process.env.DARK_FUND_RANKING_SCHEDULE || '15:30');
 }
 
 function scheduleLabel() {
@@ -49,7 +49,13 @@ async function executeSync({ source = '自动更新', now = Date.now() } = {}) {
   try {
     const tradeDate = latestTradingDate(now);
     const payload = await fetchThsHotList();
-    const ranking = await generateRanking({ data, payload, tradeDate, fetchClose: fetchCloseDarkFund });
+    const ranking = await generateRanking({
+      data,
+      payload,
+      tradeDate,
+      fetchClose: (stockCode) => requestCloseDarkFund(stockCode, { priority: 'batch' }),
+      concurrency: 6,
+    });
     if (!ranking.successCount) throw Object.assign(new Error('热榜股票盘后查询全部失败'), { status: 502 });
     syncState.status = 'success';
     syncState.lastSuccessAt = Date.now();

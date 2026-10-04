@@ -11,23 +11,16 @@ const {
   publicDarkFundOrder,
   refreshDarkFundOrderResult,
 } = require('../dark-fund-orders');
-const { fetchCloseDarkFund, isReusableCloseResult, nextTradingOpenAt } = require('../dark-fund-close');
+const { isReusableCloseResult, nextTradingOpenAt } = require('../dark-fund-close');
 const { callbackAuthorized, dispatchStockAnalysis } = require('../collector-client');
 const { persistCollectorImages } = require('../collector-images');
 const { pushNotification } = require('../notifications');
 const { lookupStock } = require('../stock-lookup');
 const { latestRanking, publicRanking } = require('../dark-fund-ranking');
-
-// 同一股票的并发盘后请求共用一次上游任务，避免重复扣减上游次数。
-const pendingCloseQueries = new Map();
+const { requestCloseDarkFund } = require('../dark-fund-close-queue');
 
 function fetchCloseDarkFundOnce(stockCode) {
-  if (pendingCloseQueries.has(stockCode)) return pendingCloseQueries.get(stockCode);
-  const request = Promise.resolve()
-    .then(() => fetchCloseDarkFund(stockCode))
-    .finally(() => pendingCloseQueries.delete(stockCode));
-  pendingCloseQueries.set(stockCode, request);
-  return request;
+  return requestCloseDarkFund(stockCode, { priority: 'user' });
 }
 
 function cachedCloseResult(data, stockCode) {

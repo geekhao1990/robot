@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { fetchThsHotList, generateRanking, normalizeCandidates, normalizeThsHotListResponse, publicRanking } = require('../src/dark-fund-ranking');
+const { fetchThsHotList, generateRanking, normalizeCandidates, normalizeThsHotListResponse, publicRanking, rankingTitle } = require('../src/dark-fund-ranking');
 const { chinaMinutes, parseSchedule } = require('../src/dark-fund-ranking-sync');
 
 function closeResult(stockCode, stockName, tradeDate, grey) {
@@ -43,10 +43,20 @@ test('THS hot-list response is converted to ranking candidates', async () => {
   assert.equal(fetched.stocks[0].stockCode, '600105');
 });
 
-test('daily ranking scheduler uses Beijing time and a configurable post-close slot', () => {
-  assert.equal(parseSchedule('16:35'), 16 * 60 + 35);
-  assert.equal(parseSchedule('bad-value'), 16 * 60 + 35);
-  assert.equal(chinaMinutes(Date.parse('2026-09-30T08:35:00Z')), 16 * 60 + 35);
+test('daily ranking scheduler uses Beijing time and the 15:30 post-close slot', () => {
+  assert.equal(parseSchedule('15:30'), 15 * 60 + 30);
+  assert.equal(parseSchedule('bad-value'), 15 * 60 + 30);
+  assert.equal(chinaMinutes(Date.parse('2026-09-30T07:30:00Z')), 15 * 60 + 30);
+});
+
+test('ranking title keeps the previous trading day visible before 15:30', () => {
+  assert.equal(rankingTitle('2026-09-29'), '9月29日暗盘榜');
+  const ranking = { tradeDate: '2026-09-29', results: {}, inflow: [], outflow: [] };
+  const beforeClose = publicRanking(ranking, Date.parse('2026-09-30T06:00:00Z'));
+  const afterClose = publicRanking(ranking, Date.parse('2026-09-30T07:31:00Z'));
+  assert.equal(beforeClose.title, '9月29日暗盘榜');
+  assert.equal(beforeClose.updateHint, '当天收盘后更新');
+  assert.equal(afterClose.updateHint, '今日榜单更新中');
 });
 
 test('daily ranking reuses same-day close cache and sorts inflow/outflow', async () => {

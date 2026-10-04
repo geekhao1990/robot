@@ -25,7 +25,7 @@ function setup() {
     '../notifications': require('../src/notifications'),
     '../dark-fund-close': require('../src/dark-fund-close'),
     '../dark-fund-ranking': require('../src/dark-fund-ranking'),
-    '../dark-fund-ranking-sync': { getStatus: () => ({ enabled: true, running: false, schedule: '16:35', state: null }), manualSync: async () => ({ tradeDate: '2026-09-30' }) },
+    '../dark-fund-ranking-sync': { getStatus: () => ({ enabled: true, running: false, schedule: '15:30', state: null }), manualSync: async () => ({ tradeDate: '2026-09-30' }) },
     '../trading-date': require('../src/trading-date'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/admin.js'), 'utf8'), {
@@ -60,7 +60,7 @@ test('admin dark-fund ranking uses direct automatic source without JSON input', 
   const { call } = setup();
   const status = await call('GET', '/api/admin/dark-fund-ranking');
   assert.equal(status.ranking, null);
-  assert.equal(status.sync.schedule, '16:35');
+  assert.equal(status.sync.schedule, '15:30');
   const generated = await call('POST', '/api/admin/dark-fund-ranking/generate');
   assert.equal(generated.tradeDate, '2026-09-30');
 });

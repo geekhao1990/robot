@@ -1,7 +1,8 @@
 const { isReusableCloseResult } = require('./dark-fund-close');
 const { lookupStock } = require('./stock-lookup');
+const { chinaToday, isTradingDay } = require('./trading-date');
 
-const MAX_CANDIDATES = 30;
+const MAX_CANDIDATES = 100;
 const THS_HOT_LIST_URL = 'https://dq.10jqka.com.cn/fuyao/hot_list_data/out/hot_list/v1/stock?list_type=normal&stock_type=a&type=day';
 
 function normalizeThsHotListResponse(payload) {
@@ -166,10 +167,29 @@ async function generateRanking({ data, payload, tradeDate, fetchClose, concurren
   return ranking;
 }
 
-function publicRanking(ranking) {
+function beijingMinutes(timestamp = Date.now()) {
+  const date = new Date(timestamp + 8 * 3600 * 1000);
+  return date.getUTCHours() * 60 + date.getUTCMinutes();
+}
+
+function rankingTitle(tradeDate) {
+  const match = String(tradeDate || '').match(/^\d{4}-(\d{2})-(\d{2})$/);
+  if (!match) return '收盘暗盘榜';
+  return `${Number(match[1])}月${Number(match[2])}日暗盘榜`;
+}
+
+function publicRanking(ranking, timestamp = Date.now()) {
   if (!ranking) return null;
   const { results, ...visible } = ranking;
-  return JSON.parse(JSON.stringify(visible));
+  const today = chinaToday(timestamp);
+  const waitingForToday = isTradingDay(today) && String(ranking.tradeDate || '') !== today;
+  return JSON.parse(JSON.stringify({
+    ...visible,
+    title: rankingTitle(ranking.tradeDate),
+    updateHint: waitingForToday
+      ? (beijingMinutes(timestamp) < 15 * 60 + 30 ? '当天收盘后更新' : '今日榜单更新中')
+      : '',
+  }));
 }
 
 function latestRanking(data) {
@@ -187,4 +207,5 @@ module.exports = {
   normalizeCandidates,
   normalizeThsHotListResponse,
   publicRanking,
+  rankingTitle,
 };
