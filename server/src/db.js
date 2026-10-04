@@ -503,10 +503,6 @@ function ensureSettings() {
     db.settings.rewardedAdEnabled = false;
     changed = true;
   }
-  if (typeof db.settings.darkFundSinglePurchaseUrl !== 'string') {
-    db.settings.darkFundSinglePurchaseUrl = '';
-    changed = true;
-  }
   if (Object.prototype.hasOwnProperty.call(db.settings, 'vipEnabled')) {
     delete db.settings.vipEnabled;
     changed = true;

@@ -87,7 +87,7 @@ Page({
     closeMonthlyActive: false,
     closeMonthlyExpiryText: '',
     darkFundEnabled: false,
-    singlePurchaseUrl: '',
+    purchasing: false,
     decisionPioneerEnabled: false,
     queryAdUnitId: /^adunit-/i.test(String(config.darkFundsQueryAdUnitId || ''))
       ? String(config.darkFundsQueryAdUnitId)
@@ -126,7 +126,6 @@ Page({
       this.setData({
         queryAdUnitId: /^adunit-/i.test(id) ? id : '',
         historyAdUnitId: /^adunit-/i.test(historyId) ? historyId : '',
-        singlePurchaseUrl: String((settings && settings.darkFundSinglePurchaseUrl) || '').trim(),
         queryAdLoadFailed: false,
         historyAdLoadFailed: false,
       });
@@ -442,17 +441,42 @@ Page({
     };
   },
   openSinglePurchase() {
-    const url = String(this.data.singlePurchaseUrl || '').trim();
-    if (!/^https:\/\//i.test(url)) {
-      return wx.showModal({ title: '暂不可用', content: '支付链接尚未配置', showCancel: false });
-    }
-    wx.navigateTo({
-      url: `/pages/payment-link/payment-link?url=${encodeURIComponent(url)}`,
-      fail: () => wx.setClipboardData({
-        data: url,
-        success: () => wx.showToast({ title: '支付链接已复制', icon: 'none' }),
-      }),
-    });
+    if (this.data.purchasing) return;
+    if (!store.isLogin()) return wx.navigateTo({ url: '/pages/login/login' });
+    this.setData({ purchasing: true });
+    wx.showLoading({ title: '创建订单', mask: true });
+    let orderId = '';
+    api.createDarkFundPurchaseOrder()
+      .then((order) => {
+        wx.hideLoading();
+        orderId = String(order && order.orderId || '');
+        if (!orderId || !order.payment) throw new Error('支付订单创建失败');
+        return new Promise((resolve, reject) => wx.requestPayment({
+          ...order.payment,
+          success: resolve,
+          fail: reject,
+        }));
+      })
+      .then(() => {
+        wx.showLoading({ title: '确认到账', mask: true });
+        return api.getDarkFundPurchaseOrder(orderId);
+      })
+      .then((result) => {
+        wx.hideLoading();
+        if (!result || result.status !== 'SUCCESS') {
+          return wx.showModal({ title: '支付处理中', content: '支付结果正在确认，请稍后重新进入页面查看次数。', showCancel: false });
+        }
+        if (result.user) store.setUser(result.user);
+        this.setData({ ...this.quotaData(result) });
+        wx.showModal({ title: '购买成功', content: '已增加1次长期有效暗盘查询。', showCancel: false });
+      })
+      .catch((error) => {
+        wx.hideLoading();
+        const message = this.errorText(error);
+        if (/cancel/i.test(message) || /取消/.test(message)) return;
+        wx.showModal({ title: '支付失败', content: message || '请稍后再试', showCancel: false });
+      })
+      .finally(() => this.setData({ purchasing: false }));
   },
   onUnload() {
     if (this.closeInterstitialAd && this.closeInterstitialAd.destroy) this.closeInterstitialAd.destroy();

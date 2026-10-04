@@ -1259,11 +1259,6 @@ function renderSettings() {
       </div>
       <div class="card" style="max-width:640px">
         <div class="field">
-          <label>新用户0.99元单次查询支付链接</label>
-          <input id="settingDarkFundSinglePurchaseUrl" value="${esc(settings.darkFundSinglePurchaseUrl || '')}" placeholder="https://..." autocomplete="url" />
-          <div class="hint">仅对暗盘剩余次数为0、且没有盘后包月权益的用户显示。必须填写 HTTPS 地址；支付成功后的自动到账由支付页面或回调接口完成。</div>
-        </div>
-        <div class="field">
           <label>盘后暗盘数据源网址</label>
           <input id="settingDarkFundCloseApiUrl" value="${esc(settings.darkFundCloseApiUrl || '')}" placeholder="https://fundflow.shiluan.space" autocomplete="url" />
           <div class="hint">用于盘后查询；决策先锋仍使用 Windows 采集器。</div>
@@ -1386,7 +1381,6 @@ function saveSettings() {
     darkFundCloseApiUrl: document.getElementById('settingDarkFundCloseApiUrl').value.trim(),
     darkFundCloseUsername: document.getElementById('settingDarkFundCloseUsername').value.trim(),
     darkFundClosePassword: document.getElementById('settingDarkFundClosePassword').value,
-    darkFundSinglePurchaseUrl: document.getElementById('settingDarkFundSinglePurchaseUrl').value.trim(),
     rewardedVideoAdUnitId: document.getElementById('settingRewardedAdUnitId').value.trim(),
     goldRewardedVideoAdUnitId: document.getElementById('settingGoldRewardedAdUnitId').value.trim(),
     articleAdUnitId: document.getElementById('settingArticleAdUnitId').value.trim(),

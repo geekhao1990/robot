@@ -147,15 +147,6 @@ module.exports = function register(router, HttpError) {
       throw new HttpError(400, '请选择金手指类型的入口笔记');
     }
     const oldSettings = d.settings || {};
-    const purchaseUrlSupplied = Object.prototype.hasOwnProperty.call(b, 'darkFundSinglePurchaseUrl');
-    const darkFundSinglePurchaseUrl = String(purchaseUrlSupplied ? b.darkFundSinglePurchaseUrl : oldSettings.darkFundSinglePurchaseUrl || '').trim();
-    if (darkFundSinglePurchaseUrl) {
-      let parsed;
-      try { parsed = new URL(darkFundSinglePurchaseUrl); } catch (_) { throw new HttpError(400, '请输入有效的0.99元单次查询支付链接'); }
-      if (parsed.protocol !== 'https:' || darkFundSinglePurchaseUrl.length > 1000) {
-        throw new HttpError(400, '0.99元单次查询支付链接必须是有效的 HTTPS 地址');
-      }
-    }
     const urlSupplied = Object.prototype.hasOwnProperty.call(b, 'darkFundCloseApiUrl');
     const usernameSupplied = Object.prototype.hasOwnProperty.call(b, 'darkFundCloseUsername');
     const passwordSupplied = Object.prototype.hasOwnProperty.call(b, 'darkFundClosePassword');
@@ -176,7 +167,6 @@ module.exports = function register(router, HttpError) {
       rewardedAdEnabled: !!(adUnits.rewardedVideoAdUnitId || adUnits.goldRewardedVideoAdUnitId),
       ...adUnits,
       featuredNoteId: b.featuredNoteId,
-      darkFundSinglePurchaseUrl,
       darkFundCloseApiUrl,
       darkFundCloseUsername,
       darkFundClosePassword,

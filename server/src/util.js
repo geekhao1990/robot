@@ -57,15 +57,6 @@ function pubSettings(data) {
     const id = String(value || '').trim();
     return /^adunit-[a-zA-Z0-9_-]+$/.test(id) && !/x{4,}/i.test(id) ? id : '';
   };
-  const publicHttpsUrl = (value) => {
-    const url = String(value || '').trim();
-    if (!url || url.length > 1000) return '';
-    try {
-      return new URL(url).protocol === 'https:' ? url : '';
-    } catch (_) {
-      return '';
-    }
-  };
   return {
     rewardedAdEnabled: raw.rewardedAdEnabled === true,
     rewardedVideoAdUnitId: publicAdUnitId(raw.rewardedVideoAdUnitId),
@@ -81,7 +72,6 @@ function pubSettings(data) {
     profileBottomAdUnitId: publicAdUnitId(raw.profileBottomAdUnitId),
     messageCenterAdUnitId: publicAdUnitId(raw.messageCenterAdUnitId),
     messageCenterBottomAdUnitId: publicAdUnitId(raw.messageCenterBottomAdUnitId),
-    darkFundSinglePurchaseUrl: publicHttpsUrl(raw.darkFundSinglePurchaseUrl),
     featuredNoteId: featured ? featured.id : '',
   };
 }

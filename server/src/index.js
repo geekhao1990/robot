@@ -16,6 +16,7 @@ require('./routes/public')(router, HttpError);
 require('./routes/app')(router, HttpError);
 require('./routes/message')(router, HttpError);
 require('./routes/payment')(router, HttpError);
+require('./routes/dark-fund-payment')(router, HttpError);
 require('./routes/stocks')(router, HttpError);
 require('./routes/saas-auth')(router, HttpError);
 require('./routes/admin')(router, HttpError);

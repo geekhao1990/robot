@@ -61,7 +61,7 @@
           <view><text>长期有效</text><text>{{permanentRemaining}} 次</text></view>
         </view>
       </view>
-      <button wx:if="{{remaining <= 0 && !closeMonthlyActive}}" class="single-purchase-button" bindtap="openSinglePurchase">0.99元购买1次查询</button>
+      <button wx:if="{{remaining <= 0 && !closeMonthlyActive}}" class="single-purchase-button" bindtap="openSinglePurchase" loading="{{purchasing}}" disabled="{{purchasing}}">{{purchasing ? '正在支付' : '0.99元购买1次查询'}}</button>
       <view class="service-actions">
         <view class="service-button" bindtap="openEnterpriseWechat">
           <view class="service-icon">企</view>
