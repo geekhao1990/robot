@@ -36,6 +36,10 @@
 .quota-details > view { display: flex; align-items: flex-start; justify-content: space-between; gap: 8rpx; min-height: 40rpx; }
 .quota-details > view > text:last-child { text-align: right; }
 .quota-expiry { color: #aaa; font-size: 19rpx; }
+.topup-entry { display: flex; align-items: center; justify-content: space-between; min-height: 88rpx; margin-top: 18rpx; padding: 0 24rpx; background: linear-gradient(100deg,#fff3e8,#fff8f1); border: 1rpx solid #ffd6ad; border-radius: 16rpx; box-sizing: border-box; }
+.topup-entry-title { display: block; color: #c65c00; font-size: 27rpx; font-weight: 800; }
+.topup-entry-tip { display: block; margin-top: 5rpx; color: #b9855c; font-size: 20rpx; }
+.topup-entry-arrow { color: #d47a2c; font-size: 44rpx; font-weight: 300; }
 .query-ad-slot { width: 100%; margin-top: 24rpx; overflow: hidden; border-radius: 12rpx; }
 .ranking-page { padding: 28rpx 24rpx 56rpx; }
 .ranking-loading, .ranking-empty { display: flex; align-items: center; justify-content: center; min-height: 420rpx; color: #aaa; font-size: 26rpx; }
@@ -90,6 +94,22 @@
 .history-page-button.disabled { color: #ccc; }
 .history-page-number { color: #999; font-size: 24rpx; }
 .history-ad-slot { width: 100%; padding-bottom: calc(24rpx + env(safe-area-inset-bottom)); overflow: hidden; border-radius: 12rpx; }
+.topup-mask { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1350; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.5); }
+.topup-sheet { width: 100%; padding: 18rpx 34rpx calc(34rpx + env(safe-area-inset-bottom)); background: #fff; border-radius: 36rpx 36rpx 0 0; box-sizing: border-box; animation: contact-sheet-in .22s ease-out; }
+.topup-handle { width: 72rpx; height: 8rpx; margin: 0 auto 24rpx; background: #ddd; border-radius: 999rpx; }
+.topup-title { color: #222; font-size: 36rpx; font-weight: 800; text-align: center; }
+.topup-subtitle { margin-top: 10rpx; color: #888; font-size: 22rpx; line-height: 1.5; text-align: center; }
+.topup-skus { display: flex; gap: 18rpx; margin-top: 30rpx; }
+.topup-sku { position: relative; display: flex; flex: 1; min-width: 0; align-items: center; justify-content: space-between; min-height: 128rpx; padding: 20rpx 22rpx; background: #fafafa; border: 2rpx solid transparent; border-radius: 20rpx; box-sizing: border-box; }
+.topup-sku.selected { background: #fff5f0; border-color: #ff6b2c; box-shadow: 0 7rpx 18rpx rgba(255,107,44,.1); }
+.topup-times { display: block; color: #222; font-size: 34rpx; font-weight: 800; }
+.topup-unit { display: block; margin-top: 6rpx; color: #999; font-size: 19rpx; }
+.topup-price { color: #f04424; font-size: 31rpx; font-weight: 800; }
+.topup-check { position: absolute; top: -2rpx; right: -2rpx; display: flex; align-items: center; justify-content: center; width: 36rpx; height: 36rpx; color: #fff; font-size: 21rpx; font-weight: 800; background: #ff6b2c; border-radius: 0 18rpx 0 16rpx; }
+.topup-pay { display: flex; align-items: center; justify-content: center; height: 88rpx; margin: 30rpx 0 0; color: #fff; font-size: 28rpx; font-weight: 800; line-height: normal; background: linear-gradient(100deg,#ff7138,#f04424); border-radius: 999rpx; box-shadow: 0 10rpx 24rpx rgba(240,68,36,.2); }
+.topup-pay::after { border: 0; }
+.topup-pay[disabled] { color: #fff; opacity: .7; }
+.topup-contact { padding: 24rpx 0 4rpx; color: #2474d2; font-size: 24rpx; text-align: center; }
 .contact-qr-mask { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1300; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.48); }
 .contact-qr-sheet { width: 100%; padding: 20rpx 48rpx calc(32rpx + env(safe-area-inset-bottom)); text-align: center; background: #fff; border-radius: 36rpx 36rpx 0 0; box-sizing: border-box; animation: contact-sheet-in .22s ease-out; }
 .contact-qr-handle { width: 72rpx; height: 8rpx; margin: 0 auto 28rpx; background: #ddd; border-radius: 999rpx; }

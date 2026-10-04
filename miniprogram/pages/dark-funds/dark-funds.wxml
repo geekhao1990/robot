@@ -69,6 +69,10 @@
           </view>
         </view>
       </view>
+      <view class="topup-entry" bindtap="openTopupModal">
+        <view><text class="topup-entry-title">购买暗盘加油包</text><text class="topup-entry-tip">次数长期有效</text></view>
+        <text class="topup-entry-arrow">›</text>
+      </view>
       <view wx:if="{{queryAdUnitId && !queryAdLoadFailed}}" class="query-ad-slot">
         <ad unit-id="{{queryAdUnitId}}" binderror="onQueryAdError" />
       </view>
@@ -96,6 +100,22 @@
     <view wx:if="{{!historyLoading && orders.length && historyAdUnitId && !historyAdLoadFailed}}" class="history-ad-slot">
       <ad unit-id="{{historyAdUnitId}}" binderror="onHistoryAdError" />
     </view>
+  </view>
+</view>
+<view wx:if="{{topupVisible}}" class="topup-mask" bindtap="closeTopupModal">
+  <view class="topup-sheet" catchtap="noop">
+    <view class="topup-handle"></view>
+    <view class="topup-title">购买暗盘加油包</view>
+    <view class="topup-subtitle">充值次数长期有效，可用于决策拼单和盘后查询</view>
+    <view class="topup-skus">
+      <view wx:for="{{topupSkus}}" wx:key="sku" class="topup-sku {{selectedTopupSku === item.sku ? 'selected' : ''}}" data-sku="{{item.sku}}" bindtap="selectTopupSku">
+        <view><text class="topup-times">{{item.times}}次</text><text class="topup-unit">{{item.unitPrice}}</text></view>
+        <text class="topup-price">{{item.price}}</text>
+        <view wx:if="{{selectedTopupSku === item.sku}}" class="topup-check">✓</view>
+      </view>
+    </view>
+    <button class="topup-pay" bindtap="purchaseTopup" loading="{{purchasing}}" disabled="{{purchasing}}">立即支付</button>
+    <view class="topup-contact" bindtap="openTopupEnterpriseWechat">更多套餐请咨询企业微信 ›</view>
   </view>
 </view>
 <view wx:if="{{serviceQrVisible}}" class="contact-qr-mask" bindtap="closeServiceQr">

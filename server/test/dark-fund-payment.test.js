@@ -70,6 +70,36 @@ test('0.99 dark-fund payment creates a native mini-program payment order', async
   assert.equal(data.paymentOrders[0].status, 'NOTPAY');
 });
 
+test('dark-fund 10-use topup charges 6 yuan and credits exactly 10 permanent uses', async () => {
+  const { data, call, paymentInputs } = setup({ amount: 600 });
+  const created = await call('POST', '/api/dark-funds/topup-orders', { sku: 'dark_fund_10' });
+  assert.equal(created.amount, 600);
+  assert.equal(paymentInputs[0].description, '暗盘加油包（10次）');
+  assert.equal(paymentInputs[0].merchantGoodsId, 'dark_fund_10');
+  assert.equal(paymentInputs[0].goodsName, '暗盘查询10次加油包');
+  const first = await call('GET', `/api/dark-funds/topup-orders/${created.orderId}`);
+  const second = await call('GET', `/api/dark-funds/topup-orders/${created.orderId}`);
+  assert.equal(first.status, 'SUCCESS');
+  assert.equal(first.creditedQuota, 10);
+  assert.equal(second.status, 'SUCCESS');
+  assert.equal(data.users[0].darkFundManualRemaining, 10);
+  assert.equal(data.systemNotifications.u1.length, 1);
+});
+
+test('dark-fund 100-use topup charges 50 yuan and rejects unknown SKUs', async () => {
+  const { data, call, paymentInputs } = setup({ amount: 5000 });
+  await assert.rejects(
+    call('POST', '/api/dark-funds/topup-orders', { sku: 'dark_fund_fake' }),
+    { status: 400 },
+  );
+  const created = await call('POST', '/api/dark-funds/topup-orders', { sku: 'dark_fund_100' });
+  assert.equal(paymentInputs[0].amount, 5000);
+  assert.equal(paymentInputs[0].merchantGoodsId, 'dark_fund_100');
+  const paid = await call('GET', `/api/dark-funds/topup-orders/${created.orderId}`);
+  assert.equal(paid.creditedQuota, 100);
+  assert.equal(data.users[0].darkFundManualRemaining, 100);
+});
+
 test('9.9 gold payment opens 360 days exactly once and uses a clear product description', async () => {
   const { data, call, paymentInputs } = setup({ amount: 990 });
   const before = Date.now();

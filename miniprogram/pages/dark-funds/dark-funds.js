@@ -114,6 +114,12 @@ Page({
     serviceQrTitle: '',
     serviceQrDescription: '',
     serviceQrImage: '',
+    topupVisible: false,
+    selectedTopupSku: 'dark_fund_10',
+    topupSkus: [
+      { sku: 'dark_fund_10', times: 10, price: '6元', unitPrice: '0.60元/次' },
+      { sku: 'dark_fund_100', times: 100, price: '50元', unitPrice: '0.50元/次' },
+    ],
   },
   onLoad(options) {
     if (!store.isLogin()) return wx.redirectTo({ url: '/pages/login/login' });
@@ -487,6 +493,62 @@ Page({
         wx.showModal({ title: '支付失败', content: message || '请稍后再试', showCancel: false });
       })
       .finally(() => this.setData({ purchasing: false }));
+  },
+  openTopupModal() {
+    if (!store.isLogin()) return wx.navigateTo({ url: '/pages/login/login' });
+    this.setData({ topupVisible: true });
+  },
+  closeTopupModal() {
+    if (!this.data.purchasing) this.setData({ topupVisible: false });
+  },
+  selectTopupSku(e) {
+    if (this.data.purchasing) return;
+    const sku = String(e.currentTarget.dataset.sku || '');
+    if (this.data.topupSkus.some((item) => item.sku === sku)) this.setData({ selectedTopupSku: sku });
+  },
+  purchaseTopup() {
+    if (this.data.purchasing) return;
+    const product = this.data.topupSkus.find((item) => item.sku === this.data.selectedTopupSku);
+    if (!product) return wx.showToast({ title: '请选择加油包', icon: 'none' });
+    this.setData({ purchasing: true });
+    let orderId = '';
+    wx.showLoading({ title: '创建订单', mask: true });
+    api.createDarkFundTopupOrder(product.sku)
+      .then((order) => {
+        wx.hideLoading();
+        orderId = String(order && order.orderId || '');
+        if (!orderId || !order.payment) throw new Error('支付订单创建失败');
+        return new Promise((resolve, reject) => wx.requestPayment({
+          ...order.payment,
+          success: resolve,
+          fail: reject,
+        }));
+      })
+      .then(() => {
+        wx.showLoading({ title: '确认到账', mask: true });
+        return api.getDarkFundTopupOrder(orderId);
+      })
+      .then((result) => {
+        wx.hideLoading();
+        if (!result || result.status !== 'SUCCESS') {
+          return wx.showModal({ title: '支付处理中', content: '支付结果正在确认，请稍后重新进入页面查看次数。', showCancel: false });
+        }
+        if (result.user) store.setUser(result.user);
+        this.setData({ topupVisible: false, ...this.quotaData(result) });
+        return this.loadTradeDate().then(() => wx.showToast({ title: `已到账${result.creditedQuota || product.times}次`, icon: 'success' }));
+      })
+      .catch((error) => {
+        wx.hideLoading();
+        const message = this.errorText(error);
+        if (/cancel/i.test(message) || /取消/.test(message)) return;
+        wx.showModal({ title: '支付失败', content: message || '请稍后再试', showCancel: false });
+      })
+      .finally(() => this.setData({ purchasing: false }));
+  },
+  openTopupEnterpriseWechat() {
+    if (this.data.purchasing) return;
+    this.setData({ topupVisible: false });
+    this.openEnterpriseWechat();
   },
   onUnload() {
     if (this.closeInterstitialAd && this.closeInterstitialAd.destroy) this.closeInterstitialAd.destroy();

@@ -324,6 +324,14 @@ function getDarkFundPurchaseOrder(orderId) {
   return request('GET', '/api/dark-funds/purchase-orders/' + encodeURIComponent(orderId), { auth: true });
 }
 
+function createDarkFundTopupOrder(sku) {
+  return request('POST', '/api/dark-funds/topup-orders', { auth: true, data: { sku } });
+}
+
+function getDarkFundTopupOrder(orderId) {
+  return request('GET', '/api/dark-funds/topup-orders/' + encodeURIComponent(orderId), { auth: true });
+}
+
 function createGoldPurchaseOrder() {
   return request('POST', '/api/gold/purchase-orders', { auth: true });
 }
@@ -533,6 +541,8 @@ module.exports = {
   getDarkFundRankingResult,
   createDarkFundPurchaseOrder,
   getDarkFundPurchaseOrder,
+  createDarkFundTopupOrder,
+  getDarkFundTopupOrder,
   createGoldPurchaseOrder,
   getGoldPurchaseOrder,
   getInvites,

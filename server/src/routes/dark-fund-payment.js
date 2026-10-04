@@ -9,7 +9,13 @@ const { pushNotification } = require('../notifications');
 const DAY_MS = 24 * 3600 * 1000;
 const PRODUCTS = Object.freeze({
   dark_fund_once: Object.freeze({
-    id: 'dark_fund_once', amount: 99, prefix: 'DFP', description: '暗盘单次查询', goodsName: '暗盘单次查询',
+    id: 'dark_fund_once', amount: 99, quota: 1, prefix: 'DFP', description: '暗盘单次查询', goodsName: '暗盘单次查询',
+  }),
+  dark_fund_10: Object.freeze({
+    id: 'dark_fund_10', amount: 600, quota: 10, prefix: 'DF10', description: '暗盘加油包（10次）', goodsName: '暗盘查询10次加油包',
+  }),
+  dark_fund_100: Object.freeze({
+    id: 'dark_fund_100', amount: 5000, quota: 100, prefix: 'DF100', description: '暗盘加油包（100次）', goodsName: '暗盘查询100次加油包',
   }),
   gold_year: Object.freeze({
     id: 'gold_year', amount: 990, prefix: 'GYP', description: '开通金手指（1年）', goodsName: '金手指年卡（360天）',
@@ -35,8 +41,9 @@ function activateOrder(data, order, transactionId) {
   if (order.status === 'SUCCESS' && order.creditedAt) return false;
   const user = (data.users || []).find((item) => item.id === order.userId);
   if (!user) throw Object.assign(new Error('支付订单用户不存在'), { status: 404 });
-  if (order.product === PRODUCTS.dark_fund_once.id) {
-    addManualDarkFundQuota(user, 1);
+  const product = PRODUCTS[order.product];
+  if (product && product.quota) {
+    addManualDarkFundQuota(user, product.quota);
     user.darkFundEnabled = true;
   } else if (order.product === PRODUCTS.gold_year.id) {
     const now = Date.now();
@@ -58,8 +65,8 @@ function activateOrder(data, order, transactionId) {
     }
     : {
       type: 'dark_recharge',
-      title: '暗盘查询次数到账',
-      content: '0.99元单次查询购买成功，已增加1次长期有效暗盘查询。',
+      title: order.product === PRODUCTS.dark_fund_once.id ? '暗盘查询次数到账' : '暗盘加油包到账',
+      content: `${(order.amount / 100).toFixed(2)}元购买成功，已增加${product.quota}次长期有效暗盘查询。`,
       targetType: 'dark_history',
       dedupeKey: `dark-fund-payment:${order.id}`,
     };
@@ -74,6 +81,7 @@ function publicOrder(order, user) {
     orderId: order.id,
     product: order.product,
     amount: order.amount,
+    creditedQuota: Number((PRODUCTS[order.product] || {}).quota) || 0,
     status: order.status,
     remaining: quota.total,
     expiringRemaining: quota.service,
@@ -150,6 +158,19 @@ module.exports = function register(router, HttpError) {
 
   router.post('/api/dark-funds/purchase-orders', (ctx) => createOrder(ctx, PRODUCTS.dark_fund_once));
   router.get('/api/dark-funds/purchase-orders/:id', (ctx) => getOrder(ctx, PRODUCTS.dark_fund_once));
+  router.post('/api/dark-funds/topup-orders', (ctx) => {
+    const sku = String((ctx.body || {}).sku || '').trim();
+    const product = [PRODUCTS.dark_fund_10, PRODUCTS.dark_fund_100].find((item) => item.id === sku);
+    if (!product) throw new HttpError(400, '请选择有效的暗盘加油包');
+    return createOrder(ctx, product);
+  });
+  router.get('/api/dark-funds/topup-orders/:id', (ctx) => {
+    const data = db.get();
+    const order = (data.paymentOrders || []).find((item) => item.id === ctx.params.id);
+    const product = order && [PRODUCTS.dark_fund_10, PRODUCTS.dark_fund_100].find((item) => item.id === order.product);
+    if (!product) throw new HttpError(404, '支付订单不存在');
+    return getOrder(ctx, product);
+  });
   router.post('/api/gold/purchase-orders', (ctx) => createOrder(ctx, PRODUCTS.gold_year));
   router.get('/api/gold/purchase-orders/:id', (ctx) => getOrder(ctx, PRODUCTS.gold_year));
 
