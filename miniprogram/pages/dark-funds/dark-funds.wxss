@@ -40,46 +40,46 @@
 .query-ad-slot { width: 100%; overflow: hidden; border-radius: 12rpx; }
 .ranking-page { padding: 28rpx 24rpx 56rpx; }
 .ranking-loading, .ranking-empty { display: flex; align-items: center; justify-content: center; min-height: 420rpx; color: #aaa; font-size: 26rpx; }
-.ranking-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx; padding: 24rpx 26rpx; color: #fff; background: linear-gradient(120deg,#181a20,#3b1017); border-radius: 20rpx; }
+.ranking-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx; padding: 26rpx; color: #fff; background: linear-gradient(120deg,#181a20,#3b1017); border-radius: 20rpx; }
 .ranking-title { font-size: 34rpx; font-weight: 800; }
 .ranking-date { margin-left: 14rpx; color: rgba(255,255,255,.65); font-size: 21rpx; }
-.ranking-update-hint { display: block; margin-top: 8rpx; color: rgba(255,255,255,.68); font-size: 21rpx; font-weight: 400; }
+.ranking-update-hint { margin-left: 16rpx; color: rgba(255,255,255,.7); font-size: 22rpx; font-weight: 500; white-space: nowrap; }
 .ranking-source { color: rgba(255,255,255,.7); font-size: 20rpx; }
-.ranking-columns { display: flex; align-items: flex-start; gap: 12rpx; }
-.ranking-section { flex: 0 0 calc(50% - 6rpx); min-width: 0; overflow: hidden; background: #fff; border-radius: 16rpx; box-shadow: 0 7rpx 24rpx rgba(0,0,0,.04); box-sizing: border-box; }
-.ranking-section-title { padding: 20rpx 14rpx; color: #222; font-size: 24rpx; font-weight: 800; border-bottom: 1rpx solid #eee; white-space: nowrap; }
-.ranking-section-title.inflow::before, .ranking-section-title.outflow::before { display: inline-block; width: 7rpx; height: 28rpx; margin-right: 12rpx; content: ''; vertical-align: -4rpx; border-radius: 999rpx; }
-.ranking-section-title.inflow::before { background: #ff3b30; }
-.ranking-section-title.outflow::before { background: #00a84f; }
+.ranking-direction-tabs { display: flex; gap: 14rpx; margin-bottom: 18rpx; padding: 8rpx; background: #eceef1; border-radius: 18rpx; }
+.ranking-direction-tab { display: flex; flex: 1; align-items: center; justify-content: center; min-height: 78rpx; color: #666; font-size: 29rpx; font-weight: 800; border-radius: 14rpx; }
+.ranking-direction-tab.active { color: #fff; box-shadow: 0 7rpx 18rpx rgba(0,0,0,.12); }
+.ranking-direction-tab.inflow.active { background: linear-gradient(110deg,#e72b35,#ff554d); }
+.ranking-direction-tab.outflow.active { background: linear-gradient(110deg,#078f4c,#14b768); }
+.ranking-section { width: 100%; min-width: 0; overflow: hidden; background: #fff; border-radius: 18rpx; box-shadow: 0 7rpx 24rpx rgba(0,0,0,.04); box-sizing: border-box; }
 .ranking-item { border-bottom: 1rpx solid #ededed; }
 .ranking-item:last-child { border-bottom: 0; }
-.ranking-row { display: flex; align-items: center; min-height: 82rpx; padding: 0 10rpx; box-sizing: border-box; }
-.ranking-number { display: flex; flex: 0 0 32rpx; align-items: center; justify-content: center; width: 32rpx; height: 32rpx; margin-right: 8rpx; color: #777; font-size: 18rpx; font-weight: 800; background: #f3f3f3; border-radius: 50%; }
+.ranking-row { display: flex; align-items: center; min-height: 104rpx; padding: 0 24rpx; box-sizing: border-box; }
+.ranking-number { display: flex; flex: 0 0 42rpx; align-items: center; justify-content: center; width: 42rpx; height: 42rpx; margin-right: 16rpx; color: #777; font-size: 23rpx; font-weight: 800; background: #f3f3f3; border-radius: 50%; }
 .ranking-row:nth-child(2) .ranking-number { color: #fff; background: #ff3b30; }
 .ranking-stock { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 5rpx; }
-.ranking-stock text:first-child { overflow: hidden; color: #222; font-size: 21rpx; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-.ranking-stock text:last-child { color: #aaa; font-size: 16rpx; }
-.ranking-change { flex: none; margin-left: 4rpx; font-size: 18rpx; font-weight: 750; white-space: nowrap; }
-.ranking-toggle { flex: 0 0 15rpx; width: 15rpx; height: 15rpx; margin-left: 7rpx; border-right: 3rpx solid #999; border-bottom: 3rpx solid #999; transform: rotate(45deg) translateY(-3rpx); transition: transform .18s ease; }
+.ranking-stock text:first-child { overflow: hidden; color: #222; font-size: 30rpx; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.ranking-stock text:last-child { color: #aaa; font-size: 21rpx; }
+.ranking-change { flex: none; margin-left: 14rpx; font-size: 28rpx; font-weight: 800; white-space: nowrap; }
+.ranking-toggle { flex: 0 0 19rpx; width: 19rpx; height: 19rpx; margin-left: 22rpx; border-right: 4rpx solid #999; border-bottom: 4rpx solid #999; transform: rotate(45deg) translateY(-3rpx); transition: transform .18s ease; }
 .ranking-toggle.expanded { transform: rotate(225deg) translate(-2rpx,-1rpx); }
-.ranking-funds { display: flex; gap: 5rpx; padding: 0 9rpx 14rpx; }
-.ranking-funds > view { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4rpx; padding: 8rpx 5rpx; background: #f7f7f7; border-radius: 8rpx; }
-.ranking-funds > view > text:first-child { color: #999; font-size: 14rpx; white-space: nowrap; }
-.ranking-funds > view > text:last-child { overflow: hidden; font-size: 17rpx; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
-.ranking-snapshot { margin: 0 8rpx 14rpx; padding: 12rpx 8rpx 16rpx; background: #fafafa; border: 1rpx solid #e9e9e9; border-radius: 10rpx; }
-.ranking-snapshot-head { display: flex; flex-direction: column; gap: 5rpx; color: #555; font-size: 16rpx; font-weight: 700; text-align: center; }
-.ranking-snapshot-head text:last-child { font-size: 15rpx; }
-.ranking-snapshot-chart { position: relative; display: flex; align-items: stretch; height: 220rpx; margin-top: 12rpx; padding: 0 2rpx; }
+.ranking-funds { display: flex; gap: 14rpx; padding: 0 24rpx 22rpx 82rpx; }
+.ranking-funds > view { display: flex; flex: 1; min-width: 0; align-items: baseline; justify-content: space-between; gap: 12rpx; padding: 17rpx 20rpx; background: #f7f7f7; border-radius: 12rpx; }
+.ranking-funds > view > text:first-child { color: #888; font-size: 22rpx; white-space: nowrap; }
+.ranking-funds > view > text:last-child { overflow: hidden; font-size: 27rpx; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.ranking-snapshot { margin: 0 22rpx 24rpx; padding: 24rpx 20rpx 28rpx; background: #fafafa; border: 1rpx solid #e5e5e5; border-radius: 16rpx; }
+.ranking-snapshot-head { display: flex; align-items: center; justify-content: space-between; color: #444; font-size: 27rpx; font-weight: 800; }
+.ranking-snapshot-head text:last-child { font-size: 25rpx; }
+.ranking-snapshot-chart { position: relative; display: flex; align-items: stretch; height: 300rpx; margin-top: 24rpx; padding: 0 12rpx; }
 .ranking-zero-line { position: absolute; top: 50%; left: 0; right: 0; height: 1rpx; background: #cfd3d8; }
 .ranking-bar-column { position: relative; flex: 1; min-width: 0; }
 .ranking-bar-stack { position: absolute; left: 50%; display: flex; align-items: center; width: 100%; transform: translateX(-50%); }
 .ranking-bar-stack.positive { bottom: 50%; flex-direction: column; justify-content: flex-end; }
 .ranking-bar-stack.negative { top: 50%; flex-direction: column; justify-content: flex-start; }
-.ranking-bar-stack text { max-width: 100%; overflow: hidden; font-size: 13rpx; font-weight: 700; line-height: 24rpx; text-overflow: ellipsis; white-space: nowrap; }
-.ranking-bar { width: 22rpx; min-height: 12rpx; }
+.ranking-bar-stack text { max-width: 100%; overflow: hidden; font-size: 22rpx; font-weight: 750; line-height: 38rpx; text-overflow: ellipsis; white-space: nowrap; }
+.ranking-bar { width: 44rpx; min-height: 12rpx; }
 .ranking-bar.up-bar { background: #ff3b30; border-radius: 4rpx 4rpx 0 0; }
 .ranking-bar.down-bar { background: #00a84f; border-radius: 0 0 4rpx 4rpx; }
-.ranking-bar-label { position: absolute; bottom: -2rpx; left: 50%; color: #777; font-size: 13rpx; white-space: nowrap; transform: translateX(-50%) scale(.88); transform-origin: center; }
+.ranking-bar-label { position: absolute; bottom: 2rpx; left: 50%; color: #666; font-size: 24rpx; white-space: nowrap; transform: translateX(-50%); }
 .up { color: #ff3b30!important; }
 .down { color: #00a84f!important; }
 .ranking-list-empty { padding: 46rpx 0; color: #aaa; font-size: 23rpx; text-align: center; }

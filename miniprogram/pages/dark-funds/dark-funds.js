@@ -88,8 +88,8 @@ function mockUpdatedRanking() {
   return {
     previewMock: true,
     tradeDate: '2026-09-30',
-    title: '9月30日暗盘榜',
-    updateHint: '',
+    title: '9月30日热股暗盘榜',
+    updateHint: '每个交易日16点更新',
     inflow: decorateMock(inflow, [6.82, 5.47, 4.96, 4.38, 3.91, 3.42, 2.87, 2.36, 1.94, 1.52], [.72, .58, .83, .46, .64, .39, .77, .52, .68, .44]),
     outflow: decorateMock(outflow, [-6.31, -5.76, -5.22, -4.73, -4.16, -3.68, -3.21, -2.75, -2.24, -1.83], [.78, .55, .69, .42, .81, .48, .63, .37, .74, .51]),
   };
@@ -131,6 +131,8 @@ Page({
     rankingLoading: false,
     rankingEmpty: true,
     ranking: { inflow: [], outflow: [] },
+    rankingDirectionTab: 'inflow',
+    rankingItems: [],
     expandedRankingKey: '',
     isOfficial: false,
     querying: false,
@@ -189,13 +191,15 @@ Page({
     const showPreview = () => {
       const displayed = mockUpdatedRanking();
       const decorate = (item, side) => this.decorateRankingItem(item, side);
+      const ranking = {
+        ...displayed,
+        inflow: displayed.inflow.map((item) => decorate(item, 'inflow')),
+        outflow: displayed.outflow.map((item) => decorate(item, 'outflow')),
+      };
       this.setData({
         rankingEmpty: false,
-        ranking: {
-          ...displayed,
-          inflow: displayed.inflow.map((item) => decorate(item, 'inflow')),
-          outflow: displayed.outflow.map((item) => decorate(item, 'outflow')),
-        },
+        ranking,
+        rankingItems: ranking[this.data.rankingDirectionTab] || [],
       });
     };
     if (rankingPreviewEnabled()) {
@@ -210,13 +214,15 @@ Page({
         const displayed = result;
         if (!displayed || displayed.empty) return this.setData({ rankingEmpty: true, ranking: { inflow: [], outflow: [] } });
         const decorate = (item, side) => this.decorateRankingItem(item, side);
+        const ranking = {
+          ...displayed,
+          inflow: (displayed.inflow || []).map((item) => decorate(item, 'inflow')),
+          outflow: (displayed.outflow || []).map((item) => decorate(item, 'outflow')),
+        };
         this.setData({
           rankingEmpty: false,
-          ranking: {
-            ...displayed,
-            inflow: (displayed.inflow || []).map((item) => decorate(item, 'inflow')),
-            outflow: (displayed.outflow || []).map((item) => decorate(item, 'outflow')),
-          },
+          ranking,
+          rankingItems: ranking[this.data.rankingDirectionTab] || [],
         });
       })
       .catch(() => {
@@ -249,13 +255,22 @@ Page({
         label: labels[index],
         text: formatRankingAmount(value),
         positive: value >= 0,
-        height: Math.max(12, Math.round(Math.abs(value) / max * 62)),
+        height: Math.max(18, Math.round(Math.abs(value) / max * 100)),
       })),
     };
   },
   toggleRankingSnapshot(e) {
     const key = String(e.currentTarget.dataset.key || '');
     this.setData({ expandedRankingKey: this.data.expandedRankingKey === key ? '' : key });
+  },
+  switchRankingDirection(e) {
+    const tab = String(e.currentTarget.dataset.tab || '');
+    if (!['inflow', 'outflow'].includes(tab) || tab === this.data.rankingDirectionTab) return;
+    this.setData({
+      rankingDirectionTab: tab,
+      rankingItems: this.data.ranking[tab] || [],
+      expandedRankingKey: '',
+    });
   },
   openRankingResult(e) {
     const stockCode = String(e.currentTarget.dataset.code || '');
