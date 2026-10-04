@@ -119,6 +119,8 @@ Page({
     topupSkus: [
       { sku: 'dark_fund_10', times: 10, price: '6元', unitPrice: '0.60元/次' },
       { sku: 'dark_fund_100', times: 100, price: '50元', unitPrice: '0.50元/次' },
+      { sku: 'dark_fund_500', times: 500, price: '200元', unitPrice: '0.40元/次' },
+      { sku: 'dark_fund_1000', times: 1000, price: '300元', unitPrice: '0.30元/次' },
     ],
   },
   onLoad(options) {

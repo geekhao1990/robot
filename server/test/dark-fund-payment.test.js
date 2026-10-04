@@ -100,6 +100,24 @@ test('dark-fund 100-use topup charges 50 yuan and rejects unknown SKUs', async (
   assert.equal(data.users[0].darkFundManualRemaining, 100);
 });
 
+test('dark-fund bulk topups credit 500 and 1000 permanent uses at their exact prices', async () => {
+  const fiveHundred = setup({ amount: 20000 });
+  const first = await fiveHundred.call('POST', '/api/dark-funds/topup-orders', { sku: 'dark_fund_500' });
+  assert.equal(fiveHundred.paymentInputs[0].amount, 20000);
+  assert.equal(fiveHundred.paymentInputs[0].goodsName, '暗盘查询次数充值500次');
+  const firstPaid = await fiveHundred.call('GET', `/api/dark-funds/topup-orders/${first.orderId}`);
+  assert.equal(firstPaid.creditedQuota, 500);
+  assert.equal(fiveHundred.data.users[0].darkFundManualRemaining, 500);
+
+  const oneThousand = setup({ amount: 30000 });
+  const second = await oneThousand.call('POST', '/api/dark-funds/topup-orders', { sku: 'dark_fund_1000' });
+  assert.equal(oneThousand.paymentInputs[0].amount, 30000);
+  assert.equal(oneThousand.paymentInputs[0].goodsName, '暗盘查询次数充值1000次');
+  const secondPaid = await oneThousand.call('GET', `/api/dark-funds/topup-orders/${second.orderId}`);
+  assert.equal(secondPaid.creditedQuota, 1000);
+  assert.equal(oneThousand.data.users[0].darkFundManualRemaining, 1000);
+});
+
 test('9.9 gold payment opens 360 days exactly once and uses a clear product description', async () => {
   const { data, call, paymentInputs } = setup({ amount: 990 });
   const before = Date.now();
