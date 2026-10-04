@@ -18,11 +18,11 @@
       </view>
       <view class="ranking-section">
         <view wx:for="{{rankingItems}}" wx:key="stockCode" class="ranking-item">
-          <view class="ranking-row">
+          <view class="ranking-row" data-key="{{item.expandKey}}" bindtap="toggleRankingSnapshot">
             <text class="ranking-number">{{index + 1}}</text>
-            <view class="ranking-stock" data-code="{{item.stockCode}}" data-name="{{item.stockName}}" data-initials="{{item.stockInitials}}" catchtap="openRankingResult"><text>{{item.stockDisplayName}}</text><text>{{item.marketStockCode}}</text></view>
+            <view class="ranking-stock"><text>{{item.stockDisplayName}}</text><text>{{item.marketStockCode}}</text></view>
             <text class="ranking-change {{item.changePercent >= 0 ? 'up' : 'down'}}">{{item.changeText}}</text>
-            <view class="ranking-toggle {{expandedRankingKey === item.expandKey ? 'expanded' : ''}}" data-key="{{item.expandKey}}" catchtap="toggleRankingSnapshot"></view>
+            <view class="ranking-toggle {{expandedRankingKey === item.expandKey ? 'expanded' : ''}}"></view>
           </view>
           <view class="ranking-funds"><view><text>暗盘资金</text><text class="{{item.grey >= 0 ? 'up' : 'down'}}">{{item.greyText}}</text></view><view><text>明盘资金</text><text class="{{item.listed >= 0 ? 'up' : 'down'}}">{{item.listedText}}</text></view></view>
           <view wx:if="{{expandedRankingKey === item.expandKey}}" class="ranking-snapshot">
