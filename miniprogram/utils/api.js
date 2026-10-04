@@ -83,11 +83,6 @@ function allNotes() {
   return data.notes;
 }
 
-function localGoldAccess() {
-  const user = store.getUser();
-  return !!(user && (user.goldAccess || Number(user.goldExpire) > Date.now() || user.serviceActive || Number(user.serviceExpire) > Date.now()));
-}
-
 // 首页 feed：discover 发现 | following 关注
 function getFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
   if (remote()) {
@@ -99,7 +94,7 @@ function getFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
 }
 
 function mockFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
-  let list = allNotes().filter((note) => note.visible !== false && (note.type !== 'gold' || localGoldAccess()));
+  let list = allNotes().filter((note) => note.visible !== false);
   if (tab === 'following') {
     const followed = new Set(store.followedIds());
     list = list.filter((n) => followed.has(n.authorId)).sort((a, b) => b.time - a.time);
@@ -129,7 +124,7 @@ function getNoteById(id) {
   if (remote()) {
     return request('GET', '/api/notes/' + id, { auth: true }).then((n) => decorate(n));
   }
-  const note = allNotes().find((n) => n.id === id && n.visible !== false && (n.type !== 'gold' || localGoldAccess()));
+  const note = allNotes().find((n) => n.id === id && n.visible !== false);
   return delay(decorate(note), 0);
 }
 
@@ -248,7 +243,7 @@ function search(keyword) {
 function mockSearch(kw) {
   const list = allNotes()
     .filter(
-      (n) => n.visible !== false && (n.type !== 'gold' || localGoldAccess()) && (
+      (n) => n.visible !== false && (
         n.title.includes(kw) ||
         n.content.includes(kw) ||
         (n.category || '').includes(kw) ||

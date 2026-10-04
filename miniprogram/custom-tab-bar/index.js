@@ -4,15 +4,15 @@ const GOLD_FINGER_ICON = '/images/gold-tab-default.png';
 const GOLD_FINGER_ACTIVE_ICON = '/images/gold-tab.png';
 
 function makeList(settings = {}) {
-  const middle = {
+  const noteId = String(settings.featuredNoteId || '').trim();
+  const middle = noteId ? {
     action: 'goldNote',
     text: '金手指',
     finger: true,
     icon: GOLD_FINGER_ICON,
     activeIcon: GOLD_FINGER_ACTIVE_ICON,
-    noteId: settings.featuredNoteId,
-    goldAccess: settings.goldAccess === true,
-  };
+    noteId,
+  } : { text: '金手指占位', spacer: true };
   return [
     { pagePath: '/pages/index/index', text: '首页' },
     middle,
@@ -65,14 +65,6 @@ Component({
       const item = this.data.list[index];
       if (!item || item.spacer) return;
       if (item.action === 'goldNote') {
-        if (!item.goldAccess) {
-          return wx.showModal({
-            title: '金手指权益未开通',
-            content: '请先兑换金手指卡或服务包后使用金手指功能。',
-            showCancel: false,
-            confirmText: '我知道了',
-          });
-        }
         if (!item.noteId) return wx.showToast({ title: '金手指笔记暂未配置', icon: 'none' });
         this.setData({ selected: 1 });
         wx.showLoading({ title: '请稍后...', mask: true });

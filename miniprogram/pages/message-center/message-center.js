@@ -95,13 +95,7 @@ Page({
       });
     };
     return api.getAppSettings()
-      .then((settings) => {
-        if (!settings || settings.goldAccess !== true) {
-          wx.showToast({ title: '金手指权益尚未开通', icon: 'none' });
-          return;
-        }
-        open(settings);
-      })
+      .then(open)
       .catch(() => wx.showToast({ title: '金手指笔记暂时无法打开', icon: 'none' }));
   },
 
