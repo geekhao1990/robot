@@ -153,9 +153,26 @@ Page({
     if (this._rankingRequesting) return Promise.resolve();
     this._rankingRequesting = true;
     this.setData({ rankingLoading: true });
+    const showPreview = () => {
+      const displayed = mockUpdatedRanking();
+      const decorate = (item) => ({
+        ...item,
+        marketStockCode: marketStockCode(item.stockCode),
+        greyText: formatRankingAmount(item.grey),
+      });
+      this.setData({
+        rankingEmpty: false,
+        ranking: {
+          ...displayed,
+          inflow: displayed.inflow.map(decorate),
+          outflow: displayed.outflow.map(decorate),
+        },
+      });
+    };
     return api.getDarkFundRanking()
       .then((result) => {
-        const displayed = (!result || result.empty) && rankingPreviewEnabled() ? mockUpdatedRanking() : result;
+        if ((!result || result.empty) && rankingPreviewEnabled()) return showPreview();
+        const displayed = result;
         if (!displayed || displayed.empty) return this.setData({ rankingEmpty: true, ranking: { inflow: [], outflow: [] } });
         const decorate = (item) => ({
           ...item,
@@ -171,7 +188,10 @@ Page({
           },
         });
       })
-      .catch(() => this.setData({ rankingEmpty: true, ranking: { inflow: [], outflow: [] } }))
+      .catch(() => {
+        if (rankingPreviewEnabled()) return showPreview();
+        this.setData({ rankingEmpty: true, ranking: { inflow: [], outflow: [] } });
+      })
       .finally(() => {
         this._rankingRequesting = false;
         this.setData({ rankingLoading: false });
