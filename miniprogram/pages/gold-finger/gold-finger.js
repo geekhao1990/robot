@@ -313,9 +313,10 @@ Page({
         Promise.all([
           this.loadPosterImage(canvas, ['/images/dark-share-bg-v2.jpg', '../../images/dark-share-bg-v2.jpg']),
           this.loadPosterImage(canvas, ['/images/indicator-warehouse-mini-code.jpg', '../../images/indicator-warehouse-mini-code.jpg']),
+          this.loadPosterImage(canvas, ['/images/profile-dark-funds.png', '../../images/profile-dark-funds.png']),
         ])
-          .then(([backgroundImage, qrImage]) => {
-            this.drawGoldSharePoster(context, width, height, { backgroundImage, qrImage });
+          .then(([backgroundImage, qrImage, darkFundImage]) => {
+            this.drawGoldSharePoster(context, width, height, { backgroundImage, qrImage, darkFundImage });
             wx.canvasToTempFilePath({
               canvas,
               width,
@@ -369,12 +370,8 @@ Page({
     const yang = Number(record.yang) || 0;
     const yin = Number(record.yin) || 0;
     const fingerText = record.finger === 'silver' ? '银手指' : '金手指';
-    const headline = record.finger === 'silver' ? '倒车接人还是开启调整' : '行情反转还是反弹';
+    const headline = record.finger === 'silver' ? '倒车接人' : '行情反转还是反弹';
     const fingerColor = record.finger === 'silver' ? '#eef3fa' : '#f4cf70';
-    const trendText = record.trend === 'down' ? '下跌' : (record.trend === 'up' ? '上涨' : '—');
-    const trendColor = record.trend === 'down' ? '#20d6a2' : (record.trend === 'up' ? '#ff5b55' : '#fff');
-    const position = Number(record.position);
-    const positionText = Number.isFinite(position) ? `${position}%` : '—';
     const warning = yang >= 75
       ? '阳谱接近80：警惕风险，随时可能调整'
       : (yin >= 75 ? '阴谱接近80：不要放弃，随时可能反弹修复' : '');
@@ -392,6 +389,26 @@ Page({
       context.textBaseline = 'middle';
       context.fillText(String(value), x, y);
     };
+    const artText = (value, x, y, size) => {
+      context.save();
+      context.font = `italic 900 ${size}px Impact, "Microsoft YaHei", sans-serif`;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.lineJoin = 'round';
+      context.lineWidth = 12;
+      context.strokeStyle = '#170406';
+      context.shadowColor = 'rgba(255,40,48,.7)';
+      context.shadowBlur = 22;
+      context.strokeText(value, x, y);
+      const gradient = context.createLinearGradient(x - 260, y - size / 2, x + 260, y + size / 2);
+      gradient.addColorStop(0, '#fff5d0');
+      gradient.addColorStop(.46, record.finger === 'silver' ? '#dce5ef' : '#ffd15a');
+      gradient.addColorStop(.52, '#ff4b45');
+      gradient.addColorStop(1, '#d71924');
+      context.fillStyle = gradient;
+      context.fillText(value, x, y);
+      context.restore();
+    };
     if (assets.backgroundImage) context.drawImage(assets.backgroundImage, 0, 0, width, height);
     const shade = context.createLinearGradient(0, 0, 0, height);
     shade.addColorStop(0, 'rgba(1,5,10,.25)');
@@ -400,28 +417,34 @@ Page({
     context.fillStyle = shade;
     context.fillRect(0, 0, width, height);
 
-    text(fingerText, 52, 104, 72, fingerColor, '900');
+    text('指标仓库', 52, 92, 43, '#fff', '900');
     text(record.date || '--', 692, 112, 25, '#fff', '700', 'right');
-    text('指标仓库 · 金手指数据分享', 56, 172, 25, '#e8e9ed', '500');
+    text('盘中金手指数据', 56, 154, 28, '#e8e9ed', '600');
     context.fillStyle = record.finger === 'silver' ? '#dfe6ef' : '#e5b944';
     context.fillRect(54, 207, 642, 3);
 
-    roundRect(38, 240, 674, 250, 28);
+    roundRect(38, 228, 674, 310, 28);
     context.fillStyle = 'rgba(5,10,18,.88)';
     context.fill();
     context.strokeStyle = record.finger === 'silver' ? 'rgba(222,231,242,.48)' : 'rgba(228,180,77,.48)';
     context.lineWidth = 2;
     context.stroke();
-    text(`本期${fingerText}`, 70, 286, 25, '#aeb3bd', '700');
-    text(headline, width / 2, 380, 52, '#fff', '900', 'center');
+    artText(headline, width / 2, 348, headline.length > 6 ? 66 : 94);
+    roundRect(270, 440, 210, 62, 31);
+    context.fillStyle = record.finger === 'silver' ? 'rgba(223,232,243,.16)' : 'rgba(231,184,69,.18)';
+    context.fill();
+    context.strokeStyle = record.finger === 'silver' ? 'rgba(235,242,250,.65)' : 'rgba(244,207,112,.7)';
+    context.lineWidth = 2;
+    context.stroke();
+    text(`指标 · ${fingerText}`, width / 2, 471, 29, fingerColor, '800', 'center');
 
-    roundRect(38, 520, 674, 420, 28);
+    roundRect(38, 568, 674, 410, 28);
     context.fillStyle = 'rgba(5,10,18,.9)';
     context.fill();
     context.strokeStyle = record.finger === 'silver' ? 'rgba(222,231,242,.34)' : 'rgba(228,180,77,.34)';
     context.stroke();
-    text(`趋势：${trendText}`, 72, 580, 32, trendColor, '800');
-    text(`仓位：${positionText}`, 678, 580, 32, '#fff', '800', 'right');
+    text('趋势：？', 72, 632, 42, '#ff5b55', '900');
+    text('仓位：？', 678, 632, 42, '#fff', '900', 'right');
 
     const cards = [
       { label: '阳谱', value: `${yang}%`, color: '#ff625b' },
@@ -429,28 +452,29 @@ Page({
     ];
     cards.forEach((item, index) => {
       const x = 72 + index * 302;
-      roundRect(x, 630, 278, 132, 18);
+      roundRect(x, 694, 278, 150, 18);
       context.fillStyle = 'rgba(255,255,255,.055)';
       context.fill();
-      text(item.label, x + 24, 668, 26, '#c4c7ce');
-      text(item.value, x + 24, 722, 48, item.color, '800');
+      text(item.label, x + 24, 738, 30, '#c4c7ce', '700');
+      text(item.value, x + 24, 800, 58, item.color, '900');
     });
 
     if (warning) {
-      roundRect(60, 800, 630, 82, 18);
+      roundRect(60, 874, 630, 72, 18);
       context.fillStyle = yang >= 75 ? 'rgba(104,22,24,.88)' : 'rgba(4,67,54,.88)';
       context.fill();
-      text(warning, width / 2, 841, 26, yang >= 75 ? '#ffb4ae' : '#84f3d1', '700', 'center');
+      text(warning, width / 2, 910, 26, yang >= 75 ? '#ffb4ae' : '#84f3d1', '700', 'center');
     }
 
-    roundRect(38, 1044, 674, 200, 24);
+    roundRect(30, 1010, 690, 256, 26);
     context.fillStyle = 'rgba(5,10,18,.9)';
     context.fill();
     context.strokeStyle = 'rgba(235,55,55,.42)';
     context.stroke();
-    if (assets.qrImage) context.drawImage(assets.qrImage, 62, 1074, 140, 140);
-    text('搜索“指标仓库”小程序', 234, 1110, 29, '#fff', '800');
-    text('盘中实时跟踪金手指', 234, 1162, 26, '#f0c96b', '700');
+    if (assets.qrImage) context.drawImage(assets.qrImage, 54, 1046, 184, 184);
+    text('查看实时金手指和暗盘资金', 270, 1086, 32, '#fff', '900');
+    text('搜索“指标仓库”小程序', 270, 1152, 31, '#f0c96b', '800');
+    if (assets.darkFundImage) context.drawImage(assets.darkFundImage, 610, 1170, 76, 76);
     text('数据来自互联网，仅供参考，不构成投资建议', width / 2, 1312, 17, '#777d88', '400', 'center');
   },
 
