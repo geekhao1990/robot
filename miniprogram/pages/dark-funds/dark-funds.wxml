@@ -14,21 +14,21 @@
       <view class="ranking-head"><view><text class="ranking-title">{{ranking.title || '收盘暗盘榜'}}</text><text wx:if="{{ranking.updateHint}}" class="ranking-update-hint">{{ranking.updateHint}}</text></view><text class="ranking-source">{{ranking.previewMock ? '效果预览' : '同花顺热榜100只'}}</text></view>
       <view class="ranking-section">
         <view class="ranking-section-title inflow">暗盘流入前五</view>
-        <view wx:for="{{ranking.inflow}}" wx:key="stockCode" class="ranking-row" data-code="{{item.stockCode}}" bindtap="openRankingResult">
+        <view wx:for="{{ranking.inflow}}" wx:key="stockCode" class="ranking-row" data-code="{{item.stockCode}}" data-name="{{item.stockName}}" data-initials="{{item.stockInitials}}" bindtap="openRankingResult">
           <text class="ranking-number">{{index + 1}}</text>
           <view class="ranking-stock"><text>{{item.stockDisplayName}}</text><text>{{item.marketStockCode}}</text></view>
           <text class="ranking-value up">{{item.greyText}}</text>
-          <view class="ranking-share" data-code="{{item.stockCode}}" catchtap="shareRankingResult"><view class="ranking-share-icon"></view><text>生成分享图</text></view>
+          <view class="ranking-share" data-code="{{item.stockCode}}" data-name="{{item.stockName}}" data-initials="{{item.stockInitials}}" catchtap="shareRankingResult"><view class="ranking-share-icon"></view><text>生成分享图</text></view>
         </view>
         <view wx:if="{{!ranking.inflow.length}}" class="ranking-list-empty">暂无净流入股票</view>
       </view>
       <view class="ranking-section">
         <view class="ranking-section-title outflow">暗盘流出前五</view>
-        <view wx:for="{{ranking.outflow}}" wx:key="stockCode" class="ranking-row" data-code="{{item.stockCode}}" bindtap="openRankingResult">
+        <view wx:for="{{ranking.outflow}}" wx:key="stockCode" class="ranking-row" data-code="{{item.stockCode}}" data-name="{{item.stockName}}" data-initials="{{item.stockInitials}}" bindtap="openRankingResult">
           <text class="ranking-number">{{index + 1}}</text>
           <view class="ranking-stock"><text>{{item.stockDisplayName}}</text><text>{{item.marketStockCode}}</text></view>
           <text class="ranking-value down">{{item.greyText}}</text>
-          <view class="ranking-share" data-code="{{item.stockCode}}" catchtap="shareRankingResult"><view class="ranking-share-icon"></view><text>生成分享图</text></view>
+          <view class="ranking-share" data-code="{{item.stockCode}}" data-name="{{item.stockName}}" data-initials="{{item.stockInitials}}" catchtap="shareRankingResult"><view class="ranking-share-icon"></view><text>生成分享图</text></view>
         </view>
         <view wx:if="{{!ranking.outflow.length}}" class="ranking-list-empty">暂无净流出股票</view>
       </view>

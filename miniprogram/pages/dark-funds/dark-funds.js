@@ -43,12 +43,9 @@ function formatRankingAmount(value) {
 }
 
 function rankingPreviewEnabled() {
-  try {
-    const account = wx.getAccountInfoSync();
-    return String(account && account.miniProgram && account.miniProgram.envVersion || 'develop') !== 'release';
-  } catch (_) {
-    return true;
-  }
+  // 当前阶段统一启用：真实榜单为空或接口不可用时，用 Mock 调试完整交互。
+  // 正式上线真实榜单前应删除该兜底和 mockUpdatedRanking。
+  return true;
 }
 
 function mockUpdatedRanking() {
@@ -58,18 +55,18 @@ function mockUpdatedRanking() {
     title: '9月30日暗盘榜',
     updateHint: '',
     inflow: [
-      { stockCode: '600159', stockDisplayName: '大龙DC', grey: 128600000 },
-      { stockCode: '002242', stockDisplayName: '九阳GF', grey: 93600000 },
-      { stockCode: '000678', stockDisplayName: '襄阳ZC', grey: 71800000 },
-      { stockCode: '002487', stockDisplayName: '大金ZG', grey: 48600000 },
-      { stockCode: '601127', stockDisplayName: '赛力S', grey: 32900000 },
+      { stockCode: '600159', stockName: '大龙地产', stockInitials: 'DLDC', stockDisplayName: '大龙DC', grey: 128600000 },
+      { stockCode: '002242', stockName: '九阳股份', stockInitials: 'JYGF', stockDisplayName: '九阳GF', grey: 93600000 },
+      { stockCode: '000678', stockName: '襄阳轴承', stockInitials: 'XYZC', stockDisplayName: '襄阳ZC', grey: 71800000 },
+      { stockCode: '002487', stockName: '大金重工', stockInitials: 'DJZG', stockDisplayName: '大金ZG', grey: 48600000 },
+      { stockCode: '601127', stockName: '赛力斯', stockInitials: 'SLS', stockDisplayName: '赛力S', grey: 32900000 },
     ],
     outflow: [
-      { stockCode: '600105', stockDisplayName: '永鼎GF', grey: -70262426.83 },
-      { stockCode: '300142', stockDisplayName: '沃森SW', grey: -55600000 },
-      { stockCode: '000001', stockDisplayName: '平安YH', grey: -43800000 },
-      { stockCode: '600519', stockDisplayName: '贵州MT', grey: -29500000 },
-      { stockCode: '000333', stockDisplayName: '美的JT', grey: -18100000 },
+      { stockCode: '600105', stockName: '永鼎股份', stockInitials: 'YDGF', stockDisplayName: '永鼎GF', grey: -70262426.83 },
+      { stockCode: '300142', stockName: '沃森生物', stockInitials: 'WSSW', stockDisplayName: '沃森SW', grey: -55600000 },
+      { stockCode: '000001', stockName: '平安银行', stockInitials: 'PAYH', stockDisplayName: '平安YH', grey: -43800000 },
+      { stockCode: '600519', stockName: '贵州茅台', stockInitials: 'GZMT', stockDisplayName: '贵州MT', grey: -29500000 },
+      { stockCode: '000333', stockName: '美的集团', stockInitials: 'MDJT', stockDisplayName: '美的JT', grey: -18100000 },
     ],
   };
 }
@@ -198,15 +195,23 @@ Page({
       });
   },
   openRankingResult(e) {
-    if (this.data.ranking.previewMock) return wx.showToast({ title: '当前为榜单效果预览', icon: 'none' });
     const stockCode = String(e.currentTarget.dataset.code || '');
     if (!/^\d{6}$/.test(stockCode)) return;
+    if (this.data.ranking.previewMock) {
+      const stockName = encodeURIComponent(String(e.currentTarget.dataset.name || '永鼎股份'));
+      const stockInitials = encodeURIComponent(String(e.currentTarget.dataset.initials || 'YDGF'));
+      return wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?mock=1&stockCode=${stockCode}&stockName=${stockName}&stockInitials=${stockInitials}` });
+    }
     wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?ranking=${stockCode}` });
   },
   shareRankingResult(e) {
-    if (this.data.ranking.previewMock) return wx.showToast({ title: '当前为榜单效果预览', icon: 'none' });
     const stockCode = String(e.currentTarget.dataset.code || '');
     if (!/^\d{6}$/.test(stockCode)) return;
+    if (this.data.ranking.previewMock) {
+      const stockName = encodeURIComponent(String(e.currentTarget.dataset.name || '永鼎股份'));
+      const stockInitials = encodeURIComponent(String(e.currentTarget.dataset.initials || 'YDGF'));
+      return wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?mock=1&poster=qr&stockCode=${stockCode}&stockName=${stockName}&stockInitials=${stockInitials}` });
+    }
     wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?ranking=${stockCode}&poster=qr` });
   },
   loadTradeDate() {

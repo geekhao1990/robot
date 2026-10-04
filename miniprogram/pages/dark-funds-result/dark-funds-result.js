@@ -83,7 +83,7 @@ function hybridStockName(name, initials) {
   return `${stockName.slice(0, 2)}${letters.slice(2) || stockName.slice(2)}`;
 }
 
-function createMockCloseResult() {
+function createMockCloseResult(options = {}) {
   const days = [
     { tradeDate: '2026-09-30', main: -279681505.83274597, grey: -70262426.83274597, listed: -209419079, super_large: -146578422.84490156, large: -133103082.9878444, middle: -18850426.15509844, small: 298531931.9878445 },
     { tradeDate: '2026-09-29', main: -234428686.71112993, grey: -123071051.71112993, listed: -111357635, super_large: -9165579.480624594, large: -225263107.23050535, middle: -18165255.519375376, small: 252593942.2305054 },
@@ -93,11 +93,14 @@ function createMockCloseResult() {
     { tradeDate: '2026-09-22', main: -861658891.3149973, grey: -242033011.31499732, listed: -619625880, super_large: -617310498.8877808, large: -244348392.4272165, middle: -63311021.112219155, small: 924969912.4272175 },
     { tradeDate: '2026-09-21', main: 22542169.263435997, grey: 17156209.263435997, listed: 5385960, super_large: 12113368.197681013, large: 10428801.065754985, middle: -100601528.197681, small: 78059358.93424496 },
   ];
+  const stockCode = /^\d{6}$/.test(String(options.stockCode || '')) ? String(options.stockCode) : '600105';
+  const stockName = String(options.stockName || '永鼎股份');
+  const stockInitials = String(options.stockInitials || 'YDGF');
   return {
     type: 'close_snapshot',
-    stockCode: '600105',
-    stockName: '永鼎股份',
-    stockInitials: 'YDGF',
+    stockCode,
+    stockName,
+    stockInitials,
     tradeDate: '2026-09-30',
     versionKey: '2026-09-30Tclose',
     versionLabel: '收盘',
