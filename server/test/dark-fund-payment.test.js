@@ -14,11 +14,12 @@ function setup(options = {}) {
     paymentOrders: [],
   };
   const db = { get: () => data, save: () => {} };
+  const paymentInputs = [];
   const payment = {
     requireConfig: () => true,
     createJsapiPayment: async (input) => {
-      assert.equal(input.amount, 99);
       assert.equal(input.openid, 'openid-u1');
+      paymentInputs.push(input);
       return {
         prepayId: 'wx-prepay-id',
         payment: { timeStamp: '1', nonceStr: 'nonce', package: 'prepay_id=wx-prepay-id', signType: 'RSA', paySign: 'signature' },
@@ -52,17 +53,37 @@ function setup(options = {}) {
     assert(match, `${method} ${url} route missing`);
     return match.handler({ body, rawBody: JSON.stringify(body), headers: { authorization: token, ...headers }, params: match.params, query: {} });
   });
-  return { data, call };
+  return { data, call, paymentInputs };
 }
 
 test('0.99 dark-fund payment creates a native mini-program payment order', async () => {
-  const { data, call } = setup();
+  const { data, call, paymentInputs } = setup();
   const created = await call('POST', '/api/dark-funds/purchase-orders');
   assert.equal(created.amount, 99);
+  assert.equal(paymentInputs[0].amount, 99);
+  assert.equal(paymentInputs[0].description, '暗盘单次查询');
   assert.equal(created.payment.signType, 'RSA');
   assert.equal(data.paymentOrders.length, 1);
   assert.equal(data.paymentOrders[0].product, 'dark_fund_once');
   assert.equal(data.paymentOrders[0].status, 'NOTPAY');
+});
+
+test('9.9 gold payment opens 360 days exactly once and uses a clear product description', async () => {
+  const { data, call, paymentInputs } = setup({ amount: 990 });
+  const before = Date.now();
+  const created = await call('POST', '/api/gold/purchase-orders');
+  assert.equal(created.amount, 990);
+  assert.equal(paymentInputs[0].amount, 990);
+  assert.equal(paymentInputs[0].description, '开通金手指（1年）');
+  const first = await call('GET', `/api/gold/purchase-orders/${created.orderId}`);
+  const expireAfterFirstCheck = data.users[0].goldExpire;
+  const second = await call('GET', `/api/gold/purchase-orders/${created.orderId}`);
+  assert.equal(first.status, 'SUCCESS');
+  assert.equal(second.status, 'SUCCESS');
+  assert.equal(data.users[0].goldExpire, expireAfterFirstCheck);
+  assert.ok(expireAfterFirstCheck >= before + 360 * 24 * 3600 * 1000);
+  assert.equal(data.systemNotifications.u1.length, 1);
+  assert.equal(data.systemNotifications.u1[0].type, 'gold_opened');
 });
 
 test('successful payment adds exactly one permanent query even when checked twice', async () => {

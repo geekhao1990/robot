@@ -325,6 +325,14 @@ function getDarkFundPurchaseOrder(orderId) {
   return request('GET', '/api/dark-funds/purchase-orders/' + encodeURIComponent(orderId), { auth: true });
 }
 
+function createGoldPurchaseOrder() {
+  return request('POST', '/api/gold/purchase-orders', { auth: true });
+}
+
+function getGoldPurchaseOrder(orderId) {
+  return request('GET', '/api/gold/purchase-orders/' + encodeURIComponent(orderId), { auth: true });
+}
+
 function getInvites() {
   return request('GET', '/api/invites', { auth: true });
 }
@@ -526,6 +534,8 @@ module.exports = {
   getDarkFundRankingResult,
   createDarkFundPurchaseOrder,
   getDarkFundPurchaseOrder,
+  createGoldPurchaseOrder,
+  getGoldPurchaseOrder,
   getInvites,
   // 写操作
   uploadImage,

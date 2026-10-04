@@ -310,6 +310,45 @@ Page({
       },
     });
   },
+  purchaseGoldAccess(onSuccess) {
+    wx.showLoading({ title: '创建订单', mask: true });
+    let orderId = '';
+    return api.createGoldPurchaseOrder()
+      .then((order) => {
+        wx.hideLoading();
+        orderId = String(order && order.orderId || '');
+        if (!orderId || !order.payment) throw new Error('支付订单创建失败');
+        return new Promise((resolve, reject) => wx.requestPayment({
+          ...order.payment,
+          success: resolve,
+          fail: reject,
+        }));
+      })
+      .then(() => {
+        wx.showLoading({ title: '确认开通', mask: true });
+        return api.getGoldPurchaseOrder(orderId);
+      })
+      .then((result) => {
+        wx.hideLoading();
+        if (!result || result.status !== 'SUCCESS') {
+          return wx.showModal({
+            title: '支付处理中',
+            content: '支付结果正在确认，请稍后重新点击领取。',
+            showCancel: false,
+          });
+        }
+        if (result.user) store.setUser(result.user);
+        wx.showToast({ title: '金手指已开通', icon: 'success', duration: 1400 });
+        return onSuccess();
+      })
+      .catch((error) => {
+        wx.hideLoading();
+        const message = String((error && (error.errMsg || (error.data && error.data.error) || error.message)) || '请稍后再试');
+        if (/cancel/i.test(message) || /取消/.test(message)) return;
+        return wx.showModal({ title: '支付失败', content: message, showCancel: false });
+      })
+      .finally(() => this.releaseResourceClaim());
+  },
   handleGetResource(skipAd = false) {
     const note = this.data.note;
     if (this._resourceClaiming) return;
@@ -414,8 +453,7 @@ Page({
         wx.hideLoading();
         const open = () => wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
         if (!this.hasGoldAccess(user)) {
-          this.releaseResourceClaim();
-          return this.showGoldCardRequired();
+          return this.purchaseGoldAccess(open);
         }
         if (this.hasAnnualServiceAccess(user)) {
           this.releaseResourceClaim();

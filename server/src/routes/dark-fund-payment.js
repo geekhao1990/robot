@@ -6,11 +6,18 @@ const { addManualDarkFundQuota, refreshDarkFundQuota } = require('../membership'
 const { pubUser } = require('../util');
 const { pushNotification } = require('../notifications');
 
-const PRODUCT = 'dark_fund_once';
-const AMOUNT = 99;
+const DAY_MS = 24 * 3600 * 1000;
+const PRODUCTS = Object.freeze({
+  dark_fund_once: Object.freeze({
+    id: 'dark_fund_once', amount: 99, prefix: 'DFP', description: '暗盘单次查询',
+  }),
+  gold_year: Object.freeze({
+    id: 'gold_year', amount: 990, prefix: 'GYP', description: '开通金手指（1年）',
+  }),
+});
 
-function orderNo() {
-  return `DFP${Date.now()}${crypto.randomBytes(5).toString('hex')}`.slice(0, 32);
+function orderNo(prefix) {
+  return `${prefix}${Date.now()}${crypto.randomBytes(5).toString('hex')}`.slice(0, 32);
 }
 
 function transactionMatches(transaction, order) {
@@ -28,19 +35,35 @@ function activateOrder(data, order, transactionId) {
   if (order.status === 'SUCCESS' && order.creditedAt) return false;
   const user = (data.users || []).find((item) => item.id === order.userId);
   if (!user) throw Object.assign(new Error('支付订单用户不存在'), { status: 404 });
-  addManualDarkFundQuota(user, 1);
-  user.darkFundEnabled = true;
+  if (order.product === PRODUCTS.dark_fund_once.id) {
+    addManualDarkFundQuota(user, 1);
+    user.darkFundEnabled = true;
+  } else if (order.product === PRODUCTS.gold_year.id) {
+    const now = Date.now();
+    user.goldExpire = Math.max(Number(user.goldExpire) || 0, now) + 360 * DAY_MS;
+  } else {
+    throw Object.assign(new Error('支付商品无效'), { status: 400 });
+  }
   order.status = 'SUCCESS';
   order.paidAt = order.paidAt || Date.now();
   order.creditedAt = order.creditedAt || Date.now();
   order.transactionId = transactionId || order.transactionId || '';
-  pushNotification(data, user.id, {
-    type: 'dark_recharge',
-    title: '暗盘查询次数到账',
-    content: '0.99元单次查询购买成功，已增加1次长期有效暗盘查询。',
-    targetType: 'dark_history',
-    dedupeKey: `dark-fund-payment:${order.id}`,
-  });
+  const notification = order.product === PRODUCTS.gold_year.id
+    ? {
+      type: 'gold_opened',
+      title: '金手指已开通',
+      content: '9.9元金手指年卡购买成功，有效期已增加360天。',
+      targetType: 'gold',
+      dedupeKey: `gold-payment:${order.id}`,
+    }
+    : {
+      type: 'dark_recharge',
+      title: '暗盘查询次数到账',
+      content: '0.99元单次查询购买成功，已增加1次长期有效暗盘查询。',
+      targetType: 'dark_history',
+      dedupeKey: `dark-fund-payment:${order.id}`,
+    };
+  pushNotification(data, user.id, notification);
   db.save();
   return true;
 }
@@ -68,7 +91,7 @@ module.exports = function register(router, HttpError) {
     return user;
   };
 
-  router.post('/api/dark-funds/purchase-orders', async (ctx) => {
+  const createOrder = async (ctx, product) => {
     const user = currentUser(ctx);
     if (!user.wxOpenId || user.wxOpenId === 'local-preview-user') {
       throw new HttpError(503, '请使用真实微信账号登录后支付');
@@ -77,10 +100,10 @@ module.exports = function register(router, HttpError) {
     const data = db.get();
     data.paymentOrders = Array.isArray(data.paymentOrders) ? data.paymentOrders : [];
     const order = {
-      id: orderNo(),
+      id: orderNo(product.prefix),
       userId: user.id,
-      product: PRODUCT,
-      amount: AMOUNT,
+      product: product.id,
+      amount: product.amount,
       status: 'CREATED',
       createdAt: Date.now(),
     };
@@ -89,7 +112,7 @@ module.exports = function register(router, HttpError) {
     try {
       const result = await wechatPay.createJsapiPayment({
         outTradeNo: order.id,
-        description: '暗盘查询1次',
+        description: product.description,
         amount: order.amount,
         openid: user.wxOpenId,
       });
@@ -103,12 +126,12 @@ module.exports = function register(router, HttpError) {
       db.save();
       throw error;
     }
-  });
+  };
 
-  router.get('/api/dark-funds/purchase-orders/:id', async (ctx) => {
+  const getOrder = async (ctx, product) => {
     const user = currentUser(ctx);
     const data = db.get();
-    const order = (data.paymentOrders || []).find((item) => item.id === ctx.params.id && item.userId === user.id && item.product === PRODUCT);
+    const order = (data.paymentOrders || []).find((item) => item.id === ctx.params.id && item.userId === user.id && item.product === product.id);
     if (!order) throw new HttpError(404, '支付订单不存在');
     if (order.status !== 'SUCCESS') {
       const transaction = await wechatPay.queryPayment(order.id);
@@ -121,13 +144,18 @@ module.exports = function register(router, HttpError) {
       db.save();
     }
     return publicOrder(order, user);
-  });
+  };
+
+  router.post('/api/dark-funds/purchase-orders', (ctx) => createOrder(ctx, PRODUCTS.dark_fund_once));
+  router.get('/api/dark-funds/purchase-orders/:id', (ctx) => getOrder(ctx, PRODUCTS.dark_fund_once));
+  router.post('/api/gold/purchase-orders', (ctx) => createOrder(ctx, PRODUCTS.gold_year));
+  router.get('/api/gold/purchase-orders/:id', (ctx) => getOrder(ctx, PRODUCTS.gold_year));
 
   router.post('/api/payments/notify', (ctx) => {
     const transaction = wechatPay.verifyAndDecryptNotification(ctx.headers, ctx.rawBody || '');
     if (!transaction) return { code: 'SUCCESS', message: '成功' };
     const data = db.get();
-    const order = (data.paymentOrders || []).find((item) => item.id === transaction.out_trade_no && item.product === PRODUCT);
+    const order = (data.paymentOrders || []).find((item) => item.id === transaction.out_trade_no && PRODUCTS[item.product]);
     if (!order) throw new HttpError(404, '支付订单不存在');
     if (!transactionMatches(transaction, order)) throw new HttpError(400, '支付回调订单信息不匹配');
     activateOrder(data, order, transaction.transaction_id);
