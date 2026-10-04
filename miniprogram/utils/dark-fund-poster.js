@@ -15,13 +15,20 @@ function maskedAmount(value) {
   const amount = number(value);
   const sign = amount < 0 ? '-' : '';
   const absolute = Math.abs(amount);
-  const hideLeadingDigit = (text) => String(text).replace(/\d/, 'x');
+  const hideLeadingDigits = (text, count = 2) => {
+    let hidden = 0;
+    return String(text).replace(/\d/g, (digit) => {
+      if (hidden >= count) return digit;
+      hidden += 1;
+      return 'x';
+    });
+  };
   if (absolute >= 100000000) {
-    return `${sign}${hideLeadingDigit((absolute / 100000000).toFixed(2))}亿元`;
+    return `${sign}${hideLeadingDigits((absolute / 100000000).toFixed(2))}亿元`;
   }
   const tenThousands = absolute / 10000;
   const text = Number.isInteger(tenThousands) ? String(tenThousands) : tenThousands.toFixed(1).replace(/\.0$/, '');
-  return `${sign}${hideLeadingDigit(text || '0')}万`;
+  return `${sign}${hideLeadingDigits(text || '0')}万`;
 }
 
 function posterMetrics(result, display = {}) {

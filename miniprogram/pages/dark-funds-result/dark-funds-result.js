@@ -587,8 +587,8 @@ Page({
       context.drawImage(assets.qrImage, 60, 1096, 136, 136);
       context.strokeStyle = 'rgba(255,255,255,.24)'; context.lineWidth = 1; context.beginPath(); context.moveTo(226, 1092); context.lineTo(226, 1248); context.stroke();
     }
-    fillText('查看完整资金数据', footerTextX, 1096, 29, '#fff', '800');
-    fillText('搜索“指标仓库”小程序', footerTextX, 1139, 21, '#d0d6dd', '600');
+    fillText('搜索“指标仓库”小程序', footerTextX, 1096, 29, '#fff', '800');
+    fillText('查看7天暗盘数据', footerTextX, 1139, 21, '#d0d6dd', '600');
     fillText('实时追踪主力资金动向', footerTextX, 1168, 18, '#9faab6');
     const ctaX = assets.withoutQr ? 62 : 250;
     const ctaWidth = assets.withoutQr ? 630 : 442;

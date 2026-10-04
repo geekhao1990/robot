@@ -16,16 +16,16 @@ test('share poster exposes exact 1-day dark fund and masks rolling totals', () =
   const metrics = posterMetrics(result);
   assert.equal(metrics.stockName, '永鼎股份');
   assert.equal(metrics.day1Text, '-7026.2万');
-  assert.equal(metrics.day3Text, '-x.36亿元');
-  assert.equal(metrics.day5Text, '-x0.02亿元');
+  assert.equal(metrics.day3Text, '-x.x6亿元');
+  assert.equal(metrics.day5Text, '-xx.02亿元');
 });
 
 test('share poster amount formatting preserves direction, scale and unit', () => {
   assert.equal(exactAmount(915000000), '+9.15亿');
-  assert.equal(maskedAmount(168000000), 'x.68亿元');
-  assert.equal(maskedAmount(1268000000), 'x2.68亿元');
-  assert.equal(maskedAmount(-5670000), '-x67万');
-  assert.equal(maskedAmount(-91500000), '-x150万');
+  assert.equal(maskedAmount(168000000), 'x.x8亿元');
+  assert.equal(maskedAmount(1268000000), 'xx.68亿元');
+  assert.equal(maskedAmount(-5670000), '-xx7万');
+  assert.equal(maskedAmount(-91500000), '-xx50万');
   assert.equal(maskedAmount(0), 'x万');
 });
 
