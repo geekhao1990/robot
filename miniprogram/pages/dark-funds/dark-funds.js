@@ -10,6 +10,12 @@ function formatQueryTime(timestamp) {
   return `${String(date.getFullYear()).slice(-2)}${pad(date.getMonth() + 1)}${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+function formatOrderDateLabel(timestamp) {
+  const date = new Date(Number(timestamp) || 0);
+  if (!Number.isFinite(date.getTime()) || !Number(timestamp)) return '日期未知';
+  return `${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
 function formatExpiryDate(timestamp) {
   const date = new Date(Number(timestamp) || 0);
   if (!Number.isFinite(date.getTime()) || !Number(timestamp)) return '';
@@ -123,6 +129,7 @@ Page({
     dateLoading: true,
     historyLoading: false,
     orders: [],
+    orderGroups: [],
     historyPage: 1,
     historyTotalPages: 1,
     historyTotal: 0,
@@ -420,8 +427,19 @@ Page({
         const unread = Array.isArray(result)
           ? normalized.filter((item) => item.ready && item.unread).length
           : Number(result && result.unread) || 0;
+        const orderGroups = [];
+        normalized.forEach((order) => {
+          const label = formatOrderDateLabel(order.createdAt);
+          let group = orderGroups[orderGroups.length - 1];
+          if (!group || group.label !== label) {
+            group = { label, orders: [] };
+            orderGroups.push(group);
+          }
+          group.orders.push(order);
+        });
         this.setData({
           orders: normalized,
+          orderGroups,
           historyBadge: Math.min(99, unread),
           historyPage: Array.isArray(result) ? 1 : (Number(result && result.page) || 1),
           historyTotalPages: Array.isArray(result) ? 1 : (Number(result && result.totalPages) || 1),
