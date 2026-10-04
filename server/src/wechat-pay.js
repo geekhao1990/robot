@@ -112,16 +112,26 @@ async function requestWechat(method, canonicalUrl, body) {
     body: body === undefined ? undefined : rawBody,
   });
   const rawResponse = await response.text();
+  let data = {};
+  try { data = rawResponse ? JSON.parse(rawResponse) : {}; } catch (_) {}
   const verification = verifySignedPayload(response.headers, rawResponse, cfg);
   if (!verification.ok) {
-    const error = new Error(verification.reason || '微信支付应答验签失败');
+    let message = verification.reason || '微信支付应答验签失败';
+    if (!response.ok) {
+      const code = String(data.code || '').trim().slice(0, 80);
+      const detail = String(data.message || '').trim().slice(0, 160);
+      message = `微信支付接口返回 HTTP ${response.status}`
+        + (code ? `，错误码 ${code}` : '')
+        + (detail ? `：${detail}` : '，且应答缺少有效签名');
+    }
+    const error = new Error(message);
     error.status = 502;
     throw error;
   }
-  let data = {};
-  try { data = rawResponse ? JSON.parse(rawResponse) : {}; } catch (_) {}
   if (!response.ok) {
-    const error = new Error(data.message || '微信支付接口请求失败');
+    const code = String(data.code || '').trim().slice(0, 80);
+    const detail = String(data.message || '').trim().slice(0, 160);
+    const error = new Error((code ? `${code}：` : '') + (detail || '微信支付接口请求失败'));
     error.status = 502;
     throw error;
   }
