@@ -74,14 +74,28 @@ function headerValue(headers, name) {
 }
 
 function verifySignedPayload(headers, rawBody, cfg) {
-  const serial = headerValue(headers, 'wechatpay-serial');
+  const serial = String(headerValue(headers, 'wechatpay-serial') || '').trim();
   const signature = headerValue(headers, 'wechatpay-signature');
   const timestamp = headerValue(headers, 'wechatpay-timestamp');
   const nonceStr = headerValue(headers, 'wechatpay-nonce');
-  if (!serial || !signature || !timestamp || !nonceStr || serial !== cfg.payPublicKeyId) return false;
-  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) return false;
+  if (!serial || !signature || !timestamp || !nonceStr) {
+    return { ok: false, reason: '微信支付应答缺少签名响应头' };
+  }
+  if (serial !== cfg.payPublicKeyId) {
+    return {
+      ok: false,
+      reason: `微信支付返回的公钥ID与服务器配置不一致（返回：${serial}，配置：${cfg.payPublicKeyId}）`,
+    };
+  }
+  if (!Number.isFinite(Number(timestamp)) || Math.abs(Date.now() / 1000 - Number(timestamp)) > 300) {
+    return { ok: false, reason: '服务器时间与微信支付时间相差超过5分钟' };
+  }
   const message = `${timestamp}\n${nonceStr}\n${rawBody}\n`;
-  return crypto.verify('RSA-SHA256', Buffer.from(message), cfg.payPublicKey, Buffer.from(signature, 'base64'));
+  const ok = crypto.verify('RSA-SHA256', Buffer.from(message), cfg.payPublicKey, Buffer.from(signature, 'base64'));
+  return {
+    ok,
+    reason: ok ? '' : '微信支付公钥验签失败，请确认公钥文件与公钥ID完全配套',
+  };
 }
 
 async function requestWechat(method, canonicalUrl, body) {
@@ -98,8 +112,9 @@ async function requestWechat(method, canonicalUrl, body) {
     body: body === undefined ? undefined : rawBody,
   });
   const rawResponse = await response.text();
-  if (!verifySignedPayload(response.headers, rawResponse, cfg)) {
-    const error = new Error('微信支付应答验签失败');
+  const verification = verifySignedPayload(response.headers, rawResponse, cfg);
+  if (!verification.ok) {
+    const error = new Error(verification.reason || '微信支付应答验签失败');
     error.status = 502;
     throw error;
   }
@@ -147,8 +162,9 @@ function queryPayment(outTradeNo) {
 
 function verifyAndDecryptNotification(headers, rawBody) {
   const cfg = requireConfig();
-  if (!verifySignedPayload(headers, rawBody, cfg)) {
-    const error = new Error('微信支付回调验签失败');
+  const verification = verifySignedPayload(headers, rawBody, cfg);
+  if (!verification.ok) {
+    const error = new Error(verification.reason || '微信支付回调验签失败');
     error.status = 401;
     throw error;
   }
