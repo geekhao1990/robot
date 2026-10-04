@@ -61,15 +61,10 @@
           <view><text>长期有效</text><text>{{permanentRemaining}} 次</text></view>
         </view>
       </view>
-      <view class="query-purchase-tip" bindtap="openEnterpriseWechat">添加企业微信购买查询次数更优惠</view>
       <view class="service-actions">
         <view class="service-button" bindtap="openEnterpriseWechat">
           <view class="service-icon">企</view>
-          <view class="service-copy"><view class="service-title">咨询人工</view><view class="service-description">售前咨询及售后服务</view></view>
-        </view>
-        <view class="service-button" bindtap="openWechatPayment">
-          <view class="service-icon payment">收</view>
-          <view class="service-copy"><view class="service-title">老客扫码复购</view><view class="service-description">微信二维码</view></view>
+          <view class="service-copy"><view class="service-title">企业微信</view><view class="service-description">添加企业微信购买更优惠</view></view>
         </view>
       </view>
       <view wx:if="{{queryAdUnitId && !queryAdLoadFailed}}" class="query-ad-slot">

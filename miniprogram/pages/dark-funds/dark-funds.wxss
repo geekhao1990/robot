@@ -25,17 +25,15 @@
 .service-actions { display: flex; gap: 16rpx; margin-top: 20rpx; }
 .service-button { display: flex; flex: 1; min-width: 0; align-items: center; padding: 22rpx 18rpx; background: #fafafa; border-radius: 18rpx; box-sizing: border-box; }
 .service-icon { display: flex; flex: 0 0 64rpx; align-items: center; justify-content: center; width: 64rpx; height: 64rpx; margin-right: 14rpx; color: #2474d2; font-size: 28rpx; font-weight: 800; background: #e9f4ff; border-radius: 18rpx; }
-.service-icon.payment { color: #16a05d; background: #e8f7ed; }
 .service-copy { min-width: 0; }
-.service-title { color: #333; font-size: 24rpx; font-weight: 700; white-space: nowrap; }
-.service-description { margin-top: 7rpx; overflow: hidden; color: #999; font-size: 17rpx; text-overflow: ellipsis; white-space: nowrap; }
+.service-title { color: #333; font-size: 28rpx; font-weight: 750; white-space: nowrap; }
+.service-description { margin-top: 7rpx; overflow: hidden; color: #777; font-size: 23rpx; text-overflow: ellipsis; white-space: nowrap; }
 .quota-summary { margin-top: 24rpx; padding: 22rpx 24rpx; background: #fafafa; border-radius: 16rpx; }
 .remaining-tip { color: #555; font-size: 26rpx; text-align: center; }
 .remaining-tip text { color: #222; font-size: 32rpx; font-weight: 750; }
 .quota-details { margin-top: 18rpx; padding-top: 16rpx; color: #777; font-size: 22rpx; border-top: 1rpx solid #eee; }
 .quota-details > view { display: flex; align-items: center; justify-content: space-between; min-height: 40rpx; }
 .quota-expiry { color: #aaa; font-size: 19rpx; }
-.query-purchase-tip { margin-top: 18rpx; color: #d92436; font-size: 22rpx; line-height: 1.5; text-align: center; }
 .query-ad-slot { width: 100%; margin-top: 24rpx; overflow: hidden; border-radius: 12rpx; }
 .ranking-page { padding: 28rpx 24rpx 56rpx; }
 .ranking-loading, .ranking-empty { display: flex; align-items: center; justify-content: center; min-height: 420rpx; color: #aaa; font-size: 26rpx; }

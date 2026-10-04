@@ -493,17 +493,9 @@ Page({
   openEnterpriseWechat() {
     this.setData({
       serviceQrVisible: true,
-      serviceQrTitle: '咨询人工',
-      serviceQrDescription: '长按或扫码添加企业微信，进行售前咨询及售后服务',
+      serviceQrTitle: '企业微信',
+      serviceQrDescription: '长按或扫码添加企业微信，购买更优惠',
       serviceQrImage: '/images/enterprise-wechat.jpg',
-    });
-  },
-  openWechatPayment() {
-    this.setData({
-      serviceQrVisible: true,
-      serviceQrTitle: '老客扫码复购',
-      serviceQrDescription: '长按保存或使用微信扫描二维码',
-      serviceQrImage: '/images/wechat-payment.jpg',
     });
   },
   closeServiceQr() {
