@@ -1273,9 +1273,14 @@ function renderSettings() {
           <div class="hint">${settings.darkFundClosePasswordConfigured ? '密码已配置且不会回显；留空保存不会清除原密码。' : '尚未配置密码，盘后查询暂时不可用。'}</div>
         </div>
         <div class="field">
+          <label>金手指入口总开关</label>
+          <div class="switch-cell"><label class="switch" title="是否显示金手指入口"><input id="settingGoldEntryEnabled" type="checkbox" ${settings.goldFingerEntryEnabled !== false ? 'checked' : ''} /><span class="switch-slider"></span></label><span>${settings.goldFingerEntryEnabled !== false ? '显示' : '隐藏'}</span></div>
+          <div class="hint">这是全局开关，只控制所有用户能否看到金手指 Tab 图标和金手指笔记；不按单个用户权限隐藏。用户权限只在点击“点击领取”时校验。</div>
+        </div>
+        <div class="field">
           <label>底部金手指入口打开的笔记</label>
           <select id="settingFeatured">${noteOptions}</select>
-          <div class="hint">这篇笔记的主图和「点击领取」均作为金手指功能入口。未开通金手指权限的用户不能进入；金手指卡、服务包月卡或自定义服务包有效时，进入前必须看完激励广告；只有服务包年卡有效时免广告进入。</div>
+          <div class="hint">所有用户均可看到并打开这篇笔记；点击「点击领取」时才校验权限。未开通用户拉起微信支付，已开通用户按现有广告规则进入金手指功能。</div>
         </div>
         <div class="field">
           <label>笔记领取规则</label>
@@ -1376,6 +1381,7 @@ function generateDarkFundRanking() {
 
 function saveSettings() {
   const body = {
+    goldFingerEntryEnabled: document.getElementById('settingGoldEntryEnabled').checked,
     featuredNoteId: document.getElementById('settingFeatured').value,
     rewardedAdEnabled: true,
     darkFundCloseApiUrl: document.getElementById('settingDarkFundCloseApiUrl').value.trim(),

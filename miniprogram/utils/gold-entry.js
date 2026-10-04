@@ -4,6 +4,10 @@ function openGoldEntry(options = {}) {
   const source = String(options.source || 'goldEntry');
   return api.getAppSettings()
     .then((settings) => {
+      if (settings && settings.goldFingerEntryEnabled === false) {
+        wx.showToast({ title: '金手指入口暂未开放', icon: 'none' });
+        return false;
+      }
       const noteId = String((settings && settings.featuredNoteId) || '').trim();
       if (!noteId) {
         wx.showToast({ title: '金手指笔记暂未配置', icon: 'none' });

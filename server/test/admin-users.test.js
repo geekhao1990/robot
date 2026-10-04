@@ -109,6 +109,7 @@ test('admin can maintain close data source without exposing or clearing its pass
   data.settings = { featuredNoteId: 'gold-entry' };
   const payload = {
     rewardedAdEnabled: true,
+    goldFingerEntryEnabled: false,
     featuredNoteId: 'gold-entry',
     hotSearch: [],
     darkFundCloseApiUrl: 'https://fundflow.shiluan.space/',
@@ -120,6 +121,8 @@ test('admin can maintain close data source without exposing or clearing its pass
   assert.equal(data.settings.darkFundCloseApiUrl, 'https://fundflow.shiluan.space');
   assert.equal(data.settings.darkFundCloseUsername, 'test15');
   assert.equal(data.settings.darkFundClosePassword, 'test-password');
+  assert.equal(data.settings.goldFingerEntryEnabled, false);
+  assert.equal(saved.goldFingerEntryEnabled, false);
   assert.equal(saved.darkFundClosePasswordConfigured, true);
   assert.equal(Object.prototype.hasOwnProperty.call(saved, 'darkFundClosePassword'), false);
 

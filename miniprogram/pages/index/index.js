@@ -57,7 +57,7 @@ Page({
       this.setData({ page: 1, hasMore: true });
       this.loadFeed(true);
     } else {
-      // 每次回到首页都重新按服务端权益取数，避免开通、到期或取消后仍残留金手指笔记。
+      // 每次回到首页都重新读取全局入口开关；单个用户权益不影响金手指笔记展示。
       this.setData({ page: 1, hasMore: true });
       this.loadFeed(true);
     }

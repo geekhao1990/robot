@@ -24,6 +24,7 @@ module.exports = function register(router, HttpError) {
     if (!goldAccess(reader)) throw new HttpError(403, '金手指权益未开通或已过期');
     return db.get();
   };
+  const goldEntryEnabled = (data) => pubSettings(data).goldFingerEntryEnabled === true;
   const sortedGoldRecords = (data) => (data.goldFingerRecords || [])
     .filter((item) => {
       const day = new Date(`${item.date}T00:00:00Z`).getUTCDay();
@@ -52,7 +53,8 @@ module.exports = function register(router, HttpError) {
     const { tab = 'discover', page = 1, size = 10 } = ctx.query;
     const d = db.get();
     let reader = optionalReader(ctx, d);
-    let list = d.notes.filter((note) => !isDarkFundNote(note) && canViewNote(d, note, reader));
+    const showGold = goldEntryEnabled(d);
+    let list = d.notes.filter((note) => !isDarkFundNote(note) && canViewNote(d, note, reader) && (note.type !== 'gold' || showGold));
     if (tab === 'following') {
       reader = requireReader(ctx);
       const state = (d.userState && d.userState[reader.id]) || {};
@@ -84,11 +86,12 @@ module.exports = function register(router, HttpError) {
   router.get('/api/search', (ctx) => {
     const data = db.get();
     const reader = optionalReader(ctx, data);
+    const showGold = goldEntryEnabled(data);
     const kw = String(ctx.query.kw || '').trim().toLowerCase();
     if (!kw) return [];
     const contains = (value) => String(value || '').toLowerCase().includes(kw);
     return data.notes.filter(
-      (n) => !isDarkFundNote(n) && canViewNote(data, n, reader) && (
+      (n) => !isDarkFundNote(n) && canViewNote(data, n, reader) && (n.type !== 'gold' || showGold) && (
         contains(n.title) ||
         contains(n.content) ||
         contains(n.category) ||
@@ -103,7 +106,7 @@ module.exports = function register(router, HttpError) {
     const data = db.get();
     const reader = optionalReader(ctx, data);
     const n = findViewableNote(data, ctx.params.id, reader);
-    if (!n) { const e = new Error('not found'); e.status = 404; throw e; }
+    if (!n || (n.type === 'gold' && !goldEntryEnabled(data))) { const e = new Error('not found'); e.status = 404; throw e; }
     return pubNote(n);
   });
 
@@ -171,6 +174,7 @@ module.exports = function register(router, HttpError) {
   router.get('/api/users/:id/notes', (ctx) => {
     const reader = requireReader(ctx);
     const data = db.get();
-    return data.notes.filter((n) => n.authorId === ctx.params.id && !isDarkFundNote(n) && canViewNote(data, n, reader)).map(pubNote);
+    const showGold = goldEntryEnabled(data);
+    return data.notes.filter((n) => n.authorId === ctx.params.id && !isDarkFundNote(n) && canViewNote(data, n, reader) && (n.type !== 'gold' || showGold)).map(pubNote);
   });
 };

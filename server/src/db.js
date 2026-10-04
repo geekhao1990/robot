@@ -507,8 +507,8 @@ function ensureSettings() {
     delete db.settings.vipEnabled;
     changed = true;
   }
-  if (Object.prototype.hasOwnProperty.call(db.settings, 'goldFingerEntryEnabled')) {
-    delete db.settings.goldFingerEntryEnabled;
+  if (typeof db.settings.goldFingerEntryEnabled !== 'boolean') {
+    db.settings.goldFingerEntryEnabled = true;
     changed = true;
   }
   const configured = notes.find((n) => n.id === db.settings.featuredNoteId);

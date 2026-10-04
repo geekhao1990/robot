@@ -108,6 +108,14 @@ module.exports = function register(router, HttpError) {
     requireAuth(ctx);
     const d = db.get();
     const b = ctx.body || {};
+    const oldSettings = d.settings || {};
+    const goldEntryEnabledSupplied = Object.prototype.hasOwnProperty.call(b, 'goldFingerEntryEnabled');
+    if (goldEntryEnabledSupplied && typeof b.goldFingerEntryEnabled !== 'boolean') {
+      throw new HttpError(400, '金手指总开关必须为布尔值');
+    }
+    const goldFingerEntryEnabled = goldEntryEnabledSupplied
+      ? b.goldFingerEntryEnabled
+      : oldSettings.goldFingerEntryEnabled !== false;
     if (typeof b.rewardedAdEnabled !== 'boolean') {
       throw new HttpError(400, '广告开关必须为布尔值');
     }
@@ -146,7 +154,6 @@ module.exports = function register(router, HttpError) {
     if (!d.notes.some((n) => n.id === b.featuredNoteId && n.type === 'gold')) {
       throw new HttpError(400, '请选择金手指类型的入口笔记');
     }
-    const oldSettings = d.settings || {};
     const urlSupplied = Object.prototype.hasOwnProperty.call(b, 'darkFundCloseApiUrl');
     const usernameSupplied = Object.prototype.hasOwnProperty.call(b, 'darkFundCloseUsername');
     const passwordSupplied = Object.prototype.hasOwnProperty.call(b, 'darkFundClosePassword');
@@ -165,6 +172,7 @@ module.exports = function register(router, HttpError) {
     const darkFundClosePassword = enteredPassword || oldSettings.darkFundClosePassword || '';
     d.settings = {
       rewardedAdEnabled: !!(adUnits.rewardedVideoAdUnitId || adUnits.goldRewardedVideoAdUnitId),
+      goldFingerEntryEnabled,
       ...adUnits,
       featuredNoteId: b.featuredNoteId,
       darkFundCloseApiUrl,

@@ -159,6 +159,7 @@ const APP_SETTINGS_CACHE_KEY = 'niulai_app_settings';
 function baseAppSettings() {
   return {
     rewardedAdEnabled: config.rewardedAdEnabled === true,
+    goldFingerEntryEnabled: true,
     rewardedVideoAdUnitId: String(config.rewardedVideoAdUnitId || ''),
     goldRewardedVideoAdUnitId: String(config.goldRewardedVideoAdUnitId || ''),
     articleAdUnitId: String(config.darkArticleAdUnitId || ''),
@@ -179,6 +180,9 @@ function baseAppSettings() {
 function normalizeAppSettings(settings, fallback = baseAppSettings()) {
   return {
     rewardedAdEnabled: settings && typeof settings.rewardedAdEnabled === 'boolean' ? settings.rewardedAdEnabled : fallback.rewardedAdEnabled,
+    goldFingerEntryEnabled: settings && typeof settings.goldFingerEntryEnabled === 'boolean'
+      ? settings.goldFingerEntryEnabled
+      : fallback.goldFingerEntryEnabled,
     rewardedVideoAdUnitId: settings && typeof settings.rewardedVideoAdUnitId === 'string'
       ? settings.rewardedVideoAdUnitId
       : fallback.rewardedVideoAdUnitId,
@@ -212,7 +216,7 @@ function normalizeAppSettings(settings, fallback = baseAppSettings()) {
 }
 function getCachedAppSettings() {
   try {
-    return { ...normalizeAppSettings(wx.getStorageSync(APP_SETTINGS_CACHE_KEY), baseAppSettings()), goldAccess: false, featuredNoteId: '' };
+    return { ...normalizeAppSettings(wx.getStorageSync(APP_SETTINGS_CACHE_KEY), baseAppSettings()), goldAccess: false };
   } catch (error) {
     return baseAppSettings();
   }

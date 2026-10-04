@@ -28,7 +28,7 @@ function setup() {
     ],
     goldFingerRecords: records,
     goldFingerBanners: [],
-    settings: { rewardedAdEnabled: true, featuredNoteId: 'g1' },
+    settings: { rewardedAdEnabled: true, goldFingerEntryEnabled: true, featuredNoteId: 'g1' },
     userState: {},
     darkFundOrders: [{ id: 'DF001', userId: 'u1', noteId: 'dark_DF001' }],
     notes: [
@@ -48,7 +48,8 @@ function setup() {
       pubNote: (x) => x,
       pubSettings: (d) => ({
         rewardedAdEnabled: d.settings.rewardedAdEnabled,
-        featuredNoteId: (d.notes.find((note) => note.id === d.settings.featuredNoteId && note.type === 'gold' && note.visible !== false)
+        goldFingerEntryEnabled: d.settings.goldFingerEntryEnabled !== false,
+        featuredNoteId: d.settings.goldFingerEntryEnabled === false ? '' : (d.notes.find((note) => note.id === d.settings.featuredNoteId && note.type === 'gold' && note.visible !== false)
           || d.notes.find((note) => note.type === 'gold' && note.visible !== false)
           || {}).id || '',
       }),
@@ -117,6 +118,12 @@ test('gold notes and entry stay visible while feature access remains entitlement
   }
   assert.equal((await call('/api/notes/g1', {}, 'Bearer u4')).id, 'g1');
   await assert.rejects(call('/api/gold-finger/latest', {}, 'Bearer u2'), { status: 403 });
+
+  data.settings.goldFingerEntryEnabled = false;
+  assert.equal((await call('/api/settings', {}, 'Bearer u2')).featuredNoteId, '');
+  assert.equal((await call('/api/feed', {}, 'Bearer u2')).list.some((note) => note.id === 'g1'), false);
+  await assert.rejects(call('/api/notes/g1', {}, 'Bearer u2'), { status: 404 });
+  data.settings.goldFingerEntryEnabled = true;
 
   data.notes.find((note) => note.id === 'g1').visible = false;
   assert.equal((await call('/api/settings', {}, 'Bearer u1')).featuredNoteId, '');
