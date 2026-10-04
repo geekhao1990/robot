@@ -9,9 +9,9 @@
 
   <view wx:if="{{tab === 'ranking'}}" class="ranking-page">
     <view wx:if="{{rankingLoading}}" class="ranking-loading">正在加载收盘暗盘榜…</view>
-    <view wx:elif="{{rankingEmpty}}" class="ranking-empty">今日收盘暗盘榜尚未生成</view>
+    <view wx:elif="{{rankingEmpty}}" class="ranking-empty">今日暗盘榜16点后更新</view>
     <block wx:else>
-      <view class="ranking-head"><view><text class="ranking-title">{{ranking.title || '收盘暗盘榜'}}</text><text wx:if="{{ranking.updateHint}}" class="ranking-update-hint">{{ranking.updateHint}}</text></view><text class="ranking-source">同花顺热榜100只</text></view>
+      <view class="ranking-head"><view><text class="ranking-title">{{ranking.title || '收盘暗盘榜'}}</text><text wx:if="{{ranking.updateHint}}" class="ranking-update-hint">{{ranking.updateHint}}</text></view><text class="ranking-source">{{ranking.previewMock ? '效果预览' : '同花顺热榜100只'}}</text></view>
       <view class="ranking-section">
         <view class="ranking-section-title inflow">暗盘流入前五</view>
         <view wx:for="{{ranking.inflow}}" wx:key="stockCode" class="ranking-row" data-code="{{item.stockCode}}" bindtap="openRankingResult">

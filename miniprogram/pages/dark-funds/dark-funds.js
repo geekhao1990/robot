@@ -42,6 +42,38 @@ function formatRankingAmount(value) {
   return `${amount > 0 ? '+' : ''}${amount.toFixed(unit.digits)}${unit.suffix}`;
 }
 
+function rankingPreviewEnabled() {
+  try {
+    const account = wx.getAccountInfoSync();
+    return String(account && account.miniProgram && account.miniProgram.envVersion || 'develop') !== 'release';
+  } catch (_) {
+    return true;
+  }
+}
+
+function mockUpdatedRanking() {
+  return {
+    previewMock: true,
+    tradeDate: '2026-09-30',
+    title: '9月30日暗盘榜',
+    updateHint: '',
+    inflow: [
+      { stockCode: '600159', stockDisplayName: '大龙DC', grey: 128600000 },
+      { stockCode: '002242', stockDisplayName: '九阳GF', grey: 93600000 },
+      { stockCode: '000678', stockDisplayName: '襄阳ZC', grey: 71800000 },
+      { stockCode: '002487', stockDisplayName: '大金ZG', grey: 48600000 },
+      { stockCode: '601127', stockDisplayName: '赛力S', grey: 32900000 },
+    ],
+    outflow: [
+      { stockCode: '600105', stockDisplayName: '永鼎GF', grey: -70262426.83 },
+      { stockCode: '300142', stockDisplayName: '沃森SW', grey: -55600000 },
+      { stockCode: '000001', stockDisplayName: '平安YH', grey: -43800000 },
+      { stockCode: '600519', stockDisplayName: '贵州MT', grey: -29500000 },
+      { stockCode: '000333', stockDisplayName: '美的JT', grey: -18100000 },
+    ],
+  };
+}
+
 Page({
   data: {
     tab: 'query',
@@ -123,7 +155,8 @@ Page({
     this.setData({ rankingLoading: true });
     return api.getDarkFundRanking()
       .then((result) => {
-        if (!result || result.empty) return this.setData({ rankingEmpty: true, ranking: { inflow: [], outflow: [] } });
+        const displayed = (!result || result.empty) && rankingPreviewEnabled() ? mockUpdatedRanking() : result;
+        if (!displayed || displayed.empty) return this.setData({ rankingEmpty: true, ranking: { inflow: [], outflow: [] } });
         const decorate = (item) => ({
           ...item,
           marketStockCode: marketStockCode(item.stockCode),
@@ -132,9 +165,9 @@ Page({
         this.setData({
           rankingEmpty: false,
           ranking: {
-            ...result,
-            inflow: (result.inflow || []).map(decorate),
-            outflow: (result.outflow || []).map(decorate),
+            ...displayed,
+            inflow: (displayed.inflow || []).map(decorate),
+            outflow: (displayed.outflow || []).map(decorate),
           },
         });
       })
@@ -145,11 +178,13 @@ Page({
       });
   },
   openRankingResult(e) {
+    if (this.data.ranking.previewMock) return wx.showToast({ title: '当前为榜单效果预览', icon: 'none' });
     const stockCode = String(e.currentTarget.dataset.code || '');
     if (!/^\d{6}$/.test(stockCode)) return;
     wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?ranking=${stockCode}` });
   },
   shareRankingResult(e) {
+    if (this.data.ranking.previewMock) return wx.showToast({ title: '当前为榜单效果预览', icon: 'none' });
     const stockCode = String(e.currentTarget.dataset.code || '');
     if (!/^\d{6}$/.test(stockCode)) return;
     wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?ranking=${stockCode}&poster=qr` });
