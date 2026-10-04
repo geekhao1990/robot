@@ -61,6 +61,11 @@ function mockUpdatedRanking() {
       { stockCode: '000678', stockName: '襄阳轴承', stockInitials: 'XYZC', stockDisplayName: '襄阳ZC', grey: 71800000 },
       { stockCode: '002487', stockName: '大金重工', stockInitials: 'DJZG', stockDisplayName: '大金ZG', grey: 48600000 },
       { stockCode: '601127', stockName: '赛力斯', stockInitials: 'SLS', stockDisplayName: '赛力S', grey: 32900000 },
+      { stockCode: '600036', stockName: '招商银行', stockInitials: 'ZSYH', stockDisplayName: '招商YH', grey: 28600000 },
+      { stockCode: '000858', stockName: '五粮液', stockInitials: 'WLY', stockDisplayName: '五粮Y', grey: 24400000 },
+      { stockCode: '601318', stockName: '中国平安', stockInitials: 'ZGPA', stockDisplayName: '中国PA', grey: 19800000 },
+      { stockCode: '300750', stockName: '宁德时代', stockInitials: 'NDSD', stockDisplayName: '宁德SD', grey: 15300000 },
+      { stockCode: '002594', stockName: '比亚迪', stockInitials: 'BYD', stockDisplayName: '比亚D', grey: 11200000 },
     ],
     outflow: [
       { stockCode: '600105', stockName: '永鼎股份', stockInitials: 'YDGF', stockDisplayName: '永鼎GF', grey: -70262426.83 },
@@ -68,6 +73,11 @@ function mockUpdatedRanking() {
       { stockCode: '000001', stockName: '平安银行', stockInitials: 'PAYH', stockDisplayName: '平安YH', grey: -43800000 },
       { stockCode: '600519', stockName: '贵州茅台', stockInitials: 'GZMT', stockDisplayName: '贵州MT', grey: -29500000 },
       { stockCode: '000333', stockName: '美的集团', stockInitials: 'MDJT', stockDisplayName: '美的JT', grey: -18100000 },
+      { stockCode: '601398', stockName: '工商银行', stockInitials: 'GSYH', stockDisplayName: '工商YH', grey: -15600000 },
+      { stockCode: '600030', stockName: '中信证券', stockInitials: 'ZXZQ', stockDisplayName: '中信ZQ', grey: -13200000 },
+      { stockCode: '000651', stockName: '格力电器', stockInitials: 'GLDQ', stockDisplayName: '格力DQ', grey: -10700000 },
+      { stockCode: '600276', stockName: '恒瑞医药', stockInitials: 'HRYY', stockDisplayName: '恒瑞YY', grey: -8400000 },
+      { stockCode: '300059', stockName: '东方财富', stockInitials: 'DFCF', stockDisplayName: '东方CF', grey: -6200000 },
     ],
   };
 }

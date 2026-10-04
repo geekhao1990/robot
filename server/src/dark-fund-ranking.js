@@ -156,8 +156,8 @@ async function generateRanking({ data, payload, tradeDate, fetchClose, concurren
     candidateCount: candidates.length,
     successCount: successful.length,
     cacheHitCount: successful.filter((item) => item.cacheHit).length,
-    inflow: successful.filter((item) => item.grey > 0).sort((a, b) => b.grey - a.grey).slice(0, 5).map(publicItem),
-    outflow: successful.filter((item) => item.grey < 0).sort((a, b) => a.grey - b.grey).slice(0, 5).map(publicItem),
+    inflow: successful.filter((item) => item.grey > 0).sort((a, b) => b.grey - a.grey).slice(0, 10).map(publicItem),
+    outflow: successful.filter((item) => item.grey < 0).sort((a, b) => a.grey - b.grey).slice(0, 10).map(publicItem),
     failed: processed.filter((item) => !item.ok),
     results: Object.fromEntries(successful.map((item) => [item.stockCode, item.result])),
   };
