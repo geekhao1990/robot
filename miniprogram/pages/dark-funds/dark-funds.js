@@ -272,7 +272,8 @@ Page({
     const stockCode = String(this.data.stockCode || '').trim();
     const queryMode = mode === 'intraday' ? 'intraday' : 'close';
     const source = queryMode === 'intraday' ? 'collector' : 'web';
-    if (!this.data.closeMonthlyActive && Number(this.data.remaining) <= 0) return this.openSinglePurchase();
+    const hasQueryEntitlement = Number(this.data.remaining) > 0
+      || (queryMode === 'close' && this.data.closeMonthlyActive);
     if (!/^\d{6}$/.test(stockCode)) return wx.showModal({ title: '无法查询', content: '请输入6位代码', showCancel: false });
     if (/^(4|8|92)/.test(stockCode)) return wx.showToast({ title: '系统繁忙', icon: 'none' });
     if (this.data.stockLookupLoading) return wx.showToast({ title: '正在确认股票信息', icon: 'none' });
@@ -280,6 +281,7 @@ Page({
       return wx.showToast({ title: this.data.stockLookupError || '请先确认股票代码', icon: 'none' });
     }
     if (!this.data.compactTradeDate) return wx.showToast({ title: '请稍后重试', icon: 'none' });
+    if (!hasQueryEntitlement) return this.openSinglePurchase();
     const stockName = this.data.stockSuggestion.stockDisplayName
       || displayStockName(this.data.stockSuggestion.stockName, this.data.stockSuggestion.stockInitials);
     const content = queryMode === 'intraday'

@@ -35,8 +35,7 @@
 .quota-details { margin-top: 18rpx; padding-top: 16rpx; color: #777; font-size: 22rpx; border-top: 1rpx solid #eee; }
 .quota-details > view { display: flex; align-items: center; justify-content: space-between; min-height: 40rpx; }
 .quota-expiry { color: #aaa; font-size: 19rpx; }
-.single-purchase-button { display: flex; width: 100%; height: 82rpx; align-items: center; justify-content: center; margin: 20rpx 0 0; padding: 0; color: #fff; font-size: 27rpx; font-weight: 750; line-height: normal; background: linear-gradient(135deg,#ff2442,#ff526c); border-radius: 999rpx; box-shadow: 0 8rpx 20rpx rgba(255,36,66,.22); }
-.single-purchase-button::after { border: 0; }
+.query-purchase-tip { margin-top: 18rpx; color: #d92436; font-size: 22rpx; line-height: 1.5; text-align: center; }
 .query-ad-slot { width: 100%; margin-top: 24rpx; overflow: hidden; border-radius: 12rpx; }
 .ranking-page { padding: 28rpx 24rpx 56rpx; }
 .ranking-loading, .ranking-empty { display: flex; align-items: center; justify-content: center; min-height: 420rpx; color: #aaa; font-size: 26rpx; }
