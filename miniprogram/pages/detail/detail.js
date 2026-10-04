@@ -346,6 +346,8 @@ Page({
           });
         }
         if (result.user) store.setUser(result.user);
+        // 本次支付成功只赠送一次免激励广告进入机会；进入后立即消费，不影响后续广告规则。
+        this._skipGoldRewardedAdOnce = true;
         wx.showToast({ title: '金手指已开通', icon: 'success', duration: 1400 });
         return onSuccess();
       })
@@ -461,7 +463,18 @@ Page({
         wx.hideLoading();
         const open = () => wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
         if (!this.hasGoldAccess(user)) {
-          return this.purchaseGoldAccess(open);
+          return this.purchaseGoldAccess(() => {
+            const skipRewardedAd = this._skipGoldRewardedAdOnce === true;
+            this._skipGoldRewardedAdOnce = false;
+            if (skipRewardedAd) {
+              this.releaseResourceClaim();
+              return open();
+            }
+            return this.showRewardedAd(() => {
+              this.releaseResourceClaim();
+              return open();
+            }, 'goldRewardedVideoAdUnitId');
+          });
         }
         if (this.hasAnnualServiceAccess(user)) {
           this.releaseResourceClaim();
