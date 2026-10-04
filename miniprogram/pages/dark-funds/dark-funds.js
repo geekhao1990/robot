@@ -40,11 +40,17 @@ function marketStockCode(code) {
   return `${/^[569]/.test(value) ? 'sh' : 'sz'}${value}`;
 }
 
-function formatRankingAmount(value) {
-  const number = Number(value) || 0;
-  const unit = Math.abs(number) >= 100000000
+function rankingAmountUnit(values) {
+  const max = Math.max(0, ...(Array.isArray(values) ? values : [values])
+    .map((value) => Math.abs(Number(value) || 0)));
+  return max >= 100000000
     ? { divisor: 100000000, suffix: '亿', digits: 2 }
     : { divisor: 10000, suffix: '万', digits: 1 };
+}
+
+function formatRankingAmount(value, sharedUnit) {
+  const number = Number(value) || 0;
+  const unit = sharedUnit || rankingAmountUnit(number);
   const amount = number / unit.divisor;
   return `${amount > 0 ? '+' : ''}${amount.toFixed(unit.digits)}${unit.suffix}`;
 }
@@ -247,6 +253,8 @@ Page({
     const main = Number.isFinite(Number(item.main)) ? Number(item.main) : grey + listed;
     const retail = Number.isFinite(Number(item.retail)) ? Number(item.retail) : -main;
     const values = [listed, grey, retail].map((value) => (Number.isFinite(value) ? value : 0));
+    const fundsUnit = rankingAmountUnit([grey, listed]);
+    const chartUnit = rankingAmountUnit(values);
     const max = Math.max(1, ...values.map((value) => Math.abs(value)));
     const labels = ['主力明盘', '主力暗盘', '散户流入'];
     return {
@@ -254,13 +262,13 @@ Page({
       expandKey: `${side}:${item.stockCode}`,
       marketStockCode: marketStockCode(item.stockCode),
       changeText: Number.isFinite(Number(item.changePercent)) ? `${Number(item.changePercent) > 0 ? '+' : ''}${Number(item.changePercent).toFixed(2)}%` : '—',
-      greyText: Number.isFinite(grey) ? formatRankingAmount(grey) : '—',
-      listedText: Number.isFinite(listed) ? formatRankingAmount(listed) : '—',
+      greyText: Number.isFinite(grey) ? formatRankingAmount(grey, fundsUnit) : '—',
+      listedText: Number.isFinite(listed) ? formatRankingAmount(listed, fundsUnit) : '—',
       mainText: Number.isFinite(main) ? formatRankingAmount(main) : '—',
       retailText: Number.isFinite(retail) ? formatRankingAmount(retail) : '—',
       snapshotBars: values.map((value, index) => ({
         label: labels[index],
-        text: formatRankingAmount(value),
+        text: formatRankingAmount(value, chartUnit),
         positive: value >= 0,
         height: Math.max(18, Math.round(Math.abs(value) / max * 100)),
       })),
