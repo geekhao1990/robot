@@ -50,35 +50,48 @@ function rankingPreviewEnabled() {
 }
 
 function mockUpdatedRanking() {
+  const decorateMock = (items, changes, listedRatios) => items.map((item, index) => {
+    const listed = item.grey * listedRatios[index];
+    const main = item.grey + listed;
+    return {
+      ...item,
+      changePercent: changes[index],
+      listed,
+      main,
+      retail: -main,
+    };
+  });
+  const inflow = [
+    { stockCode: '600159', stockName: '大龙地产', stockInitials: 'DLDC', stockDisplayName: '大龙DC', grey: 128600000 },
+    { stockCode: '002242', stockName: '九阳股份', stockInitials: 'JYGF', stockDisplayName: '九阳GF', grey: 93600000 },
+    { stockCode: '000678', stockName: '襄阳轴承', stockInitials: 'XYZC', stockDisplayName: '襄阳ZC', grey: 71800000 },
+    { stockCode: '002487', stockName: '大金重工', stockInitials: 'DJZG', stockDisplayName: '大金ZG', grey: 48600000 },
+    { stockCode: '601127', stockName: '赛力斯', stockInitials: 'SLS', stockDisplayName: '赛力S', grey: 32900000 },
+    { stockCode: '600036', stockName: '招商银行', stockInitials: 'ZSYH', stockDisplayName: '招商YH', grey: 28600000 },
+    { stockCode: '000858', stockName: '五粮液', stockInitials: 'WLY', stockDisplayName: '五粮Y', grey: 24400000 },
+    { stockCode: '601318', stockName: '中国平安', stockInitials: 'ZGPA', stockDisplayName: '中国PA', grey: 19800000 },
+    { stockCode: '300750', stockName: '宁德时代', stockInitials: 'NDSD', stockDisplayName: '宁德SD', grey: 15300000 },
+    { stockCode: '002594', stockName: '比亚迪', stockInitials: 'BYD', stockDisplayName: '比亚D', grey: 11200000 },
+  ];
+  const outflow = [
+    { stockCode: '600105', stockName: '永鼎股份', stockInitials: 'YDGF', stockDisplayName: '永鼎GF', grey: -70262426.83 },
+    { stockCode: '300142', stockName: '沃森生物', stockInitials: 'WSSW', stockDisplayName: '沃森SW', grey: -55600000 },
+    { stockCode: '000001', stockName: '平安银行', stockInitials: 'PAYH', stockDisplayName: '平安YH', grey: -43800000 },
+    { stockCode: '600519', stockName: '贵州茅台', stockInitials: 'GZMT', stockDisplayName: '贵州MT', grey: -29500000 },
+    { stockCode: '000333', stockName: '美的集团', stockInitials: 'MDJT', stockDisplayName: '美的JT', grey: -18100000 },
+    { stockCode: '601398', stockName: '工商银行', stockInitials: 'GSYH', stockDisplayName: '工商YH', grey: -15600000 },
+    { stockCode: '600030', stockName: '中信证券', stockInitials: 'ZXZQ', stockDisplayName: '中信ZQ', grey: -13200000 },
+    { stockCode: '000651', stockName: '格力电器', stockInitials: 'GLDQ', stockDisplayName: '格力DQ', grey: -10700000 },
+    { stockCode: '600276', stockName: '恒瑞医药', stockInitials: 'HRYY', stockDisplayName: '恒瑞YY', grey: -8400000 },
+    { stockCode: '300059', stockName: '东方财富', stockInitials: 'DFCF', stockDisplayName: '东方CF', grey: -6200000 },
+  ];
   return {
     previewMock: true,
     tradeDate: '2026-09-30',
     title: '9月30日暗盘榜',
     updateHint: '',
-    inflow: [
-      { stockCode: '600159', stockName: '大龙地产', stockInitials: 'DLDC', stockDisplayName: '大龙DC', grey: 128600000 },
-      { stockCode: '002242', stockName: '九阳股份', stockInitials: 'JYGF', stockDisplayName: '九阳GF', grey: 93600000 },
-      { stockCode: '000678', stockName: '襄阳轴承', stockInitials: 'XYZC', stockDisplayName: '襄阳ZC', grey: 71800000 },
-      { stockCode: '002487', stockName: '大金重工', stockInitials: 'DJZG', stockDisplayName: '大金ZG', grey: 48600000 },
-      { stockCode: '601127', stockName: '赛力斯', stockInitials: 'SLS', stockDisplayName: '赛力S', grey: 32900000 },
-      { stockCode: '600036', stockName: '招商银行', stockInitials: 'ZSYH', stockDisplayName: '招商YH', grey: 28600000 },
-      { stockCode: '000858', stockName: '五粮液', stockInitials: 'WLY', stockDisplayName: '五粮Y', grey: 24400000 },
-      { stockCode: '601318', stockName: '中国平安', stockInitials: 'ZGPA', stockDisplayName: '中国PA', grey: 19800000 },
-      { stockCode: '300750', stockName: '宁德时代', stockInitials: 'NDSD', stockDisplayName: '宁德SD', grey: 15300000 },
-      { stockCode: '002594', stockName: '比亚迪', stockInitials: 'BYD', stockDisplayName: '比亚D', grey: 11200000 },
-    ],
-    outflow: [
-      { stockCode: '600105', stockName: '永鼎股份', stockInitials: 'YDGF', stockDisplayName: '永鼎GF', grey: -70262426.83 },
-      { stockCode: '300142', stockName: '沃森生物', stockInitials: 'WSSW', stockDisplayName: '沃森SW', grey: -55600000 },
-      { stockCode: '000001', stockName: '平安银行', stockInitials: 'PAYH', stockDisplayName: '平安YH', grey: -43800000 },
-      { stockCode: '600519', stockName: '贵州茅台', stockInitials: 'GZMT', stockDisplayName: '贵州MT', grey: -29500000 },
-      { stockCode: '000333', stockName: '美的集团', stockInitials: 'MDJT', stockDisplayName: '美的JT', grey: -18100000 },
-      { stockCode: '601398', stockName: '工商银行', stockInitials: 'GSYH', stockDisplayName: '工商YH', grey: -15600000 },
-      { stockCode: '600030', stockName: '中信证券', stockInitials: 'ZXZQ', stockDisplayName: '中信ZQ', grey: -13200000 },
-      { stockCode: '000651', stockName: '格力电器', stockInitials: 'GLDQ', stockDisplayName: '格力DQ', grey: -10700000 },
-      { stockCode: '600276', stockName: '恒瑞医药', stockInitials: 'HRYY', stockDisplayName: '恒瑞YY', grey: -8400000 },
-      { stockCode: '300059', stockName: '东方财富', stockInitials: 'DFCF', stockDisplayName: '东方CF', grey: -6200000 },
-    ],
+    inflow: decorateMock(inflow, [6.82, 5.47, 4.96, 4.38, 3.91, 3.42, 2.87, 2.36, 1.94, 1.52], [.72, .58, .83, .46, .64, .39, .77, .52, .68, .44]),
+    outflow: decorateMock(outflow, [-6.31, -5.76, -5.22, -4.73, -4.16, -3.68, -3.21, -2.75, -2.24, -1.83], [.78, .55, .69, .42, .81, .48, .63, .37, .74, .51]),
   };
 }
 
@@ -118,6 +131,7 @@ Page({
     rankingLoading: false,
     rankingEmpty: true,
     ranking: { inflow: [], outflow: [] },
+    expandedRankingKey: '',
     isOfficial: false,
     querying: false,
     serviceQrVisible: false,
@@ -174,36 +188,34 @@ Page({
     this.setData({ rankingLoading: true });
     const showPreview = () => {
       const displayed = mockUpdatedRanking();
-      const decorate = (item) => ({
-        ...item,
-        marketStockCode: marketStockCode(item.stockCode),
-        greyText: formatRankingAmount(item.grey),
-      });
+      const decorate = (item, side) => this.decorateRankingItem(item, side);
       this.setData({
         rankingEmpty: false,
         ranking: {
           ...displayed,
-          inflow: displayed.inflow.map(decorate),
-          outflow: displayed.outflow.map(decorate),
+          inflow: displayed.inflow.map((item) => decorate(item, 'inflow')),
+          outflow: displayed.outflow.map((item) => decorate(item, 'outflow')),
         },
       });
     };
+    if (rankingPreviewEnabled()) {
+      showPreview();
+      this._rankingRequesting = false;
+      this.setData({ rankingLoading: false });
+      return Promise.resolve();
+    }
     return api.getDarkFundRanking()
       .then((result) => {
         if ((!result || result.empty) && rankingPreviewEnabled()) return showPreview();
         const displayed = result;
         if (!displayed || displayed.empty) return this.setData({ rankingEmpty: true, ranking: { inflow: [], outflow: [] } });
-        const decorate = (item) => ({
-          ...item,
-          marketStockCode: marketStockCode(item.stockCode),
-          greyText: formatRankingAmount(item.grey),
-        });
+        const decorate = (item, side) => this.decorateRankingItem(item, side);
         this.setData({
           rankingEmpty: false,
           ranking: {
             ...displayed,
-            inflow: (displayed.inflow || []).map(decorate),
-            outflow: (displayed.outflow || []).map(decorate),
+            inflow: (displayed.inflow || []).map((item) => decorate(item, 'inflow')),
+            outflow: (displayed.outflow || []).map((item) => decorate(item, 'outflow')),
           },
         });
       })
@@ -215,6 +227,35 @@ Page({
         this._rankingRequesting = false;
         this.setData({ rankingLoading: false });
       });
+  },
+  decorateRankingItem(item, side) {
+    const grey = Number(item.grey);
+    const listed = Number(item.listed);
+    const main = Number.isFinite(Number(item.main)) ? Number(item.main) : grey + listed;
+    const retail = Number.isFinite(Number(item.retail)) ? Number(item.retail) : -main;
+    const values = [listed, grey, retail].map((value) => (Number.isFinite(value) ? value : 0));
+    const max = Math.max(1, ...values.map((value) => Math.abs(value)));
+    const labels = ['主力明盘', '主力暗盘', '散户流入'];
+    return {
+      ...item,
+      expandKey: `${side}:${item.stockCode}`,
+      marketStockCode: marketStockCode(item.stockCode),
+      changeText: Number.isFinite(Number(item.changePercent)) ? `${Number(item.changePercent) > 0 ? '+' : ''}${Number(item.changePercent).toFixed(2)}%` : '—',
+      greyText: Number.isFinite(grey) ? formatRankingAmount(grey) : '—',
+      listedText: Number.isFinite(listed) ? formatRankingAmount(listed) : '—',
+      mainText: Number.isFinite(main) ? formatRankingAmount(main) : '—',
+      retailText: Number.isFinite(retail) ? formatRankingAmount(retail) : '—',
+      snapshotBars: values.map((value, index) => ({
+        label: labels[index],
+        text: formatRankingAmount(value),
+        positive: value >= 0,
+        height: Math.max(12, Math.round(Math.abs(value) / max * 62)),
+      })),
+    };
+  },
+  toggleRankingSnapshot(e) {
+    const key = String(e.currentTarget.dataset.key || '');
+    this.setData({ expandedRankingKey: this.data.expandedRankingKey === key ? '' : key });
   },
   openRankingResult(e) {
     const stockCode = String(e.currentTarget.dataset.code || '');

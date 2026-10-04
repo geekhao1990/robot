@@ -15,21 +15,35 @@
       <view class="ranking-columns">
       <view class="ranking-section">
         <view class="ranking-section-title inflow">暗盘流入前十</view>
-        <view wx:for="{{ranking.inflow}}" wx:key="stockCode" class="ranking-row" data-code="{{item.stockCode}}" data-name="{{item.stockName}}" data-initials="{{item.stockInitials}}" bindtap="openRankingResult">
-          <text class="ranking-number">{{index + 1}}</text>
-          <view class="ranking-stock"><text>{{item.stockDisplayName}}</text><text>{{item.marketStockCode}}</text></view>
-          <text class="ranking-value up">{{item.greyText}}</text>
-          <view class="ranking-share" data-code="{{item.stockCode}}" data-name="{{item.stockName}}" data-initials="{{item.stockInitials}}" catchtap="shareRankingResult"><view class="ranking-share-icon"></view><text>分享</text></view>
+        <view wx:for="{{ranking.inflow}}" wx:key="stockCode" class="ranking-item">
+          <view class="ranking-row">
+            <text class="ranking-number">{{index + 1}}</text>
+            <view class="ranking-stock" data-code="{{item.stockCode}}" data-name="{{item.stockName}}" data-initials="{{item.stockInitials}}" catchtap="openRankingResult"><text>{{item.stockDisplayName}}</text><text>{{item.marketStockCode}}</text></view>
+            <text class="ranking-change {{item.changePercent >= 0 ? 'up' : 'down'}}">{{item.changeText}}</text>
+            <view class="ranking-toggle {{expandedRankingKey === item.expandKey ? 'expanded' : ''}}" data-key="{{item.expandKey}}" catchtap="toggleRankingSnapshot"></view>
+          </view>
+          <view class="ranking-funds"><view><text>暗盘资金</text><text class="up">{{item.greyText}}</text></view><view><text>明盘资金</text><text class="{{item.listed >= 0 ? 'up' : 'down'}}">{{item.listedText}}</text></view></view>
+          <view wx:if="{{expandedRankingKey === item.expandKey}}" class="ranking-snapshot">
+            <view class="ranking-snapshot-head"><text>1日主力流向 · 收盘</text><text class="{{item.main >= 0 ? 'up' : 'down'}}">主力净流入 {{item.mainText}}</text></view>
+            <view class="ranking-snapshot-chart"><view class="ranking-zero-line"></view><view wx:for="{{item.snapshotBars}}" wx:for-item="bar" wx:key="label" class="ranking-bar-column"><view wx:if="{{bar.positive}}" class="ranking-bar-stack positive"><text class="up">{{bar.text}}</text><view class="ranking-bar up-bar" style="height:{{bar.height}}rpx"></view></view><view wx:else class="ranking-bar-stack negative"><view class="ranking-bar down-bar" style="height:{{bar.height}}rpx"></view><text class="down">{{bar.text}}</text></view><text class="ranking-bar-label">{{bar.label}}</text></view></view>
+          </view>
         </view>
         <view wx:if="{{!ranking.inflow.length}}" class="ranking-list-empty">暂无净流入股票</view>
       </view>
       <view class="ranking-section">
         <view class="ranking-section-title outflow">暗盘流出前十</view>
-        <view wx:for="{{ranking.outflow}}" wx:key="stockCode" class="ranking-row" data-code="{{item.stockCode}}" data-name="{{item.stockName}}" data-initials="{{item.stockInitials}}" bindtap="openRankingResult">
-          <text class="ranking-number">{{index + 1}}</text>
-          <view class="ranking-stock"><text>{{item.stockDisplayName}}</text><text>{{item.marketStockCode}}</text></view>
-          <text class="ranking-value down">{{item.greyText}}</text>
-          <view class="ranking-share" data-code="{{item.stockCode}}" data-name="{{item.stockName}}" data-initials="{{item.stockInitials}}" catchtap="shareRankingResult"><view class="ranking-share-icon"></view><text>分享</text></view>
+        <view wx:for="{{ranking.outflow}}" wx:key="stockCode" class="ranking-item">
+          <view class="ranking-row">
+            <text class="ranking-number">{{index + 1}}</text>
+            <view class="ranking-stock" data-code="{{item.stockCode}}" data-name="{{item.stockName}}" data-initials="{{item.stockInitials}}" catchtap="openRankingResult"><text>{{item.stockDisplayName}}</text><text>{{item.marketStockCode}}</text></view>
+            <text class="ranking-change {{item.changePercent >= 0 ? 'up' : 'down'}}">{{item.changeText}}</text>
+            <view class="ranking-toggle {{expandedRankingKey === item.expandKey ? 'expanded' : ''}}" data-key="{{item.expandKey}}" catchtap="toggleRankingSnapshot"></view>
+          </view>
+          <view class="ranking-funds"><view><text>暗盘资金</text><text class="down">{{item.greyText}}</text></view><view><text>明盘资金</text><text class="{{item.listed >= 0 ? 'up' : 'down'}}">{{item.listedText}}</text></view></view>
+          <view wx:if="{{expandedRankingKey === item.expandKey}}" class="ranking-snapshot">
+            <view class="ranking-snapshot-head"><text>1日主力流向 · 收盘</text><text class="{{item.main >= 0 ? 'up' : 'down'}}">主力净流入 {{item.mainText}}</text></view>
+            <view class="ranking-snapshot-chart"><view class="ranking-zero-line"></view><view wx:for="{{item.snapshotBars}}" wx:for-item="bar" wx:key="label" class="ranking-bar-column"><view wx:if="{{bar.positive}}" class="ranking-bar-stack positive"><text class="up">{{bar.text}}</text><view class="ranking-bar up-bar" style="height:{{bar.height}}rpx"></view></view><view wx:else class="ranking-bar-stack negative"><view class="ranking-bar down-bar" style="height:{{bar.height}}rpx"></view><text class="down">{{bar.text}}</text></view><text class="ranking-bar-label">{{bar.label}}</text></view></view>
+          </view>
         </view>
         <view wx:if="{{!ranking.outflow.length}}" class="ranking-list-empty">暂无净流出股票</view>
       </view>
