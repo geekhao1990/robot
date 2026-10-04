@@ -1,5 +1,6 @@
 const api = require('../../utils/api');
 const store = require('../../utils/store');
+const { confirmPurchase } = require('../../utils/payment-ui');
 const config = require('../../utils/config');
 
 function formatQueryTime(timestamp) {
@@ -446,10 +447,15 @@ Page({
     if (this.data.purchasing) return;
     if (!store.isLogin()) return wx.navigateTo({ url: '/pages/login/login' });
     this.setData({ purchasing: true });
-    wx.showLoading({ title: '创建订单', mask: true });
     let orderId = '';
-    api.createDarkFundPurchaseOrder()
+    confirmPurchase('暗盘单次查询', '¥0.99')
+      .then((confirmed) => {
+        if (!confirmed) return null;
+        wx.showLoading({ title: '创建订单', mask: true });
+        return api.createDarkFundPurchaseOrder();
+      })
       .then((order) => {
+        if (!order) return null;
         wx.hideLoading();
         orderId = String(order && order.orderId || '');
         if (!orderId || !order.payment) throw new Error('支付订单创建失败');
@@ -460,10 +466,12 @@ Page({
         }));
       })
       .then(() => {
+        if (!orderId) return null;
         wx.showLoading({ title: '确认到账', mask: true });
         return api.getDarkFundPurchaseOrder(orderId);
       })
       .then((result) => {
+        if (!orderId) return;
         wx.hideLoading();
         if (!result || result.status !== 'SUCCESS') {
           return wx.showModal({ title: '支付处理中', content: '支付结果正在确认，请稍后重新进入页面查看次数。', showCancel: false });

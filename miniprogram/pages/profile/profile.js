@@ -2,6 +2,7 @@ const api = require('../../utils/api');
 const store = require('../../utils/store');
 const config = require('../../utils/config');
 const { refreshTabBar } = require('../../utils/util');
+const { openGoldEntry } = require('../../utils/gold-entry');
 
 Page({
   data: {
@@ -288,18 +289,9 @@ Page({
   },
   goGoldNote() {
     if (!store.isLogin()) return this.goLogin();
-    api.getAppSettings().then((settings) => {
-      const noteId = String(settings && settings.featuredNoteId || '').trim();
-      this.setData({ goldEntryNoteId: noteId });
-      if (!noteId) throw new Error('金手指笔记暂未配置');
-      wx.navigateTo({
-        url: `/pages/detail/detail?id=${encodeURIComponent(noteId)}&from=goldTab`,
-        fail: () => {
-          wx.showToast({ title: '页面打开失败，请重试', icon: 'none' });
-        },
-      });
-    }).catch((error) => {
-      wx.showToast({ title: error.message || '金手指笔记暂未配置', icon: 'none' });
+    return openGoldEntry({
+      source: 'goldProfile',
+      beforeNavigate: (noteId) => this.setData({ goldEntryNoteId: noteId }),
     });
   },
   goMessageCenter() {

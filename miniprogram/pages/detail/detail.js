@@ -1,6 +1,7 @@
 const api = require('../../utils/api');
 const store = require('../../utils/store');
 const config = require('../../utils/config');
+const { confirmPurchase } = require('../../utils/payment-ui');
 const { formatCount, fromNow, toast } = require('../../utils/util');
 const RISK_DISCLAIMER = '数据来自交易所和互联网公开数据，由本人整理发布，不构成投资建议';
 
@@ -311,10 +312,15 @@ Page({
     });
   },
   purchaseGoldAccess(onSuccess) {
-    wx.showLoading({ title: '创建订单', mask: true });
     let orderId = '';
-    return api.createGoldPurchaseOrder()
+    return confirmPurchase('金手指年卡（360天）', '¥9.90')
+      .then((confirmed) => {
+        if (!confirmed) return null;
+        wx.showLoading({ title: '创建订单', mask: true });
+        return api.createGoldPurchaseOrder();
+      })
       .then((order) => {
+        if (!order) return null;
         wx.hideLoading();
         orderId = String(order && order.orderId || '');
         if (!orderId || !order.payment) throw new Error('支付订单创建失败');
@@ -325,10 +331,12 @@ Page({
         }));
       })
       .then(() => {
+        if (!orderId) return null;
         wx.showLoading({ title: '确认开通', mask: true });
         return api.getGoldPurchaseOrder(orderId);
       })
       .then((result) => {
+        if (!orderId) return;
         wx.hideLoading();
         if (!result || result.status !== 'SUCCESS') {
           return wx.showModal({

@@ -138,7 +138,7 @@ async function requestWechat(method, canonicalUrl, body) {
   return data;
 }
 
-async function createJsapiPayment({ outTradeNo, description, amount, openid }) {
+async function createJsapiPayment({ outTradeNo, description, merchantGoodsId, goodsName, amount, openid }) {
   const cfg = requireConfig();
   const result = await requestWechat('POST', '/v3/pay/transactions/jsapi', {
     appid: cfg.appId,
@@ -148,6 +148,14 @@ async function createJsapiPayment({ outTradeNo, description, amount, openid }) {
     notify_url: cfg.notifyUrl,
     amount: { total: amount, currency: 'CNY' },
     payer: { openid },
+    detail: {
+      goods_detail: [{
+        merchant_goods_id: merchantGoodsId,
+        goods_name: goodsName,
+        quantity: 1,
+        unit_price: amount,
+      }],
+    },
   });
   if (!result.prepay_id) {
     const error = new Error('微信支付未返回预支付标识');

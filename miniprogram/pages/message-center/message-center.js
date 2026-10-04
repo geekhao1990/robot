@@ -1,4 +1,5 @@
 const api = require('../../utils/api');
+const { openGoldEntry } = require('../../utils/gold-entry');
 const store = require('../../utils/store');
 const config = require('../../utils/config');
 
@@ -83,20 +84,7 @@ Page({
   },
 
   openGoldNote(item) {
-    const open = (settings) => {
-      const noteId = String((item && item.targetId) || (settings && settings.featuredNoteId) || '').trim();
-      if (!noteId) {
-        wx.showToast({ title: '金手指笔记暂未配置', icon: 'none' });
-        return;
-      }
-      wx.navigateTo({
-        url: `/pages/detail/detail?id=${encodeURIComponent(noteId)}&from=goldNotification`,
-        fail: () => wx.showToast({ title: '页面打开失败，请重试', icon: 'none' }),
-      });
-    };
-    return api.getAppSettings()
-      .then(open)
-      .catch(() => wx.showToast({ title: '金手指笔记暂时无法打开', icon: 'none' }));
+    return openGoldEntry({ source: 'goldNotification' });
   },
 
   openMessage(e) {

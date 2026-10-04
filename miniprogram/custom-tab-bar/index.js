@@ -1,4 +1,5 @@
 const api = require('../utils/api');
+const { openGoldEntry } = require('../utils/gold-entry');
 
 const GOLD_FINGER_ICON = '/images/gold-tab-default.png';
 const GOLD_FINGER_ACTIVE_ICON = '/images/gold-tab.png';
@@ -65,16 +66,10 @@ Component({
       const item = this.data.list[index];
       if (!item || item.spacer) return;
       if (item.action === 'goldNote') {
-        if (!item.noteId) return wx.showToast({ title: '金手指笔记暂未配置', icon: 'none' });
-        this.setData({ selected: 1 });
-        wx.showLoading({ title: '请稍后...', mask: true });
-        return wx.navigateTo({
-          url: '/pages/detail/detail?id=' + encodeURIComponent(item.noteId) + '&from=goldTab',
-          fail: () => {
-            wx.hideLoading();
-            this.setData({ selected: 0 });
-            wx.showToast({ title: '页面打开失败，请重试', icon: 'none' });
-          },
+        return openGoldEntry({
+          source: 'goldTab',
+          beforeNavigate: () => this.setData({ selected: 1 }),
+          onNavigateFail: () => this.setData({ selected: 0 }),
         });
       }
       const url = item.pagePath;

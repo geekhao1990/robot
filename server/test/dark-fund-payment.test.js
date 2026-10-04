@@ -62,6 +62,8 @@ test('0.99 dark-fund payment creates a native mini-program payment order', async
   assert.equal(created.amount, 99);
   assert.equal(paymentInputs[0].amount, 99);
   assert.equal(paymentInputs[0].description, '暗盘单次查询');
+  assert.equal(paymentInputs[0].merchantGoodsId, 'dark_fund_once');
+  assert.equal(paymentInputs[0].goodsName, '暗盘单次查询');
   assert.equal(created.payment.signType, 'RSA');
   assert.equal(data.paymentOrders.length, 1);
   assert.equal(data.paymentOrders[0].product, 'dark_fund_once');
@@ -75,6 +77,8 @@ test('9.9 gold payment opens 360 days exactly once and uses a clear product desc
   assert.equal(created.amount, 990);
   assert.equal(paymentInputs[0].amount, 990);
   assert.equal(paymentInputs[0].description, '开通金手指（1年）');
+  assert.equal(paymentInputs[0].merchantGoodsId, 'gold_year');
+  assert.equal(paymentInputs[0].goodsName, '金手指年卡（360天）');
   const first = await call('GET', `/api/gold/purchase-orders/${created.orderId}`);
   const expireAfterFirstCheck = data.users[0].goldExpire;
   const second = await call('GET', `/api/gold/purchase-orders/${created.orderId}`);

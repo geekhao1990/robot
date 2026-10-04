@@ -9,10 +9,10 @@ const { pushNotification } = require('../notifications');
 const DAY_MS = 24 * 3600 * 1000;
 const PRODUCTS = Object.freeze({
   dark_fund_once: Object.freeze({
-    id: 'dark_fund_once', amount: 99, prefix: 'DFP', description: '暗盘单次查询',
+    id: 'dark_fund_once', amount: 99, prefix: 'DFP', description: '暗盘单次查询', goodsName: '暗盘单次查询',
   }),
   gold_year: Object.freeze({
-    id: 'gold_year', amount: 990, prefix: 'GYP', description: '开通金手指（1年）',
+    id: 'gold_year', amount: 990, prefix: 'GYP', description: '开通金手指（1年）', goodsName: '金手指年卡（360天）',
   }),
 });
 
@@ -113,6 +113,8 @@ module.exports = function register(router, HttpError) {
       const result = await wechatPay.createJsapiPayment({
         outTradeNo: order.id,
         description: product.description,
+        merchantGoodsId: product.id,
+        goodsName: product.goodsName,
         amount: order.amount,
         openid: user.wxOpenId,
       });
