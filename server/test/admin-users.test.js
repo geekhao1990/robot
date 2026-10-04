@@ -114,12 +114,15 @@ test('admin can maintain close data source without exposing or clearing its pass
     darkFundCloseApiUrl: 'https://fundflow.shiluan.space/',
     darkFundCloseUsername: ' test15 ',
     darkFundClosePassword: 'test-password',
+    darkFundSinglePurchaseUrl: 'https://pay.example.com/dark-fund-once',
   };
   await assert.rejects(call('PUT', '/api/admin/settings', payload, ''), { status: 401 });
   const saved = await call('PUT', '/api/admin/settings', payload);
   assert.equal(data.settings.darkFundCloseApiUrl, 'https://fundflow.shiluan.space');
   assert.equal(data.settings.darkFundCloseUsername, 'test15');
   assert.equal(data.settings.darkFundClosePassword, 'test-password');
+  assert.equal(data.settings.darkFundSinglePurchaseUrl, 'https://pay.example.com/dark-fund-once');
+  assert.equal(saved.darkFundSinglePurchaseUrl, 'https://pay.example.com/dark-fund-once');
   assert.equal(saved.darkFundClosePasswordConfigured, true);
   assert.equal(Object.prototype.hasOwnProperty.call(saved, 'darkFundClosePassword'), false);
 
@@ -129,6 +132,7 @@ test('admin can maintain close data source without exposing or clearing its pass
   const fetched = await call('GET', '/api/admin/settings');
   assert.equal(fetched.darkFundCloseUsername, 'test15');
   assert.equal(Object.prototype.hasOwnProperty.call(fetched, 'darkFundClosePassword'), false);
+  await assert.rejects(call('PUT', '/api/admin/settings', { ...payload, darkFundSinglePurchaseUrl: 'http://pay.example.com' }), { status: 400 });
 });
 
 test('admin can save a trimmed user remark with a length limit', async () => {

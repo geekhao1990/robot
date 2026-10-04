@@ -86,6 +86,8 @@ Page({
     quotaExpiryText: '',
     closeMonthlyActive: false,
     closeMonthlyExpiryText: '',
+    darkFundEnabled: false,
+    singlePurchaseUrl: '',
     decisionPioneerEnabled: false,
     queryAdUnitId: /^adunit-/i.test(String(config.darkFundsQueryAdUnitId || ''))
       ? String(config.darkFundsQueryAdUnitId)
@@ -115,29 +117,31 @@ Page({
   onLoad(options) {
     if (!store.isLogin()) return wx.redirectTo({ url: '/pages/login/login' });
     const user = store.getUser();
-    if (!user || user.darkFundEnabled !== true) {
-      wx.showModal({ title: '暂不可用', content: '暗盘资金入口尚未开通', showCancel: false, complete: () => wx.navigateBack() });
-      return;
-    }
     const requestedTab = String(options && options.tab || '');
     const tab = ['ranking', 'history'].includes(requestedTab) ? requestedTab : 'query';
-    this.setData({ tab, isOfficial: user.official === true });
+    this.setData({ tab, isOfficial: user && user.official === true, darkFundEnabled: user && user.darkFundEnabled === true });
     api.getAppSettings().then((settings) => {
       const id = String((settings && settings.darkFundsQueryAdUnitId) || config.darkFundsQueryAdUnitId || '');
       const historyId = String((settings && settings.darkFundsHistoryAdUnitId) || config.darkFundsHistoryAdUnitId || '');
       this.setData({
         queryAdUnitId: /^adunit-/i.test(id) ? id : '',
         historyAdUnitId: /^adunit-/i.test(historyId) ? historyId : '',
+        singlePurchaseUrl: String((settings && settings.darkFundSinglePurchaseUrl) || '').trim(),
         queryAdLoadFailed: false,
         historyAdLoadFailed: false,
       });
     });
-    this.loadTradeDate();
     if (tab === 'ranking') this.loadRanking();
   },
   onShow() {
     if (!store.isLogin()) return;
-    this.loadOrders(true);
+    store.syncMe().then((user) => {
+      this.setData({
+        isOfficial: user && user.official === true,
+        darkFundEnabled: user && user.darkFundEnabled === true,
+      });
+      return Promise.all([this.loadTradeDate(), this.loadOrders(true)]);
+    });
   },
   switchTab(e) {
     const tab = e.currentTarget.dataset.tab;
@@ -269,6 +273,7 @@ Page({
     const stockCode = String(this.data.stockCode || '').trim();
     const queryMode = mode === 'intraday' ? 'intraday' : 'close';
     const source = queryMode === 'intraday' ? 'collector' : 'web';
+    if (!this.data.closeMonthlyActive && Number(this.data.remaining) <= 0) return this.openSinglePurchase();
     if (!/^\d{6}$/.test(stockCode)) return wx.showModal({ title: '无法查询', content: '请输入6位代码', showCancel: false });
     if (/^(4|8|92)/.test(stockCode)) return wx.showToast({ title: '系统繁忙', icon: 'none' });
     if (this.data.stockLookupLoading) return wx.showToast({ title: '正在确认股票信息', icon: 'none' });
@@ -433,7 +438,21 @@ Page({
       closeMonthlyActive: result && result.closeMonthlyActive === true,
       closeMonthlyExpiryText: formatExpiryDate(result && result.closeMonthlyExpireAt),
       decisionPioneerEnabled: result && result.decisionPioneerEnabled === true,
+      darkFundEnabled: result && result.darkFundEnabled === true,
     };
+  },
+  openSinglePurchase() {
+    const url = String(this.data.singlePurchaseUrl || '').trim();
+    if (!/^https:\/\//i.test(url)) {
+      return wx.showModal({ title: '暂不可用', content: '支付链接尚未配置', showCancel: false });
+    }
+    wx.navigateTo({
+      url: `/pages/payment-link/payment-link?url=${encodeURIComponent(url)}`,
+      fail: () => wx.setClipboardData({
+        data: url,
+        success: () => wx.showToast({ title: '支付链接已复制', icon: 'none' }),
+      }),
+    });
   },
   onUnload() {
     if (this.closeInterstitialAd && this.closeInterstitialAd.destroy) this.closeInterstitialAd.destroy();

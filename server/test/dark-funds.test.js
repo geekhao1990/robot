@@ -363,9 +363,14 @@ test('dispatch failure refunds quota and records a failed ticket', async () => {
   assert.equal(data.darkFundOrders[0].status, 'DISPATCH_FAILED');
 });
 
-test('dark fund entry is hidden by default and exhausted quota blocks query', async () => {
+test('users without quota can inspect quota but cannot submit a query', async () => {
   const { data, call } = setup();
-  await assert.rejects(call('GET', '/api/dark-funds/trade-date', {}, 'Bearer u2'), { status: 403 });
+  const emptyQuota = await call('GET', '/api/dark-funds/trade-date', {}, 'Bearer u2');
+  assert.equal(emptyQuota.remaining, 0);
+  assert.equal(emptyQuota.darkFundEnabled, false);
+  await assert.rejects(call('POST', '/api/dark-funds/orders/close', {
+    stockCode: '600105', request_id: 'new_user_without_quota_001',
+  }, 'Bearer u2'), { status: 403 });
   data.users[0].darkFundRemaining = 0;
   await assert.rejects(call('POST', '/api/dark-funds/orders', { stockCode: '600105' }), { status: 403 });
 });

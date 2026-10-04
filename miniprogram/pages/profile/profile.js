@@ -276,8 +276,6 @@ Page({
   goLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
   goDarkFunds() {
     if (!store.isLogin()) return this.goLogin();
-    const user = store.getUser();
-    if (!user || user.darkFundEnabled !== true) return wx.showToast({ title: '功能尚未开通', icon: 'none' });
     wx.navigateTo({ url: '/pages/dark-funds/dark-funds' });
   },
   goGoldNote() {

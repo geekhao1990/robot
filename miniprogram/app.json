@@ -8,6 +8,7 @@
     "pages/login/login",
     "pages/dark-funds/dark-funds",
     "pages/dark-funds-result/dark-funds-result",
+    "pages/payment-link/payment-link",
     "pages/message-center/message-center"
   ],
   "subPackages": [],

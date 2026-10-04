@@ -106,7 +106,6 @@ module.exports = function register(router, HttpError) {
 
   router.get('/api/dark-funds/trade-date', (ctx) => {
     const user = currentUser(ctx);
-    if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
     const quota = refreshDarkFundQuota(user);
     if (quota.changed) db.save();
     const tradeDate = latestTradingDate();
@@ -120,6 +119,7 @@ module.exports = function register(router, HttpError) {
       closeMonthlyActive: closeDarkFundActiveAt(user),
       closeMonthlyExpireAt: closeDarkFundActiveAt(user) ? Number(user.darkFundCloseExpire) : 0,
       decisionPioneerEnabled: user.decisionPioneerEnabled === true,
+      darkFundEnabled: user.darkFundEnabled === true,
     };
   });
 
