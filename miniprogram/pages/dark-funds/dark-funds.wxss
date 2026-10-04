@@ -57,8 +57,7 @@
 .ranking-number { display: flex; flex: 0 0 42rpx; align-items: center; justify-content: center; width: 42rpx; height: 42rpx; margin-right: 16rpx; color: #777; font-size: 23rpx; font-weight: 800; background: #f3f3f3; border-radius: 50%; }
 .ranking-row:nth-child(2) .ranking-number { color: #fff; background: #ff3b30; }
 .ranking-stock { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 5rpx; }
-.ranking-stock text:first-child { overflow: hidden; color: #222; font-size: 30rpx; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
-.ranking-stock text:last-child { color: #aaa; font-size: 21rpx; }
+.ranking-stock-name { overflow: hidden; color: #222; font-size: 30rpx; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
 .ranking-change { flex: none; margin-left: 14rpx; font-size: 30rpx; font-weight: 800; white-space: nowrap; }
 .ranking-toggle { flex: 0 0 19rpx; width: 19rpx; height: 19rpx; margin-left: 22rpx; border-right: 4rpx solid #999; border-bottom: 4rpx solid #999; transform: rotate(45deg) translateY(-3rpx); transition: transform .18s ease; }
 .ranking-toggle.expanded { transform: rotate(225deg) translate(-2rpx,-1rpx); }

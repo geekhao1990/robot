@@ -20,7 +20,7 @@
         <view wx:for="{{rankingItems}}" wx:key="stockCode" class="ranking-item">
           <view class="ranking-row" data-key="{{item.expandKey}}" bindtap="toggleRankingSnapshot">
             <text class="ranking-number">{{index + 1}}</text>
-            <view class="ranking-stock"><text>{{item.stockDisplayName}}</text><text>{{item.marketStockCode}}</text></view>
+            <view class="ranking-stock"><text class="ranking-stock-name">{{item.stockName}}</text></view>
             <text class="ranking-change {{item.changePercent >= 0 ? 'up' : 'down'}}">{{item.changeText}}</text>
             <view class="ranking-toggle {{expandedRankingKey === item.expandKey ? 'expanded' : ''}}"></view>
           </view>
@@ -33,7 +33,7 @@
         </view>
         <view wx:if="{{!rankingItems.length}}" class="ranking-list-empty">暂无榜单数据</view>
       </view>
-      <view class="ranking-tip">仅统计收盘暗盘数据；榜单显示最近一次已生成的交易日结果</view>
+      <view class="ranking-tip">数据来自互联网和AI工具，不构成投资建议</view>
     </block>
   </view>
 
