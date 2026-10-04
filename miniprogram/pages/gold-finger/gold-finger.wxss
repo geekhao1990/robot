@@ -48,6 +48,12 @@
 .history-card { margin: 20rpx -28rpx 0; padding: 32rpx 28rpx 0; background: #fff; border-top: 1rpx solid #eee; border-bottom: 1rpx solid #eee; }
 .history-title-row { display: flex; align-items: center; justify-content: space-between; }
 .history-title { padding-left: 22rpx; color: #242424; font-size: 36rpx; font-weight: 850; border-left: 9rpx solid #ff2442; }
+.history-actions { display: flex; align-items: center; gap: 12rpx; }
+.history-poster { display: flex; align-items: center; justify-content: center; gap: 8rpx; height: 64rpx; padding: 0 18rpx; color: #9a6714; font-size: 24rpx; font-weight: 700; background: #fff7e3; border: 1rpx solid #e7c067; border-radius: 999rpx; box-sizing: border-box; }
+.history-poster-icon { position: relative; width: 24rpx; height: 24rpx; border: 3rpx solid currentColor; border-radius: 50%; box-sizing: border-box; }
+.history-poster-icon::before { position: absolute; top: -9rpx; left: 8rpx; width: 7rpx; height: 7rpx; content: ''; border-top: 3rpx solid currentColor; border-right: 3rpx solid currentColor; transform: rotate(-45deg); }
+.history-poster-icon::after { position: absolute; top: -4rpx; left: 9rpx; width: 3rpx; height: 14rpx; content: ''; background: currentColor; }
+.history-poster.disabled { opacity: .58; pointer-events: none; }
 .history-refresh { display: flex; align-items: center; justify-content: center; min-width: 176rpx; height: 64rpx; padding: 0 26rpx; color: #fff; font-size: 25rpx; font-weight: 600; background: #ff2442; border-radius: 999rpx; box-shadow: 0 8rpx 18rpx rgba(255,36,66,.2); box-sizing: border-box; }
 .history-refresh.disabled { opacity: .58; pointer-events: none; }
 .history-grid { display: flex; align-items: center; width: 100%; }
@@ -77,3 +83,4 @@
 .banner-image { display: block; width: 100%; height: 100%; }
 .gold-ad-slot { width: 100%; margin: 28rpx 0 8rpx; overflow: hidden; border-radius: 12rpx; }
 .disclaimer { padding: 24rpx 0 50rpx; color: #aaa095; font-size: 20rpx; text-align: center; }
+.gold-share-poster-canvas { position: fixed; top: 0; left: -2000px; width: 750px; height: 1334px; pointer-events: none; }

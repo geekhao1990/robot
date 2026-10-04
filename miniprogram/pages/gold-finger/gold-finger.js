@@ -31,6 +31,8 @@ Page({
     adLoadFailed: false,
     refreshSlotKey: '',
     nextRefreshAt: 0,
+    posterGenerating: false,
+    posterPath: '',
   },
 
   onLoad() {
@@ -292,6 +294,156 @@ Page({
 
   onAdError() {
     this.setData({ adLoadFailed: true });
+  },
+
+  generateSharePoster() {
+    if (this.data.posterGenerating || !this.data.record) return;
+    this.setData({ posterGenerating: true });
+    wx.showLoading({ title: '正在生成', mask: true });
+    wx.createSelectorQuery().in(this).select('#goldSharePosterCanvas').fields({ node: true, size: true }).exec((queryResult) => {
+      const target = queryResult && queryResult[0];
+      if (!target || !target.node) return this.finishPosterError('画布初始化失败');
+      try {
+        const canvas = target.node;
+        const width = 750;
+        const height = 1334;
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        this.loadPosterImage(canvas, ['/images/indicator-warehouse-mini-code.jpg', '../../images/indicator-warehouse-mini-code.jpg'])
+          .then((qrImage) => {
+            this.drawGoldSharePoster(context, width, height, qrImage);
+            wx.canvasToTempFilePath({
+              canvas,
+              width,
+              height,
+              destWidth: width,
+              destHeight: height,
+              fileType: 'png',
+              quality: 1,
+              success: ({ tempFilePath }) => {
+                wx.hideLoading();
+                this.setData({ posterGenerating: false, posterPath: tempFilePath });
+                if (typeof wx.showShareImageMenu === 'function') {
+                  wx.showShareImageMenu({ path: tempFilePath, fail: () => wx.previewImage({ current: tempFilePath, urls: [tempFilePath] }) });
+                } else {
+                  wx.previewImage({ current: tempFilePath, urls: [tempFilePath] });
+                }
+              },
+              fail: () => this.finishPosterError('生成分享图失败'),
+            });
+          })
+          .catch(() => this.finishPosterError('小程序码加载失败'));
+      } catch (error) {
+        this.finishPosterError('生成分享图失败');
+      }
+    });
+  },
+
+  loadPosterImage(canvas, sources) {
+    return new Promise((resolve, reject) => {
+      const load = (index) => {
+        const image = canvas.createImage();
+        image.onload = () => resolve(image);
+        image.onerror = () => {
+          if (index + 1 < sources.length) return load(index + 1);
+          reject(new Error('image load failed'));
+        };
+        image.src = sources[index];
+      };
+      load(0);
+    });
+  },
+
+  finishPosterError(message) {
+    wx.hideLoading();
+    this.setData({ posterGenerating: false });
+    wx.showToast({ title: message, icon: 'none' });
+  },
+
+  drawGoldSharePoster(context, width, height, qrImage) {
+    const record = this.data.record || {};
+    const records = (this.data.records || []).slice(0, 5);
+    const roundRect = (x, y, w, h, r) => {
+      context.beginPath();
+      context.moveTo(x + r, y); context.lineTo(x + w - r, y); context.quadraticCurveTo(x + w, y, x + w, y + r);
+      context.lineTo(x + w, y + h - r); context.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      context.lineTo(x + r, y + h); context.quadraticCurveTo(x, y + h, x, y + h - r);
+      context.lineTo(x, y + r); context.quadraticCurveTo(x, y, x + r, y); context.closePath();
+    };
+    const text = (value, x, y, size, color = '#fff', weight = '400', align = 'left') => {
+      context.font = `${weight} ${size}px "Microsoft YaHei", sans-serif`;
+      context.fillStyle = color;
+      context.textAlign = align;
+      context.textBaseline = 'middle';
+      context.fillText(String(value), x, y);
+    };
+    const gradient = context.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, '#0b1324');
+    gradient.addColorStop(.55, '#171423');
+    gradient.addColorStop(1, '#241408');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, width, height);
+    const glow = context.createRadialGradient(610, 110, 10, 610, 110, 330);
+    glow.addColorStop(0, 'rgba(232,181,73,.38)');
+    glow.addColorStop(1, 'rgba(232,181,73,0)');
+    context.fillStyle = glow;
+    context.fillRect(280, 0, 470, 470);
+
+    text('金手指趋势', 56, 92, 54, '#f5d486', '800');
+    text('主力资金 · 先人一步', 58, 150, 24, '#b8aa91', '400');
+    context.fillStyle = '#d9a838';
+    context.fillRect(56, 188, 638, 3);
+
+    roundRect(42, 228, 666, 408, 28);
+    context.fillStyle = 'rgba(9,16,29,.88)';
+    context.fill();
+    context.strokeStyle = 'rgba(228,180,77,.42)';
+    context.lineWidth = 2;
+    context.stroke();
+    text(record.date || '--', 72, 275, 27, '#aaa69e');
+    const fingerText = record.finger === 'silver' ? '银手指' : '金手指';
+    text(fingerText, 72, 370, 86, record.finger === 'silver' ? '#e7edf5' : '#f2ca68', '900');
+    text(record.trend === 'down' ? '趋势下行' : '趋势上行', 76, 445, 30, record.trend === 'down' ? '#20c997' : '#ff5b55', '700');
+    text(`水位 ${Number(record.position) || 0}%`, 678, 445, 30, '#fff', '700', 'right');
+
+    const cards = [
+      { label: '阳谱', value: `${Number(record.yang) || 0}%`, color: '#ff625b' },
+      { label: '阴谱', value: `${Number(record.yin) || 0}%`, color: '#2ad6a3' },
+    ];
+    cards.forEach((item, index) => {
+      const x = 72 + index * 302;
+      roundRect(x, 492, 278, 108, 18);
+      context.fillStyle = 'rgba(255,255,255,.055)';
+      context.fill();
+      text(item.label, x + 22, 524, 22, '#a9abb2');
+      text(item.value, x + 22, 568, 38, item.color, '800');
+    });
+
+    text('近期点金记录', 54, 695, 34, '#fff', '800');
+    text('日期', 72, 746, 21, '#858b98');
+    text('阳谱', 312, 746, 21, '#858b98', '400', 'center');
+    text('阴谱', 430, 746, 21, '#858b98', '400', 'center');
+    text('点金', 548, 746, 21, '#858b98', '400', 'center');
+    text('水位', 668, 746, 21, '#858b98', '400', 'right');
+    records.forEach((item, index) => {
+      const y = 798 + index * 62;
+      context.strokeStyle = 'rgba(255,255,255,.08)';
+      context.beginPath(); context.moveTo(64, y - 30); context.lineTo(686, y - 30); context.stroke();
+      text(item.date || '--', 72, y, 22, '#d7d9de');
+      text(`${item.yang}%`, 312, y, 22, '#ff625b', '700', 'center');
+      text(`${item.yin}%`, 430, y, 22, '#2ad6a3', '700', 'center');
+      text(item.finger === 'silver' ? '银' : '金', 548, y, 22, item.finger === 'silver' ? '#e7edf5' : '#f2ca68', '800', 'center');
+      text(`${item.position}%`, 668, y, 22, '#fff', '700', 'right');
+    });
+
+    roundRect(42, 1130, 666, 160, 24);
+    context.fillStyle = 'rgba(255,255,255,.07)';
+    context.fill();
+    if (qrImage) context.drawImage(qrImage, 66, 1150, 120, 120);
+    text('搜索“指标仓库”小程序', 218, 1186, 29, '#fff', '800');
+    text('查看金手指与7天暗盘数据', 218, 1232, 23, '#c5bdaf');
+    text('数据来自互联网，仅供参考，不构成投资建议', width / 2, 1312, 17, '#777d88', '400', 'center');
   },
 
   onUnload() {

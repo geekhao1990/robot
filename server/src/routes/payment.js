@@ -152,7 +152,9 @@ module.exports = function register(router, HttpError) {
     if (!['intraday', 'close'].includes(queryMode)) throw new HttpError(400, '查询类型无效');
     if (!['web', 'collector'].includes(querySource)) throw new HttpError(400, '查询来源无效');
     if (!/^[A-Za-z0-9_-]{12,80}$/.test(requestId)) throw new HttpError(400, '查询请求标识无效');
-    if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
+    if (queryMode === 'close' && user.darkFundEnabled !== true) {
+      throw new HttpError(403, '盘后查询尚未开通');
+    }
     if (queryMode === 'intraday' && user.decisionPioneerEnabled !== true) {
       throw new HttpError(403, '决策拼单尚未开通');
     }

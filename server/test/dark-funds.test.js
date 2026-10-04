@@ -390,3 +390,16 @@ test('决策先锋需要独立权限且不影响盘后查询', async () => {
   });
   assert.equal(close.ready, true);
 });
+
+test('只开通决策拼单也可以使用盘中采集且不能使用盘后查询', async () => {
+  const { data, call } = setup();
+  data.users[0].darkFundEnabled = false;
+  data.users[0].decisionPioneerEnabled = true;
+  const intraday = await call('POST', '/api/dark-funds/orders/intraday', {
+    stockCode: '600105', request_id: 'decision_only_intraday_001',
+  });
+  assert.equal(intraday.queryMode, 'intraday');
+  await assert.rejects(call('POST', '/api/dark-funds/orders/close', {
+    stockCode: '600105', request_id: 'decision_only_close_001',
+  }), { status: 403 });
+});
