@@ -111,7 +111,7 @@ module.exports = function register(router, HttpError) {
     const oldSettings = d.settings || {};
     const goldEntryEnabledSupplied = Object.prototype.hasOwnProperty.call(b, 'goldFingerEntryEnabled');
     if (goldEntryEnabledSupplied && typeof b.goldFingerEntryEnabled !== 'boolean') {
-      throw new HttpError(400, '金手指总开关必须为布尔值');
+      throw new HttpError(400, '底部红色加号开关必须为布尔值');
     }
     const goldFingerEntryEnabled = goldEntryEnabledSupplied
       ? b.goldFingerEntryEnabled

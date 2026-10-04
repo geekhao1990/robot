@@ -31,16 +31,19 @@
   font-weight: 700;
 }
 
-.finger-item, .spacer-item { flex: 1; }
-.finger-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.plus-item, .spacer-item { flex: 1; }
+.plus-btn {
   width: 96rpx;
   height: 64rpx;
-  transform: translateY(2px);
+  color: #fff;
+  font-size: 56rpx;
+  font-weight: 300;
+  line-height: 60rpx;
+  text-align: center;
+  background: #ff2442;
+  border-radius: 20rpx;
+  box-shadow: 0 6rpx 16rpx rgba(255,36,66,.35);
 }
-.finger-btn image { width: 54rpx; height: 54rpx; }
 .tab-spacer { width: 96rpx; height: 64rpx; }
 
 /* 角标：绝对定位，不占布局 */

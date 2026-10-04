@@ -1274,9 +1274,9 @@ function renderSettings() {
           <div class="hint">${settings.darkFundClosePasswordConfigured ? '密码已配置且不会回显；留空保存不会清除原密码。' : '尚未配置密码，盘后查询暂时不可用。'}</div>
         </div>
         <div class="field">
-          <label>金手指入口总开关</label>
-          <div class="switch-cell"><label class="switch" title="是否显示金手指入口"><input id="settingGoldEntryEnabled" type="checkbox" ${settings.goldFingerEntryEnabled !== false ? 'checked' : ''} /><span class="switch-slider"></span></label><span>${settings.goldFingerEntryEnabled !== false ? '显示' : '隐藏'}</span></div>
-          <div class="hint">这是全局开关，只控制所有用户能否看到金手指 Tab 图标和金手指笔记；不按单个用户权限隐藏。用户权限只在点击“查看金手指”时校验。</div>
+          <label>底部红色加号入口总开关</label>
+          <div class="switch-cell"><label class="switch" title="是否显示底部红色加号"><input id="settingGoldEntryEnabled" type="checkbox" ${settings.goldFingerEntryEnabled !== false ? 'checked' : ''} /><span class="switch-slider"></span></label><span>${settings.goldFingerEntryEnabled !== false ? '显示' : '隐藏'}</span></div>
+          <div class="hint">开启后，用户点击底部红色加号可选择“查看暗盘”或“查看金手指”；关闭后隐藏中间按钮并保留等宽占位。该总开关仍同时控制金手指笔记的整体展示。</div>
         </div>
         <div class="field">
           <label>底部金手指入口打开的笔记</label>

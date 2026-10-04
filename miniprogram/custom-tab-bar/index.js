@@ -1,18 +1,11 @@
 const api = require('../utils/api');
 const { openGoldEntry } = require('../utils/gold-entry');
 
-const GOLD_FINGER_ICON = '/images/gold-tab-default.png';
-const GOLD_FINGER_ACTIVE_ICON = '/images/gold-tab.png';
-
 function makeList(settings = {}) {
-  const noteId = settings.goldFingerEntryEnabled === false ? '' : String(settings.featuredNoteId || '').trim();
-  const middle = noteId ? {
-    action: 'goldNote',
-    text: '金手指',
-    finger: true,
-    icon: GOLD_FINGER_ICON,
-    activeIcon: GOLD_FINGER_ACTIVE_ICON,
-    noteId,
+  const middle = settings.goldFingerEntryEnabled !== false ? {
+    action: 'quickEntry',
+    text: '功能入口',
+    plus: true,
   } : { text: '金手指占位', spacer: true };
   return [
     { pagePath: '/pages/index/index', text: '首页' },
@@ -55,23 +48,30 @@ Component({
     },
 
     applySettings(settings) {
-        const pages = getCurrentPages();
-        const page = pages[pages.length - 1];
-        const isGoldNote = !!(page && page.route === 'pages/detail/detail' && page.options && String(page.options.id || '') === settings.featuredNoteId);
-        this.setData({ list: makeList(settings), selected: isGoldNote ? 1 : this.data.selected });
+        this.setData({ list: makeList(settings) });
+    },
+
+    openQuickEntry() {
+      wx.showActionSheet({
+        itemList: ['查看暗盘', '查看金手指'],
+        success: ({ tapIndex }) => {
+          if (tapIndex === 0) {
+            wx.navigateTo({
+              url: '/pages/dark-funds/dark-funds',
+              fail: () => wx.showToast({ title: '页面打开失败，请重试', icon: 'none' }),
+            });
+            return;
+          }
+          if (tapIndex === 1) openGoldEntry({ source: 'quickTab' });
+        },
+      });
     },
 
     switchTab(e) {
       const index = e.currentTarget.dataset.index;
       const item = this.data.list[index];
       if (!item || item.spacer) return;
-      if (item.action === 'goldNote') {
-        return openGoldEntry({
-          source: 'goldTab',
-          beforeNavigate: () => this.setData({ selected: 1 }),
-          onNavigateFail: () => this.setData({ selected: 0 }),
-        });
-      }
+      if (item.action === 'quickEntry') return this.openQuickEntry();
       const url = item.pagePath;
       this.setData({ selected: index });
       wx.switchTab({ url });
