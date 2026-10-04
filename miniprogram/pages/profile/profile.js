@@ -31,6 +31,7 @@ Page({
     refreshReady: false,
     profileScrollTop: 0,
     messageUnread: 0,
+    goldEntryNoteId: '',
     profileBottomAdUnitId: /^adunit-/i.test(String(config.profileBottomAdUnitId || '')) ? String(config.profileBottomAdUnitId) : '',
     profileBottomAdLoadFailed: false,
   },
@@ -41,6 +42,7 @@ Page({
       const id = String((settings && settings.profileAdUnitId) || config.profileAdUnitId || '');
       const bottomId = String((settings && settings.profileBottomAdUnitId) || config.profileBottomAdUnitId || '');
       this.setData({
+        goldEntryNoteId: String((settings && settings.featuredNoteId) || '').trim(),
         profileBottomAdUnitId: /^adunit-/i.test(bottomId) ? bottomId : '',
         profileBottomAdLoadFailed: false,
       });
@@ -49,6 +51,7 @@ Page({
   },
   onShow() {
     refreshTabBar(this, 2);
+    this.loadGoldEntrySettings();
     if (this._returningFromDetail) {
       this._returningFromDetail = false;
       this.showProfileInterstitialAd();
@@ -56,6 +59,11 @@ Page({
     }
     this.refreshProfile();
     this.showProfileInterstitialAd();
+  },
+  loadGoldEntrySettings() {
+    return api.getAppSettings().then((settings) => {
+      this.setData({ goldEntryNoteId: String((settings && settings.featuredNoteId) || '').trim() });
+    }).catch(() => {});
   },
   createProfileInterstitialAd(adUnitId) {
     if (this._profileInterstitialAd || !wx.createInterstitialAd) return;
@@ -280,10 +288,9 @@ Page({
   },
   goGoldNote() {
     if (!store.isLogin()) return this.goLogin();
-    const user = store.getUser();
-    if (!user || user.goldAccess !== true) return wx.showToast({ title: '金手指权益尚未开通', icon: 'none' });
     api.getAppSettings().then((settings) => {
       const noteId = String(settings && settings.featuredNoteId || '').trim();
+      this.setData({ goldEntryNoteId: noteId });
       if (!noteId) throw new Error('金手指笔记暂未配置');
       wx.navigateTo({
         url: `/pages/detail/detail?id=${encodeURIComponent(noteId)}&from=goldTab`,

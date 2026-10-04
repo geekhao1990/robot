@@ -51,8 +51,8 @@ function pubNote(note) {
 function pubSettings(data) {
   const notes = (data && data.notes) || [];
   const raw = (data && data.settings) || {};
-  const featured = notes.find((n) => n.id === raw.featuredNoteId && n.type === 'gold')
-    || notes.find((n) => n.type === 'gold');
+  const featured = notes.find((n) => n.id === raw.featuredNoteId && n.type === 'gold' && n.visible !== false)
+    || notes.find((n) => n.type === 'gold' && n.visible !== false);
   const publicAdUnitId = (value) => {
     const id = String(value || '').trim();
     return /^adunit-[a-zA-Z0-9_-]+$/.test(id) && !/x{4,}/i.test(id) ? id : '';

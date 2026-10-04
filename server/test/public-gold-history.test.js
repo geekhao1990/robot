@@ -48,7 +48,9 @@ function setup() {
       pubNote: (x) => x,
       pubSettings: (d) => ({
         rewardedAdEnabled: d.settings.rewardedAdEnabled,
-        featuredNoteId: d.settings.featuredNoteId,
+        featuredNoteId: (d.notes.find((note) => note.id === d.settings.featuredNoteId && note.type === 'gold' && note.visible !== false)
+          || d.notes.find((note) => note.type === 'gold' && note.visible !== false)
+          || {}).id || '',
       }),
     },
     '../content-types': { typeLabel: () => '' },
@@ -98,14 +100,14 @@ test('gold finger history returns fixed pages of 10 records', async () => {
   await assert.rejects(call('/api/gold-finger/history', { page: '1' }, 'Bearer u2'), { status: 403 });
 });
 
-test('gold notes and entry are visible to gold-card and service-package users', async () => {
-  const { call } = setup();
+test('gold notes and entry stay visible while feature access remains entitlement protected', async () => {
+  const { call, data } = setup();
   const anonymousSettings = await call('/api/settings', {}, '');
   assert.equal(anonymousSettings.goldAccess, false);
-  assert.equal(anonymousSettings.featuredNoteId, '');
-  assert.equal((await call('/api/feed', {}, '')).list.map((note) => note.id).join(','), 'n1');
-  assert.equal((await call('/api/search', { kw: '金手指' }, 'Bearer u2')).map((note) => note.id).join(','), '');
-  await assert.rejects(call('/api/notes/g1', {}, 'Bearer u2'), { status: 404 });
+  assert.equal(anonymousSettings.featuredNoteId, 'g1');
+  assert.equal((await call('/api/feed', {}, '')).list.map((note) => note.id).join(','), 'g1,n1');
+  assert.equal((await call('/api/search', { kw: '金手指' }, 'Bearer u2')).map((note) => note.id).join(','), 'g1');
+  assert.equal((await call('/api/notes/g1', {}, 'Bearer u2')).id, 'g1');
 
   for (const token of ['Bearer u1', 'Bearer u3']) {
     const settings = await call('/api/settings', {}, token);
@@ -113,7 +115,13 @@ test('gold notes and entry are visible to gold-card and service-package users', 
     assert.equal(settings.featuredNoteId, 'g1');
     assert.equal((await call('/api/notes/g1', {}, token)).id, 'g1');
   }
-  await assert.rejects(call('/api/notes/g1', {}, 'Bearer u4'), { status: 404 });
+  assert.equal((await call('/api/notes/g1', {}, 'Bearer u4')).id, 'g1');
+  await assert.rejects(call('/api/gold-finger/latest', {}, 'Bearer u2'), { status: 403 });
+
+  data.notes.find((note) => note.id === 'g1').visible = false;
+  assert.equal((await call('/api/settings', {}, 'Bearer u1')).featuredNoteId, '');
+  assert.equal((await call('/api/feed', {}, 'Bearer u1')).list.some((note) => note.id === 'g1'), false);
+  await assert.rejects(call('/api/notes/g1', {}, 'Bearer u1'), { status: 404 });
 });
 
 test('every registered user can fetch course resources', async () => {
