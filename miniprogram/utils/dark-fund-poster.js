@@ -13,14 +13,15 @@ function exactAmount(value) {
 
 function maskedAmount(value) {
   const amount = number(value);
-  const sign = amount > 0 ? '+' : amount < 0 ? '-' : '';
+  const sign = amount < 0 ? '-' : '';
   const absolute = Math.abs(amount);
+  const hideLeadingDigit = (text) => String(text).replace(/\d/, 'x');
   if (absolute >= 100000000) {
-    const digits = Math.max(1, Math.floor(absolute / 100000000).toString().length);
-    return `${sign}${'x'.repeat(digits)}.xx亿`;
+    return `${sign}${hideLeadingDigit((absolute / 100000000).toFixed(2))}亿元`;
   }
-  const digits = Math.max(1, Math.round(absolute / 10000).toString().length);
-  return `${sign}${'x'.repeat(digits)}万`;
+  const tenThousands = absolute / 10000;
+  const text = Number.isInteger(tenThousands) ? String(tenThousands) : tenThousands.toFixed(1).replace(/\.0$/, '');
+  return `${sign}${hideLeadingDigit(text || '0')}万`;
 }
 
 function posterMetrics(result, display = {}) {
