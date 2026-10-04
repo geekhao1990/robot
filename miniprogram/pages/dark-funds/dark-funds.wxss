@@ -63,15 +63,15 @@
 .ranking-toggle { flex: 0 0 19rpx; width: 19rpx; height: 19rpx; margin-left: 22rpx; border-right: 4rpx solid #999; border-bottom: 4rpx solid #999; transform: rotate(45deg) translateY(-3rpx); transition: transform .18s ease; }
 .ranking-toggle.expanded { transform: rotate(225deg) translate(-2rpx,-1rpx); }
 .ranking-funds { display: flex; gap: 14rpx; padding: 0 24rpx 22rpx 82rpx; }
-.ranking-funds > view { display: flex; flex: 1; min-width: 0; align-items: baseline; justify-content: space-between; gap: 12rpx; padding: 17rpx 20rpx; background: #f7f7f7; border-radius: 12rpx; }
-.ranking-funds > view > text:first-child { color: #888; font-size: 22rpx; white-space: nowrap; }
-.ranking-funds > view > text:last-child { overflow: hidden; font-size: 27rpx; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.ranking-funds > view { display: flex; flex: 1; min-width: 0; align-items: baseline; justify-content: space-between; gap: 12rpx; padding: 13rpx 4rpx; background: transparent; border-radius: 0; }
+.ranking-funds > view > text:first-child { color: #777; font-size: 26rpx; font-weight: 600; white-space: nowrap; }
+.ranking-funds > view > text:last-child { overflow: hidden; font-size: 32rpx; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
 .ranking-snapshot { margin: 0 22rpx 24rpx; padding: 24rpx 20rpx 28rpx; background: #fafafa; border: 1rpx solid #e5e5e5; border-radius: 16rpx; }
 .ranking-snapshot-head { color: #333; font-size: 30rpx; font-weight: 850; }
 .ranking-snapshot-summary { display: flex; gap: 16rpx; margin-top: 20rpx; padding: 22rpx 12rpx; background: #f1f2f3; border-radius: 12rpx; }
 .ranking-snapshot-summary > view { display: flex; flex: 1; flex-direction: column; align-items: center; gap: 9rpx; color: #777; font-size: 24rpx; }
 .ranking-snapshot-summary > view > text:last-child { font-size: 30rpx; font-weight: 800; }
-.ranking-snapshot-chart { position: relative; display: flex; align-items: stretch; height: 300rpx; margin-top: 24rpx; padding: 0 12rpx; }
+.ranking-snapshot-chart { position: relative; display: flex; align-items: stretch; height: 300rpx; margin-top: 24rpx; margin-bottom: 40rpx; padding: 0 12rpx; }
 .ranking-zero-line { position: absolute; top: 50%; left: 0; right: 0; height: 1rpx; background: #cfd3d8; }
 .ranking-bar-column { position: relative; flex: 1; min-width: 0; }
 .ranking-bar-stack { position: absolute; left: 50%; display: flex; align-items: center; width: 100%; transform: translateX(-50%); }
@@ -81,7 +81,7 @@
 .ranking-bar { width: 44rpx; min-height: 12rpx; }
 .ranking-bar.up-bar { background: #ff3b30; border-radius: 4rpx 4rpx 0 0; }
 .ranking-bar.down-bar { background: #00a84f; border-radius: 0 0 4rpx 4rpx; }
-.ranking-bar-label { position: absolute; bottom: 2rpx; left: 50%; color: #666; font-size: 24rpx; white-space: nowrap; transform: translateX(-50%); }
+.ranking-bar-label { position: absolute; bottom: -40rpx; left: 50%; color: #666; font-size: 24rpx; white-space: nowrap; transform: translateX(-50%); }
 .up { color: #ff3b30!important; }
 .down { color: #00a84f!important; }
 .ranking-list-empty { padding: 46rpx 0; color: #aaa; font-size: 23rpx; text-align: center; }
