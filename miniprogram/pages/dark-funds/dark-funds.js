@@ -253,8 +253,8 @@ Page({
     const main = Number.isFinite(Number(item.main)) ? Number(item.main) : grey + listed;
     const retail = Number.isFinite(Number(item.retail)) ? Number(item.retail) : -main;
     const values = [listed, grey, retail].map((value) => (Number.isFinite(value) ? value : 0));
-    const fundsUnit = rankingAmountUnit([grey, listed]);
-    const chartUnit = rankingAmountUnit(values);
+    // 同一只股票的列表、汇总与柱状图必须共用单位，避免临界值附近同时出现“万”和“亿”。
+    const displayUnit = rankingAmountUnit([grey, listed, main, retail]);
     const max = Math.max(1, ...values.map((value) => Math.abs(value)));
     const labels = ['主力明盘', '主力暗盘', '散户流入'];
     return {
@@ -262,13 +262,13 @@ Page({
       expandKey: `${side}:${item.stockCode}`,
       marketStockCode: marketStockCode(item.stockCode),
       changeText: Number.isFinite(Number(item.changePercent)) ? `${Number(item.changePercent) > 0 ? '+' : ''}${Number(item.changePercent).toFixed(2)}%` : '—',
-      greyText: Number.isFinite(grey) ? formatRankingAmount(grey, fundsUnit) : '—',
-      listedText: Number.isFinite(listed) ? formatRankingAmount(listed, fundsUnit) : '—',
-      mainText: Number.isFinite(main) ? formatRankingAmount(main) : '—',
-      retailText: Number.isFinite(retail) ? formatRankingAmount(retail) : '—',
+      greyText: Number.isFinite(grey) ? formatRankingAmount(grey, displayUnit) : '—',
+      listedText: Number.isFinite(listed) ? formatRankingAmount(listed, displayUnit) : '—',
+      mainText: Number.isFinite(main) ? formatRankingAmount(main, displayUnit) : '—',
+      retailText: Number.isFinite(retail) ? formatRankingAmount(retail, displayUnit) : '—',
       snapshotBars: values.map((value, index) => ({
         label: labels[index],
-        text: formatRankingAmount(value, chartUnit),
+        text: formatRankingAmount(value, displayUnit),
         positive: value >= 0,
         height: Math.max(18, Math.round(Math.abs(value) / max * 100)),
       })),
