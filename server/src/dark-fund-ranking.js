@@ -92,7 +92,20 @@ function storeCloseResult(data, stockCode, result) {
   };
 }
 
+function isCloseRankingResult(result, stockCode, tradeDate) {
+  const normalizedCode = (value) => String(value || '').replace(/^(sh|sz)/i, '');
+  return Boolean(result
+    && result.type === 'close_snapshot'
+    && Number(result.validationVersion) >= 2
+    && String(result.kind || '').toLowerCase() === 'close'
+    && normalizedCode(result.stockCode) === normalizedCode(stockCode)
+    && String(result.tradeDate || '') === String(tradeDate || ''));
+}
+
 function rankingItem(candidate, result, cacheHit) {
+  if (!isCloseRankingResult(result, candidate.stockCode, result && result.tradeDate)) {
+    throw new Error('今日暗盘榜仅允许收盘盘后查询结果');
+  }
   const days = Array.isArray(result.days) ? result.days : [];
   const day = days.find((item) => String(item.tradeDate || '') === String(result.tradeDate || ''))
     || days.slice().sort((a, b) => String(b.tradeDate || '').localeCompare(String(a.tradeDate || '')))[0];
@@ -104,6 +117,8 @@ function rankingItem(candidate, result, cacheHit) {
     hotRank: candidate.hotRank,
     grey: Number(day.grey),
     cacheHit,
+    queryMode: 'close',
+    querySource: 'web',
     result: JSON.parse(JSON.stringify(result)),
   };
 }
@@ -130,8 +145,8 @@ async function generateRanking({ data, payload, tradeDate, fetchClose, concurren
       const cacheHit = Boolean(result);
       if (!result) {
         result = await fetchClose(candidate.stockCode);
-        if (String(result && result.tradeDate || '') !== tradeDate || String(result && result.kind || '') !== 'close') {
-          throw new Error(`盘后数据不是${tradeDate}收盘结果`);
+        if (!isCloseRankingResult(result, candidate.stockCode, tradeDate)) {
+          throw new Error(`盘后数据不是${tradeDate}收盘盘后查询结果`);
         }
         storeCloseResult(data, candidate.stockCode, result);
       }
@@ -148,6 +163,8 @@ async function generateRanking({ data, payload, tradeDate, fetchClose, concurren
     hotRank: item.hotRank,
     grey: item.grey,
     cacheHit: item.cacheHit,
+    queryMode: item.queryMode,
+    querySource: item.querySource,
   });
   const ranking = {
     tradeDate,
@@ -181,10 +198,15 @@ function rankingTitle(tradeDate) {
 function publicRanking(ranking, timestamp = Date.now()) {
   if (!ranking) return null;
   const { results, ...visible } = ranking;
+  const validCodes = new Set(Object.entries(results || {})
+    .filter(([stockCode, result]) => isCloseRankingResult(result, stockCode, ranking.tradeDate))
+    .map(([stockCode]) => stockCode));
   const today = chinaToday(timestamp);
   const waitingForToday = isTradingDay(today) && String(ranking.tradeDate || '') !== today;
   return JSON.parse(JSON.stringify({
     ...visible,
+    inflow: (visible.inflow || []).filter((item) => validCodes.has(String(item.stockCode || ''))),
+    outflow: (visible.outflow || []).filter((item) => validCodes.has(String(item.stockCode || ''))),
     title: rankingTitle(ranking.tradeDate),
     updateHint: waitingForToday
       ? (beijingMinutes(timestamp) < 15 * 60 + 30 ? '当天收盘后更新' : '今日榜单更新中')
@@ -203,6 +225,7 @@ module.exports = {
   THS_HOT_LIST_URL,
   fetchThsHotList,
   generateRanking,
+  isCloseRankingResult,
   latestRanking,
   normalizeCandidates,
   normalizeThsHotListResponse,

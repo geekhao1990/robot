@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { fetchThsHotList, generateRanking, normalizeCandidates, normalizeThsHotListResponse, publicRanking, rankingTitle } = require('../src/dark-fund-ranking');
+const { fetchThsHotList, generateRanking, isCloseRankingResult, normalizeCandidates, normalizeThsHotListResponse, publicRanking, rankingTitle } = require('../src/dark-fund-ranking');
 const { chinaMinutes, parseSchedule } = require('../src/dark-fund-ranking-sync');
 
 function closeResult(stockCode, stockName, tradeDate, grey) {
@@ -83,4 +83,24 @@ test('daily ranking reuses same-day close cache and sorts inflow/outflow', async
   assert.equal(ranking.outflow[0].stockCode, '600105');
   assert.equal(publicRanking(ranking).results, undefined);
   assert(data.darkFundRankings[tradeDate]);
+});
+
+test('daily ranking only accepts close snapshots and excludes intraday collector data', async () => {
+  const tradeDate = '2026-09-30';
+  const intraday = {
+    ...closeResult('600105', '永鼎股份', tradeDate, 70000000),
+    type: 'collector_result',
+    kind: 'intraday',
+  };
+  assert.equal(isCloseRankingResult(intraday, '600105', tradeDate), false);
+  const ranking = await generateRanking({
+    data: {},
+    tradeDate,
+    payload: { stocks: [{ stockCode: '600105' }] },
+    fetchClose: async () => intraday,
+  });
+  assert.equal(ranking.successCount, 0);
+  assert.equal(ranking.inflow.length, 0);
+  assert.equal(ranking.outflow.length, 0);
+  assert.match(ranking.failed[0].error, /收盘盘后查询结果/);
 });

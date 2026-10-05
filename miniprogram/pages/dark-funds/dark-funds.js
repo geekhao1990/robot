@@ -55,6 +55,22 @@ function formatRankingAmount(value, sharedUnit) {
   return `${amount > 0 ? '+' : ''}${amount.toFixed(unit.digits)}${unit.suffix}`;
 }
 
+function darkFundFailure(error, mode = 'close') {
+  const raw = (error && (error.errMsg || (error.data && error.data.error) || error.message)) || '';
+  const message = /require\s*:?\s*ok/i.test(String(raw)) ? '' : String(raw).trim();
+  const statusCode = Number(error && error.statusCode) || 0;
+  if (/次数|额度|用完|余额不足/.test(message)) {
+    return { title: '额度不足', content: '暗盘查询次数不足，请先充值暗盘次数', short: '额度不足' };
+  }
+  if (mode === 'intraday' && (statusCode >= 500 || !message || /采集|Windows|collector|ECONN|dispatch|连接|超时/i.test(message))) {
+    return { title: '采集器异常', content: '采集器异常，请稍后再试', short: '采集器异常' };
+  }
+  if (mode === 'close' && (statusCode >= 500 || !message || /接口|盘后|数据源|task|登录|请求|HTTP|连接|超时/i.test(message))) {
+    return { title: '接口异常', content: '盘后数据接口异常，请稍后再试', short: '接口异常' };
+  }
+  return { title: '查询失败', content: message || '接口异常，请稍后再试', short: '查询失败' };
+}
+
 function rankingPreviewEnabled() {
   // 当前阶段统一启用：真实榜单为空或接口不可用时，用 Mock 调试完整交互。
   // 正式上线真实榜单前应删除该兜底和 mockUpdatedRanking。
@@ -67,6 +83,8 @@ function mockUpdatedRanking() {
     const main = item.grey + listed;
     return {
       ...item,
+      queryMode: 'close',
+      querySource: 'web',
       changePercent: changes[index],
       listed,
       main,
@@ -370,7 +388,7 @@ Page({
     if (!this.data.stockSuggestion || this.data.stockSuggestion.stockCode !== stockCode) {
       return wx.showToast({ title: this.data.stockLookupError || '请先确认股票代码', icon: 'none' });
     }
-    if (!this.data.compactTradeDate) return wx.showToast({ title: '请稍后重试', icon: 'none' });
+    if (!this.data.compactTradeDate) return wx.showToast({ title: '交易日期接口异常', icon: 'none' });
     if (!hasQueryEntitlement) return this.openSinglePurchase();
     const stockName = this.data.stockSuggestion.stockDisplayName
       || displayStockName(this.data.stockSuggestion.stockName, this.data.stockSuggestion.stockInitials);
@@ -407,7 +425,8 @@ Page({
       .catch((error) => {
         wx.hideLoading();
         if (error && Number(error.statusCode) >= 400 && Number(error.statusCode) < 500) this.clearQueryRequestId(requestId);
-        wx.showModal({ title: '查询失败', content: '请稍后再试', showCancel: false });
+        const failure = darkFundFailure(error, queryMode);
+        wx.showModal({ title: failure.title, content: failure.content, showCancel: false });
       })
       .finally(() => this.setData({ querying: false }));
   },
@@ -429,7 +448,7 @@ Page({
             marketStockCode: marketStockCode(item.stockCode),
             queryTypeText: item.queryMode === 'close' ? '盘后查询' : '决策拼单',
             queryTimeText: formatQueryTime(item.createdAt),
-            statusText: ready ? '点击查看' : (failed ? '查询失败' : '处理中'),
+            statusText: ready ? '点击查看' : (failed ? darkFundFailure({ message: item.error }, item.queryMode).short : '处理中'),
           };
         });
         const unread = Array.isArray(result)
@@ -492,7 +511,13 @@ Page({
   },
   openOrder(e) {
     const order = this.data.orders.find((item) => item.id === e.currentTarget.dataset.id);
-    if (!order || !order.ready) return wx.showToast({ title: order && order.failed ? '请稍后再试' : '处理中，请稍后刷新', icon: 'none' });
+    if (!order || !order.ready) {
+      if (order && order.failed) {
+        const failure = darkFundFailure({ message: order.error }, order.queryMode);
+        return wx.showModal({ title: failure.title, content: failure.content, showCancel: false });
+      }
+      return wx.showToast({ title: '处理中，请稍后刷新', icon: 'none' });
+    }
     api.getDarkFundOrder(order.id)
       .then((readyOrder) => {
         if (!readyOrder) throw new Error('查询结果不存在');

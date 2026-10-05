@@ -429,13 +429,12 @@ Page({
     context.strokeStyle = 'rgba(239,51,59,.72)';
     context.lineWidth = 2;
     context.stroke();
-    artText(headline, width / 2, 274, 54);
-    text('趋势：？', 66, 354, 27, '#ff7671', '800');
-    text('仓位：？成', 302, 354, 27, '#f3f3f5', '800');
-    roundRect(486, 330, 196, 48, 24);
+    roundRect(486, 222, 196, 44, 22);
     context.fillStyle = 'rgba(100,18,22,.72)';
     context.fill();
-    text(`指标 · ${fingerText}`, 584, 354, 22, fingerColor, '700', 'center');
+    text(`指标 · ${fingerText}`, 584, 244, 21, fingerColor, '700', 'center');
+    artText(headline, width / 2, 295, 54);
+    text('趋势、仓位及实时金手指请登录小程序查看', width / 2, 365, 23, '#f3f3f5', '700', 'center');
 
     roundRect(30, 420, 690, 280, 28);
     context.fillStyle = 'rgba(5,10,18,.9)';
@@ -476,6 +475,10 @@ Page({
     context.strokeStyle = 'rgba(239,51,59,.52)';
     context.stroke();
     if (assets.darkFundImage) context.drawImage(assets.darkFundImage, 42, 732, 666, 441);
+    roundRect(568, 744, 120, 38, 19);
+    context.fillStyle = 'rgba(211,33,42,.9)';
+    context.fill();
+    text('静态样例', 628, 763, 19, '#fff', '800', 'center');
 
     roundRect(30, 1205, 690, 190, 26);
     context.fillStyle = 'rgba(8,10,16,.92)';
