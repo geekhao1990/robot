@@ -1,4 +1,6 @@
 const { fetchCloseDarkFund } = require('./dark-fund-close');
+const db = require('./db');
+const analytics = require('./analytics');
 
 const MAX_ACTIVE = Math.max(1, Number(process.env.DARK_FUND_CLOSE_CONCURRENCY) || 2);
 const userQueue = [];
@@ -24,9 +26,26 @@ function pump() {
     if (!job) return;
     active += 1;
     job.started = true;
+    const startedAt = Date.now();
     Promise.resolve()
       .then(() => fetchCloseDarkFund(job.stockCode))
-      .then(job.resolve, job.reject)
+      .then((result) => {
+        analytics.record(db.get(), {
+          type: 'dark_close_api', source: job.priority, stockCode: job.stockCode,
+          status: 'success', durationMs: Date.now() - startedAt,
+        });
+        db.save();
+        job.resolve(result);
+      }, (error) => {
+        const reason = analytics.classifyFailure(error);
+        analytics.record(db.get(), {
+          type: 'dark_close_api', source: job.priority, stockCode: job.stockCode,
+          status: reason === '数据校验失败' ? 'data_invalid' : 'interface_error',
+          reason, durationMs: Date.now() - startedAt,
+        });
+        db.save();
+        job.reject(error);
+      })
       .finally(() => {
         active -= 1;
         pendingByStock.delete(job.stockCode);

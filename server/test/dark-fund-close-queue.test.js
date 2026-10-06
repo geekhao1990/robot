@@ -14,7 +14,10 @@ test('user close query jumps ahead of waiting ranking jobs', async () => {
   const mod = { exports: {} };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/dark-fund-close-queue.js'), 'utf8'), {
     module: mod,
-    require: (id) => id === './dark-fund-close' ? { fetchCloseDarkFund } : require(id),
+    require: (id) => id === './dark-fund-close' ? { fetchCloseDarkFund }
+      : id === './db' ? { get: () => ({}), save: () => {} }
+      : id === './analytics' ? { record: () => {}, classifyFailure: () => '接口异常' }
+      : require(id),
     process: { env: { DARK_FUND_CLOSE_CONCURRENCY: '1' } },
     Promise, Map, Number, String, queueMicrotask,
   });
@@ -43,7 +46,10 @@ test('same-stock user request reuses and promotes a queued ranking job', async (
   const mod = { exports: {} };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/dark-fund-close-queue.js'), 'utf8'), {
     module: mod,
-    require: (id) => id === './dark-fund-close' ? { fetchCloseDarkFund } : require(id),
+    require: (id) => id === './dark-fund-close' ? { fetchCloseDarkFund }
+      : id === './db' ? { get: () => ({}), save: () => {} }
+      : id === './analytics' ? { record: () => {}, classifyFailure: () => '接口异常' }
+      : require(id),
     process: { env: { DARK_FUND_CLOSE_CONCURRENCY: '1' } },
     Promise, Map, Number, String, queueMicrotask,
   });

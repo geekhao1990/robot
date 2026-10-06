@@ -11,6 +11,7 @@ const { notifyFollowersOfNote, pushNotification } = require('../notifications');
 const { URL } = require('url');
 const { latestRanking, publicRanking } = require('../dark-fund-ranking');
 const darkFundRankingSync = require('../dark-fund-ranking-sync');
+const { buildMonitoringStats } = require('../monitoring-stats');
 
 module.exports = function register(router, HttpError) {
   const baseCategories = Object.values(TYPE_LABELS);
@@ -81,6 +82,7 @@ module.exports = function register(router, HttpError) {
       goldNotes: d.notes.filter((n) => n.type === 'gold').length,
       ads: d.notes.filter((n) => n.type === 'ad').length,
       categories: d.categories.length,
+      monitoring: buildMonitoringStats(d),
     };
   });
 

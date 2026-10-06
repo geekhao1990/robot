@@ -426,6 +426,10 @@ function ensureContentTypes() {
     db.darkFundOrders = [];
     changed = true;
   }
+  if (!Array.isArray(db.analyticsEvents)) {
+    db.analyticsEvents = [];
+    changed = true;
+  }
   db.darkFundOrders.forEach((order) => {
     const noteId = order.noteId || (order.snapshot && order.snapshot.note && order.snapshot.note.id) || `dark_${order.id}`;
     const note = db.notes.find((item) => item.id === noteId);

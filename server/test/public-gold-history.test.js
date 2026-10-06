@@ -64,6 +64,7 @@ function setup() {
         scheduleVersion: '10:00,11:30,13:30,14:30,15:30',
       }),
     },
+    '../analytics': { record: () => {} },
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/public.js'), 'utf8'), {
     module: mod,

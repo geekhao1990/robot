@@ -27,6 +27,7 @@ function setup() {
     '../dark-fund-ranking': require('../src/dark-fund-ranking'),
     '../dark-fund-ranking-sync': { getStatus: () => ({ enabled: true, running: false, schedule: '15:30', state: null }), manualSync: async () => ({ tradeDate: '2026-09-30' }) },
     '../trading-date': require('../src/trading-date'),
+    '../monitoring-stats': require('../src/monitoring-stats'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/admin.js'), 'utf8'), {
     module: mod,

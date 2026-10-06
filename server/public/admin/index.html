@@ -38,6 +38,25 @@
   .card { background: #fff; border-radius: 12px; padding: 24px; min-width: 180px; flex: 1; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
   .card .n { font-size: 34px; font-weight: 800; color: var(--primary); }
   .card .l { color: #888; margin-top: 8px; font-size: 14px; }
+  .monitor-section { margin-top: 24px; }
+  .monitor-title { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+  .monitor-title h3 { font-size: 17px; }
+  .monitor-title span { color: #999; font-size: 12px; }
+  .monitor-cards { display: grid; grid-template-columns: repeat(5,minmax(150px,1fr)); gap: 12px; }
+  .monitor-card { padding: 16px; background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+  .monitor-card .value { color: #25272b; font-size: 23px; font-weight: 750; }
+  .monitor-card .label { margin-top: 6px; color: #777; font-size: 13px; }
+  .monitor-card .sub { min-height: 17px; margin-top: 5px; color: #aaa; font-size: 11px; }
+  .monitor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .monitor-panel { padding: 18px; background: #fff; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+  .monitor-panel h4 { margin-bottom: 12px; font-size: 15px; }
+  .monitor-list { display: flex; flex-direction: column; gap: 9px; }
+  .monitor-row { display: flex; justify-content: space-between; gap: 20px; color: #666; font-size: 13px; }
+  .monitor-row strong { color: #25272b; text-align: right; }
+  .monitor-alert { padding: 9px 11px; color: #7a5700; font-size: 13px; background: #fff8df; border-radius: 7px; }
+  .monitor-alert.danger { color: #b42337; background: #fff0f2; }
+  .monitor-alert.ok { color: #168c4b; background: #edf9f1; }
+  @media (max-width: 1100px) { .monitor-cards { grid-template-columns: repeat(2,minmax(150px,1fr)); } }
   /* 工具条 */
   .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
   .btn-primary { background: var(--primary); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; }
@@ -295,6 +314,15 @@ function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({
 // 概览
 function renderOverview() {
   api('/api/admin/stats').then((s) => {
+    const m = s.monitoring || {};
+    const dark = m.dark || {}, gold = m.gold || {}, users = m.users || {}, payments = m.payments || {}, freshness = m.freshness || {};
+    const pct = (value) => value == null ? '待累计' : `${value}%`;
+    const duration = (value) => value == null ? '待累计' : (value >= 1000 ? `${(value / 1000).toFixed(1)}秒` : `${value}ms`);
+    const time = (value) => value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '暂无数据';
+    const failureHtml = (dark.failures || []).length
+      ? dark.failures.map((item) => `<div class="monitor-row"><span>${esc(item.reason)}</span><strong>${item.count}次</strong></div>`).join('')
+      : '<div class="monitor-row"><span>近5个交易日无失败记录</span><strong>0次</strong></div>';
+    const alertHtml = (m.alerts || []).map((item) => `<div class="monitor-alert ${esc(item.level)}">${esc(item.message)}</div>`).join('');
     document.getElementById('content').innerHTML = `
       <div class="cards">
         <div class="card"><div class="n">${s.notes}</div><div class="l">笔记总数</div></div>
@@ -306,7 +334,32 @@ function renderOverview() {
         <div class="card"><div class="n">${s.newUsers}</div><div class="l">新注册用户</div></div>
         <div class="card"><div class="n">${s.goldUsers}</div><div class="l">金手指权限用户</div></div>
         <div class="card"><div class="n">${s.categories}</div><div class="l">分类数</div></div>
-      </div>`;
+      </div>
+      <div class="monitor-section">
+        <div class="monitor-title"><h3>业务数据概览</h3><span>查询按近5个交易日，其余按近5个自然日</span></div>
+        <div class="monitor-cards">
+          <div class="monitor-card"><div class="value">${dark.closeQueries || 0} / ${dark.intradayQueries || 0}</div><div class="label">盘后查询 / 决策拼单</div><div class="sub">日均 ${dark.averageDailyQueries || 0} 次</div></div>
+          <div class="monitor-card"><div class="value">${dark.uniqueUsers || 0} / ${dark.uniqueStocks || 0}</div><div class="label">查询人数 / 股票数</div><div class="sub">共 ${dark.totalQueries || 0} 次查询</div></div>
+          <div class="monitor-card"><div class="value">${pct(dark.cacheHitRate)}</div><div class="label">缓存命中率</div><div class="sub">任务成功率 ${pct(dark.orderSuccessRate)}</div></div>
+          <div class="monitor-card"><div class="value">${pct(dark.interfaceAvailability)}</div><div class="label">盘后接口可用率</div><div class="sub">数据合格率 ${pct(dark.dataQualityRate)} · ${dark.telemetrySamples || 0}个样本</div></div>
+          <div class="monitor-card"><div class="value">${duration(dark.averageResponseMs)}</div><div class="label">平均响应时间</div><div class="sub">P95 ${duration(dark.p95ResponseMs)}</div></div>
+          <div class="monitor-card"><div class="value">${gold.uniqueUsers || 0} / ${gold.views || 0}</div><div class="label">金手指人数 / 查看次数</div><div class="sub">日均 ${gold.averageDailyViews || 0} 次</div></div>
+          <div class="monitor-card"><div class="value">${users.newUsers || 0}</div><div class="label">近5日新增用户</div><div class="sub">首次查询率 ${pct(users.firstQueryRate)}</div></div>
+          <div class="monitor-card"><div class="value">¥${Number(payments.amountYuan || 0).toFixed(2)}</div><div class="label">近5日支付金额</div><div class="sub">成功率 ${pct(payments.successRate)}</div></div>
+          <div class="monitor-card"><div class="value">${payments.creditAnomalies || 0}</div><div class="label">权益到账异常</div><div class="sub">支付成功 ${payments.successfulOrders || 0} 笔</div></div>
+          <div class="monitor-card"><div class="value">${(m.alerts || []).filter((item) => item.level !== 'ok').length}</div><div class="label">当前系统告警</div><div class="sub">详见下方状态</div></div>
+        </div>
+      </div>
+      <div class="monitor-section monitor-grid">
+        <div class="monitor-panel"><h4>失败原因分布</h4><div class="monitor-list">${failureHtml}</div></div>
+        <div class="monitor-panel"><h4>数据最后更新时间</h4><div class="monitor-list">
+          <div class="monitor-row"><span>暗盘查询结果</span><strong>${time(freshness.darkResultAt)}</strong></div>
+          <div class="monitor-row"><span>盘后接口监测</span><strong>${time(freshness.darkApiAt)}</strong></div>
+          <div class="monitor-row"><span>金手指数据</span><strong>${time(freshness.goldAt)}</strong></div>
+          <div class="monitor-row"><span>今日暗盘榜</span><strong>${time(freshness.rankingAt)}</strong></div>
+        </div></div>
+      </div>
+      <div class="monitor-section monitor-panel"><h4>系统告警</h4><div class="monitor-list">${alertHtml}</div></div>`;
   });
 }
 

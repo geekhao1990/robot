@@ -6,6 +6,7 @@ const { typeLabel } = require('../content-types');
 const { resourceList } = require('../resource-links');
 const { canViewNote, findViewableNote, isDarkFundNote } = require('../note-access');
 const goldFingerSync = require('../gold-finger-sync');
+const analytics = require('../analytics');
 
 module.exports = function register(router, HttpError) {
   const requireReader = (ctx) => {
@@ -113,6 +114,11 @@ module.exports = function register(router, HttpError) {
   // 独立金手指功能：有效金手指卡或服务包用户可查看。
   router.get('/api/gold-finger/latest', (ctx) => {
     const data = requireGoldAccess(ctx);
+    analytics.record(data, {
+      type: 'gold_view',
+      userId: auth.userIdFor(ctx.headers.authorization),
+    });
+    db.save();
     const records = sortedGoldRecords(data);
     const latestFive = records.slice(0, 5);
     return {
