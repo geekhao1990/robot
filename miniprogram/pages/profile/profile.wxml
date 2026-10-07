@@ -84,10 +84,10 @@
       <view class="quick-title">订单中心</view>
     </view>
   </view>
-  <view wx:if="{{serviceQrAccess}}" class="service-actions">
+  <view class="service-actions">
     <view class="service-button" bindtap="openEnterpriseWechat">
       <view class="service-icon">企</view>
-      <view class="service-copy"><view class="service-title">加企微免费查暗盘</view><view class="service-description">添加企业微信，免费查询暗盘</view></view>
+      <view class="service-copy"><view class="service-title">加企微领暗盘</view><view class="service-description">添加企业微信，领取暗盘查询</view></view>
     </view>
   </view>
   <block wx:if="{{loggedIn}}">

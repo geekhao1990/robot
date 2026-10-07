@@ -26,7 +26,6 @@ Page({
     serviceQrTitle: '',
     serviceQrDescription: '',
     serviceQrImage: '',
-    serviceQrAccess: false,
     entitlements: [],
     refreshing: false,
     refreshReady: false,
@@ -109,8 +108,6 @@ Page({
       this.setData({
         user,
         entitlements,
-        serviceQrAccess: entitlements.length > 0,
-        serviceQrVisible: entitlements.length > 0 ? this.data.serviceQrVisible : false,
         loggedIn: !!user,
       });
       if (user) {
@@ -150,11 +147,10 @@ Page({
   },
   noop() {},
   openEnterpriseWechat() {
-    if (!this.data.serviceQrAccess) return;
     this.setData({
       serviceQrVisible: true,
-      serviceQrTitle: '加企微免费查暗盘',
-      serviceQrDescription: '长按或扫码添加企业微信，免费查询暗盘',
+      serviceQrTitle: '加企微领暗盘',
+      serviceQrDescription: '长按或扫码添加企业微信，领取暗盘查询',
       serviceQrImage: '/images/enterprise-wechat.jpg',
     });
   },
@@ -173,7 +169,7 @@ Page({
     api.redeemGiftCard(code).then((result) => {
       store.setUser(result.user);
       const entitlements = this.entitlementRows(result.user);
-      this.setData({ user: result.user, giftCode: '', giftModalVisible: false, entitlements, serviceQrAccess: entitlements.length > 0 });
+      this.setData({ user: result.user, giftCode: '', giftModalVisible: false, entitlements });
       const detail = result.days ? `${result.days}天` : `${result.quota || 0}次`;
       wx.showModal({ title: result.alreadyRedeemed ? '该卡已兑换' : '兑换成功', content: result.alreadyRedeemed ? '权益已在当前账号生效。' : `${result.label || '礼品卡'}已生效（${detail}）。`, showCancel: false });
     }).catch((error) => wx.showModal({ title: '兑换失败', content: this.errorText(error), showCancel: false }))

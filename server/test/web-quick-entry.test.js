@@ -46,14 +46,16 @@ test('Web enterprise-WeChat entry offers a free dark-fund query without the lega
   assert.doesNotMatch(features, /wechat-payment-code/);
 });
 
-test('Mini-program uses the same enterprise-WeChat copy and removes the legacy repurchase block', () => {
+test('Mini-program exposes the enterprise-WeChat dark-fund entry to guests', () => {
   const miniRoot = path.join(__dirname, '..', '..', 'miniprogram', 'pages', 'profile');
   const wxml = fs.readFileSync(path.join(miniRoot, 'profile.wxml'), 'utf8');
   const script = fs.readFileSync(path.join(miniRoot, 'profile.js'), 'utf8');
   const combined = `${wxml}\n${script}`;
 
-  assert.match(combined, /加企微免费查暗盘/);
-  assert.match(combined, /添加企业微信，免费查询暗盘/);
+  assert.match(combined, /加企微领暗盘/);
+  assert.match(combined, /领取暗盘查询/);
+  assert.doesNotMatch(combined, /serviceQrAccess/);
+  assert.doesNotMatch(combined, /加企微免费查暗盘/);
   assert.doesNotMatch(combined, /咨询人工/);
   assert.doesNotMatch(combined, /老客扫码复购/);
   assert.doesNotMatch(combined, /openWechatPayment/);
