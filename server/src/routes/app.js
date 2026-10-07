@@ -333,7 +333,7 @@ module.exports = function register(router, HttpError) {
     const phone = account.replace(/\D/g, '');
     const password = String(body.password || '');
     const user = data.users.find((item) => item.id === account || (/^1\d{10}$/.test(phone) && String(item.phone || '').replace(/\D/g, '') === phone));
-    if (!user || !verifyPassword(user, password)) throw new HttpError(401, '手机号或密码错误');
+    if (!user || !verifyPassword(user, password)) throw new HttpError(401, '账号或密码错误');
     if (user.mustChangeWebPassword === true) {
       const changeToken = crypto.randomBytes(32).toString('hex');
       webPasswordChanges.set(changeToken, { userId: user.id, expiresAt: Date.now() + 15 * 60 * 1000 });
