@@ -150,13 +150,15 @@ function applyHostedAuthorAvatarMigration() {
 
 function applyDarkFundRankingChangePercentMigration() {
   db.contentMigrations = db.contentMigrations || {};
-  if (db.contentMigrations.darkFundRankingChangePercentV1 === true) return false;
-  // 旧榜单没有保存同花顺热榜的涨跌幅。只清空已生成榜单和同步状态，
-  // 保留逐股收盘缓存，重新生成时仍可复用当天已经验证过的 close 数据。
+  if (db.contentMigrations.darkFundRankingCloseCacheResetV1 === true) return false;
+  // 旧榜单没有保存同花顺热榜的涨跌幅。按运营测试要求，一次性同时清空
+  // 已生成榜单和逐股 close 缓存，确保下一次榜单完整重新请求上游。
   db.darkFundRankings = {};
+  db.darkFundCloseCache = {};
   delete db.latestDarkFundRankingDate;
   delete db.darkFundRankingSyncState;
   db.contentMigrations.darkFundRankingChangePercentV1 = true;
+  db.contentMigrations.darkFundRankingCloseCacheResetV1 = true;
   return true;
 }
 
