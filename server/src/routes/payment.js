@@ -145,16 +145,6 @@ module.exports = function register(router, HttpError) {
     return publicRanking(latestRanking(db.get())) || { empty: true, inflow: [], outflow: [] };
   });
 
-  router.get('/api/dark-funds/ranking/:stockCode', (ctx) => {
-    const user = currentUser(ctx);
-    if (user.darkFundEnabled !== true) throw new HttpError(403, '暗盘资金入口尚未开通');
-    const stockCode = String(ctx.params.stockCode || '').replace(/^(sh|sz)/i, '');
-    const ranking = latestRanking(db.get());
-    const result = ranking && ranking.results && ranking.results[stockCode];
-    if (!result) throw new HttpError(404, '榜单数据不存在');
-    return { tradeDate: ranking.tradeDate, result: JSON.parse(JSON.stringify(result)) };
-  });
-
   const createDarkFundOrder = async (ctx, forcedQueryMode = '') => {
     const user = currentUser(ctx);
     const stockCode = String((ctx.body || {}).stockCode || '').trim();

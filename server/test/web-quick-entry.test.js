@@ -21,3 +21,15 @@ test('Web middle tab matches the mini-program quick entry behavior', () => {
   assert.match(style, /\.finger-tab \.plus-btn/);
   assert.match(style, /\.quick-entry-sheet/);
 });
+
+test('Web ranking only exposes the one-day snapshot and cannot bypass paid queries', () => {
+  const html = fs.readFileSync(path.join(webRoot, 'index.html'), 'utf8');
+  const darkFunds = fs.readFileSync(path.join(webRoot, 'dark-funds.js'), 'utf8');
+  const payment = fs.readFileSync(path.join(__dirname, '..', 'src', 'routes', 'payment.js'), 'utf8');
+
+  assert.match(html, /dark-funds\.js\?v=2026100702/);
+  assert.doesNotMatch(darkFunds, /查看完整7日数据/);
+  assert.doesNotMatch(darkFunds, /data-wdf-ranking-result/);
+  assert.doesNotMatch(darkFunds, /dark-ranking\//);
+  assert.doesNotMatch(payment, /\/api\/dark-funds\/ranking\/:stockCode/);
+});
