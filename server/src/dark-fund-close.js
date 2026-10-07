@@ -300,6 +300,18 @@ function exactSearchStock(items, stockCode) {
   return items.find((item) => stockCodeFrom(item && (item.code || item.stock)) === stockCode) || null;
 }
 
+async function searchCloseStock(stockCode) {
+  let lastCount = 0;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const items = await closeApiRequest(`/api/search?q=${encodeURIComponent(stockCode)}`);
+    lastCount = Array.isArray(items) ? items.length : 0;
+    const found = exactSearchStock(items, stockCode);
+    if (found) return found;
+    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+  }
+  throw Object.assign(new Error(`盘后数据源搜索不到${stockCode}（最后返回${lastCount}项）`), { status: 404 });
+}
+
 async function waitCloseTask(taskId) {
   const pollMs = Math.max(300, Number(process.env.DARK_FUND_CLOSE_POLL_MS) || 800);
   const deadline = Date.now() + Math.max(5000, Number(process.env.DARK_FUND_CLOSE_TASK_TIMEOUT_MS) || 90000);
@@ -321,8 +333,7 @@ async function fetchCloseDarkFund(stockCode) {
     return normalizeCloseDarkFund(SAMPLE_CLOSE_PAYLOAD, stockCode);
   }
   try {
-    const found = exactSearchStock(await closeApiRequest(`/api/search?q=${encodeURIComponent(stockCode)}`), stockCode);
-    if (!found) throw Object.assign(new Error('盘后数据源未找到该股票'), { status: 404 });
+    const found = await searchCloseStock(stockCode);
     const stock = String(found.code || found.stock || '').trim();
     if (!/^(sh|sz|bj)\d{6}$/i.test(stock)) throw Object.assign(new Error('盘后数据源返回的股票代码无效'), { status: 502 });
     const created = await closeApiRequest('/api/query', {

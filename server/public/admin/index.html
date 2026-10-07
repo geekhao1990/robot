@@ -1458,8 +1458,16 @@ function rankingProgressText(syncState) {
 
 function rankingResultText(ranking) {
   const failed = ranking && ranking.failed || [];
-  const firstError = failed.find((item) => item && item.error);
-  return `榜单已更新：${ranking.tradeDate}，成功 ${Number(ranking.successCount) || 0}/${Number(ranking.candidateCount) || 0}，命中缓存 ${Number(ranking.cacheHitCount) || 0}，失败 ${failed.length}${firstError ? `；首个失败原因：${firstError.error}` : ''}`;
+  const missing = failed.filter((item) => /搜索不到|未找到该股票/.test(String(item && item.error || '')));
+  const other = failed.filter((item) => !missing.includes(item));
+  const stockLabel = (item) => `${item.stockCode || '未知代码'}${item.stockName ? ` ${item.stockName}` : ''}`;
+  const missingText = missing.length
+    ? `；盘后源未收录 ${missing.length} 只：${missing.slice(0, 12).map(stockLabel).join('、')}${missing.length > 12 ? `等${missing.length}只` : ''}`
+    : '';
+  const otherText = other.length
+    ? `；其他失败 ${other.length} 只：${other.slice(0, 5).map((item) => `${stockLabel(item)}（${item.error || '未知错误'}）`).join('、')}`
+    : '';
+  return `榜单已更新：${ranking.tradeDate}，成功 ${Number(ranking.successCount) || 0}/${Number(ranking.candidateCount) || 0}，命中缓存 ${Number(ranking.cacheHitCount) || 0}，失败 ${failed.length}${missingText}${otherText}`;
 }
 
 function pollDarkFundRanking() {
