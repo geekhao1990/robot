@@ -66,7 +66,7 @@
         <view class="recharge-actions">
           <view class="recharge-button" bindtap="openTopupModal">
             <view class="recharge-icon">充</view>
-            <view class="recharge-copy"><view class="recharge-title">充值暗盘次数</view><view class="recharge-description"><text>暗盘查询低至3毛</text><text>次数长期有效</text></view></view>
+            <view class="recharge-copy"><view class="recharge-title">充值暗盘次数</view><view class="recharge-description"><text>暗盘查询低至2毛4</text><text>次数长期有效</text></view></view>
           </view>
         </view>
       </view>

@@ -20,8 +20,11 @@ const PRODUCTS = Object.freeze({
   dark_fund_500: Object.freeze({
     id: 'dark_fund_500', amount: 20000, quota: 500, prefix: 'DF500', description: '充值暗盘次数（500次）', goodsName: '暗盘查询次数充值500次',
   }),
+  dark_fund_300: Object.freeze({
+    id: 'dark_fund_300', amount: 9900, quota: 300, prefix: 'DF300', description: '暗盘同价包月（300次）', goodsName: '暗盘查询同价包月300次',
+  }),
   dark_fund_1000: Object.freeze({
-    id: 'dark_fund_1000', amount: 30000, quota: 1000, prefix: 'DF1000', description: '充值暗盘次数（1000次）', goodsName: '暗盘查询次数充值1000次',
+    id: 'dark_fund_1000', amount: 24000, quota: 1000, prefix: 'DF1000', description: '充值暗盘次数（1000次）', goodsName: '暗盘查询次数充值1000次',
   }),
   gold_year: Object.freeze({
     id: 'gold_year', amount: 990, prefix: 'GYP', description: '开通金手指（1年）', goodsName: '金手指年卡（360天）',
@@ -167,14 +170,14 @@ module.exports = function register(router, HttpError) {
   router.get('/api/dark-funds/purchase-orders/:id', (ctx) => getOrder(ctx, PRODUCTS.dark_fund_once));
   router.post('/api/dark-funds/topup-orders', (ctx) => {
     const sku = String((ctx.body || {}).sku || '').trim();
-    const product = [PRODUCTS.dark_fund_10, PRODUCTS.dark_fund_100, PRODUCTS.dark_fund_500, PRODUCTS.dark_fund_1000].find((item) => item.id === sku);
+    const product = [PRODUCTS.dark_fund_10, PRODUCTS.dark_fund_100, PRODUCTS.dark_fund_300, PRODUCTS.dark_fund_1000].find((item) => item.id === sku);
     if (!product) throw new HttpError(400, '请选择有效的暗盘次数套餐');
     return createOrder(ctx, product);
   });
   router.get('/api/dark-funds/topup-orders/:id', (ctx) => {
     const data = db.get();
     const order = (data.paymentOrders || []).find((item) => item.id === ctx.params.id);
-    const product = order && [PRODUCTS.dark_fund_10, PRODUCTS.dark_fund_100, PRODUCTS.dark_fund_500, PRODUCTS.dark_fund_1000].find((item) => item.id === order.product);
+    const product = order && [PRODUCTS.dark_fund_10, PRODUCTS.dark_fund_100, PRODUCTS.dark_fund_300, PRODUCTS.dark_fund_500, PRODUCTS.dark_fund_1000].find((item) => item.id === order.product);
     if (!product) throw new HttpError(404, '支付订单不存在');
     return getOrder(ctx, product);
   });
