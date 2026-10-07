@@ -68,9 +68,4 @@ Page({
   nextPage() {
     if (this.data.page < this.data.pages) this.loadOrders(this.data.page + 1);
   },
-  copyOrderNo(e) {
-    const orderNo = String(e.currentTarget.dataset.order || '');
-    if (!orderNo) return;
-    wx.setClipboardData({ data: orderNo, success: () => wx.showToast({ title: '订单号已复制', icon: 'success' }) });
-  },
 });
