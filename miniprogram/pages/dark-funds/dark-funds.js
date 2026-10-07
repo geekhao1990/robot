@@ -187,21 +187,33 @@ Page({
     return api.getDarkFundRanking()
       .then((result) => {
         const displayed = result;
-        if (!displayed || displayed.empty) return this.setData({ rankingEmpty: true, ranking: { inflow: [], outflow: [] } });
+        if (!displayed || displayed.empty) return this.setData({
+          rankingEmpty: true,
+          ranking: { inflow: [], outflow: [] },
+          rankingItems: [],
+          expandedRankingKey: '',
+        });
         const decorate = (item, side) => this.decorateRankingItem(item, side);
         const ranking = {
           ...displayed,
           inflow: (displayed.inflow || []).map((item) => decorate(item, 'inflow')),
           outflow: (displayed.outflow || []).map((item) => decorate(item, 'outflow')),
         };
+        const rankingItems = ranking[this.data.rankingDirectionTab] || [];
         this.setData({
           rankingEmpty: false,
           ranking,
-          rankingItems: ranking[this.data.rankingDirectionTab] || [],
+          rankingItems,
+          expandedRankingKey: rankingItems.length ? rankingItems[0].expandKey : '',
         });
       })
       .catch(() => {
-        this.setData({ rankingEmpty: true, ranking: { inflow: [], outflow: [] } });
+        this.setData({
+          rankingEmpty: true,
+          ranking: { inflow: [], outflow: [] },
+          rankingItems: [],
+          expandedRankingKey: '',
+        });
       })
       .finally(() => {
         this._rankingRequesting = false;
@@ -242,10 +254,11 @@ Page({
   switchRankingDirection(e) {
     const tab = String(e.currentTarget.dataset.tab || '');
     if (!['inflow', 'outflow'].includes(tab) || tab === this.data.rankingDirectionTab) return;
+    const rankingItems = this.data.ranking[tab] || [];
     this.setData({
       rankingDirectionTab: tab,
-      rankingItems: this.data.ranking[tab] || [],
-      expandedRankingKey: '',
+      rankingItems,
+      expandedRankingKey: rankingItems.length ? rankingItems[0].expandKey : '',
     });
   },
   openRankingResult(e) {
