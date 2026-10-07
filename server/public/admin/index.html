@@ -1314,7 +1314,7 @@ function renderSettings() {
       <div class="card" style="max-width:640px;margin-bottom:20px;border-left:4px solid #ff2442">
         <h3>今日收盘暗盘榜</h3>
         <div class="hint" style="margin:8px 0 14px">系统在北京时间交易日 ${esc(rankingSync.schedule || '15:30')} 自动读取同花顺热榜完整100只股票并生成榜单；用户盘后查询优先于榜单批处理，当天已有收盘缓存的股票不会重复请求上游。需要临时重跑时可点击下方按钮。</div>
-        <div id="darkFundRankingStatus" class="hint">${ranking ? `当前榜单：${esc(ranking.tradeDate || '—')}，成功 ${Number(ranking.successCount) || 0}/${Number(ranking.candidateCount) || 0}，命中缓存 ${Number(ranking.cacheHitCount) || 0}` : (rankingSyncState.status === 'failed' ? `最近更新失败：${esc(rankingSyncState.error || '未知错误')}` : '当前尚未生成榜单')}</div>
+        <div id="darkFundRankingStatus" class="hint">${rankingSync.running ? esc(rankingProgressText(rankingSyncState)) : (ranking ? esc(rankingResultText(ranking)) : (rankingSyncState.status === 'failed' ? `最近更新失败：${esc(rankingSyncState.error || '未知错误')}` : '当前尚未生成榜单'))}</div>
         <button id="darkFundRankingButton" class="btn-primary" style="margin-top:14px" onclick="generateDarkFundRanking()" ${rankingSync.running ? 'disabled' : ''}>${rankingSync.running ? '正在更新…' : '立即更新今日暗盘榜'}</button>
       </div>
       <div class="card" style="max-width:640px">
@@ -1414,6 +1414,7 @@ function renderSettings() {
         </div>
         <button class="btn-primary" onclick="saveSettings()">保存设置</button>
       </div>`;
+    if (rankingSync.running) setTimeout(pollDarkFundRanking, 500);
   });
 }
 
@@ -1423,20 +1424,54 @@ function generateDarkFundRanking() {
   if (button.disabled) return;
   button.disabled = true;
   button.textContent = '正在更新…';
-  status.textContent = '正在读取同花顺热榜，并复用当日缓存查询尚未缓存的股票，请勿关闭页面。';
+  status.textContent = '正在启动串行批量任务，页面可以关闭，任务会继续运行。';
   api('/api/admin/dark-fund-ranking/generate', { method: 'POST', body: '{}' })
-    .then((result) => {
-      status.textContent = `榜单已更新：${result.tradeDate}，成功 ${result.successCount}/${result.candidateCount}，命中缓存 ${result.cacheHitCount}，失败 ${(result.failed || []).length}`;
-      showAdminToast('今日收盘暗盘榜已更新');
-    })
+    .then(() => pollDarkFundRanking())
     .catch((error) => {
       status.textContent = error.message || '榜单生成失败';
       showAdminToast(error.message || '榜单生成失败', 'error');
-    })
-    .finally(() => {
       button.disabled = false;
       button.textContent = '立即更新今日暗盘榜';
     });
+}
+
+function rankingProgressText(syncState) {
+  const progress = syncState && syncState.progress || {};
+  const processed = Number(progress.processedCount) || 0;
+  const total = Number(progress.candidateCount) || 100;
+  return `榜单更新中：已处理 ${processed}/${total}，成功 ${Number(progress.successCount) || 0}，命中缓存 ${Number(progress.cacheHitCount) || 0}，失败 ${Number(progress.failureCount) || 0}`;
+}
+
+function rankingResultText(ranking) {
+  const failed = ranking && ranking.failed || [];
+  const firstError = failed.find((item) => item && item.error);
+  return `榜单已更新：${ranking.tradeDate}，成功 ${Number(ranking.successCount) || 0}/${Number(ranking.candidateCount) || 0}，命中缓存 ${Number(ranking.cacheHitCount) || 0}，失败 ${failed.length}${firstError ? `；首个失败原因：${firstError.error}` : ''}`;
+}
+
+function pollDarkFundRanking() {
+  const button = document.getElementById('darkFundRankingButton');
+  const status = document.getElementById('darkFundRankingStatus');
+  if (!button || !status) return Promise.resolve();
+  return api('/api/admin/dark-fund-ranking').then((data) => {
+    const sync = data && data.sync || {};
+    if (sync.running) {
+      status.textContent = rankingProgressText(sync.state || {});
+      return new Promise((resolve) => setTimeout(resolve, 2000)).then(pollDarkFundRanking);
+    }
+    button.disabled = false;
+    button.textContent = '立即更新今日暗盘榜';
+    if (sync.state && sync.state.status === 'failed') {
+      status.textContent = `榜单更新失败：${sync.state.error || '未知错误'}`;
+      showAdminToast('今日收盘暗盘榜更新失败', 'error');
+      return;
+    }
+    if (data.ranking) status.textContent = rankingResultText(data.ranking);
+    showAdminToast('今日收盘暗盘榜已更新');
+  }).catch((error) => {
+    status.textContent = error.message || '获取榜单进度失败';
+    button.disabled = false;
+    button.textContent = '立即更新今日暗盘榜';
+  });
 }
 
 function saveSettings() {

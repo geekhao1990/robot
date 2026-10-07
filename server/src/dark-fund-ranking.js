@@ -137,9 +137,14 @@ async function mapConcurrent(items, concurrency, worker) {
   return output;
 }
 
-async function generateRanking({ data, payload, tradeDate, fetchClose, concurrency = 3 }) {
+async function generateRanking({ data, payload, tradeDate, fetchClose, concurrency = 3, onProgress = null }) {
   const candidates = normalizeCandidates(payload);
+  let processedCount = 0;
+  let successCount = 0;
+  let failureCount = 0;
+  let cacheHitCount = 0;
   const processed = await mapConcurrent(candidates, concurrency, async (candidate) => {
+    let outcome;
     try {
       let result = cachedCloseResult(data, candidate.stockCode, tradeDate);
       const cacheHit = Boolean(result);
@@ -150,10 +155,28 @@ async function generateRanking({ data, payload, tradeDate, fetchClose, concurren
         }
         storeCloseResult(data, candidate.stockCode, result);
       }
-      return { ok: true, item: rankingItem(candidate, result, cacheHit) };
+      outcome = { ok: true, item: rankingItem(candidate, result, cacheHit) };
     } catch (error) {
-      return { ok: false, stockCode: candidate.stockCode, stockName: candidate.stockName, error: String(error && error.message || '查询失败').slice(0, 200) };
+      outcome = { ok: false, stockCode: candidate.stockCode, stockName: candidate.stockName, error: String(error && error.message || '查询失败').slice(0, 200) };
     }
+    processedCount += 1;
+    if (outcome.ok) {
+      successCount += 1;
+      if (outcome.item.cacheHit) cacheHitCount += 1;
+    } else {
+      failureCount += 1;
+    }
+    if (typeof onProgress === 'function') {
+      await onProgress({
+        processedCount,
+        candidateCount: candidates.length,
+        successCount,
+        failureCount,
+        cacheHitCount,
+        lastError: outcome.ok ? '' : outcome.error,
+      });
+    }
+    return outcome;
   });
   const successful = processed.filter((item) => item.ok).map((item) => item.item);
   const publicItem = (item) => ({

@@ -9,6 +9,26 @@ const RETRY_INTERVAL_MS = 5 * 60 * 1000;
 let timer = null;
 let running = false;
 
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchBatchClose(stockCode) {
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await requestCloseDarkFund(stockCode, { priority: 'batch' });
+    } catch (error) {
+      const message = String(error && error.message || '');
+      const transient = Number(error && error.status) === 429
+        || /稍后|繁忙|频繁|已有.*任务|任务.*进行|冲突|too many|busy|in progress/i.test(message);
+      if (!transient || attempt === maxAttempts) throw error;
+      await wait(attempt * 1500);
+    }
+  }
+  throw new Error('盘后批量查询失败');
+}
+
 function chinaMinutes(timestamp = Date.now()) {
   const date = new Date(timestamp + 8 * 3600 * 1000);
   return date.getUTCHours() * 60 + date.getUTCMinutes();
@@ -45,6 +65,7 @@ async function executeSync({ source = '自动更新', now = Date.now() } = {}) {
   syncState.lastAttemptAt = now;
   syncState.source = source;
   syncState.error = '';
+  syncState.progress = { processedCount: 0, candidateCount: 0, successCount: 0, failureCount: 0, cacheHitCount: 0, lastError: '' };
   await db.save();
   try {
     const tradeDate = latestTradingDate(now);
@@ -53,8 +74,14 @@ async function executeSync({ source = '自动更新', now = Date.now() } = {}) {
       data,
       payload,
       tradeDate,
-      fetchClose: (stockCode) => requestCloseDarkFund(stockCode, { priority: 'batch' }),
-      concurrency: 6,
+      // The upstream account accepts one query task at a time. Parallel submits
+      // cause one long-running task to succeed while the remaining stocks fail fast.
+      fetchClose: fetchBatchClose,
+      concurrency: 1,
+      onProgress: async (progress) => {
+        syncState.progress = progress;
+        await db.save();
+      },
     });
     if (!ranking.successCount) throw Object.assign(new Error('热榜股票盘后查询全部失败'), { status: 502 });
     syncState.status = 'success';
@@ -100,11 +127,10 @@ async function tick(now = Date.now()) {
 async function manualSync() {
   if (running) throw Object.assign(new Error('今日暗盘榜正在更新，请稍后再试'), { status: 409 });
   running = true;
-  try {
-    return await executeSync({ source: '后台人工更新' });
-  } finally {
-    running = false;
-  }
+  executeSync({ source: '后台人工更新' })
+    .catch(() => {})
+    .finally(() => { running = false; });
+  return { started: true, running: true };
 }
 
 function getStatus() {

@@ -2,7 +2,9 @@ const { fetchCloseDarkFund } = require('./dark-fund-close');
 const db = require('./db');
 const analytics = require('./analytics');
 
-const MAX_ACTIVE = Math.max(1, Number(process.env.DARK_FUND_CLOSE_CONCURRENCY) || 2);
+// The upstream account only supports one active task reliably. Keep one shared
+// lane for user and ranking requests; user jobs still jump ahead of waiting batch jobs.
+const MAX_ACTIVE = Math.max(1, Number(process.env.DARK_FUND_CLOSE_CONCURRENCY) || 1);
 const userQueue = [];
 const batchQueue = [];
 const pendingByStock = new Map();

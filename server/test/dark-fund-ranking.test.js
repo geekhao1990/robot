@@ -104,3 +104,22 @@ test('daily ranking only accepts close snapshots and excludes intraday collector
   assert.equal(ranking.outflow.length, 0);
   assert.match(ranking.failed[0].error, /收盘盘后查询结果/);
 });
+
+test('daily ranking reports durable per-stock progress during a serial batch', async () => {
+  const tradeDate = '2026-09-30';
+  const progress = [];
+  const ranking = await generateRanking({
+    data: {},
+    tradeDate,
+    concurrency: 1,
+    payload: { stocks: [{ stockCode: '600105' }, { stockCode: '600159' }] },
+    fetchClose: async (stockCode) => closeResult(stockCode, stockCode === '600105' ? '永鼎股份' : '大龙地产', tradeDate, 10000000),
+    onProgress: async (value) => progress.push({ ...value }),
+  });
+  assert.equal(ranking.successCount, 2);
+  assert.equal(progress.length, 2);
+  assert.equal(progress[0].processedCount, 1);
+  assert.equal(progress[1].processedCount, 2);
+  assert.equal(progress[1].successCount, 2);
+  assert.equal(progress[1].candidateCount, 2);
+});
