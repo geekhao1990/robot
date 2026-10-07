@@ -81,7 +81,12 @@ test('daily ranking reuses same-day close cache and sorts inflow/outflow', async
   assert.equal(ranking.cacheHitCount, 1);
   assert.equal(ranking.inflow[0].stockCode, '600159');
   assert.equal(ranking.outflow[0].stockCode, '600105');
-  assert.equal(publicRanking(ranking).results, undefined);
+  const visible = publicRanking(ranking);
+  assert.equal(visible.results, undefined);
+  assert.equal(visible.inflow[0].grey, 90000000);
+  assert.equal(visible.inflow[0].listed, 0);
+  assert.equal(visible.inflow[0].main, 90000000);
+  assert.equal(visible.inflow[0].retail, -90000000);
   assert(data.darkFundRankings[tradeDate]);
 });
 

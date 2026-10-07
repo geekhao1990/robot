@@ -102,20 +102,35 @@ function isCloseRankingResult(result, stockCode, tradeDate) {
     && String(result.tradeDate || '') === String(tradeDate || ''));
 }
 
+function closeDayFunds(result, tradeDate) {
+  const days = Array.isArray(result && result.days) ? result.days : [];
+  const day = days.find((item) => String(item.tradeDate || '') === String(tradeDate || ''))
+    || days.slice().sort((a, b) => String(b.tradeDate || '').localeCompare(String(a.tradeDate || '')))[0];
+  if (!day) return {};
+  const numberOrNull = (value) => (Number.isFinite(Number(value)) ? Number(value) : null);
+  const main = numberOrNull(day.main);
+  const grey = numberOrNull(day.grey);
+  const listed = numberOrNull(day.listed);
+  const middle = numberOrNull(day.middle);
+  const small = numberOrNull(day.small);
+  const retail = middle !== null && small !== null
+    ? middle + small
+    : (main !== null ? -main : null);
+  return { main, grey, listed, retail };
+}
+
 function rankingItem(candidate, result, cacheHit) {
   if (!isCloseRankingResult(result, candidate.stockCode, result && result.tradeDate)) {
     throw new Error('今日暗盘榜仅允许收盘盘后查询结果');
   }
-  const days = Array.isArray(result.days) ? result.days : [];
-  const day = days.find((item) => String(item.tradeDate || '') === String(result.tradeDate || ''))
-    || days.slice().sort((a, b) => String(b.tradeDate || '').localeCompare(String(a.tradeDate || '')))[0];
-  if (!day || !Number.isFinite(Number(day.grey))) throw new Error('返回结果缺少当日暗盘资金');
+  const funds = closeDayFunds(result, result.tradeDate);
+  if (!Number.isFinite(funds.grey)) throw new Error('返回结果缺少当日暗盘资金');
   return {
     stockCode: candidate.stockCode,
     stockName: result.stockName || candidate.stockName,
     stockDisplayName: candidate.stockDisplayName,
     hotRank: candidate.hotRank,
-    grey: Number(day.grey),
+    ...funds,
     cacheHit,
     queryMode: 'close',
     querySource: 'web',
@@ -204,7 +219,10 @@ async function generateRanking({ data, payload, tradeDate, fetchClose, concurren
     stockName: item.stockName,
     stockDisplayName: item.stockDisplayName,
     hotRank: item.hotRank,
+    main: item.main,
     grey: item.grey,
+    listed: item.listed,
+    retail: item.retail,
     cacheHit: item.cacheHit,
     queryMode: item.queryMode,
     querySource: item.querySource,
@@ -246,10 +264,14 @@ function publicRanking(ranking, timestamp = Date.now()) {
     .map(([stockCode]) => stockCode));
   const today = chinaToday(timestamp);
   const waitingForToday = isTradingDay(today) && String(ranking.tradeDate || '') !== today;
+  const hydrate = (item) => ({
+    ...item,
+    ...closeDayFunds(results && results[String(item.stockCode || '')], ranking.tradeDate),
+  });
   return JSON.parse(JSON.stringify({
     ...visible,
-    inflow: (visible.inflow || []).filter((item) => validCodes.has(String(item.stockCode || ''))),
-    outflow: (visible.outflow || []).filter((item) => validCodes.has(String(item.stockCode || ''))),
+    inflow: (visible.inflow || []).filter((item) => validCodes.has(String(item.stockCode || ''))).map(hydrate),
+    outflow: (visible.outflow || []).filter((item) => validCodes.has(String(item.stockCode || ''))).map(hydrate),
     title: rankingTitle(ranking.tradeDate),
     updateHint: waitingForToday
       ? (beijingMinutes(timestamp) < 15 * 60 + 30 ? '当天收盘后更新' : '今日榜单更新中')
