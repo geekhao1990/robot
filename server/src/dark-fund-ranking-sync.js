@@ -99,6 +99,12 @@ async function executeSync({ source = '自动更新', now = Date.now() } = {}) {
         await db.save();
       },
     });
+    if (ranking.failed.length) {
+      console.warn(`[今日暗盘榜][失败汇总] ${tradeDate} 共${ranking.failed.length}只失败`);
+      ranking.failed.forEach((item, index) => {
+        console.warn(`[今日暗盘榜][失败明细] ${index + 1}/${ranking.failed.length} ${item.stockCode || '未知代码'} ${item.stockName || '未知名称'}：${item.error || '未知错误'}`);
+      });
+    }
     if (!ranking.successCount) throw Object.assign(new Error('热榜股票盘后查询全部失败'), { status: 502 });
     syncState.status = 'success';
     syncState.lastSuccessAt = Date.now();
