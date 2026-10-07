@@ -13,7 +13,7 @@ function closeResult(stockCode, stockName, tradeDate, grey) {
 
 test('hot-list candidates are deduplicated and validated through the stock map', () => {
   const rows = normalizeCandidates({ stocks: [
-    { stockCode: '600105', rank: 1 },
+    { stockCode: '600105', rank: 1, rise_and_fall: 1.2345 },
     { code: 'sh600105', rank: 2 },
     { ticker: '600159', rank: 3 },
     { code: '920001', rank: 4 },
@@ -21,26 +21,30 @@ test('hot-list candidates are deduplicated and validated through the stock map',
   ] });
   assert.deepEqual(rows.map((item) => item.stockCode), ['600105', '600159']);
   assert.equal(rows[0].stockDisplayName, '永鼎GF');
+  assert.equal(rows[0].changePercent, 1.2345);
+  assert.equal(rows[1].changePercent, null);
 });
 
 test('THS hot-list response is converted to ranking candidates', async () => {
   const source = normalizeThsHotListResponse({
     status_code: 0,
     data: { stock_list: [
-      { code: '600105', name: '永鼎股份', order: 1 },
-      { code: '600159', name: '大龙地产', order: 2 },
+      { code: '600105', name: '永鼎股份', order: 1, rise_and_fall: 4.1578 },
+      { code: '600159', name: '大龙地产', order: 2, rise_and_fall: -0.5621 },
     ] },
   });
   assert.equal(source.source, '同花顺热榜-24小时');
   assert.deepEqual(source.stocks.map((item) => item.stockCode), ['600105', '600159']);
+  assert.deepEqual(source.stocks.map((item) => item.changePercent), [4.1578, -0.5621]);
   const fetched = await fetchThsHotList({
     fetchImpl: async (url, options) => {
       assert.match(url, /10jqka\.com\.cn/);
       assert.match(options.headers.Referer, /10jqka/);
-      return { ok: true, json: async () => ({ status_code: 0, data: { stock_list: [{ code: '600105', name: '永鼎股份', order: 1 }] } }) };
+      return { ok: true, json: async () => ({ status_code: 0, data: { stock_list: [{ code: '600105', name: '永鼎股份', order: 1, rise_and_fall: 2.5 }] } }) };
     },
   });
   assert.equal(fetched.stocks[0].stockCode, '600105');
+  assert.equal(fetched.stocks[0].changePercent, 2.5);
 });
 
 test('daily ranking scheduler uses Beijing time and the 15:30 post-close slot', () => {
@@ -71,7 +75,7 @@ test('daily ranking reuses same-day close cache and sorts inflow/outflow', async
   const ranking = await generateRanking({
     data,
     tradeDate,
-    payload: { stocks: [{ stockCode: '600105' }, { stockCode: '600159' }] },
+    payload: { stocks: [{ stockCode: '600105', changePercent: -1.25 }, { stockCode: '600159', changePercent: 3.4567 }] },
     fetchClose: async (stockCode) => {
       fetchCount += 1;
       return closeResult(stockCode, '大龙地产', tradeDate, 90000000);
@@ -80,7 +84,9 @@ test('daily ranking reuses same-day close cache and sorts inflow/outflow', async
   assert.equal(fetchCount, 1);
   assert.equal(ranking.cacheHitCount, 1);
   assert.equal(ranking.inflow[0].stockCode, '600159');
+  assert.equal(ranking.inflow[0].changePercent, 3.4567);
   assert.equal(ranking.outflow[0].stockCode, '600105');
+  assert.equal(ranking.outflow[0].changePercent, -1.25);
   const visible = publicRanking(ranking);
   assert.equal(visible.results, undefined);
   assert.equal(visible.inflow[0].grey, 90000000);

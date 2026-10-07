@@ -148,6 +148,18 @@ function applyHostedAuthorAvatarMigration() {
   return true;
 }
 
+function applyDarkFundRankingChangePercentMigration() {
+  db.contentMigrations = db.contentMigrations || {};
+  if (db.contentMigrations.darkFundRankingChangePercentV1 === true) return false;
+  // 旧榜单没有保存同花顺热榜的涨跌幅。只清空已生成榜单和同步状态，
+  // 保留逐股收盘缓存，重新生成时仍可复用当天已经验证过的 close 数据。
+  db.darkFundRankings = {};
+  delete db.latestDarkFundRankingDate;
+  delete db.darkFundRankingSyncState;
+  db.contentMigrations.darkFundRankingChangePercentV1 = true;
+  return true;
+}
+
 function mysqlEnabled() {
   return !!String(process.env.MYSQL_DATABASE || '').trim();
 }
@@ -560,9 +572,10 @@ async function load() {
   const settingsChanged = ensureSettings();
   const lifestyleChanged = applyLifestyleNotesMigration();
   const avatarChanged = applyHostedAuthorAvatarMigration();
+  const rankingChanged = applyDarkFundRankingChangePercentMigration();
   if (mysqlEnabled()) {
     await save();
-  } else if (contentChanged || settingsChanged || lifestyleChanged || avatarChanged || !fs.existsSync(FILE)) {
+  } else if (contentChanged || settingsChanged || lifestyleChanged || avatarChanged || rankingChanged || !fs.existsSync(FILE)) {
     save();
   }
   return db;

@@ -5,6 +5,12 @@ const { chinaToday, isTradingDay } = require('./trading-date');
 const MAX_CANDIDATES = 100;
 const THS_HOT_LIST_URL = 'https://dq.10jqka.com.cn/fuyao/hot_list_data/out/hot_list/v1/stock?list_type=normal&stock_type=a&type=day';
 
+function finiteNumberOrNull(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 function normalizeThsHotListResponse(payload) {
   const rows = payload && payload.data && payload.data.stock_list;
   if (Number(payload && payload.status_code) !== 0 || !Array.isArray(rows) || !rows.length) {
@@ -17,6 +23,7 @@ function normalizeThsHotListResponse(payload) {
       stockCode: String(item && item.code || '').trim(),
       stockName: String(item && item.name || '').trim(),
       rank: Number(item && item.order) || index + 1,
+      changePercent: finiteNumberOrNull(item && item.rise_and_fall),
     })),
   };
 }
@@ -67,6 +74,9 @@ function normalizeCandidates(payload) {
       stockName: mapped.stockName,
       stockDisplayName: mapped.stockDisplayName,
       hotRank: Number(typeof row === 'object' && (row.hotRank || row.rank || row.order)) || index + 1,
+      changePercent: finiteNumberOrNull(typeof row === 'object'
+        ? (row.changePercent ?? row.rise_and_fall ?? row.pct_change)
+        : null),
     });
   });
   if (!candidates.length) throw Object.assign(new Error('热榜 JSON 没有匹配到本地股票 Map'), { status: 400 });
@@ -130,6 +140,7 @@ function rankingItem(candidate, result, cacheHit) {
     stockName: result.stockName || candidate.stockName,
     stockDisplayName: candidate.stockDisplayName,
     hotRank: candidate.hotRank,
+    changePercent: candidate.changePercent,
     ...funds,
     cacheHit,
     queryMode: 'close',
@@ -219,6 +230,7 @@ async function generateRanking({ data, payload, tradeDate, fetchClose, concurren
     stockName: item.stockName,
     stockDisplayName: item.stockDisplayName,
     hotRank: item.hotRank,
+    changePercent: item.changePercent,
     main: item.main,
     grey: item.grey,
     listed: item.listed,
