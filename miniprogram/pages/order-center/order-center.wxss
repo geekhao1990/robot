@@ -1,0 +1,24 @@
+.page { min-height: 100vh; padding: 24rpx 24rpx 56rpx; color: #222; background: #f6f6f6; box-sizing: border-box; }
+.order-head { display: flex; align-items: center; justify-content: space-between; padding: 10rpx 4rpx 24rpx; }
+.head-title { font-size: 36rpx; font-weight: 800; }
+.head-subtitle { margin-top: 8rpx; color: #999; font-size: 22rpx; }
+.head-refresh { padding: 14rpx 24rpx; color: #ff5b2d; font-size: 24rpx; background: #fff0e9; border-radius: 999rpx; }
+.order-list { display: flex; flex-direction: column; gap: 20rpx; }
+.order-card { padding: 28rpx 26rpx 24rpx; background: #fff; border-radius: 22rpx; box-shadow: 0 8rpx 24rpx rgba(0,0,0,.035); }
+.order-top { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; padding-bottom: 22rpx; border-bottom: 1rpx dashed #e7e7e7; }
+.product-name { flex: 1; min-width: 0; overflow: hidden; font-size: 29rpx; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.order-status { flex: none; padding: 8rpx 16rpx; font-size: 21rpx; font-weight: 700; border-radius: 999rpx; }
+.order-status.success { color: #0b9a56; background: #eaf8f1; }
+.order-status.pending { color: #b47410; background: #fff6dc; }
+.order-status.failed { color: #cf3949; background: #fff0f2; }
+.order-amount { display: flex; align-items: baseline; justify-content: space-between; padding: 24rpx 0 18rpx; color: #888; font-size: 24rpx; }
+.order-amount text:last-child { color: #ef4c2c; font-size: 36rpx; font-weight: 850; }
+.order-detail { display: flex; align-items: flex-start; justify-content: space-between; gap: 24rpx; padding: 8rpx 0; color: #999; font-size: 22rpx; line-height: 1.5; }
+.order-detail > text:last-child { color: #555; text-align: right; }
+.order-number { max-width: 76%; overflow-wrap: anywhere; }
+.copy-tip { margin-top: 12rpx; color: #bbb; font-size: 19rpx; text-align: right; }
+.pagination { display: flex; align-items: center; justify-content: space-between; padding: 32rpx 16rpx 0; color: #999; font-size: 23rpx; }
+.page-button { min-width: 120rpx; padding: 18rpx 0; color: #555; text-align: center; background: #fff; border-radius: 999rpx; }
+.page-button.disabled { color: #ccc; background: #f0f0f0; }
+.empty { display: flex; min-height: 68vh; flex-direction: column; align-items: center; justify-content: center; color: #aaa; font-size: 25rpx; }
+.empty-icon { display: flex; align-items: center; justify-content: center; width: 104rpx; height: 104rpx; margin-bottom: 20rpx; color: #ff6b35; font-size: 40rpx; font-weight: 800; background: #fff; border-radius: 50%; }

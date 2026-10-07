@@ -5,31 +5,9 @@ const wechatPay = require('../wechat-pay');
 const { addManualDarkFundQuota, refreshDarkFundQuota } = require('../membership');
 const { pubUser, reviewModeEnabled } = require('../util');
 const { pushNotification } = require('../notifications');
+const { PRODUCTS, paymentOrderView } = require('../payment-orders');
 
 const DAY_MS = 24 * 3600 * 1000;
-const PRODUCTS = Object.freeze({
-  dark_fund_once: Object.freeze({
-    id: 'dark_fund_once', amount: 99, quota: 1, prefix: 'DFP', description: '暗盘单次查询', goodsName: '暗盘单次查询',
-  }),
-  dark_fund_10: Object.freeze({
-    id: 'dark_fund_10', amount: 600, quota: 10, prefix: 'DF10', description: '充值暗盘次数（10次）', goodsName: '暗盘查询次数充值10次',
-  }),
-  dark_fund_100: Object.freeze({
-    id: 'dark_fund_100', amount: 5000, quota: 100, prefix: 'DF100', description: '充值暗盘次数（100次）', goodsName: '暗盘查询次数充值100次',
-  }),
-  dark_fund_500: Object.freeze({
-    id: 'dark_fund_500', amount: 20000, quota: 500, prefix: 'DF500', description: '充值暗盘次数（500次）', goodsName: '暗盘查询次数充值500次',
-  }),
-  dark_fund_300: Object.freeze({
-    id: 'dark_fund_300', amount: 9900, quota: 300, prefix: 'DF300', description: '暗盘同价包月（300次）', goodsName: '暗盘查询同价包月300次',
-  }),
-  dark_fund_1000: Object.freeze({
-    id: 'dark_fund_1000', amount: 24000, quota: 1000, prefix: 'DF1000', description: '充值暗盘次数（1000次）', goodsName: '暗盘查询次数充值1000次',
-  }),
-  gold_year: Object.freeze({
-    id: 'gold_year', amount: 990, prefix: 'GYP', description: '开通金手指（1年）', goodsName: '金手指年卡（360天）',
-  }),
-});
 
 function orderNo(prefix) {
   return `${prefix}${Date.now()}${crypto.randomBytes(5).toString('hex')}`.slice(0, 32);
@@ -87,11 +65,8 @@ function activateOrder(data, order, transactionId) {
 function publicOrder(order, user) {
   const quota = refreshDarkFundQuota(user);
   return {
-    orderId: order.id,
-    product: order.product,
-    amount: order.amount,
+    ...paymentOrderView(order),
     creditedQuota: Number((PRODUCTS[order.product] || {}).quota) || 0,
-    status: order.status,
     remaining: quota.total,
     expiringRemaining: quota.service,
     permanentRemaining: quota.manual,
@@ -100,13 +75,16 @@ function publicOrder(order, user) {
 }
 
 module.exports = function register(router, HttpError) {
-  const currentUser = (ctx) => {
-    if (reviewModeEnabled(db.get())) throw new HttpError(403, '功能暂未开放');
+  const authenticatedUser = (ctx) => {
     const uid = auth.userIdFor(ctx.headers.authorization);
     if (!uid) throw new HttpError(401, '未登录');
     const user = (db.get().users || []).find((item) => item.id === uid);
     if (!user) throw new HttpError(401, '用户不存在');
     return user;
+  };
+  const currentUser = (ctx) => {
+    if (reviewModeEnabled(db.get())) throw new HttpError(403, '功能暂未开放');
+    return authenticatedUser(ctx);
   };
 
   const createOrder = async (ctx, product) => {
@@ -183,6 +161,23 @@ module.exports = function register(router, HttpError) {
   });
   router.post('/api/gold/purchase-orders', (ctx) => createOrder(ctx, PRODUCTS.gold_year));
   router.get('/api/gold/purchase-orders/:id', (ctx) => getOrder(ctx, PRODUCTS.gold_year));
+
+  router.get('/api/payment-orders', (ctx) => {
+    const user = authenticatedUser(ctx);
+    const page = Math.max(1, Number(ctx.query.page) || 1);
+    const size = Math.max(1, Math.min(50, Number(ctx.query.size) || 20));
+    const orders = (db.get().paymentOrders || [])
+      .filter((order) => order.userId === user.id)
+      .sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));
+    const start = (page - 1) * size;
+    return {
+      list: orders.slice(start, start + size).map(paymentOrderView),
+      page,
+      size,
+      total: orders.length,
+      pages: Math.max(1, Math.ceil(orders.length / size)),
+    };
+  });
 
   router.post('/api/payments/notify', (ctx) => {
     const transaction = wechatPay.verifyAndDecryptNotification(ctx.headers, ctx.rawBody || '');

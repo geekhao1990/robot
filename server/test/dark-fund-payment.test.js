@@ -40,6 +40,7 @@ function setup(options = {}) {
     '../membership': require('../src/membership'),
     '../util': require('../src/util'),
     '../notifications': require('../src/notifications'),
+    '../payment-orders': require('../src/payment-orders'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/dark-fund-payment.js'), 'utf8'), {
     module: mod,
@@ -120,6 +121,22 @@ test('dark-fund bulk topups credit 300 and 1000 permanent uses at their exact pr
   const secondPaid = await oneThousand.call('GET', `/api/dark-funds/topup-orders/${second.orderId}`);
   assert.equal(secondPaid.creditedQuota, 1000);
   assert.equal(oneThousand.data.users[0].darkFundManualRemaining, 1000);
+});
+
+test('customer order center only returns the signed-in user payment orders', async () => {
+  const { data, call } = setup();
+  data.users.push({ id: 'u2', name: '其他用户' });
+  data.paymentOrders.push(
+    { id: 'DF300-order', userId: 'u1', product: 'dark_fund_300', amount: 9900, status: 'SUCCESS', createdAt: 100, paidAt: 200 },
+    { id: 'DF100-order', userId: 'u2', product: 'dark_fund_100', amount: 5000, status: 'SUCCESS', createdAt: 300, paidAt: 400 },
+  );
+  await assert.rejects(call('GET', '/api/payment-orders', {}, ''), { status: 401 });
+  const result = await call('GET', '/api/payment-orders');
+  assert.equal(result.total, 1);
+  assert.equal(result.list[0].orderId, 'DF300-order');
+  assert.equal(result.list[0].productName, '暗盘同价包月 · 300次');
+  assert.equal(result.list[0].statusLabel, '已付款');
+  assert.equal(result.list[0].paidAt, 200);
 });
 
 test('9.9 gold payment opens 360 days exactly once and uses a clear product description', async () => {

@@ -29,6 +29,7 @@ function setup() {
     '../trading-date': require('../src/trading-date'),
     '../monitoring-stats': require('../src/monitoring-stats'),
     '../user-password': require('../src/user-password'),
+    '../payment-orders': require('../src/payment-orders'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/admin.js'), 'utf8'), {
     module: mod,
@@ -65,6 +66,23 @@ test('admin dark-fund ranking uses direct automatic source without JSON input', 
   assert.equal(status.sync.schedule, '15:30');
   const generated = await call('POST', '/api/admin/dark-fund-ranking/generate');
   assert.equal(generated.tradeDate, '2026-09-30');
+});
+
+test('admin payment order management returns customer and payment details', async () => {
+  const { data, call } = setup();
+  data.paymentOrders.push({
+    id: 'DF1000-order', userId: 'u1', product: 'dark_fund_1000', amount: 24000,
+    status: 'SUCCESS', createdAt: 100, paidAt: 200, transactionId: 'wx-order',
+  });
+  await assert.rejects(call('GET', '/api/admin/payment-orders', {}, ''), { status: 401 });
+  const orders = await call('GET', '/api/admin/payment-orders');
+  assert.equal(orders.length, 1);
+  assert.equal(orders[0].orderId, 'DF1000-order');
+  assert.equal(orders[0].productName, '暗盘查询次数 · 1000次');
+  assert.equal(orders[0].amount, 24000);
+  assert.equal(orders[0].paidAt, 200);
+  assert.equal(orders[0].statusLabel, '已付款');
+  assert.equal(orders[0].user.name, '测试用户');
 });
 
 test('admin creates a phone Web account with a temporary password that must be changed', async () => {

@@ -342,6 +342,10 @@ function getGoldPurchaseOrder(orderId) {
   return request('GET', '/api/gold/purchase-orders/' + encodeURIComponent(orderId), { auth: true });
 }
 
+function getPaymentOrders(page = 1, size = 20) {
+  return request('GET', '/api/payment-orders', { auth: true, data: { page, size } });
+}
+
 function getInvites() {
   return request('GET', '/api/invites', { auth: true });
 }
@@ -547,6 +551,7 @@ module.exports = {
   getDarkFundTopupOrder,
   createGoldPurchaseOrder,
   getGoldPurchaseOrder,
+  getPaymentOrders,
   getInvites,
   // 写操作
   uploadImage,

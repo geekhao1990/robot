@@ -79,6 +79,10 @@
       <view class="quick-icon-wrap"><image class="quick-icon" src="/images/profile-messages.svg" mode="aspectFit" /><view wx:if="{{messageUnread}}" class="quick-badge">{{messageUnread}}</view></view>
       <view class="quick-title">消息中心</view>
     </view>
+    <view class="quick-item" bindtap="goOrderCenter">
+      <image class="quick-icon" src="/images/profile-orders.svg" mode="aspectFit" />
+      <view class="quick-title">订单中心</view>
+    </view>
   </view>
   <view wx:if="{{serviceQrAccess}}" class="service-actions">
     <view class="service-button" bindtap="openEnterpriseWechat">

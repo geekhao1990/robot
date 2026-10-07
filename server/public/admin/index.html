@@ -198,6 +198,7 @@
       <div class="nav-item" data-view="goldFinger" onclick="switchView('goldFinger')">☝️ 金手指数据</div>
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
       <div class="nav-item" data-view="darkFundOrders" onclick="switchView('darkFundOrders')">📈 暗盘工单</div>
+      <div class="nav-item" data-view="paymentOrders" onclick="switchView('paymentOrders')">🧾 订单管理</div>
       <div class="nav-item" data-view="giftCards" onclick="switchView('giftCards')">🎁 礼品卡管理</div>
       <div class="nav-item" data-view="withdrawals" onclick="switchView('withdrawals')">💰 提现审核<span class="nav-badge" id="withdrawBadge"></span></div>
       <div class="nav-item" data-view="points" onclick="switchView('points')">🧾 积分记录<span class="nav-badge" id="anomalyBadge"></span></div>
@@ -284,7 +285,7 @@ function showAdminToast(message, type = 'success') {
     _adminToastTimer = null;
   }, 3000);
 }
-const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', darkFundOrders: '暗盘工单', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
+const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', darkFundOrders: '暗盘工单', paymentOrders: '订单管理', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
 const BASE_CATEGORIES = ['资料', '课程', '金手指', '广告'];
 const GIFT_CARD_LABELS = {
   gold: '金手指卡（360天 + 5次暗盘）',
@@ -306,6 +307,7 @@ function switchView(v) {
   if (v === 'goldFinger') renderGoldFinger();
   if (v === 'users') renderUsers();
   if (v === 'darkFundOrders') renderDarkFundOrders();
+  if (v === 'paymentOrders') renderPaymentOrders();
   if (v === 'giftCards') renderGiftCards();
   if (v === 'withdrawals') renderWithdrawals();
   if (v === 'points') renderPointRecords();
@@ -587,6 +589,7 @@ function delNote(id) {
 
 // 用户
 function fmtDate(ts) { if (!ts) return ''; const d = new Date(ts); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
+function fmtDateTime(ts) { if (!ts) return '—'; const d = new Date(ts); const p = (v) => String(v).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
 function fmtDateInput(ts) { if (!ts) return ''; const d = new Date(ts); const p = (v) => String(v).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; }
 
 let _userKeyword = '';
@@ -898,6 +901,73 @@ function openDarkFundSnapshot(orderId) {
         <div class="modal-actions"><button class="btn-primary" onclick="closeModal()">关闭</button></div>
       </div>
     </div>`;
+}
+
+// 微信支付订单：与客户订单中心共用 paymentOrders 数据。
+let _paymentOrders = [];
+let _paymentOrderPage = 1;
+let _paymentOrderKeyword = '';
+let _paymentOrderStatus = '';
+
+function renderPaymentOrders() {
+  api('/api/admin/payment-orders').then((orders) => {
+    _paymentOrders = orders || [];
+    _paymentOrderPage = 1;
+    drawPaymentOrders();
+  });
+}
+
+function filterPaymentOrders() {
+  const keywordInput = document.getElementById('paymentOrderKeyword');
+  const statusInput = document.getElementById('paymentOrderStatus');
+  _paymentOrderKeyword = String(keywordInput ? keywordInput.value : '').trim().toLowerCase();
+  _paymentOrderStatus = String(statusInput ? statusInput.value : '');
+  _paymentOrderPage = 1;
+  drawPaymentOrders();
+}
+
+function gotoPaymentOrderPage(page) { _paymentOrderPage = page; drawPaymentOrders(); }
+
+function drawPaymentOrders() {
+  const keyword = _paymentOrderKeyword;
+  const list = _paymentOrders.filter((order) => {
+    const user = order.user || {};
+    const haystack = [order.orderId, order.productName, user.id, user.name, user.phone].join(' ').toLowerCase();
+    return (!keyword || haystack.includes(keyword)) && (!_paymentOrderStatus || order.status === _paymentOrderStatus);
+  });
+  const total = list.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if (_paymentOrderPage > pages) _paymentOrderPage = pages;
+  const start = (_paymentOrderPage - 1) * PAGE_SIZE;
+  const rows = list.slice(start, start + PAGE_SIZE).map((order, index) => {
+    const user = order.user || {};
+    const success = order.status === 'SUCCESS';
+    const failed = ['FAILED', 'PAYERROR', 'CLOSED', 'REVOKED'].includes(order.status);
+    const statusStyle = failed ? 'style="color:#d93025;background:#fff0f0"' : '';
+    return `<tr>
+      <td>${start + index + 1}</td>
+      <td><strong>${esc(order.productName)}</strong><div class="hint">¥${(Number(order.amount || 0) / 100).toFixed(2)}</div></td>
+      <td><span style="font-family:monospace">${esc(order.orderId)}</span>${order.transactionId ? `<div class="hint">微信单号：${esc(order.transactionId)}</div>` : ''}</td>
+      <td>${esc(user.name || '用户不存在')}<div class="hint">${esc(user.id || order.userId || '')}</div><div class="hint">${esc(user.phone || '')}</div></td>
+      <td><span class="tag ${success ? 'paid' : ''}" ${statusStyle}>${esc(order.statusLabel)}</span>${order.error ? `<div class="hint" style="color:#d93025" title="${esc(order.error)}">${esc(order.error)}</div>` : ''}</td>
+      <td>${fmtDateTime(order.createdAt)}<div class="hint">付款：${fmtDateTime(order.paidAt)}</div></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('content').innerHTML = `
+    <div class="toolbar">
+      <div><h3>订单管理</h3><div class="hint">客户订单中心与管理后台共用同一份微信支付订单数据。</div></div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input id="paymentOrderKeyword" value="${esc(_paymentOrderKeyword)}" placeholder="订单号 / 用户 / 商品" onkeydown="if(event.key==='Enter')filterPaymentOrders()" />
+        <button class="btn-sm" onclick="filterPaymentOrders()">搜索</button>
+        <select id="paymentOrderStatus" onchange="filterPaymentOrders()">
+          <option value="">全部状态</option>
+          ${['SUCCESS','NOTPAY','USERPAYING','FAILED','PAYERROR','CLOSED','REVOKED','REFUND'].map((status) => `<option value="${status}" ${_paymentOrderStatus === status ? 'selected' : ''}>${status}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <table><thead><tr><th>序号</th><th>商品/金额</th><th>订单号</th><th>客户</th><th>状态</th><th>下单/付款时间</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#999;padding:40px">暂无支付订单</td></tr>'}</tbody></table>
+    ${pagerHtml(_paymentOrderPage, pages, total, 'gotoPaymentOrderPage')}`;
 }
 
 // 提现审核

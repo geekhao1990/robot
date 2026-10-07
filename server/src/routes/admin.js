@@ -13,6 +13,7 @@ const { latestRanking, publicRanking } = require('../dark-fund-ranking');
 const darkFundRankingSync = require('../dark-fund-ranking-sync');
 const { buildMonitoringStats } = require('../monitoring-stats');
 const { setPassword } = require('../user-password');
+const { paymentOrderView } = require('../payment-orders');
 
 module.exports = function register(router, HttpError) {
   const baseCategories = Object.values(TYPE_LABELS);
@@ -872,6 +873,22 @@ module.exports = function register(router, HttpError) {
         user: user ? { id: user.id, name: user.name, phone: user.phone || '' } : null,
       };
     });
+  });
+
+  // ---------- 微信支付订单 ----------
+  router.get('/api/admin/payment-orders', (ctx) => {
+    requireAuth(ctx);
+    const d = db.get();
+    return (d.paymentOrders || [])
+      .slice()
+      .sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0))
+      .map((order) => {
+        const user = (d.users || []).find((item) => item.id === order.userId);
+        return {
+          ...paymentOrderView(order, { admin: true }),
+          user: user ? { id: user.id, name: user.name, phone: user.phone || '' } : null,
+        };
+      });
   });
 
   router.post('/api/admin/dark-fund-orders/:id/retry', async (ctx) => {

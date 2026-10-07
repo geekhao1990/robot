@@ -1,0 +1,31 @@
+<view class="page">
+  <view class="order-head">
+    <view><view class="head-title">我的订单</view><view class="head-subtitle">共 {{total}} 笔支付订单</view></view>
+    <view class="head-refresh" bindtap="onPullDownRefresh">刷新</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="empty"><view class="empty-icon">单</view><text>正在加载订单…</text></view>
+  <view wx:elif="{{!orders.length}}" class="empty"><view class="empty-icon">单</view><text>暂无订单记录</text></view>
+  <block wx:else>
+    <view class="order-list">
+      <view wx:for="{{orders}}" wx:key="orderId" class="order-card">
+        <view class="order-top">
+          <view class="product-name">{{item.productName}}</view>
+          <view class="order-status {{item.statusClass}}">{{item.statusLabel}}</view>
+        </view>
+        <view class="order-amount"><text>支付金额</text><text>¥{{item.amountText}}</text></view>
+        <view class="order-detail" data-order="{{item.orderId}}" bindlongpress="copyOrderNo">
+          <text>订单号</text><text class="order-number" user-select="true">{{item.orderId}}</text>
+        </view>
+        <view class="order-detail"><text>付款时间</text><text>{{item.paidTime}}</text></view>
+        <view class="order-detail"><text>下单时间</text><text>{{item.createdTime}}</text></view>
+        <view class="copy-tip">长按订单号可复制</view>
+      </view>
+    </view>
+    <view wx:if="{{pages > 1}}" class="pagination">
+      <view class="page-button {{page <= 1 ? 'disabled' : ''}}" bindtap="previousPage">上一页</view>
+      <text>{{page}} / {{pages}}</text>
+      <view class="page-button {{page >= pages ? 'disabled' : ''}}" bindtap="nextPage">下一页</view>
+    </view>
+  </block>
+</view>
