@@ -113,7 +113,7 @@ test('daily ranking only accepts close snapshots and excludes intraday collector
   assert.equal(ranking.successCount, 0);
   assert.equal(ranking.inflow.length, 0);
   assert.equal(ranking.outflow.length, 0);
-  assert.match(ranking.failed[0].error, /收盘盘后查询结果/);
+  assert.match(ranking.failed[0].error, /收盘普通查询结果/);
 });
 
 test('daily ranking reports durable per-stock progress during a serial batch', async () => {

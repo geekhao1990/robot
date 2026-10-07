@@ -93,7 +93,7 @@ async function executeSync({ source = '自动更新', now = Date.now() } = {}) {
         console.warn(`[今日暗盘榜][失败明细] ${index + 1}/${ranking.failed.length} ${item.stockCode || '未知代码'} ${item.stockName || '未知名称'}：${item.error || '未知错误'}`);
       });
     }
-    if (!ranking.successCount) throw Object.assign(new Error('热榜股票盘后查询全部失败'), { status: 502 });
+    if (!ranking.successCount) throw Object.assign(new Error('热榜股票普通查询全部失败'), { status: 502 });
     syncState.status = 'success';
     syncState.lastSuccessAt = Date.now();
     syncState.lastSuccessDate = tradeDate;

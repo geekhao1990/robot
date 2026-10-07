@@ -314,13 +314,13 @@ async function waitCloseTask(taskId) {
   while (Date.now() < deadline) {
     const task = await closeApiRequest(`/api/task/${encodeURIComponent(taskId)}`);
     if (task.state === 'ready') return task.result;
-    if (task.state === 'failed') throw Object.assign(new Error(task.error || '盘后查询任务失败'), { status: 502 });
+    if (task.state === 'failed') throw Object.assign(new Error(task.error || '普通查询任务失败'), { status: 502 });
     if (!CLOSE_TASK_PENDING_STATES.has(task.state)) {
-      throw Object.assign(new Error(`盘后查询返回未知状态：${task.state || '空'}`), { status: 502 });
+      throw Object.assign(new Error(`普通查询返回未知状态：${task.state || '空'}`), { status: 502 });
     }
     await new Promise((resolve) => setTimeout(resolve, pollMs));
   }
-  throw Object.assign(new Error('盘后查询任务等待超时'), { status: 504 });
+  throw Object.assign(new Error('普通查询任务等待超时'), { status: 504 });
 }
 
 async function fetchCloseDarkFund(stockCode) {
@@ -337,7 +337,7 @@ async function fetchCloseDarkFund(stockCode) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stock }),
     });
-    if (!created || !created.task_id) throw Object.assign(new Error('盘后查询未返回任务编号'), { status: 502 });
+    if (!created || !created.task_id) throw Object.assign(new Error('普通查询未返回任务编号'), { status: 502 });
     return normalizeCloseDarkFund(await waitCloseTask(created.task_id), stockCode);
   } catch (error) {
     if (error && error.name === 'AbortError') throw Object.assign(new Error('盘后数据接口响应超时'), { status: 504 });

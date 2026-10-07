@@ -336,8 +336,8 @@ Page({
     const stockName = this.data.stockSuggestion.stockDisplayName
       || displayStockName(this.data.stockSuggestion.stockName, this.data.stockSuggestion.stockInitials);
     const content = queryMode === 'intraday'
-      ? `是否使用决策拼单查询：${stockCode}${stockName ? ` ${stockName}` : ''}，查询日期${this.data.compactTradeDate}`
-      : `是否查询盘后数据：${stockCode}${stockName ? ` ${stockName}` : ''}，查询近7日暗盘数据`;
+      ? `是否进行决策查询：${stockCode}${stockName ? ` ${stockName}` : ''}，查询日期${this.data.compactTradeDate}`
+      : `是否进行普通查询：${stockCode}${stockName ? ` ${stockName}` : ''}，查询近7日暗盘数据`;
     wx.showModal({
       title: '确认查询',
       content,
@@ -389,7 +389,7 @@ Page({
             failed,
             stockDisplayName: item.stockDisplayName || displayStockName(item.stockName, item.stockInitials),
             marketStockCode: marketStockCode(item.stockCode),
-            queryTypeText: item.queryMode === 'close' ? '盘后查询' : '决策拼单',
+            queryTypeText: item.queryMode === 'close' ? '普通查询' : '决策查询',
             queryTimeText: formatQueryTime(item.createdAt),
             statusText: ready ? '点击查看' : (failed ? darkFundFailure({ message: item.error }, item.queryMode).short : '处理中'),
           };

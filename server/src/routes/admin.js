@@ -137,7 +137,7 @@ module.exports = function register(router, HttpError) {
       ['goldFingerInterstitialAdUnitId', '金手指页面插屏'],
       ['darkFundsQueryAdUnitId', '暗盘查询'],
       ['darkFundsHistoryAdUnitId', '暗盘历史订单'],
-      ['darkFundsCloseInterstitialAdUnitId', '暗盘盘后查询插屏'],
+      ['darkFundsCloseInterstitialAdUnitId', '暗盘普通查询插屏'],
       ['darkFundsCloseBannerAdUnitId', '暗盘盘后结果页'],
       ['profileAdUnitId', '个人中心'],
       ['profileBottomAdUnitId', '个人中心末尾'],
@@ -840,7 +840,7 @@ module.exports = function register(router, HttpError) {
     return user;
   });
 
-  // “决策拼单”是盘中采集器查询的独立权限，不随暗盘盘后权限自动开通。
+  // “决策查询”是盘中采集器查询的独立权限，不随暗盘盘后权限自动开通。
   router.put('/api/admin/users/:id/decision-pioneer', (ctx) => {
     requireAuth(ctx);
     const d = db.get();
@@ -849,10 +849,10 @@ module.exports = function register(router, HttpError) {
     const action = String((ctx.body || {}).action || '');
     const active = user.decisionPioneerEnabled === true;
     if (action === 'open') {
-      if (active) throw new HttpError(409, '该用户已开通决策拼单');
+      if (active) throw new HttpError(409, '该用户已开通决策查询');
       user.decisionPioneerEnabled = true;
     } else if (action === 'cancel') {
-      if (!active) throw new HttpError(409, '该用户未开通决策拼单');
+      if (!active) throw new HttpError(409, '该用户未开通决策查询');
       user.decisionPioneerEnabled = false;
     } else {
       throw new HttpError(400, 'action 须为 open/cancel');

@@ -304,7 +304,7 @@ function darkOrdersHtml(orders) {
   return orders.map((order) => {
     const ready = order.ready === true || order.status === 'READY' || order.status === 'SUCCESS';
     const failed = String(order.status).includes('FAILED');
-    const type = order.queryMode === 'close' ? '盘后查询' : '盘中查询';
+    const type = order.queryMode === 'close' ? '普通查询' : '决策查询';
     const name = order.stockDisplayName || darkQueryStockName(order.stockName);
     const marketCode = `${/^[569]/.test(String(order.stockCode || '')) ? 'sh' : 'sz'}${order.stockCode || ''}`;
     return `<article class="order" data-order="${escapeHtml(order.id)}" data-ready="${ready}"><div><div class="order-stock-name">${name ? `<strong>${escapeHtml(name)}</strong>` : ''}<span>${escapeHtml(marketCode)}</span></div><small>${escapeHtml(type)} · ${formatTime(order.createdAt)}</small></div><span class="status ${ready ? 'ready' : ''}">${ready ? '点击查看' : (failed ? '查询失败' : '等待结果')}</span></article>`;
@@ -493,7 +493,7 @@ submitDark = async function submitDarkWithLookup(requestedMode = 'close') {
   const source = queryMode === 'intraday' ? 'collector' : 'web';
   const description = queryMode === 'intraday'
     ? `是否查询暗盘【盘中】数据：${code}${displayName ? ` ${displayName}` : ''}，查询日期${dateText}`
-    : `是否查询暗盘【盘后】数据：${code}${displayName ? ` ${displayName}` : ''}，查询近7日暗盘数据`;
+    : `是否进行普通查询：${code}${displayName ? ` ${displayName}` : ''}，查询近7日暗盘数据`;
   if (!confirm(description)) return;
   const requestId = `web_${Date.now()}_${queryMode}_${source}_${Math.random().toString(36).slice(2, 9)}`;
   try {
@@ -538,7 +538,7 @@ renderDark = async function renderDarkQueryModes(mode = 'query') {
     const seconds = Math.max(0, Number(entry.estimatedWaitSeconds) || 0);
     return `<span class="dark-query-label">${label}</span><small>前方排队${ahead}人，预计等待${seconds}秒</small>`;
   };
-  actions.innerHTML = `<button class="primary dark-query-button" data-dark-query-submit="intraday">${queueCopy('决策拼单', queue.intraday)}</button><button class="close-query dark-query-button" data-dark-query-submit="close">${queueCopy('盘后查询', queue.close)}</button>`;
+  actions.innerHTML = `<button class="primary dark-query-button" data-dark-query-submit="intraday">${queueCopy('决策查询', queue.intraday)}</button><button class="close-query dark-query-button" data-dark-query-submit="close">${queueCopy('普通查询', queue.close)}</button>`;
   actions.insertAdjacentHTML('afterend', profileServiceActionsHtml().replace('profile-service-actions', 'profile-service-actions dark-service-actions'));
 };
 
@@ -662,7 +662,7 @@ renderLocation = function renderLocationWithDarkResult() {
   loading();
   return api(`/api/dark-funds/orders/${encodeURIComponent(id)}`)
     .then(renderCloseDarkResult)
-    .catch((error) => { app.innerHTML = `<div class="notice"><strong>盘后结果加载失败</strong>${escapeHtml(error.message || '请稍后重试')}</div>`; });
+    .catch((error) => { app.innerHTML = `<div class="notice"><strong>普通查询结果加载失败</strong>${escapeHtml(error.message || '请稍后重试')}</div>`; });
 };
 window.addEventListener('popstate', () => {
   if ((location.hash || '').slice(1).startsWith('dark-result/')) renderLocation();

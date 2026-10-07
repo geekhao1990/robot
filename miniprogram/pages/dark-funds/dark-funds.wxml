@@ -51,12 +51,12 @@
         <view wx:else class="stock-dropdown-error">{{stockLookupError}}</view>
       </view>
       <view class="query-actions">
-        <button wx:if="{{decisionPioneerEnabled}}" class="query-button query-button-live" bindtap="prepareIntradayQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}"><text class="query-button-title">决策拼单</text><text class="query-button-queue">前方排队{{intradayQueueAhead}}人，预计等待{{intradayWaitText}}</text></button>
-        <button wx:if="{{darkFundEnabled}}" class="query-button query-button-close" bindtap="prepareCloseQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}"><text class="query-button-title">盘后查询</text><text class="query-button-queue">前方排队{{closeQueueAhead}}人，预计等待{{closeWaitText}}</text></button>
+        <button wx:if="{{decisionPioneerEnabled}}" class="query-button query-button-live" bindtap="prepareIntradayQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}"><text class="query-button-title">决策查询</text><text class="query-button-queue">前方排队{{intradayQueueAhead}}人，预计等待{{intradayWaitText}}</text></button>
+        <button wx:if="{{darkFundEnabled}}" class="query-button query-button-close" bindtap="prepareCloseQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}"><text class="query-button-title">普通查询</text><text class="query-button-queue">前方排队{{closeQueueAhead}}人，预计等待{{closeWaitText}}</text></button>
       </view>
       <view class="query-benefits-row">
         <view class="quota-summary">
-          <view wx:if="{{closeMonthlyActive}}" class="remaining-tip">盘后包月：<text>无限查询</text><text wx:if="{{closeMonthlyExpiryText}}" class="quota-expiry">（有效至 {{closeMonthlyExpiryText}}）</text></view>
+          <view wx:if="{{closeMonthlyActive}}" class="remaining-tip">普通查询包月：<text>无限查询</text><text wx:if="{{closeMonthlyExpiryText}}" class="quota-expiry">（有效至 {{closeMonthlyExpiryText}}）</text></view>
           <view class="remaining-tip">剩余次数：<text>{{remaining}}</text></view>
           <view class="quota-details">
             <view><text>30天内到期</text><text>{{expiringRemaining}} 次<text wx:if="{{quotaExpiryText}}" class="quota-expiry">（有效至 {{quotaExpiryText}}）</text></text></view>
@@ -108,7 +108,7 @@
   <view class="topup-sheet" catchtap="noop">
     <view class="topup-handle"></view>
     <view class="topup-title">充值暗盘次数</view>
-    <view class="topup-subtitle">充值次数长期有效，可用于决策拼单和盘后查询</view>
+    <view class="topup-subtitle">充值次数长期有效，可用于决策查询和普通查询</view>
     <view class="topup-skus">
       <view wx:for="{{topupSkus}}" wx:key="sku" class="topup-sku {{selectedTopupSku === item.sku ? 'selected' : ''}}" data-sku="{{item.sku}}" bindtap="selectTopupSku">
         <view><text class="topup-times">{{item.times}}次</text><text class="topup-unit">{{item.unitPrice}}</text></view>

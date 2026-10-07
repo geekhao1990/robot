@@ -142,7 +142,7 @@ module.exports = { useRemote: true, previewAuthRemote: true, wechatAuthRemote: t
 `get()/save()` 语义或在各 route 中改为异步查询即可，路由与管理后台无需改动。
 # 盘后暗盘数据接口
 
-盘后查询默认读取 `DARK_FUND_CLOSE_API_URL`。地址可以直接使用查询参数，也可以包含占位符：
+普通查询默认读取 `DARK_FUND_CLOSE_API_URL`。地址可以直接使用查询参数，也可以包含占位符：
 
 - `{stockCode}`：六位代码，例如 `600105`
 - `{stock}`：带市场前缀的代码，例如 `sh600105`

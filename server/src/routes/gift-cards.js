@@ -131,7 +131,7 @@ module.exports = function register(router, HttpError) {
         type: 'dark_recharge',
         title: card.type === 'dark_month' ? '暗盘包月开通成功' : '暗盘次数充值成功',
         content: card.type === 'dark_month'
-          ? '暗盘包月已生效，30天内可无限次查看盘后暗盘'
+          ? '暗盘包月已生效，30天内可无限次使用普通查询'
           : `${definition.label}已生效，当前剩余${Number(user.darkFundRemaining) || 0}次`,
         targetType: 'dark_home',
         dedupeKey: `gift-card:${card.id}`,

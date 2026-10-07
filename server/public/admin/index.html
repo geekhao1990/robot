@@ -290,7 +290,7 @@ const GIFT_CARD_LABELS = {
   gold: '金手指卡（360天 + 5次暗盘）',
   service_month: '服务包月卡（30天 + 每30天15次暗盘）',
   service_year: '服务包年卡（360天 + 每30天15次暗盘）',
-  dark_month: '暗盘包月卡（30天盘后无限查询）',
+  dark_month: '暗盘包月卡（30天普通查询无限）',
   dark_1: '暗盘1次卡',
   dark_50: '暗盘50次卡',
   dark_100: '暗盘100次卡',
@@ -343,10 +343,10 @@ function renderOverview() {
       <div class="monitor-section">
         <div class="monitor-title"><h3>业务数据概览</h3><span>查询按近5个交易日，其余按近5个自然日</span></div>
         <div class="monitor-cards">
-          <div class="monitor-card"><div class="value">${dark.closeQueries || 0} / ${dark.intradayQueries || 0}</div><div class="label">盘后查询 / 决策拼单</div><div class="sub">日均 ${dark.averageDailyQueries || 0} 次</div></div>
+          <div class="monitor-card"><div class="value">${dark.closeQueries || 0} / ${dark.intradayQueries || 0}</div><div class="label">普通查询 / 决策查询</div><div class="sub">日均 ${dark.averageDailyQueries || 0} 次</div></div>
           <div class="monitor-card"><div class="value">${dark.uniqueUsers || 0} / ${dark.uniqueStocks || 0}</div><div class="label">查询人数 / 股票数</div><div class="sub">共 ${dark.totalQueries || 0} 次查询</div></div>
           <div class="monitor-card"><div class="value">${pct(dark.cacheHitRate)}</div><div class="label">缓存命中率</div><div class="sub">任务成功率 ${pct(dark.orderSuccessRate)}</div></div>
-          <div class="monitor-card"><div class="value">${pct(dark.interfaceAvailability)}</div><div class="label">盘后接口可用率</div><div class="sub">数据合格率 ${pct(dark.dataQualityRate)} · ${dark.telemetrySamples || 0}个样本</div></div>
+          <div class="monitor-card"><div class="value">${pct(dark.interfaceAvailability)}</div><div class="label">普通查询接口可用率</div><div class="sub">数据合格率 ${pct(dark.dataQualityRate)} · ${dark.telemetrySamples || 0}个样本</div></div>
           <div class="monitor-card"><div class="value">${duration(dark.averageResponseMs)}</div><div class="label">平均响应时间</div><div class="sub">P95 ${duration(dark.p95ResponseMs)}</div></div>
           <div class="monitor-card"><div class="value">${gold.uniqueUsers || 0} / ${gold.views || 0}</div><div class="label">金手指人数 / 查看次数</div><div class="sub">日均 ${gold.averageDailyViews || 0} 次</div></div>
           <div class="monitor-card"><div class="value">${users.newUsers || 0}</div><div class="label">近5日新增用户</div><div class="sub">首次查询率 ${pct(users.firstQueryRate)}</div></div>
@@ -359,7 +359,7 @@ function renderOverview() {
         <div class="monitor-panel"><h4>失败原因分布</h4><div class="monitor-list">${failureHtml}</div></div>
         <div class="monitor-panel"><h4>数据最后更新时间</h4><div class="monitor-list">
           <div class="monitor-row"><span>暗盘查询结果</span><strong>${time(freshness.darkResultAt)}</strong></div>
-          <div class="monitor-row"><span>盘后接口监测</span><strong>${time(freshness.darkApiAt)}</strong></div>
+          <div class="monitor-row"><span>普通查询接口监测</span><strong>${time(freshness.darkApiAt)}</strong></div>
           <div class="monitor-row"><span>金手指数据</span><strong>${time(freshness.goldAt)}</strong></div>
           <div class="monitor-row"><span>今日暗盘榜</span><strong>${time(freshness.rankingAt)}</strong></div>
         </div></div>
@@ -634,9 +634,9 @@ function drawUsers() {
       ? `<span class="tag vip">${serviceName} · 至 ${fmtDate(u.serviceExpire)}</span>`
       : (u.serviceExpire ? '<span class="tag">已过期</span>' : '<span class="tag">未开通</span>');
     const closeDarkFundStatus = darkFundActive
-      ? `<span class="tag vip">盘后查询已开通 · 剩余 ${Math.max(0, Number(u.darkFundRemaining) || 0)} 次</span><div class="hint">服务包 ${Math.max(0, Number(u.darkFundServiceRemaining) || 0)} · 永久 ${Math.max(0, Number(u.darkFundManualRemaining) || 0)}</div>`
-      : '<span class="tag">盘后查询未开通</span>';
-    const darkFundStatus = `${closeDarkFundStatus}<div style="margin-top:6px">${decisionPioneerActive ? '<span class="tag vip">决策拼单已开通</span>' : '<span class="tag">决策拼单未开通</span>'}</div>`;
+      ? `<span class="tag vip">普通查询已开通 · 剩余 ${Math.max(0, Number(u.darkFundRemaining) || 0)} 次</span><div class="hint">服务包 ${Math.max(0, Number(u.darkFundServiceRemaining) || 0)} · 永久 ${Math.max(0, Number(u.darkFundManualRemaining) || 0)}</div>`
+      : '<span class="tag">普通查询未开通</span>';
+    const darkFundStatus = `${closeDarkFundStatus}<div style="margin-top:6px">${decisionPioneerActive ? '<span class="tag vip">决策查询已开通</span>' : '<span class="tag">决策查询未开通</span>'}</div>`;
     return `
       <tr>
         <td>${start + i + 1}</td>
@@ -659,8 +659,8 @@ function drawUsers() {
           <button class="btn-sm del" ${serviceActive ? '' : 'disabled'} onclick='cancelService("${u.id}")'>取消服务包</button>
           <button class="btn-sm" ${darkFundActive ? 'disabled' : ''} onclick='setDarkFunds("${u.id}","open")'>开通暗盘资金</button>
           <button class="btn-sm del" ${darkFundActive ? '' : 'disabled'} onclick='setDarkFunds("${u.id}","cancel")'>关闭暗盘资金</button>
-          <button class="btn-sm" ${decisionPioneerActive ? 'disabled' : ''} onclick='setDecisionPioneer("${u.id}","open")'>开通决策拼单</button>
-          <button class="btn-sm del" ${decisionPioneerActive ? '' : 'disabled'} onclick='setDecisionPioneer("${u.id}","cancel")'>关闭决策拼单</button>
+          <button class="btn-sm" ${decisionPioneerActive ? 'disabled' : ''} onclick='setDecisionPioneer("${u.id}","open")'>开通决策查询</button>
+          <button class="btn-sm del" ${decisionPioneerActive ? '' : 'disabled'} onclick='setDecisionPioneer("${u.id}","cancel")'>关闭决策查询</button>
           <button class="btn-sm" onclick='setDarkFundQuota("${u.id}")'>设置查询次数</button>
           <button class="btn-sm" onclick='editUser("${u.id}")'>编辑</button>
         </td>
@@ -763,10 +763,10 @@ function setDarkFunds(id, action) {
     .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
 }
 function setDecisionPioneer(id, action) {
-  const label = action === 'open' ? '开通决策拼单' : '关闭决策拼单';
+  const label = action === 'open' ? '开通决策查询' : '关闭决策查询';
   if (!confirm(`确定为该用户「${label}」吗？`)) return;
   api('/api/admin/users/' + id + '/decision-pioneer', { method: 'PUT', body: JSON.stringify({ action }) })
-    .then(() => { showAdminToast(action === 'open' ? '决策拼单已开通' : '决策拼单已关闭'); renderUsers(); })
+    .then(() => { showAdminToast(action === 'open' ? '决策查询已开通' : '决策查询已关闭'); renderUsers(); })
     .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
 }
 function setDarkFundQuota(id) {
@@ -1318,7 +1318,7 @@ function renderSettings() {
     document.getElementById('content').innerHTML = `
       <div class="card" style="max-width:640px;margin-bottom:20px;border-left:4px solid #ff2442">
         <h3>今日收盘暗盘榜</h3>
-        <div class="hint" style="margin:8px 0 14px">系统在北京时间交易日 ${esc(rankingSync.schedule || '15:30')} 自动读取同花顺热榜完整100只股票并生成榜单；用户盘后查询优先于榜单批处理，当天已有收盘缓存的股票不会重复请求上游。需要临时重跑时可点击下方按钮。</div>
+        <div class="hint" style="margin:8px 0 14px">系统在北京时间交易日 ${esc(rankingSync.schedule || '15:30')} 自动读取同花顺热榜完整100只股票并生成榜单；用户普通查询优先于榜单批处理，当天已有收盘缓存的股票不会重复请求上游。需要临时重跑时可点击下方按钮。</div>
         <div id="darkFundRankingStatus" class="hint">${rankingSync.running ? esc(rankingProgressText(rankingSyncState)) : (ranking ? esc(rankingResultText(ranking)) : (rankingSyncState.status === 'failed' ? `最近更新失败：${esc(rankingSyncState.error || '未知错误')}` : '当前尚未生成榜单'))}</div>
         <button id="darkFundRankingButton" class="btn-primary" style="margin-top:14px" onclick="generateDarkFundRanking()" ${rankingSync.running ? 'disabled' : ''}>${rankingSync.running ? '正在更新…' : '立即更新今日暗盘榜'}</button>
       </div>
@@ -1329,18 +1329,18 @@ function renderSettings() {
           <div class="hint">开启后立即对所有用户隐藏金手指笔记、底部红色按钮和“我”页面的暗盘资金入口；金手指与暗盘接口同时禁用，已有权限用户也无法通过旧页面或直链进入。</div>
         </div>
         <div class="field">
-          <label>盘后暗盘数据源网址</label>
+          <label>普通查询数据源网址</label>
           <input id="settingDarkFundCloseApiUrl" value="${esc(settings.darkFundCloseApiUrl || '')}" placeholder="https://fundflow.shiluan.space" autocomplete="url" />
-          <div class="hint">用于盘后查询；决策拼单仍使用 Windows 采集器。</div>
+          <div class="hint">用于普通查询；决策查询仍使用 Windows 采集器。</div>
         </div>
         <div class="field">
-          <label>盘后暗盘数据源账号</label>
+          <label>普通查询数据源账号</label>
           <input id="settingDarkFundCloseUsername" value="${esc(settings.darkFundCloseUsername || '')}" placeholder="请输入登录账号" autocomplete="username" />
         </div>
         <div class="field">
-          <label>盘后暗盘数据源密码</label>
+          <label>普通查询数据源密码</label>
           <input id="settingDarkFundClosePassword" type="password" value="" placeholder="${settings.darkFundClosePasswordConfigured ? '已配置，留空保持不变' : '请输入登录密码'}" autocomplete="new-password" />
-          <div class="hint">${settings.darkFundClosePasswordConfigured ? '密码已配置且不会回显；留空保存不会清除原密码。' : '尚未配置密码，盘后查询暂时不可用。'}</div>
+          <div class="hint">${settings.darkFundClosePasswordConfigured ? '密码已配置且不会回显；留空保存不会清除原密码。' : '尚未配置密码，普通查询暂时不可用。'}</div>
         </div>
         <div class="field">
           <label>底部红色加号入口总开关</label>
@@ -1390,12 +1390,12 @@ function renderSettings() {
           <div class="hint">历史订单分页控件下方的 Banner 广告位。</div>
         </div>
         <div class="field">
-          <label>暗盘盘后查询插屏广告位 ID</label>
+          <label>暗盘普通查询插屏广告位 ID</label>
           <input id="settingDarkFundsCloseInterstitialAdUnitId" value="${esc(settings.darkFundsCloseInterstitialAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
-          <div class="hint">进入盘后暗盘结果页时尝试展示；广告拉取失败不影响查看。</div>
+          <div class="hint">进入普通查询结果页时尝试展示；广告拉取失败不影响查看。</div>
         </div>
         <div class="field">
-          <label>暗盘盘后结果页 Banner 广告位 ID</label>
+          <label>暗盘普通查询结果页 Banner 广告位 ID</label>
           <input id="settingDarkFundsCloseBannerAdUnitId" value="${esc(settings.darkFundsCloseBannerAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
           <div class="hint">展示在“近7日资金情况”上方，广告拉取失败时不显示。</div>
         </div>
@@ -1467,7 +1467,7 @@ function rankingResultText(ranking) {
   const other = failed.filter((item) => !missing.includes(item));
   const stockLabel = (item) => `${item.stockCode || '未知代码'}${item.stockName ? ` ${item.stockName}` : ''}`;
   const missingText = missing.length
-    ? `；盘后源未收录 ${missing.length} 只：${missing.slice(0, 12).map(stockLabel).join('、')}${missing.length > 12 ? `等${missing.length}只` : ''}`
+    ? `；普通查询数据源未收录 ${missing.length} 只：${missing.slice(0, 12).map(stockLabel).join('、')}${missing.length > 12 ? `等${missing.length}只` : ''}`
     : '';
   const otherText = other.length
     ? `；其他失败 ${other.length} 只：${other.slice(0, 5).map((item) => `${stockLabel(item)}（${item.error || '未知错误'}）`).join('、')}`

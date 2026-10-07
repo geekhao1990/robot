@@ -131,7 +131,7 @@ function closeDayFunds(result, tradeDate) {
 
 function rankingItem(candidate, result, cacheHit) {
   if (!isCloseRankingResult(result, candidate.stockCode, result && result.tradeDate)) {
-    throw new Error('今日暗盘榜仅允许收盘盘后查询结果');
+    throw new Error('今日暗盘榜仅允许收盘普通查询结果');
   }
   const funds = closeDayFunds(result, result.tradeDate);
   if (!Number.isFinite(funds.grey)) throw new Error('返回结果缺少当日暗盘资金');
@@ -192,7 +192,7 @@ async function generateRanking({ data, payload, tradeDate, fetchClose, concurren
       if (!result) {
         result = await fetchClose(candidate.stockCode);
         if (!isCloseRankingResult(result, candidate.stockCode, tradeDate)) {
-          throw new Error(`盘后数据不是${tradeDate}收盘盘后查询结果`);
+          throw new Error(`盘后数据不是${tradeDate}收盘普通查询结果`);
         }
         storeCloseResult(data, candidate.stockCode, result);
       }
