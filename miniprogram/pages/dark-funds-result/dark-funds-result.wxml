@@ -66,9 +66,6 @@
         <view wx:else class="trend-empty">历史数据不足，暂时无法绘制该周期</view>
       </block>
     </view>
-    <view wx:if="{{closeBannerAdUnitId && !closeBannerAdLoadFailed}}" class="close-banner-ad">
-      <ad unit-id="{{closeBannerAdUnitId}}" binderror="onCloseBannerAdError" />
-    </view>
     <view class="card detail-card">
       <view class="detail-title">近7日资金情况</view>
       <view class="segment-control">
@@ -83,6 +80,9 @@
         <view class="tr th"><text>日期</text><text>特大单</text><text>大单</text><text>中单</text><text>小单</text></view>
         <view wx:for="{{rows}}" wx:key="tradeDate" class="tr"><text>{{item.displayDate}}</text><text class="{{item.super_large >= 0 ? 'up' : 'down'}}">{{item.super_largeText}}</text><text class="{{item.large >= 0 ? 'up' : 'down'}}">{{item.largeText}}</text><text class="{{item.middle >= 0 ? 'up' : 'down'}}">{{item.middleText}}</text><text class="{{item.small >= 0 ? 'up' : 'down'}}">{{item.smallText}}</text></view>
       </view>
+    </view>
+    <view wx:if="{{closeBannerAdUnitId && !closeBannerAdLoadFailed}}" class="close-banner-ad">
+      <ad unit-id="{{closeBannerAdUnitId}}" binderror="onCloseBannerAdError" />
     </view>
     <view class="disclaimer">数据和图表来自互联网，由AI生成，仅供参考，不构成投资建议</view>
     <canvas type="2d" id="sharePosterCanvas" class="share-poster-canvas"></canvas>
