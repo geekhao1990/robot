@@ -24,25 +24,13 @@ async function waitForBatchWindow() {
 }
 
 async function fetchBatchClose(stockCode) {
-  const maxAttempts = 3;
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    try {
-      // Batch jobs deliberately leave a cooldown between completed upstream tasks.
-      // No batch job occupies the shared queue during this wait, so user orders can
-      // enter immediately and still retain priority.
-      await waitForBatchWindow();
-      return await requestCloseDarkFund(stockCode, { priority: 'batch' });
-    } catch (error) {
-      const message = String(error && error.message || '');
-      const transient = Number(error && error.status) === 429
-        || /稍后|繁忙|频繁|已有.*任务|任务.*进行|冲突|too many|busy|in progress/i.test(message);
-      if (!transient || attempt === maxAttempts) throw error;
-      await wait(attempt * 1500);
-    } finally {
-      lastBatchFinishedAt = Date.now();
-    }
+  try {
+    // 每只股票只提交一次。失败立即交还队列，由共享队列继续处理下一单。
+    await waitForBatchWindow();
+    return await requestCloseDarkFund(stockCode, { priority: 'batch' });
+  } finally {
+    lastBatchFinishedAt = Date.now();
   }
-  throw new Error('盘后批量查询失败');
 }
 
 function chinaMinutes(timestamp = Date.now()) {

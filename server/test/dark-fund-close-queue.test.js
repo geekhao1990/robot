@@ -67,3 +67,27 @@ test('same-stock user request reuses and promotes a queued ranking job', async (
   releases.get('600105')();
   await Promise.all([batch, user]);
 });
+
+test('failed close job immediately releases the queue for the next job', async () => {
+  const started = [];
+  const fetchCloseDarkFund = async (stockCode) => {
+    started.push(stockCode);
+    if (stockCode === '600001') throw Object.assign(new Error('查询失败'), { status: 502 });
+    return { stockCode };
+  };
+  const mod = { exports: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/dark-fund-close-queue.js'), 'utf8'), {
+    module: mod,
+    require: (id) => id === './dark-fund-close' ? { fetchCloseDarkFund }
+      : id === './db' ? { get: () => ({}), save: () => {} }
+      : id === './analytics' ? { record: () => {}, classifyFailure: () => '接口异常' }
+      : require(id),
+    process: { env: { DARK_FUND_CLOSE_CONCURRENCY: '1', DARK_FUND_CLOSE_REQUEST_GAP_MS: '1' } },
+    Promise, Map, Number, String, Date, queueMicrotask, setTimeout, clearTimeout,
+  });
+  const failed = mod.exports.requestCloseDarkFund('600001', { priority: 'user' });
+  const next = mod.exports.requestCloseDarkFund('600002', { priority: 'user' });
+  await assert.rejects(failed, /查询失败/);
+  assert.deepEqual(await next, { stockCode: '600002' });
+  assert.deepEqual(started, ['600001', '600002']);
+});

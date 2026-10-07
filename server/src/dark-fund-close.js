@@ -300,16 +300,12 @@ function exactSearchStock(items, stockCode) {
   return items.find((item) => stockCodeFrom(item && (item.code || item.stock)) === stockCode) || null;
 }
 
-async function searchCloseStock(stockCode) {
-  let lastCount = 0;
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    const items = await closeApiRequest(`/api/search?q=${encodeURIComponent(stockCode)}`);
-    lastCount = Array.isArray(items) ? items.length : 0;
-    const found = exactSearchStock(items, stockCode);
-    if (found) return found;
-    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
-  }
-  throw Object.assign(new Error(`盘后数据源连续3次搜索不到${stockCode}（最后返回${lastCount}项，可能未收录或触发频率限制）`), { status: 404 });
+async function searchCloseStock(stockCode, request = closeApiRequest) {
+  const items = await request(`/api/search?q=${encodeURIComponent(stockCode)}`);
+  const found = exactSearchStock(items, stockCode);
+  if (found) return found;
+  const count = Array.isArray(items) ? items.length : 0;
+  throw Object.assign(new Error(`盘后数据源搜索不到${stockCode}（返回${count}项）`), { status: 404 });
 }
 
 async function waitCloseTask(taskId) {
@@ -357,4 +353,5 @@ module.exports = {
   nextTradingOpenAt,
   normalizeCloseDarkFund,
   relativeFundError,
+  searchCloseStock,
 };

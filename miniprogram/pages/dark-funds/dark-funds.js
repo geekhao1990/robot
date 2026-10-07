@@ -62,11 +62,11 @@ function darkFundFailure(error, mode = 'close') {
   if (/次数|额度|用完|余额不足/.test(message)) {
     return { title: '额度不足', content: '暗盘查询次数不足，请先充值暗盘次数', short: '额度不足' };
   }
+  if (mode === 'close') {
+    return { title: '查询失败', content: '查询失败，请稍后再试', short: '查询失败' };
+  }
   if (mode === 'intraday' && (statusCode >= 500 || !message || /采集|Windows|collector|ECONN|dispatch|连接|超时/i.test(message))) {
     return { title: '采集器异常', content: '采集器异常，请稍后再试', short: '采集器异常' };
-  }
-  if (mode === 'close' && (statusCode >= 500 || !message || /接口|盘后|数据源|task|登录|请求|HTTP|连接|超时/i.test(message))) {
-    return { title: '接口异常', content: '盘后数据接口异常，请稍后再试', short: '接口异常' };
   }
   return { title: '查询失败', content: message || '接口异常，请稍后再试', short: '查询失败' };
 }

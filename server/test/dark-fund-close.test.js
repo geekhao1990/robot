@@ -6,6 +6,7 @@ const {
   isReusableCloseResult,
   nextTradingOpenAt,
   normalizeCloseDarkFund,
+  searchCloseStock,
 } = require('../src/dark-fund-close');
 
 test('盘后暗盘 JSON 被标准化为独立快照结果', () => {
@@ -50,4 +51,13 @@ test('盘后搜索结果按六位代码精确匹配', () => {
   ], '600105');
   assert.equal(hit.code, 'sh600105');
   assert.equal(exactSearchStock([{ code: 'sh600104' }], '600105'), null);
+});
+
+test('盘后股票搜索失败只请求一次', async () => {
+  let requestCount = 0;
+  await assert.rejects(searchCloseStock('600105', async () => {
+    requestCount += 1;
+    return [];
+  }), { status: 404 });
+  assert.equal(requestCount, 1);
 });
