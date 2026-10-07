@@ -89,6 +89,10 @@ Page({
     darkFundEnabled: false,
     purchasing: false,
     decisionPioneerEnabled: false,
+    intradayQueueAhead: 0,
+    intradayWaitText: '0秒',
+    closeQueueAhead: 0,
+    closeWaitText: '0秒',
     queryAdUnitId: /^adunit-/i.test(String(config.darkFundsQueryAdUnitId || ''))
       ? String(config.darkFundsQueryAdUnitId)
       : '',
@@ -242,11 +246,21 @@ Page({
   loadTradeDate() {
     this.setData({ dateLoading: true });
     return api.getDarkFundTradeDate()
-      .then((result) => this.setData({
-        tradeDate: result.tradeDate,
-        compactTradeDate: result.compactTradeDate,
-        ...this.quotaData(result),
-      }))
+      .then((result) => {
+        const queue = result.queue || {};
+        const intraday = queue.intraday || {};
+        const close = queue.close || {};
+        const waitText = (seconds) => `${Number(seconds) || 0}秒`;
+        this.setData({
+          tradeDate: result.tradeDate,
+          compactTradeDate: result.compactTradeDate,
+          intradayQueueAhead: Math.max(0, Number(intraday.ahead) || 0),
+          intradayWaitText: waitText(intraday.estimatedWaitSeconds),
+          closeQueueAhead: Math.max(0, Number(close.ahead) || 0),
+          closeWaitText: waitText(close.estimatedWaitSeconds),
+          ...this.quotaData(result),
+        });
+      })
       .catch(() => wx.showToast({ title: '交易日获取失败', icon: 'none' }))
       .finally(() => this.setData({ dateLoading: false }));
   },

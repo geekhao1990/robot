@@ -528,7 +528,17 @@ renderDark = async function renderDarkQueryModes(mode = 'query') {
     state.darkTradeDate = String(tradeDate.textContent || '').replace(/^查询日期[：:]\s*/, '').trim();
     tradeDate.remove();
   }
-  actions.innerHTML = `<button class="primary" data-dark-query-submit="intraday">决策拼单</button><button class="close-query" data-dark-query-submit="close">盘后查询</button>`;
+  let queue = {};
+  try {
+    const tradeDateResult = await api('/api/dark-funds/trade-date');
+    queue = tradeDateResult.queue || {};
+  } catch (_) {}
+  const queueCopy = (label, entry = {}) => {
+    const ahead = Math.max(0, Number(entry.ahead) || 0);
+    const seconds = Math.max(0, Number(entry.estimatedWaitSeconds) || 0);
+    return `<span class="dark-query-label">${label}</span><small>前方排队${ahead}人，预计等待${seconds}秒</small>`;
+  };
+  actions.innerHTML = `<button class="primary dark-query-button" data-dark-query-submit="intraday">${queueCopy('决策拼单', queue.intraday)}</button><button class="close-query dark-query-button" data-dark-query-submit="close">${queueCopy('盘后查询', queue.close)}</button>`;
   actions.insertAdjacentHTML('afterend', profileServiceActionsHtml().replace('profile-service-actions', 'profile-service-actions dark-service-actions'));
 };
 

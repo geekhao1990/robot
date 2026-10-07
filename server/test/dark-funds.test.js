@@ -49,7 +49,10 @@ function setup(options = {}) {
       isReusableCloseResult: options.isReusableCloseResult || require('../src/dark-fund-close').isReusableCloseResult,
       nextTradingOpenAt: require('../src/dark-fund-close').nextTradingOpenAt,
     },
-    '../dark-fund-close-queue': { requestCloseDarkFund: fetchCloseStub },
+    '../dark-fund-close-queue': {
+      requestCloseDarkFund: fetchCloseStub,
+      getQueueStatus: () => ({ userAhead: Number(options.closeQueueAhead) || 0 }),
+    },
     '../collector-client': collector, '../collector-images': collectorImages,
     '../notifications': require('../src/notifications'),
     '../stock-lookup': require('../src/stock-lookup'),
@@ -191,6 +194,21 @@ test('query dispatches immediately and authenticated callback completes it idemp
   const viewed = await call('GET', `/api/dark-funds/orders/${created.orderId}`);
   assert.equal(viewed.unread, false);
   await assert.rejects(call('GET', `/api/dark-funds/orders/${created.orderId}`, {}, 'Bearer u2'), { status: 404 });
+});
+
+test('trade date exposes real queue counts and wait estimates', async () => {
+  const { data, call } = setup({ closeQueueAhead: 3 });
+  data.darkFundOrders.push(
+    { id: 'pending-1', queryMode: 'intraday', status: 'QUEUED' },
+    { id: 'pending-2', queryMode: 'intraday', status: 'CREATED' },
+    { id: 'ready-1', queryMode: 'intraday', status: 'READY' },
+    { id: 'close-1', queryMode: 'close', status: 'QUEUED' },
+  );
+  const result = await call('GET', '/api/dark-funds/trade-date');
+  assert.equal(result.queue.intraday.ahead, 2);
+  assert.equal(result.queue.intraday.estimatedWaitSeconds, 30);
+  assert.equal(result.queue.close.ahead, 3);
+  assert.equal(result.queue.close.estimatedWaitSeconds, 4.5);
 });
 
 test('same user and request_id returns the original order without consuming quota twice', async () => {

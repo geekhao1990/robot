@@ -17,9 +17,11 @@
 .stock-dropdown-tip { justify-content: center; color: #999; }
 .stock-dropdown-error { justify-content: center; color: #ff2442; }
 .query-actions { display: flex; align-items: center; gap: 18rpx; margin-top: 40rpx; }
-.query-button { display: flex; align-items: center; justify-content: center; height: 88rpx; margin: 0; padding: 0 16rpx; font-size: 25rpx; font-weight: 700; line-height: normal; border-radius: 999rpx; }
+.query-button { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 104rpx; margin: 0; padding: 8rpx 12rpx; font-size: 25rpx; font-weight: 700; line-height: normal; border-radius: 999rpx; }
 .query-button { flex: 1; color: #fff; background: #ff2442; }
 .query-button-close { color: #ff2442; background: #fff5f7; border: 2rpx solid #ff2442; }
+.query-button-title { display: block; font-size: 26rpx; line-height: 34rpx; font-weight: 800; }
+.query-button-queue { display: block; margin-top: 3rpx; font-size: 19rpx; line-height: 27rpx; font-weight: 500; white-space: nowrap; opacity: .9; }
 .query-button::after { border: none; }
 .query-button[disabled] { color: #fff; background: #ff9aaa; }
 .query-benefits-row { display: flex; align-items: stretch; gap: 16rpx; margin-top: 24rpx; margin-bottom: 40rpx; }

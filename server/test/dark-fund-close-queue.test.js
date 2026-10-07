@@ -25,6 +25,7 @@ test('user close query jumps ahead of waiting ranking jobs', async () => {
   const second = mod.exports.requestCloseDarkFund('600002', { priority: 'batch' });
   await new Promise((resolve) => setImmediate(resolve));
   const user = mod.exports.requestCloseDarkFund('600003', { priority: 'user' });
+  assert.equal(mod.exports.getQueueStatus().userAhead, 2);
   releases.get('600001')();
   await first;
   await new Promise((resolve) => setImmediate(resolve));
@@ -58,6 +59,7 @@ test('same-stock user request reuses and promotes a queued ranking job', async (
   await new Promise((resolve) => setImmediate(resolve));
   const user = mod.exports.requestCloseDarkFund('600105', { priority: 'user' });
   assert.equal(user, batch);
+  assert.equal(mod.exports.getQueueStatus().userAhead, 2);
   releases.get('600001')();
   await blocker;
   await new Promise((resolve) => setImmediate(resolve));

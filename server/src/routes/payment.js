@@ -17,7 +17,20 @@ const { persistCollectorImages } = require('../collector-images');
 const { pushNotification } = require('../notifications');
 const { lookupStock } = require('../stock-lookup');
 const { latestRanking, publicRanking } = require('../dark-fund-ranking');
-const { requestCloseDarkFund } = require('../dark-fund-close-queue');
+const { requestCloseDarkFund, getQueueStatus = () => ({ userAhead: 0 }) } = require('../dark-fund-close-queue');
+
+function darkFundQueueSnapshot(data) {
+  const intradayAhead = (data.darkFundOrders || []).filter((order) => (
+    (order.queryMode || 'intraday') === 'intraday'
+    && ['CREATED', 'QUEUED'].includes(String(order.status || '').toUpperCase())
+  )).length;
+  const closeStatus = getQueueStatus() || {};
+  const closeAhead = Math.max(0, Number(closeStatus.userAhead) || 0);
+  return {
+    intraday: { ahead: intradayAhead, estimatedWaitSeconds: intradayAhead * 15 },
+    close: { ahead: closeAhead, estimatedWaitSeconds: closeAhead * 1.5 },
+  };
+}
 
 function fetchCloseDarkFundOnce(stockCode) {
   return requestCloseDarkFund(stockCode, { priority: 'user' });
@@ -120,6 +133,7 @@ module.exports = function register(router, HttpError) {
       closeMonthlyExpireAt: closeDarkFundActiveAt(user) ? Number(user.darkFundCloseExpire) : 0,
       decisionPioneerEnabled: user.decisionPioneerEnabled === true,
       darkFundEnabled: user.darkFundEnabled === true,
+      queue: darkFundQueueSnapshot(db.get()),
     };
   });
 

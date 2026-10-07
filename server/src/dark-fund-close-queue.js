@@ -74,7 +74,15 @@ function requestCloseDarkFund(stockCode, options = {}) {
 }
 
 function getQueueStatus() {
-  return { active, userWaiting: userQueue.length, batchWaiting: batchQueue.length, pendingStocks: pendingByStock.size };
+  return {
+    active,
+    userWaiting: userQueue.length,
+    batchWaiting: batchQueue.length,
+    pendingStocks: pendingByStock.size,
+    // New user requests run ahead of waiting batch jobs, so only active work and
+    // already-waiting user requests are actually in front of the next user.
+    userAhead: active + userQueue.length,
+  };
 }
 
 module.exports = { MAX_ACTIVE, getQueueStatus, requestCloseDarkFund };

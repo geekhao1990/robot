@@ -51,8 +51,8 @@
         <view wx:else class="stock-dropdown-error">{{stockLookupError}}</view>
       </view>
       <view class="query-actions">
-        <button wx:if="{{decisionPioneerEnabled}}" class="query-button query-button-live" bindtap="prepareIntradayQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">决策拼单</button>
-        <button wx:if="{{darkFundEnabled}}" class="query-button query-button-close" bindtap="prepareCloseQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}">盘后查询</button>
+        <button wx:if="{{decisionPioneerEnabled}}" class="query-button query-button-live" bindtap="prepareIntradayQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}"><text class="query-button-title">决策拼单</text><text class="query-button-queue">前方排队{{intradayQueueAhead}}人，预计等待{{intradayWaitText}}</text></button>
+        <button wx:if="{{darkFundEnabled}}" class="query-button query-button-close" bindtap="prepareCloseQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}"><text class="query-button-title">盘后查询</text><text class="query-button-queue">前方排队{{closeQueueAhead}}人，预计等待{{closeWaitText}}</text></button>
       </view>
       <view class="query-benefits-row">
         <view class="quota-summary">
