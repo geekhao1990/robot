@@ -235,7 +235,7 @@ renderProfile = async function renderInteractiveProfile() {
     const gift = document.querySelector('#giftPanel');
     if (gift) gift.insertAdjacentHTML('beforebegin', profileContactHtml() + profileLibraryHtml(state.profileTab, notes || []));
   } catch (error) {
-    toast(error.message);
+    toast(queryMode === 'close' ? '查询失败，请稍后再试' : (error.message || '查询失败，请稍后再试'));
   }
 };
 
