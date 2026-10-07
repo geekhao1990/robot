@@ -4,6 +4,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+async function waitUntil(predicate, timeoutMs = 500) {
+  const deadline = Date.now() + timeoutMs;
+  while (!predicate() && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  assert.equal(Boolean(predicate()), true, 'timed out waiting for queued job');
+}
+
 test('user close query jumps ahead of waiting ranking jobs', async () => {
   const started = [];
   const releases = new Map();
@@ -28,11 +36,11 @@ test('user close query jumps ahead of waiting ranking jobs', async () => {
   assert.equal(mod.exports.getQueueStatus().userAhead, 2);
   releases.get('600001')();
   await first;
-  await new Promise((resolve) => setImmediate(resolve));
+  await waitUntil(() => releases.has('600003'));
   assert.deepEqual(started, ['600001', '600003']);
   releases.get('600003')();
   await user;
-  await new Promise((resolve) => setImmediate(resolve));
+  await waitUntil(() => releases.has('600002'));
   releases.get('600002')();
   await second;
 });
@@ -62,7 +70,7 @@ test('same-stock user request reuses and promotes a queued ranking job', async (
   assert.equal(mod.exports.getQueueStatus().userAhead, 2);
   releases.get('600001')();
   await blocker;
-  await new Promise((resolve) => setImmediate(resolve));
+  await waitUntil(() => releases.has('600105'));
   assert.deepEqual(started, ['600001', '600105']);
   releases.get('600105')();
   await Promise.all([batch, user]);
@@ -90,4 +98,36 @@ test('failed close job immediately releases the queue for the next job', async (
   await assert.rejects(failed, /查询失败/);
   assert.deepEqual(await next, { stockCode: '600002' });
   assert.deepEqual(started, ['600001', '600002']);
+});
+
+test('next close job waits for the shared cooldown after completion', async () => {
+  const started = [];
+  let releaseFirst;
+  const fetchCloseDarkFund = (stockCode) => {
+    started.push({ stockCode, at: Date.now() });
+    if (stockCode === '600001') return new Promise((resolve) => { releaseFirst = resolve; });
+    return Promise.resolve({ stockCode });
+  };
+  const mod = { exports: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/dark-fund-close-queue.js'), 'utf8'), {
+    module: mod,
+    require: (id) => id === './dark-fund-close' ? { fetchCloseDarkFund }
+      : id === './db' ? { get: () => ({}), save: () => {} }
+      : id === './analytics' ? { record: () => {}, classifyFailure: () => '接口异常' }
+      : require(id),
+    process: { env: { DARK_FUND_CLOSE_REQUEST_GAP_MS: '30' } },
+    Promise, Map, Number, String, Date, queueMicrotask, setTimeout, clearTimeout,
+  });
+  const first = mod.exports.requestCloseDarkFund('600001', { priority: 'batch' });
+  await waitUntil(() => typeof releaseFirst === 'function');
+  const user = mod.exports.requestCloseDarkFund('600002', { priority: 'user' });
+  const releasedAt = Date.now();
+  releaseFirst({ stockCode: '600001' });
+  await first;
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.deepEqual(started.map((item) => item.stockCode), ['600001']);
+  assert(mod.exports.getQueueStatus().cooldownRemainingMs > 0);
+  await user;
+  assert.deepEqual(started.map((item) => item.stockCode), ['600001', '600002']);
+  assert(started[1].at - releasedAt >= 25);
 });

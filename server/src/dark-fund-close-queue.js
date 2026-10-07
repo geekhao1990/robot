@@ -4,16 +4,22 @@ const analytics = require('./analytics');
 
 // The upstream account only supports one active task reliably. Keep one shared
 // lane for user and ranking requests; user jobs still jump ahead of waiting batch jobs.
-const MAX_ACTIVE = Math.max(1, Number(process.env.DARK_FUND_CLOSE_CONCURRENCY) || 1);
+const MAX_ACTIVE = 1;
 const userQueue = [];
 const batchQueue = [];
 const pendingByStock = new Map();
 let active = 0;
 let lastStartedAt = 0;
+let lastFinishedAt = 0;
 let pumpTimer = null;
 
 function requestGapMs() {
-  return Math.max(0, Number(process.env.DARK_FUND_CLOSE_REQUEST_GAP_MS) || 1500);
+  return Math.max(0, Number(process.env.DARK_FUND_CLOSE_REQUEST_GAP_MS) || 3000);
+}
+
+function nextStartAt() {
+  const gap = requestGapMs();
+  return Math.max(lastStartedAt + gap, lastFinishedAt + gap);
 }
 
 function removeJob(queue, job) {
@@ -31,7 +37,9 @@ function promote(job) {
 function pump() {
   while (active < MAX_ACTIVE) {
     if (!userQueue.length && !batchQueue.length) return;
-    const remaining = lastStartedAt + requestGapMs() - Date.now();
+    // 上游限频按“上一任务完成时间”计算。长任务结束后也必须冷却，
+    // 不能因为开始时间已经过去很久就让下一单立即撞向接口。
+    const remaining = nextStartAt() - Date.now();
     if (remaining > 0) {
       if (!pumpTimer) {
         pumpTimer = setTimeout(() => {
@@ -68,6 +76,7 @@ function pump() {
       })
       .finally(() => {
         active -= 1;
+        lastFinishedAt = Date.now();
         pendingByStock.delete(job.stockCode);
         pump();
       });
@@ -99,6 +108,7 @@ function getQueueStatus() {
     userWaiting: userQueue.length,
     batchWaiting: batchQueue.length,
     pendingStocks: pendingByStock.size,
+    cooldownRemainingMs: Math.max(0, nextStartAt() - Date.now()),
     // New user requests run ahead of waiting batch jobs, so only active work and
     // already-waiting user requests are actually in front of the next user.
     userAhead: active + userQueue.length,
