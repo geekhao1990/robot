@@ -1,6 +1,6 @@
 // server/src/routes/public.js —— 小程序只读接口
 const db = require('../db');
-const { goldAccess, pubUser, pubNote, pubSettings } = require('../util');
+const { goldAccess, pubUser, pubNote, pubSettings, reviewModeEnabled } = require('../util');
 const auth = require('../auth');
 const { typeLabel } = require('../content-types');
 const { resourceList } = require('../resource-links');
@@ -21,6 +21,7 @@ module.exports = function register(router, HttpError) {
     return uid ? data.users.find((u) => u.id === uid) || null : null;
   };
   const requireGoldAccess = (ctx) => {
+    if (reviewModeEnabled(db.get())) throw new HttpError(403, '功能暂未开放');
     const reader = requireReader(ctx);
     if (!goldAccess(reader)) throw new HttpError(403, '金手指权益未开通或已过期');
     return db.get();
@@ -106,6 +107,10 @@ module.exports = function register(router, HttpError) {
   router.get('/api/notes/:id', (ctx) => {
     const data = db.get();
     const reader = optionalReader(ctx, data);
+    const candidate = data.notes.find((note) => note.id === ctx.params.id);
+    if (reviewModeEnabled(data) && candidate && (candidate.type === 'gold' || isDarkFundNote(candidate))) {
+      throw new HttpError(404, 'not found');
+    }
     const n = findViewableNote(data, ctx.params.id, reader);
     if (!n || (n.type === 'gold' && !goldEntryEnabled(data))) { const e = new Error('not found'); e.status = 404; throw e; }
     return pubNote(n);

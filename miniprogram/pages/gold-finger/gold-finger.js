@@ -44,14 +44,23 @@ Page({
     });
     if (!store.isLogin()) return wx.redirectTo({ url: '/pages/login/login' });
     api.getAppSettings().then((settings) => {
+      if (settings && settings.reviewModeEnabled === true) {
+        wx.showModal({
+          title: '提示',
+          content: '功能暂未开放',
+          showCancel: false,
+          success: () => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) }),
+        });
+        return;
+      }
       const id = String((settings && settings.goldFingerAdUnitId) || config.goldFingerAdUnitId || '');
       const interstitialId = String((settings && settings.goldFingerInterstitialAdUnitId) || config.goldFingerInterstitialAdUnitId || '');
       const rewardedId = String((settings && settings.goldRewardedVideoAdUnitId) || config.goldRewardedVideoAdUnitId || '');
       this.setData({ goldFingerAdUnitId: /^adunit-/i.test(id) ? id : '', adLoadFailed: false });
       if (/^adunit-/i.test(interstitialId)) this.createGoldInterstitialAd(interstitialId);
       if (/^adunit-/i.test(rewardedId)) this.createGoldRewardedAd(rewardedId);
+      this.loadData();
     });
-    this.loadData();
   },
 
   loadData(options = {}) {

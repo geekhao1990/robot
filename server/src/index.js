@@ -10,6 +10,7 @@ const audit = require('./audit');
 const goldFingerSync = require('./gold-finger-sync');
 const darkFundRankingSync = require('./dark-fund-ranking-sync');
 const webWechatLogin = require('./web-wechat-login');
+const { reviewModeEnabled } = require('./util');
 
 const router = createRouter();
 require('./routes/public')(router, HttpError);
@@ -107,6 +108,16 @@ const server = http.createServer((req, res) => {
     };
     const auditAction = { method: req.method, path: pathname };
     Promise.resolve()
+      .then(() => {
+        const protectedFeature = pathname === '/api/dark-funds'
+          || pathname.startsWith('/api/dark-funds/')
+          || pathname === '/api/gold-finger'
+          || pathname.startsWith('/api/gold-finger/')
+          || pathname.startsWith('/api/gold/');
+        if (protectedFeature && reviewModeEnabled(db.get())) {
+          throw new HttpError(403, '功能暂未开放');
+        }
+      })
       .then(() => m.handler(ctx))
       .then(async (result) => {
         if (pathname.startsWith('/api/admin/') && pathname !== '/api/admin/login' && req.method !== 'GET') {

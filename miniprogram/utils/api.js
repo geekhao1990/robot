@@ -160,6 +160,7 @@ function baseAppSettings() {
   return {
     rewardedAdEnabled: config.rewardedAdEnabled === true,
     goldFingerEntryEnabled: true,
+    reviewModeEnabled: false,
     rewardedVideoAdUnitId: String(config.rewardedVideoAdUnitId || ''),
     goldRewardedVideoAdUnitId: String(config.goldRewardedVideoAdUnitId || ''),
     articleAdUnitId: String(config.darkArticleAdUnitId || ''),
@@ -180,6 +181,7 @@ function baseAppSettings() {
 function normalizeAppSettings(settings, fallback = baseAppSettings()) {
   return {
     rewardedAdEnabled: settings && typeof settings.rewardedAdEnabled === 'boolean' ? settings.rewardedAdEnabled : fallback.rewardedAdEnabled,
+    reviewModeEnabled: settings && settings.reviewModeEnabled === true,
     goldFingerEntryEnabled: settings && typeof settings.goldFingerEntryEnabled === 'boolean'
       ? settings.goldFingerEntryEnabled
       : fallback.goldFingerEntryEnabled,

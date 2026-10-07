@@ -7,6 +7,10 @@ function goldAccess(user) {
   return !!(user && (Number(user.goldExpire) > Date.now() || serviceActiveAt(user)));
 }
 
+function reviewModeEnabled(data) {
+  return !!(data && data.settings && data.settings.reviewModeEnabled === true);
+}
+
 // 对外输出的用户对象（隐藏登录标识及已停用的旧会员字段）
 function pubUser(user) {
   if (!user) return user;
@@ -51,7 +55,8 @@ function pubNote(note) {
 function pubSettings(data) {
   const notes = (data && data.notes) || [];
   const raw = (data && data.settings) || {};
-  const goldFingerEntryEnabled = raw.goldFingerEntryEnabled !== false;
+  const reviewMode = reviewModeEnabled(data);
+  const goldFingerEntryEnabled = !reviewMode && raw.goldFingerEntryEnabled !== false;
   const featured = goldFingerEntryEnabled
     ? notes.find((n) => n.id === raw.featuredNoteId && n.type === 'gold' && n.visible !== false)
       || notes.find((n) => n.type === 'gold' && n.visible !== false)
@@ -61,6 +66,7 @@ function pubSettings(data) {
     return /^adunit-[a-zA-Z0-9_-]+$/.test(id) && !/x{4,}/i.test(id) ? id : '';
   };
   return {
+    reviewModeEnabled: reviewMode,
     rewardedAdEnabled: raw.rewardedAdEnabled === true,
     goldFingerEntryEnabled,
     rewardedVideoAdUnitId: publicAdUnitId(raw.rewardedVideoAdUnitId),
@@ -80,4 +86,4 @@ function pubSettings(data) {
   };
 }
 
-module.exports = { goldAccess, pubUser, pubNote, pubSettings };
+module.exports = { goldAccess, pubUser, pubNote, pubSettings, reviewModeEnabled };

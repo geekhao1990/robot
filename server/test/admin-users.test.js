@@ -128,6 +128,7 @@ test('admin can maintain close data source without exposing or clearing its pass
   data.settings = { featuredNoteId: 'gold-entry' };
   const payload = {
     rewardedAdEnabled: true,
+    reviewModeEnabled: true,
     goldFingerEntryEnabled: false,
     featuredNoteId: 'gold-entry',
     hotSearch: [],
@@ -141,7 +142,9 @@ test('admin can maintain close data source without exposing or clearing its pass
   assert.equal(data.settings.darkFundCloseUsername, 'test15');
   assert.equal(data.settings.darkFundClosePassword, 'test-password');
   assert.equal(data.settings.goldFingerEntryEnabled, false);
+  assert.equal(data.settings.reviewModeEnabled, true);
   assert.equal(saved.goldFingerEntryEnabled, false);
+  assert.equal(saved.reviewModeEnabled, true);
   assert.equal(saved.darkFundClosePasswordConfigured, true);
   assert.equal(Object.prototype.hasOwnProperty.call(saved, 'darkFundClosePassword'), false);
 

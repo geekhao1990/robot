@@ -2,7 +2,7 @@ const api = require('../utils/api');
 const { openGoldEntry } = require('../utils/gold-entry');
 
 function makeList(settings = {}) {
-  const middle = settings.goldFingerEntryEnabled !== false ? {
+  const middle = settings.reviewModeEnabled !== true && settings.goldFingerEntryEnabled !== false ? {
     action: 'quickEntry',
     text: '功能入口',
     plus: true,

@@ -44,12 +44,14 @@ function setup() {
     '../auth': { userIdFor: (token) => /^Bearer u[1234]$/.test(token || '') ? token.slice(7) : '' },
     '../util': {
       goldAccess,
+      reviewModeEnabled: (d) => d.settings.reviewModeEnabled === true,
       pubUser: (x) => x,
       pubNote: (x) => x,
       pubSettings: (d) => ({
         rewardedAdEnabled: d.settings.rewardedAdEnabled,
-        goldFingerEntryEnabled: d.settings.goldFingerEntryEnabled !== false,
-        featuredNoteId: d.settings.goldFingerEntryEnabled === false ? '' : (d.notes.find((note) => note.id === d.settings.featuredNoteId && note.type === 'gold' && note.visible !== false)
+        reviewModeEnabled: d.settings.reviewModeEnabled === true,
+        goldFingerEntryEnabled: d.settings.reviewModeEnabled !== true && d.settings.goldFingerEntryEnabled !== false,
+        featuredNoteId: d.settings.reviewModeEnabled === true || d.settings.goldFingerEntryEnabled === false ? '' : (d.notes.find((note) => note.id === d.settings.featuredNoteId && note.type === 'gold' && note.visible !== false)
           || d.notes.find((note) => note.type === 'gold' && note.visible !== false)
           || {}).id || '',
       }),
@@ -125,6 +127,16 @@ test('gold notes and entry stay visible while feature access remains entitlement
   assert.equal((await call('/api/feed', {}, 'Bearer u2')).list.some((note) => note.id === 'g1'), false);
   await assert.rejects(call('/api/notes/g1', {}, 'Bearer u2'), { status: 404 });
   data.settings.goldFingerEntryEnabled = true;
+
+  data.settings.reviewModeEnabled = true;
+  const reviewSettings = await call('/api/settings', {}, 'Bearer u1');
+  assert.equal(reviewSettings.reviewModeEnabled, true);
+  assert.equal(reviewSettings.goldFingerEntryEnabled, false);
+  assert.equal(reviewSettings.featuredNoteId, '');
+  assert.equal((await call('/api/feed', {}, 'Bearer u1')).list.some((note) => note.id === 'g1'), false);
+  await assert.rejects(call('/api/notes/g1', {}, 'Bearer u1'), { status: 404 });
+  await assert.rejects(call('/api/gold-finger/latest', {}, 'Bearer u1'), { status: 403 });
+  data.settings.reviewModeEnabled = false;
 
   data.notes.find((note) => note.id === 'g1').visible = false;
   assert.equal((await call('/api/settings', {}, 'Bearer u1')).featuredNoteId, '');

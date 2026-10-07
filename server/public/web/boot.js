@@ -1,4 +1,5 @@
 restoreSession()
+  .then(() => loadPublicSettings())
   .then(() => {
     if (!location.hash) history.replaceState({ route: 'home' }, '', '#home');
     renderLocation();

@@ -529,6 +529,10 @@ function ensureSettings() {
     db.settings.goldFingerEntryEnabled = true;
     changed = true;
   }
+  if (typeof db.settings.reviewModeEnabled !== 'boolean') {
+    db.settings.reviewModeEnabled = false;
+    changed = true;
+  }
   const configured = notes.find((n) => n.id === db.settings.featuredNoteId);
   const goldNote = configured && configured.type === 'gold'
     ? configured

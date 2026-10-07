@@ -3,7 +3,7 @@ const db = require('../db');
 const auth = require('../auth');
 const wechatPay = require('../wechat-pay');
 const { addManualDarkFundQuota, refreshDarkFundQuota } = require('../membership');
-const { pubUser } = require('../util');
+const { pubUser, reviewModeEnabled } = require('../util');
 const { pushNotification } = require('../notifications');
 
 const DAY_MS = 24 * 3600 * 1000;
@@ -98,6 +98,7 @@ function publicOrder(order, user) {
 
 module.exports = function register(router, HttpError) {
   const currentUser = (ctx) => {
+    if (reviewModeEnabled(db.get())) throw new HttpError(403, '功能暂未开放');
     const uid = auth.userIdFor(ctx.headers.authorization);
     if (!uid) throw new HttpError(401, '未登录');
     const user = (db.get().users || []).find((item) => item.id === uid);

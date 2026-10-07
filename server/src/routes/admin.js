@@ -112,6 +112,13 @@ module.exports = function register(router, HttpError) {
     const d = db.get();
     const b = ctx.body || {};
     const oldSettings = d.settings || {};
+    const reviewModeSupplied = Object.prototype.hasOwnProperty.call(b, 'reviewModeEnabled');
+    if (reviewModeSupplied && typeof b.reviewModeEnabled !== 'boolean') {
+      throw new HttpError(400, '过审模式开关必须为布尔值');
+    }
+    const reviewModeEnabled = reviewModeSupplied
+      ? b.reviewModeEnabled
+      : oldSettings.reviewModeEnabled === true;
     const goldEntryEnabledSupplied = Object.prototype.hasOwnProperty.call(b, 'goldFingerEntryEnabled');
     if (goldEntryEnabledSupplied && typeof b.goldFingerEntryEnabled !== 'boolean') {
       throw new HttpError(400, '底部红色加号开关必须为布尔值');
@@ -176,6 +183,7 @@ module.exports = function register(router, HttpError) {
     d.settings = {
       rewardedAdEnabled: !!(adUnits.rewardedVideoAdUnitId || adUnits.goldRewardedVideoAdUnitId),
       goldFingerEntryEnabled,
+      reviewModeEnabled,
       ...adUnits,
       featuredNoteId: b.featuredNoteId,
       darkFundCloseApiUrl,

@@ -1323,6 +1323,11 @@ function renderSettings() {
         <button id="darkFundRankingButton" class="btn-primary" style="margin-top:14px" onclick="generateDarkFundRanking()" ${rankingSync.running ? 'disabled' : ''}>${rankingSync.running ? '正在更新…' : '立即更新今日暗盘榜'}</button>
       </div>
       <div class="card" style="max-width:640px">
+        <div class="field" style="padding:14px;border:1px solid #ffb3b3;background:#fff7f7;border-radius:8px">
+          <label>过审模式</label>
+          <div class="switch-cell"><label class="switch" title="开启过审模式"><input id="settingReviewModeEnabled" type="checkbox" ${settings.reviewModeEnabled === true ? 'checked' : ''} /><span class="switch-slider"></span></label><span>${settings.reviewModeEnabled === true ? '已开启' : '已关闭'}</span></div>
+          <div class="hint">开启后立即对所有用户隐藏金手指笔记、底部红色按钮和“我”页面的暗盘资金入口；金手指与暗盘接口同时禁用，已有权限用户也无法通过旧页面或直链进入。</div>
+        </div>
         <div class="field">
           <label>盘后暗盘数据源网址</label>
           <input id="settingDarkFundCloseApiUrl" value="${esc(settings.darkFundCloseApiUrl || '')}" placeholder="https://fundflow.shiluan.space" autocomplete="url" />
@@ -1498,6 +1503,7 @@ function pollDarkFundRanking() {
 
 function saveSettings() {
   const body = {
+    reviewModeEnabled: document.getElementById('settingReviewModeEnabled').checked,
     goldFingerEntryEnabled: document.getElementById('settingGoldEntryEnabled').checked,
     featuredNoteId: document.getElementById('settingFeatured').value,
     rewardedAdEnabled: true,

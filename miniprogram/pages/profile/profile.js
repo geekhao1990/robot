@@ -33,6 +33,7 @@ Page({
     profileScrollTop: 0,
     messageUnread: 0,
     goldEntryNoteId: '',
+    reviewModeEnabled: false,
     profileBottomAdUnitId: /^adunit-/i.test(String(config.profileBottomAdUnitId || '')) ? String(config.profileBottomAdUnitId) : '',
     profileBottomAdLoadFailed: false,
   },
@@ -43,6 +44,7 @@ Page({
       const id = String((settings && settings.profileAdUnitId) || config.profileAdUnitId || '');
       const bottomId = String((settings && settings.profileBottomAdUnitId) || config.profileBottomAdUnitId || '');
       this.setData({
+        reviewModeEnabled: settings && settings.reviewModeEnabled === true,
         goldEntryNoteId: String((settings && settings.featuredNoteId) || '').trim(),
         profileBottomAdUnitId: /^adunit-/i.test(bottomId) ? bottomId : '',
         profileBottomAdLoadFailed: false,
@@ -63,7 +65,10 @@ Page({
   },
   loadGoldEntrySettings() {
     return api.getAppSettings().then((settings) => {
-      this.setData({ goldEntryNoteId: String((settings && settings.featuredNoteId) || '').trim() });
+      this.setData({
+        reviewModeEnabled: settings && settings.reviewModeEnabled === true,
+        goldEntryNoteId: String((settings && settings.featuredNoteId) || '').trim(),
+      });
     }).catch(() => {});
   },
   createProfileInterstitialAd(adUnitId) {

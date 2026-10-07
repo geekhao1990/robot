@@ -136,7 +136,17 @@ Page({
     const requestedTab = String(options && options.tab || '');
     const tab = ['ranking', 'history'].includes(requestedTab) ? requestedTab : 'query';
     this.setData({ tab, isOfficial: user && user.official === true, darkFundEnabled: user && user.darkFundEnabled === true });
-    api.getAppSettings().then((settings) => {
+    this._reviewModePromise = api.getAppSettings().then((settings) => {
+      if (settings && settings.reviewModeEnabled === true) {
+        this._reviewBlocked = true;
+        wx.showModal({
+          title: '提示',
+          content: '功能暂未开放',
+          showCancel: false,
+          success: () => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) }),
+        });
+        return true;
+      }
       const id = String((settings && settings.darkFundsQueryAdUnitId) || config.darkFundsQueryAdUnitId || '');
       const historyId = String((settings && settings.darkFundsHistoryAdUnitId) || config.darkFundsHistoryAdUnitId || '');
       this.setData({
@@ -145,12 +155,17 @@ Page({
         queryAdLoadFailed: false,
         historyAdLoadFailed: false,
       });
+      if (tab === 'ranking') this.loadRanking();
+      return false;
     });
-    if (tab === 'ranking') this.loadRanking();
   },
   onShow() {
     if (!store.isLogin()) return;
-    store.syncMe().then((user) => {
+    return (this._reviewModePromise || api.getAppSettings().then((settings) => settings && settings.reviewModeEnabled === true)).then((blocked) => {
+      if (blocked || this._reviewBlocked) return null;
+      return store.syncMe();
+    }).then((user) => {
+      if (!user) return null;
       this.setData({
         isOfficial: user && user.official === true,
         darkFundEnabled: user && user.darkFundEnabled === true,

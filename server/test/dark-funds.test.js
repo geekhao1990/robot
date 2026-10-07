@@ -103,6 +103,18 @@ test('Beijing exchange code is rejected without creating an order or consuming q
   assert.equal(data.users[0].darkFundRemaining, 2);
 });
 
+test('review mode blocks every user from dark fund pages regardless of entitlement', async () => {
+  const { data, call } = setup();
+  data.settings = { reviewModeEnabled: true };
+  await assert.rejects(call('GET', '/api/dark-funds/trade-date'), { status: 403, message: '功能暂未开放' });
+  await assert.rejects(
+    call('POST', '/api/dark-funds/orders/close', { stockCode: '600105', request_id: 'df_review_mode_001' }),
+    { status: 403, message: '功能暂未开放' },
+  );
+  assert.equal(data.darkFundOrders.length, 0);
+  assert.equal(data.users[0].darkFundRemaining, 2);
+});
+
 test('dark fund order history uses fixed pages of 10 while preserving the legacy list response', async () => {
   const { data, call } = setup();
   for (let index = 1; index <= 23; index += 1) {
@@ -147,6 +159,7 @@ test('online membership payment routes are removed', () => {
       '../notifications': require('../src/notifications'),
       '../stock-lookup': require('../src/stock-lookup'),
       '../dark-fund-ranking': require('../src/dark-fund-ranking'),
+      '../util': { reviewModeEnabled: () => false },
     }[id] || require(id)),
     process,
   });
