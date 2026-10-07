@@ -184,7 +184,7 @@ async function executeWebSearch(keyword = state.searchKeyword) {
 }
 
 function profileContactHtml() {
-  return `<section class="profile-service-actions"><button type="button" class="profile-service-button" data-action="enterprise-contact"><span class="profile-service-icon">企</span><span><strong>咨询人工</strong><small>售前咨询及售后服务</small></span></button><button type="button" class="profile-service-button" data-action="wechat-payment-code"><span class="profile-service-icon payment">收</span><span><strong>老客扫码复购</strong><small>微信二维码</small></span></button></section>`;
+  return `<section class="profile-service-actions"><button type="button" class="profile-service-button" data-action="enterprise-contact"><span class="profile-service-icon">企</span><span><strong>加企微免费查暗盘</strong><small>添加企业微信，免费查询暗盘</small></span></button></section>`;
 }
 
 function closeEnterpriseWechatModal() {
@@ -196,7 +196,7 @@ function showEnterpriseWechatModal() {
   closeEnterpriseWechatModal();
   const host = document.createElement('div');
   host.id = 'enterpriseWechatModalHost';
-  host.innerHTML = `<div class="wechat-modal-mask"><section class="wechat-sheet"><div class="wechat-sheet-handle"></div><h2>咨询人工</h2><p>长按或扫码添加企业微信，进行售前咨询及售后服务</p><img src="/web/assets/enterprise-wechat.jpg" alt="咨询人工二维码"><button type="button" class="wechat-sheet-close">关闭</button></section></div>`;
+  host.innerHTML = `<div class="wechat-modal-mask"><section class="wechat-sheet"><div class="wechat-sheet-handle"></div><h2>加企微免费查暗盘</h2><p>长按或扫码添加企业微信，免费查询暗盘</p><img src="/web/assets/enterprise-wechat.jpg" alt="企业微信二维码"><button type="button" class="wechat-sheet-close">关闭</button></section></div>`;
   document.body.appendChild(host);
   const mask = host.querySelector('.wechat-modal-mask');
   const close = host.querySelector('.wechat-sheet-close');
@@ -206,19 +206,6 @@ function showEnterpriseWechatModal() {
   close.addEventListener('click', closeEnterpriseWechatModal);
 }
 window.showEnterpriseWechatModal = showEnterpriseWechatModal;
-
-function showWechatPaymentCodeModal() {
-  closeEnterpriseWechatModal();
-  const host = document.createElement('div');
-  host.id = 'enterpriseWechatModalHost';
-  host.innerHTML = `<div class="wechat-modal-mask"><section class="wechat-sheet"><div class="wechat-sheet-handle"></div><h2>老客扫码复购</h2><p>长按保存或使用微信扫描二维码</p><img src="/web/assets/wechat-payment.jpg" alt="微信二维码"><button type="button" class="wechat-sheet-close">关闭</button></section></div>`;
-  document.body.appendChild(host);
-  const mask = host.querySelector('.wechat-modal-mask');
-  mask.addEventListener('click', (event) => {
-    if (event.target === mask) closeEnterpriseWechatModal();
-  });
-  host.querySelector('.wechat-sheet-close').addEventListener('click', closeEnterpriseWechatModal);
-}
 
 const renderProfileBase = renderProfile;
 renderProfile = async function renderInteractiveProfile() {
@@ -834,11 +821,6 @@ document.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopImmediatePropagation();
     return showEnterpriseWechatModal();
-  }
-  if (action === 'wechat-payment-code') {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    return showWechatPaymentCodeModal();
   }
   if (action === 'messages') {
     event.preventDefault();

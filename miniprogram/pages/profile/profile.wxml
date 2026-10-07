@@ -87,11 +87,7 @@
   <view wx:if="{{serviceQrAccess}}" class="service-actions">
     <view class="service-button" bindtap="openEnterpriseWechat">
       <view class="service-icon">企</view>
-      <view class="service-copy"><view class="service-title">咨询人工</view><view class="service-description">售前咨询及售后服务</view></view>
-    </view>
-    <view class="service-button" bindtap="openWechatPayment">
-      <view class="service-icon payment">收</view>
-      <view class="service-copy"><view class="service-title">老客扫码复购</view><view class="service-description">微信二维码</view></view>
+      <view class="service-copy"><view class="service-title">加企微免费查暗盘</view><view class="service-description">添加企业微信，免费查询暗盘</view></view>
     </view>
   </view>
   <block wx:if="{{loggedIn}}">

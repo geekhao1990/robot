@@ -153,18 +153,9 @@ Page({
     if (!this.data.serviceQrAccess) return;
     this.setData({
       serviceQrVisible: true,
-      serviceQrTitle: '咨询人工',
-      serviceQrDescription: '长按或扫码添加企业微信，进行售前咨询及售后服务',
+      serviceQrTitle: '加企微免费查暗盘',
+      serviceQrDescription: '长按或扫码添加企业微信，免费查询暗盘',
       serviceQrImage: '/images/enterprise-wechat.jpg',
-    });
-  },
-  openWechatPayment() {
-    if (!this.data.serviceQrAccess) return;
-    this.setData({
-      serviceQrVisible: true,
-      serviceQrTitle: '老客扫码复购',
-      serviceQrDescription: '长按保存或使用微信扫描二维码',
-      serviceQrImage: '/images/wechat-payment.jpg',
     });
   },
   closeServiceQr() { this.setData({ serviceQrVisible: false }); },
