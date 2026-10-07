@@ -143,8 +143,23 @@ async function generateRanking({ data, payload, tradeDate, fetchClose, concurren
   let successCount = 0;
   let failureCount = 0;
   let cacheHitCount = 0;
+  let lastError = '';
   const processed = await mapConcurrent(candidates, concurrency, async (candidate) => {
     let outcome;
+    if (typeof onProgress === 'function') {
+      await onProgress({
+        phase: 'querying',
+        processedCount,
+        candidateCount: candidates.length,
+        successCount,
+        failureCount,
+        cacheHitCount,
+        currentStockCode: candidate.stockCode,
+        currentStockName: candidate.stockName,
+        lastError,
+        updatedAt: Date.now(),
+      });
+    }
     try {
       let result = cachedCloseResult(data, candidate.stockCode, tradeDate);
       const cacheHit = Boolean(result);
@@ -165,15 +180,20 @@ async function generateRanking({ data, payload, tradeDate, fetchClose, concurren
       if (outcome.item.cacheHit) cacheHitCount += 1;
     } else {
       failureCount += 1;
+      lastError = outcome.error;
     }
     if (typeof onProgress === 'function') {
       await onProgress({
+        phase: 'completed',
         processedCount,
         candidateCount: candidates.length,
         successCount,
         failureCount,
         cacheHitCount,
-        lastError: outcome.ok ? '' : outcome.error,
+        currentStockCode: candidate.stockCode,
+        currentStockName: candidate.stockName,
+        lastError,
+        updatedAt: Date.now(),
       });
     }
     return outcome;

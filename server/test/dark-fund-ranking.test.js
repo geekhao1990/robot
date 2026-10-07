@@ -117,9 +117,11 @@ test('daily ranking reports durable per-stock progress during a serial batch', a
     onProgress: async (value) => progress.push({ ...value }),
   });
   assert.equal(ranking.successCount, 2);
-  assert.equal(progress.length, 2);
-  assert.equal(progress[0].processedCount, 1);
-  assert.equal(progress[1].processedCount, 2);
-  assert.equal(progress[1].successCount, 2);
-  assert.equal(progress[1].candidateCount, 2);
+  assert.equal(progress.length, 4);
+  assert.equal(progress[0].phase, 'querying');
+  assert.equal(progress[0].currentStockCode, '600105');
+  assert.equal(progress[1].processedCount, 1);
+  assert.equal(progress[3].processedCount, 2);
+  assert.equal(progress[3].successCount, 2);
+  assert.equal(progress[3].candidateCount, 2);
 });
