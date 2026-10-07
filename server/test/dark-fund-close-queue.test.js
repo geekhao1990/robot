@@ -18,8 +18,8 @@ test('user close query jumps ahead of waiting ranking jobs', async () => {
       : id === './db' ? { get: () => ({}), save: () => {} }
       : id === './analytics' ? { record: () => {}, classifyFailure: () => '接口异常' }
       : require(id),
-    process: { env: { DARK_FUND_CLOSE_CONCURRENCY: '1' } },
-    Promise, Map, Number, String, queueMicrotask,
+    process: { env: { DARK_FUND_CLOSE_CONCURRENCY: '1', DARK_FUND_CLOSE_REQUEST_GAP_MS: '1' } },
+    Promise, Map, Number, String, Date, queueMicrotask, setTimeout, clearTimeout,
   });
   const first = mod.exports.requestCloseDarkFund('600001', { priority: 'batch' });
   const second = mod.exports.requestCloseDarkFund('600002', { priority: 'batch' });
@@ -51,8 +51,8 @@ test('same-stock user request reuses and promotes a queued ranking job', async (
       : id === './db' ? { get: () => ({}), save: () => {} }
       : id === './analytics' ? { record: () => {}, classifyFailure: () => '接口异常' }
       : require(id),
-    process: { env: { DARK_FUND_CLOSE_CONCURRENCY: '1' } },
-    Promise, Map, Number, String, queueMicrotask,
+    process: { env: { DARK_FUND_CLOSE_CONCURRENCY: '1', DARK_FUND_CLOSE_REQUEST_GAP_MS: '1' } },
+    Promise, Map, Number, String, Date, queueMicrotask, setTimeout, clearTimeout,
   });
   const blocker = mod.exports.requestCloseDarkFund('600001', { priority: 'batch' });
   const batch = mod.exports.requestCloseDarkFund('600105', { priority: 'batch' });

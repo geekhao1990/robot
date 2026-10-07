@@ -307,9 +307,9 @@ async function searchCloseStock(stockCode) {
     lastCount = Array.isArray(items) ? items.length : 0;
     const found = exactSearchStock(items, stockCode);
     if (found) return found;
-    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
   }
-  throw Object.assign(new Error(`盘后数据源搜索不到${stockCode}（最后返回${lastCount}项）`), { status: 404 });
+  throw Object.assign(new Error(`盘后数据源连续3次搜索不到${stockCode}（最后返回${lastCount}项，可能未收录或触发频率限制）`), { status: 404 });
 }
 
 async function waitCloseTask(taskId) {

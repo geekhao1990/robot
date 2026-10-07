@@ -8,15 +8,29 @@ const CHECK_INTERVAL_MS = 60 * 1000;
 const RETRY_INTERVAL_MS = 5 * 60 * 1000;
 let timer = null;
 let running = false;
+let lastBatchFinishedAt = 0;
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function batchRequestGapMs() {
+  return Math.max(1000, Number(process.env.DARK_FUND_RANKING_REQUEST_GAP_MS) || 3000);
+}
+
+async function waitForBatchWindow() {
+  const remaining = lastBatchFinishedAt + batchRequestGapMs() - Date.now();
+  if (remaining > 0) await wait(remaining);
 }
 
 async function fetchBatchClose(stockCode) {
   const maxAttempts = 3;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
+      // Batch jobs deliberately leave a cooldown between completed upstream tasks.
+      // No batch job occupies the shared queue during this wait, so user orders can
+      // enter immediately and still retain priority.
+      await waitForBatchWindow();
       return await requestCloseDarkFund(stockCode, { priority: 'batch' });
     } catch (error) {
       const message = String(error && error.message || '');
@@ -24,6 +38,8 @@ async function fetchBatchClose(stockCode) {
         || /稍后|繁忙|频繁|已有.*任务|任务.*进行|冲突|too many|busy|in progress/i.test(message);
       if (!transient || attempt === maxAttempts) throw error;
       await wait(attempt * 1500);
+    } finally {
+      lastBatchFinishedAt = Date.now();
     }
   }
   throw new Error('盘后批量查询失败');
@@ -163,6 +179,7 @@ module.exports = {
   getStatus,
   manualSync,
   parseSchedule,
+  batchRequestGapMs,
   scheduleMinutes,
   start,
   stop,

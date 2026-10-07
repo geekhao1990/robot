@@ -9,6 +9,12 @@ const userQueue = [];
 const batchQueue = [];
 const pendingByStock = new Map();
 let active = 0;
+let lastStartedAt = 0;
+let pumpTimer = null;
+
+function requestGapMs() {
+  return Math.max(0, Number(process.env.DARK_FUND_CLOSE_REQUEST_GAP_MS) || 1500);
+}
 
 function removeJob(queue, job) {
   const index = queue.indexOf(job);
@@ -24,9 +30,21 @@ function promote(job) {
 
 function pump() {
   while (active < MAX_ACTIVE) {
+    if (!userQueue.length && !batchQueue.length) return;
+    const remaining = lastStartedAt + requestGapMs() - Date.now();
+    if (remaining > 0) {
+      if (!pumpTimer) {
+        pumpTimer = setTimeout(() => {
+          pumpTimer = null;
+          pump();
+        }, remaining);
+      }
+      return;
+    }
     const job = userQueue.shift() || batchQueue.shift();
     if (!job) return;
     active += 1;
+    lastStartedAt = Date.now();
     job.started = true;
     const startedAt = Date.now();
     Promise.resolve()
@@ -87,4 +105,4 @@ function getQueueStatus() {
   };
 }
 
-module.exports = { MAX_ACTIVE, getQueueStatus, requestCloseDarkFund };
+module.exports = { MAX_ACTIVE, getQueueStatus, requestCloseDarkFund, requestGapMs };
