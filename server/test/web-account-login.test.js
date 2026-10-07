@@ -111,3 +111,19 @@ test('reaction batch writes final states idempotently instead of toggling twice'
   assert.equal(data.notes[0].likes, 10);
   assert.equal(data.notes[0].collects, 5);
 });
+
+test('share friends are built from real following and follower relationships', async () => {
+  const { data, call } = setup();
+  data.users.push(
+    { id: 'mutual', name: '互关用户' },
+    { id: 'following', name: '我关注的用户' },
+    { id: 'follower', name: '关注我的用户' },
+  );
+  data.userState.wx_example123 = { likes: {}, collects: {}, follows: { mutual: 3, following: 2 } };
+  data.userState.mutual = { follows: { wx_example123: 4 } };
+  data.userState.follower = { follows: { wx_example123: 1 } };
+
+  const friends = await call('GET', '/api/me/friends', {}, 'mini-token');
+  assert.deepEqual(Array.from(friends, (item) => item.id), ['mutual', 'following', 'follower']);
+  assert.deepEqual(Array.from(friends, (item) => item.relationship), ['mutual', 'following', 'follower']);
+});

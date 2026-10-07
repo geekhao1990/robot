@@ -498,8 +498,8 @@ function getFans() {
 }
 
 function getFriends() {
-  // 演示数据：以 mock 用户作为可分享的好友
-  return delay(data.users.slice());
+  if (remote()) return request('GET', '/api/me/friends', { auth: true });
+  return delay([]);
 }
 
 module.exports = {

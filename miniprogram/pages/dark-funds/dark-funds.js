@@ -71,60 +71,6 @@ function darkFundFailure(error, mode = 'close') {
   return { title: '查询失败', content: message || '接口异常，请稍后再试', short: '查询失败' };
 }
 
-function rankingPreviewEnabled() {
-  // 当前阶段统一启用：真实榜单为空或接口不可用时，用 Mock 调试完整交互。
-  // 正式上线真实榜单前应删除该兜底和 mockUpdatedRanking。
-  return true;
-}
-
-function mockUpdatedRanking() {
-  const decorateMock = (items, changes, listedRatios) => items.map((item, index) => {
-    const listed = item.grey * listedRatios[index];
-    const main = item.grey + listed;
-    return {
-      ...item,
-      queryMode: 'close',
-      querySource: 'web',
-      changePercent: changes[index],
-      listed,
-      main,
-      retail: -main,
-    };
-  });
-  const inflow = [
-    { stockCode: '600159', stockName: '大龙地产', stockInitials: 'DLDC', stockDisplayName: '大龙DC', grey: 128600000 },
-    { stockCode: '002242', stockName: '九阳股份', stockInitials: 'JYGF', stockDisplayName: '九阳GF', grey: 93600000 },
-    { stockCode: '000678', stockName: '襄阳轴承', stockInitials: 'XYZC', stockDisplayName: '襄阳ZC', grey: 71800000 },
-    { stockCode: '002487', stockName: '大金重工', stockInitials: 'DJZG', stockDisplayName: '大金ZG', grey: 48600000 },
-    { stockCode: '601127', stockName: '赛力斯', stockInitials: 'SLS', stockDisplayName: '赛力S', grey: 32900000 },
-    { stockCode: '600036', stockName: '招商银行', stockInitials: 'ZSYH', stockDisplayName: '招商YH', grey: 28600000 },
-    { stockCode: '000858', stockName: '五粮液', stockInitials: 'WLY', stockDisplayName: '五粮Y', grey: 24400000 },
-    { stockCode: '601318', stockName: '中国平安', stockInitials: 'ZGPA', stockDisplayName: '中国PA', grey: 19800000 },
-    { stockCode: '300750', stockName: '宁德时代', stockInitials: 'NDSD', stockDisplayName: '宁德SD', grey: 15300000 },
-    { stockCode: '002594', stockName: '比亚迪', stockInitials: 'BYD', stockDisplayName: '比亚D', grey: 11200000 },
-  ];
-  const outflow = [
-    { stockCode: '600105', stockName: '永鼎股份', stockInitials: 'YDGF', stockDisplayName: '永鼎GF', grey: -70262426.83 },
-    { stockCode: '300142', stockName: '沃森生物', stockInitials: 'WSSW', stockDisplayName: '沃森SW', grey: -55600000 },
-    { stockCode: '000001', stockName: '平安银行', stockInitials: 'PAYH', stockDisplayName: '平安YH', grey: -43800000 },
-    { stockCode: '600519', stockName: '贵州茅台', stockInitials: 'GZMT', stockDisplayName: '贵州MT', grey: -29500000 },
-    { stockCode: '000333', stockName: '美的集团', stockInitials: 'MDJT', stockDisplayName: '美的JT', grey: -18100000 },
-    { stockCode: '601398', stockName: '工商银行', stockInitials: 'GSYH', stockDisplayName: '工商YH', grey: -15600000 },
-    { stockCode: '600030', stockName: '中信证券', stockInitials: 'ZXZQ', stockDisplayName: '中信ZQ', grey: -13200000 },
-    { stockCode: '000651', stockName: '格力电器', stockInitials: 'GLDQ', stockDisplayName: '格力DQ', grey: -10700000 },
-    { stockCode: '600276', stockName: '恒瑞医药', stockInitials: 'HRYY', stockDisplayName: '恒瑞YY', grey: -8400000 },
-    { stockCode: '300059', stockName: '东方财富', stockInitials: 'DFCF', stockDisplayName: '东方CF', grey: -6200000 },
-  ];
-  return {
-    previewMock: true,
-    tradeDate: '2026-09-30',
-    title: '9月30日热股暗盘榜',
-    updateHint: '每个交易日16点更新',
-    inflow: decorateMock(inflow, [6.82, 5.47, 4.96, 4.38, 3.91, 3.42, 2.87, 2.36, 1.94, 1.52], [.72, .58, .83, .46, .64, .39, .77, .52, .68, .44]),
-    outflow: decorateMock(outflow, [-6.31, -5.76, -5.22, -4.73, -4.16, -3.68, -3.21, -2.75, -2.24, -1.83], [.78, .55, .69, .42, .81, .48, .63, .37, .74, .51]),
-  };
-}
-
 Page({
   data: {
     tab: 'query',
@@ -219,29 +165,8 @@ Page({
     if (this._rankingRequesting) return Promise.resolve();
     this._rankingRequesting = true;
     this.setData({ rankingLoading: true });
-    const showPreview = () => {
-      const displayed = mockUpdatedRanking();
-      const decorate = (item, side) => this.decorateRankingItem(item, side);
-      const ranking = {
-        ...displayed,
-        inflow: displayed.inflow.map((item) => decorate(item, 'inflow')),
-        outflow: displayed.outflow.map((item) => decorate(item, 'outflow')),
-      };
-      this.setData({
-        rankingEmpty: false,
-        ranking,
-        rankingItems: ranking[this.data.rankingDirectionTab] || [],
-      });
-    };
-    if (rankingPreviewEnabled()) {
-      showPreview();
-      this._rankingRequesting = false;
-      this.setData({ rankingLoading: false });
-      return Promise.resolve();
-    }
     return api.getDarkFundRanking()
       .then((result) => {
-        if ((!result || result.empty) && rankingPreviewEnabled()) return showPreview();
         const displayed = result;
         if (!displayed || displayed.empty) return this.setData({ rankingEmpty: true, ranking: { inflow: [], outflow: [] } });
         const decorate = (item, side) => this.decorateRankingItem(item, side);
@@ -257,7 +182,6 @@ Page({
         });
       })
       .catch(() => {
-        if (rankingPreviewEnabled()) return showPreview();
         this.setData({ rankingEmpty: true, ranking: { inflow: [], outflow: [] } });
       })
       .finally(() => {
@@ -308,21 +232,11 @@ Page({
   openRankingResult(e) {
     const stockCode = String(e.currentTarget.dataset.code || '');
     if (!/^\d{6}$/.test(stockCode)) return;
-    if (this.data.ranking.previewMock) {
-      const stockName = encodeURIComponent(String(e.currentTarget.dataset.name || '永鼎股份'));
-      const stockInitials = encodeURIComponent(String(e.currentTarget.dataset.initials || 'YDGF'));
-      return wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?mock=1&stockCode=${stockCode}&stockName=${stockName}&stockInitials=${stockInitials}` });
-    }
     wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?ranking=${stockCode}` });
   },
   shareRankingResult(e) {
     const stockCode = String(e.currentTarget.dataset.code || '');
     if (!/^\d{6}$/.test(stockCode)) return;
-    if (this.data.ranking.previewMock) {
-      const stockName = encodeURIComponent(String(e.currentTarget.dataset.name || '永鼎股份'));
-      const stockInitials = encodeURIComponent(String(e.currentTarget.dataset.initials || 'YDGF'));
-      return wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?mock=1&poster=qr&stockCode=${stockCode}&stockName=${stockName}&stockInitials=${stockInitials}` });
-    }
     wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?ranking=${stockCode}&poster=qr` });
   },
   loadTradeDate() {

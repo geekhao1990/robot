@@ -3,51 +3,20 @@ const db = require('../db');
 const auth = require('../auth');
 const { paginatedNotificationsFor, unreadCount, markRead } = require('../notifications');
 
-// 新用户首次访问时的示例消息模板
-function notifTemplate() {
-  return [
-    { id: 'm1', type: 'like', userId: 'u3', noteId: 'n1', text: '赞了你的笔记', time: 0.2 },
-    { id: 'm2', type: 'collect', userId: 'u4', noteId: 'n1', text: '收藏了你的笔记', time: 0.5 },
-    { id: 'm3', type: 'comment', userId: 'u2', noteId: 'n5', text: '评论了你的笔记：太实用了，已收藏！', time: 1 },
-    { id: 'm4', type: 'follow', userId: 'u5', text: '关注了你', time: 2 },
-    { id: 'm5', type: 'like', userId: 'u6', noteId: 'n5', text: '赞了你的笔记', time: 3 },
-    { id: 'm6', type: 'like', userId: 'u2', noteId: 'n1', text: '赞了你的笔记', time: 5 },
-    { id: 'm7', type: 'collect', userId: 'u1', noteId: 'n5', text: '收藏了你的笔记', time: 8 },
-    { id: 'm8', type: 'follow', userId: 'u6', text: '关注了你', time: 26 },
-    { id: 'm9', type: 'comment', userId: 'u4', noteId: 'n1', text: '评论了你的笔记：请问机位在哪呀～', time: 30 },
-  ];
+function legacyMockMessageData(value) {
+  const notificationIds = (value && value.notifications || []).map((item) => item.id).sort().join(',');
+  const conversationIds = (value && value.conversations || []).map((item) => item.id).sort().join(',');
+  return notificationIds === 'm1,m2,m3,m4,m5,m6,m7,m8,m9' && conversationIds === 'c1,c2,c3';
 }
-// 会话内消息按时间正序（旧→新）存储
-function convTemplate() {
-  return [
-    { id: 'c1', userId: 'u2', unread: 2, read: false, time: 0.1, messages: [
-      { fromMe: false, text: '在吗？看到你那篇笔记啦', time: 1 },
-      { fromMe: true, text: '在的～有什么问题嘛', time: 0.8 },
-      { fromMe: false, text: '请问那个用的是哪个牌子呀', time: 0.3 },
-      { fromMe: false, text: '想自己也试试 😋', time: 0.1 },
-    ] },
-    { id: 'c2', userId: 'u3', unread: 0, read: true, time: 2, messages: [
-      { fromMe: false, text: '你的分享真好看！求链接～', time: 5 },
-      { fromMe: true, text: '已经私你啦，记得查收', time: 2 },
-    ] },
-    { id: 'c3', userId: 'u5', unread: 1, read: false, time: 24, messages: [
-      { fromMe: false, text: '那期内容能分享下吗', time: 26 },
-      { fromMe: true, text: '可以呀，我整理下发你', time: 25 },
-      { fromMe: false, text: '太感谢啦 🥰', time: 24 },
-    ] },
-  ];
-}
-
-const REPLIES = ['好的呀～', '收到！', '哈哈哈哈', '谢谢你！', '我看看哈', '可以的👌'];
 
 function getMsg(userId) {
   const d = db.get();
   if (!d.messageData) d.messageData = {};
-  if (!d.messageData[userId]) {
+  if (!d.messageData[userId] || legacyMockMessageData(d.messageData[userId])) {
     d.messageData[userId] = {
-      notifications: notifTemplate(),
+      notifications: [],
       notifyRead: { like: false, comment: false, follow: false },
-      conversations: convTemplate(),
+      conversations: [],
     };
     db.save();
   }
@@ -162,7 +131,7 @@ module.exports = function register(router, HttpError) {
     return summary(m);
   });
 
-  // 发送私信：保存我的消息 + 生成一条对方自动回复，返回新增消息（正序）
+  // 发送私信：只保存用户真实发送的消息，不生成自动回复。
   router.post('/api/conversations/:id/messages', (ctx) => {
     const m = getMsg(current(ctx));
     const c = m.conversations.find((x) => x.id === ctx.params.id);
@@ -170,10 +139,9 @@ module.exports = function register(router, HttpError) {
     const text = ((ctx.body || {}).text || '').trim();
     if (!text) throw new HttpError(400, '内容为空');
     const mine = { fromMe: true, text, time: 0 };
-    const reply = { fromMe: false, text: REPLIES[Math.floor(Math.random() * REPLIES.length)], time: 0 };
-    c.messages.push(mine, reply);
+    c.messages.push(mine);
     c.read = true; c.unread = 0;
     db.save();
-    return { added: [mine, reply] };
+    return { added: [mine] };
   });
 };

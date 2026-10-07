@@ -647,6 +647,21 @@ module.exports = function register(router, HttpError) {
     return fanIds.map((id) => pubUser(d.users.find((x) => x.id === id))).filter(Boolean);
   });
 
+  // 分享好友来自真实关注/粉丝关系，互相关注的用户排在最前面。
+  router.get('/api/me/friends', (ctx) => {
+    const user = currentUser(ctx);
+    const data = db.get();
+    const states = data.userState || {};
+    const following = new Set(Object.keys(getState(user.id).follows));
+    const followers = new Set(Object.keys(states).filter((id) => states[id] && states[id].follows && states[id].follows[user.id]));
+    return Array.from(new Set([...following, ...followers])).map((id) => {
+      const target = data.users.find((item) => item.id === id);
+      if (!target) return null;
+      const relationship = following.has(id) && followers.has(id) ? 'mutual' : (following.has(id) ? 'following' : 'follower');
+      return { ...pubUser(target), relationship };
+    }).filter(Boolean).sort((a, b) => Number(b.relationship === 'mutual') - Number(a.relationship === 'mutual'));
+  });
+
   // 我赞过 / 收藏的笔记
   router.get('/api/me/likes', (ctx) => {
     const u = currentUser(ctx);
