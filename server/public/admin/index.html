@@ -783,7 +783,9 @@ function editUser(id) {
   const u = id ? _users.find((x) => x.id === id) : {};
   openModal(`${id ? '编辑' : '新增'}用户`, `
     <div class="field"><label>昵称</label><input id="u_name" value="${esc(u.name)}" /></div>
-    ${id ? `<div class="field"><label>手机号</label><input value="${esc(u.phone || '未绑定')}" disabled /><div class="hint">手机号只能由用户在小程序内通过微信授权绑定</div></div>` : ''}
+    <div class="field"><label>手机号</label><input id="u_phone" inputmode="numeric" maxlength="11" value="${esc(u.phone || '')}" ${id ? 'disabled' : ''} placeholder="请输入11位手机号" /></div>
+    <div class="field"><label>${id ? '重置临时密码（选填）' : '临时密码'}</label><input id="u_temp_password" type="password" minlength="12" maxlength="64" autocomplete="new-password" placeholder="12到64位，首次登录后必须修改" /></div>
+    <div class="hint">${id ? '如填写临时密码，用户下次使用手机号登录 Web 时必须先修改密码。' : '新账号使用手机号和临时密码登录 Web，首次登录必须修改密码。'}</div>
     <div class="field"><label>简介</label><input id="u_desc" value="${esc(u.desc)}" /></div>
     <div class="field"><label>账号类型</label><select id="u_official">
       <option value="false" ${u.official ? '' : 'selected'}>普通用户（不可发布笔记）</option>
@@ -796,6 +798,10 @@ function editUser(id) {
       desc: document.getElementById('u_desc').value,
       official: document.getElementById('u_official').value === 'true',
     };
+    const temporaryPassword = document.getElementById('u_temp_password').value;
+    if (!id) body.phone = document.getElementById('u_phone').value;
+    if (temporaryPassword) body.temporaryPassword = temporaryPassword;
+    if (!id && !temporaryPassword) return showAdminToast('请设置12到64位临时密码', 'error');
     const req = id ? api('/api/admin/users/' + id, { method: 'PUT', body: JSON.stringify(body) })
                    : api('/api/admin/users', { method: 'POST', body: JSON.stringify(body) });
     req.then(() => { closeModal(); renderUsers(); });

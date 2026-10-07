@@ -9,6 +9,9 @@ const webWechatLogin = require('../web-wechat-login');
 const { canViewNote } = require('../note-access');
 const { setPassword, verifyPassword } = require('../user-password');
 
+const webPasswordChanges = new Map();
+const FIRST_WEB_PASSWORD_MIN_LENGTH = 12;
+
 function getState(userId) {
   const d = db.get();
   if (!d.userState) d.userState = {};
@@ -322,15 +325,46 @@ module.exports = function register(router, HttpError) {
 
   router.get('/api/web/wechat/status', () => ({ enabled: webWechatLogin.configured() }));
 
-  // Web 前台使用小程序个人资料中设置的用户 ID + 密码登录同一账号。
+  // Web 前台优先使用手机号登录；保留用户 ID 兼容既有账号。
   router.post('/api/web/login', (ctx) => {
     const data = db.get();
     const body = ctx.body || {};
-    const userId = String(body.userId || '').trim();
+    const account = String(body.phone || body.userId || '').trim();
+    const phone = account.replace(/\D/g, '');
     const password = String(body.password || '');
-    const user = data.users.find((item) => item.id === userId);
-    if (!user || !verifyPassword(user, password)) throw new HttpError(401, '用户ID或密码错误');
+    const user = data.users.find((item) => item.id === account || (/^1\d{10}$/.test(phone) && String(item.phone || '').replace(/\D/g, '') === phone));
+    if (!user || !verifyPassword(user, password)) throw new HttpError(401, '手机号或密码错误');
+    if (user.mustChangeWebPassword === true) {
+      const changeToken = crypto.randomBytes(32).toString('hex');
+      webPasswordChanges.set(changeToken, { userId: user.id, expiresAt: Date.now() + 15 * 60 * 1000 });
+      return { mustChangePassword: true, changeToken, expiresIn: 900, user: pubUser(user, true) };
+    }
     return { token: auth.issue(user.id), user: pubUser(user, true) };
+  });
+
+  router.post('/api/web/password/first-change', (ctx) => {
+    const body = ctx.body || {};
+    const changeToken = String(body.changeToken || '').trim();
+    const record = webPasswordChanges.get(changeToken);
+    if (!record || record.expiresAt <= Date.now()) {
+      webPasswordChanges.delete(changeToken);
+      throw new HttpError(401, '改密凭证已失效，请重新登录');
+    }
+    const password = String(body.password || '');
+    const confirmPassword = String(body.confirmPassword || '');
+    if (password !== confirmPassword) throw new HttpError(400, '两次输入的新密码不一致');
+    if (password.length < FIRST_WEB_PASSWORD_MIN_LENGTH || password.length > 64) {
+      throw new HttpError(400, `新密码必须为${FIRST_WEB_PASSWORD_MIN_LENGTH}到64位`);
+    }
+    const user = db.get().users.find((item) => item.id === record.userId);
+    if (!user) throw new HttpError(404, '用户不存在');
+    if (verifyPassword(user, password)) throw new HttpError(400, '新密码不能与临时密码相同');
+    try { setPassword(user, password); } catch (error) { throw new HttpError(400, error.message); }
+    user.mustChangeWebPassword = false;
+    user.firstWebPasswordChangedAt = Date.now();
+    webPasswordChanges.delete(changeToken);
+    db.save();
+    return { token: auth.issue(user.id), mustChangePassword: false, user: pubUser(user, true) };
   });
 
   // 当前用户 + 交互状态

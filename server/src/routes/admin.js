@@ -12,6 +12,7 @@ const { URL } = require('url');
 const { latestRanking, publicRanking } = require('../dark-fund-ranking');
 const darkFundRankingSync = require('../dark-fund-ranking-sync');
 const { buildMonitoringStats } = require('../monitoring-stats');
+const { setPassword } = require('../user-password');
 
 module.exports = function register(router, HttpError) {
   const baseCategories = Object.values(TYPE_LABELS);
@@ -578,6 +579,10 @@ module.exports = function register(router, HttpError) {
   });
 
   // ---------- 用户 ----------
+  const adminUserView = (user) => {
+    const { webPasswordHash, webPasswordSalt, ...safe } = user;
+    return { ...safe, webPasswordSet: Boolean(webPasswordHash && webPasswordSalt) };
+  };
   router.get('/api/admin/users', (ctx) => {
     requireAuth(ctx);
     const d = db.get();
@@ -588,7 +593,7 @@ module.exports = function register(router, HttpError) {
       const aNew = Array.isArray(a.tags) && a.tags.includes('new') ? 1 : 0;
       const bNew = Array.isArray(b.tags) && b.tags.includes('new') ? 1 : 0;
       return bNew - aNew || (b.createdAt || 0) - (a.createdAt || 0);
-    });
+    }).map(adminUserView);
   });
 
   router.get('/api/admin/notifications/summary', (ctx) => {
@@ -610,11 +615,17 @@ module.exports = function register(router, HttpError) {
     requireAuth(ctx);
     const d = db.get();
     const b = ctx.body || {};
+    const phone = String(b.phone || '').replace(/\D/g, '');
+    const temporaryPassword = String(b.temporaryPassword || '');
+    if (!/^1\d{10}$/.test(phone)) throw new HttpError(400, '请输入正确的手机号');
+    if (d.users.some((item) => String(item.phone || '').replace(/\D/g, '') === phone)) throw new HttpError(409, '该手机号已绑定其他用户');
+    if (temporaryPassword.length < 12 || temporaryPassword.length > 64) throw new HttpError(400, '临时密码必须为12到64位');
     const user = {
       id: 'u' + Date.now(),
       name: b.name || '新用户',
       avatar: b.avatar || 'https://app.nankaitechschool.com/assets/avatars/author-1.jpg',
-      phone: /^1\d{10}$/.test(String(b.phone || '').replace(/\D/g, '')) ? String(b.phone).replace(/\D/g, '') : '',
+      phone,
+      phoneBoundAt: Date.now(),
       desc: b.desc || '',
       remark: String(b.remark || '').trim().slice(0, 200),
       fans: b.fans || 0,
@@ -628,15 +639,17 @@ module.exports = function register(router, HttpError) {
       official: b.official === true,
       darkFundEnabled: false,
       decisionPioneerEnabled: false,
+      mustChangeWebPassword: true,
       darkFundRemaining: 0,
       darkFundManualRemaining: 0,
       darkFundServiceRemaining: 0,
       createdAt: Date.now(),
       tags: b.official === true ? [] : ['new'],
     };
+    setPassword(user, temporaryPassword);
     d.users.push(user);
     db.save();
-    return user;
+    return adminUserView(user);
   });
 
   router.put('/api/admin/users/:id', (ctx) => {
@@ -645,6 +658,13 @@ module.exports = function register(router, HttpError) {
     const i = d.users.findIndex((u) => u.id === ctx.params.id);
     if (i < 0) throw new HttpError(404, 'not found');
     const update = { ...(ctx.body || {}) };
+    const temporaryPassword = Object.prototype.hasOwnProperty.call(update, 'temporaryPassword')
+      ? String(update.temporaryPassword || '') : '';
+    delete update.temporaryPassword;
+    delete update.webPasswordHash;
+    delete update.webPasswordSalt;
+    delete update.webPasswordUpdatedAt;
+    delete update.mustChangeWebPassword;
     if (Object.prototype.hasOwnProperty.call(update, 'remark')) {
       update.remark = String(update.remark || '').trim();
       if (update.remark.length > 200) throw new HttpError(400, '备注最多200个字符');
@@ -662,6 +682,11 @@ module.exports = function register(router, HttpError) {
       throw new HttpError(400, '该账号仍是笔记作者，请先更换对应笔记作者');
     }
     d.users[i] = { ...d.users[i], ...update };
+    if (temporaryPassword) {
+      if (temporaryPassword.length < 12 || temporaryPassword.length > 64) throw new HttpError(400, '临时密码必须为12到64位');
+      setPassword(d.users[i], temporaryPassword);
+      d.users[i].mustChangeWebPassword = true;
+    }
     if (Object.prototype.hasOwnProperty.call(update, 'name') || Object.prototype.hasOwnProperty.call(update, 'avatar')) {
       d.notes.filter((note) => note.authorId === ctx.params.id).forEach((note) => {
         note.author = {
@@ -673,7 +698,7 @@ module.exports = function register(router, HttpError) {
       });
     }
     db.save();
-    return d.users[i];
+    return adminUserView(d.users[i]);
   });
 
   router.delete('/api/admin/users/:id', (ctx) => {

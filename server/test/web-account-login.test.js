@@ -66,6 +66,33 @@ test('password confirmation and minimum length are enforced', async () => {
   }, 'mini-token'), { status: 400 });
 });
 
+test('Web phone login forces an administrator-created account to change its temporary password', async () => {
+  const { data, call } = setup();
+  const { setPassword, verifyPassword } = require('../src/user-password');
+  const user = data.users[0];
+  user.phone = '13800138000';
+  user.mustChangeWebPassword = true;
+  setPassword(user, 'temporary-pass-123');
+
+  const firstLogin = await call('POST', '/api/web/login', { phone: '13800138000', password: 'temporary-pass-123' });
+  assert.equal(firstLogin.mustChangePassword, true);
+  assert.equal(typeof firstLogin.changeToken, 'string');
+  assert.equal('token' in firstLogin, false);
+
+  const changed = await call('POST', '/api/web/password/first-change', {
+    changeToken: firstLogin.changeToken,
+    password: 'permanent-pass-456',
+    confirmPassword: 'permanent-pass-456',
+  });
+  assert.equal(changed.token, 'token:wx_example123');
+  assert.equal(user.mustChangeWebPassword, false);
+  assert.equal(verifyPassword(user, 'permanent-pass-456'), true);
+
+  const secondLogin = await call('POST', '/api/web/login', { phone: '13800138000', password: 'permanent-pass-456' });
+  assert.equal(secondLogin.token, 'token:wx_example123');
+  assert.equal(secondLogin.mustChangePassword, undefined);
+});
+
 test('reaction batch writes final states idempotently instead of toggling twice', async () => {
   const { data, call } = setup();
   const body = { items: [{ noteId: 'n1', liked: true, collected: true, updatedAt: 1000 }] };

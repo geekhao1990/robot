@@ -427,10 +427,31 @@ async function refreshDarkOrders(mode) {
 const renderDarkBase = renderDark;
 renderDark = async function renderEventDrivenDark(mode = 'query') {
   stopDarkPolling();
-  const syntheticQuota = state.user && state.user.darkFundCloseMonthlyActive && Number(state.user.darkFundRemaining) <= 0;
-  if (syntheticQuota) state.user.darkFundRemaining = 1;
-  await renderDarkBase(mode);
-  if (syntheticQuota && state.user) state.user.darkFundRemaining = 0;
+  // Web 中查询入口始终可见；具体通道权限仍由提交接口校验。
+  const refreshMeBase = refreshMe;
+  let originalDarkFundEnabled;
+  let originalDarkFundRemaining;
+  let syntheticAccess = false;
+  refreshMe = async function refreshMeWithVisibleDarkEntries() {
+    const user = await refreshMeBase();
+    originalDarkFundEnabled = user.darkFundEnabled;
+    originalDarkFundRemaining = user.darkFundRemaining;
+    syntheticAccess = !user.darkFundEnabled || Number(user.darkFundRemaining) <= 0;
+    if (syntheticAccess) {
+      user.darkFundEnabled = true;
+      user.darkFundRemaining = 1;
+    }
+    return user;
+  };
+  try {
+    await renderDarkBase(mode);
+  } finally {
+    refreshMe = refreshMeBase;
+    if (syntheticAccess && state.user) {
+      state.user.darkFundEnabled = originalDarkFundEnabled;
+      state.user.darkFundRemaining = originalDarkFundRemaining;
+    }
+  }
   if (!state.user || !document.querySelector('.dark-page')) return;
   if (mode === 'query') {
     const input = document.querySelector('#stockCode');
@@ -507,7 +528,7 @@ renderDark = async function renderDarkQueryModes(mode = 'query') {
     state.darkTradeDate = String(tradeDate.textContent || '').replace(/^查询日期[：:]\s*/, '').trim();
     tradeDate.remove();
   }
-  actions.innerHTML = `<button class="primary" data-dark-query-submit="intraday">暗盘【盘中】查询</button><button class="close-query" data-dark-query-submit="close">暗盘【盘后】查询</button>`;
+  actions.innerHTML = `<button class="primary" data-dark-query-submit="intraday">决策拼单</button><button class="close-query" data-dark-query-submit="close">盘后查询</button>`;
   actions.insertAdjacentHTML('afterend', profileServiceActionsHtml().replace('profile-service-actions', 'profile-service-actions dark-service-actions'));
 };
 

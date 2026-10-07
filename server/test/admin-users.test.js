@@ -28,6 +28,7 @@ function setup() {
     '../dark-fund-ranking-sync': { getStatus: () => ({ enabled: true, running: false, schedule: '15:30', state: null }), manualSync: async () => ({ tradeDate: '2026-09-30' }) },
     '../trading-date': require('../src/trading-date'),
     '../monitoring-stats': require('../src/monitoring-stats'),
+    '../user-password': require('../src/user-password'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/admin.js'), 'utf8'), {
     module: mod,
@@ -64,6 +65,23 @@ test('admin dark-fund ranking uses direct automatic source without JSON input', 
   assert.equal(status.sync.schedule, '15:30');
   const generated = await call('POST', '/api/admin/dark-fund-ranking/generate');
   assert.equal(generated.tradeDate, '2026-09-30');
+});
+
+test('admin creates a phone Web account with a temporary password that must be changed', async () => {
+  const { data, call } = setup();
+  const created = await call('POST', '/api/admin/users', {
+    name: 'Web测试用户',
+    phone: '13900139000',
+    temporaryPassword: 'temporary-pass-123',
+  });
+  assert.equal(created.phone, '13900139000');
+  assert.equal(created.webPasswordSet, true);
+  assert.equal(created.mustChangeWebPassword, true);
+  assert.equal('webPasswordHash' in created, false);
+  assert.equal(data.users.at(-1).mustChangeWebPassword, true);
+  await assert.rejects(call('POST', '/api/admin/users', {
+    phone: '13900139000', temporaryPassword: 'another-pass-123',
+  }), { status: 409 });
 });
 
 test('admin can set a custom service package expiry date for legacy subscribers', async () => {
