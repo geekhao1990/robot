@@ -10,7 +10,7 @@ const audit = require('./audit');
 const goldFingerSync = require('./gold-finger-sync');
 const darkFundRankingSync = require('./dark-fund-ranking-sync');
 const webWechatLogin = require('./web-wechat-login');
-const { reviewModeEnabled } = require('./util');
+const { reviewModeApplies } = require('./util');
 
 const router = createRouter();
 require('./routes/public')(router, HttpError);
@@ -114,7 +114,7 @@ const server = http.createServer((req, res) => {
           || pathname === '/api/gold-finger'
           || pathname.startsWith('/api/gold-finger/')
           || pathname.startsWith('/api/gold/');
-        if (protectedFeature && reviewModeEnabled(db.get())) {
+        if (protectedFeature && reviewModeApplies(ctx, db.get())) {
           throw new HttpError(403, '功能暂未开放');
         }
       })

@@ -3,7 +3,7 @@ const db = require('../db');
 const auth = require('../auth');
 const wechatPay = require('../wechat-pay');
 const { addManualDarkFundQuota, refreshDarkFundQuota } = require('../membership');
-const { pubUser, reviewModeEnabled } = require('../util');
+const { pubUser, reviewModeApplies } = require('../util');
 const { pushNotification } = require('../notifications');
 const { PRODUCTS, paymentOrderView } = require('../payment-orders');
 
@@ -83,7 +83,7 @@ module.exports = function register(router, HttpError) {
     return user;
   };
   const currentUser = (ctx) => {
-    if (reviewModeEnabled(db.get())) throw new HttpError(403, '功能暂未开放');
+    if (reviewModeApplies(ctx, db.get())) throw new HttpError(403, '功能暂未开放');
     return authenticatedUser(ctx);
   };
 

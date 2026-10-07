@@ -11,6 +11,14 @@ function reviewModeEnabled(data) {
   return !!(data && data.settings && data.settings.reviewModeEnabled === true);
 }
 
+function webClient(ctx) {
+  return String(ctx && ctx.headers && ctx.headers['x-client-surface'] || '').trim().toLowerCase() === 'web';
+}
+
+function reviewModeApplies(ctx, data) {
+  return reviewModeEnabled(data) && !webClient(ctx);
+}
+
 // 对外输出的用户对象（隐藏登录标识及已停用的旧会员字段）
 function pubUser(user) {
   if (!user) return user;
@@ -86,4 +94,4 @@ function pubSettings(data) {
   };
 }
 
-module.exports = { goldAccess, pubUser, pubNote, pubSettings, reviewModeEnabled };
+module.exports = { goldAccess, pubUser, pubNote, pubSettings, reviewModeEnabled, reviewModeApplies, webClient };

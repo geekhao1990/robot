@@ -18,7 +18,7 @@ const { pushNotification } = require('../notifications');
 const { lookupStock } = require('../stock-lookup');
 const { latestRanking, publicRanking } = require('../dark-fund-ranking');
 const { requestCloseDarkFund, getQueueStatus = () => ({ userAhead: 0 }) } = require('../dark-fund-close-queue');
-const { reviewModeEnabled } = require('../util');
+const { reviewModeApplies } = require('../util');
 
 function darkFundQueueSnapshot(data) {
   const intradayAhead = (data.darkFundOrders || []).filter((order) => (
@@ -111,7 +111,7 @@ function orderQuotaResponse(order, quota, duplicate = false, user = null) {
 
 module.exports = function register(router, HttpError) {
   const currentUser = (ctx) => {
-    if (reviewModeEnabled(db.get())) throw new HttpError(403, '功能暂未开放');
+    if (reviewModeApplies(ctx, db.get())) throw new HttpError(403, '功能暂未开放');
     const uid = auth.userIdFor(ctx.headers.authorization);
     if (!uid) throw new HttpError(401, '未登录');
     const user = db.get().users.find((item) => item.id === uid);

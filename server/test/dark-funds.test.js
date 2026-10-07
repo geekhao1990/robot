@@ -103,7 +103,7 @@ test('Beijing exchange code is rejected without creating an order or consuming q
   assert.equal(data.users[0].darkFundRemaining, 2);
 });
 
-test('review mode blocks every user from dark fund pages regardless of entitlement', async () => {
+test('review mode blocks mini-program dark funds but leaves Web available', async () => {
   const { data, call } = setup();
   data.settings = { reviewModeEnabled: true };
   await assert.rejects(call('GET', '/api/dark-funds/trade-date'), { status: 403, message: '功能暂未开放' });
@@ -111,6 +111,9 @@ test('review mode blocks every user from dark fund pages regardless of entitleme
     call('POST', '/api/dark-funds/orders/close', { stockCode: '600105', request_id: 'df_review_mode_001' }),
     { status: 403, message: '功能暂未开放' },
   );
+  const webResult = await call('GET', '/api/dark-funds/trade-date', {}, 'Bearer u1', { 'x-client-surface': 'web' });
+  assert.equal(webResult.darkFundEnabled, true);
+  assert.equal(webResult.remaining, 2);
   assert.equal(data.darkFundOrders.length, 0);
   assert.equal(data.users[0].darkFundRemaining, 2);
 });

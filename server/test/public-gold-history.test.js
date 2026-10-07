@@ -40,11 +40,14 @@ function setup() {
   const goldAccess = (user) => !!(user && (Number(user.goldExpire) > Date.now() || Number(user.serviceExpire) > Date.now()));
   const mod = { exports: {} };
   const dependencyMap = {
-    '../db': { get: () => data },
+    '../db': { get: () => data, save: () => {} },
     '../auth': { userIdFor: (token) => /^Bearer u[1234]$/.test(token || '') ? token.slice(7) : '' },
     '../util': {
       goldAccess,
       reviewModeEnabled: (d) => d.settings.reviewModeEnabled === true,
+      webClient: (ctx) => String(ctx && ctx.headers && ctx.headers['x-client-surface'] || '').toLowerCase() === 'web',
+      reviewModeApplies: (ctx, d) => d.settings.reviewModeEnabled === true
+        && String(ctx && ctx.headers && ctx.headers['x-client-surface'] || '').toLowerCase() !== 'web',
       pubUser: (x) => x,
       pubNote: (x) => x,
       pubSettings: (d) => ({
@@ -74,12 +77,12 @@ function setup() {
   });
   const router = createRouter();
   mod.exports(router, HttpError);
-  const call = (pathname, query = {}, token = 'Bearer u1') => {
+  const call = (pathname, query = {}, token = 'Bearer u1', extraHeaders = {}) => {
     const route = router.match('GET', pathname);
     return Promise.resolve().then(() => route.handler({
       query,
       params: route.params,
-      headers: { authorization: token },
+      headers: { authorization: token, ...extraHeaders },
     }));
   };
   return { records, data, call };
@@ -136,6 +139,14 @@ test('gold notes and entry stay visible while feature access remains entitlement
   assert.equal((await call('/api/feed', {}, 'Bearer u1')).list.some((note) => note.id === 'g1'), false);
   await assert.rejects(call('/api/notes/g1', {}, 'Bearer u1'), { status: 404 });
   await assert.rejects(call('/api/gold-finger/latest', {}, 'Bearer u1'), { status: 403 });
+  const webHeaders = { 'x-client-surface': 'web' };
+  const webSettings = await call('/api/settings', {}, 'Bearer u1', webHeaders);
+  assert.equal(webSettings.reviewModeEnabled, false);
+  assert.equal(webSettings.goldFingerEntryEnabled, true);
+  assert.equal(webSettings.featuredNoteId, 'g1');
+  assert.equal((await call('/api/feed', {}, 'Bearer u1', webHeaders)).list.some((note) => note.id === 'g1'), true);
+  assert.equal((await call('/api/notes/g1', {}, 'Bearer u1', webHeaders)).id, 'g1');
+  assert.equal((await call('/api/gold-finger/latest', {}, 'Bearer u1', webHeaders)).record.finger, 'gold');
   data.settings.reviewModeEnabled = false;
 
   data.notes.find((note) => note.id === 'g1').visible = false;
