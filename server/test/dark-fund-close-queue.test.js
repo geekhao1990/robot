@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-async function waitUntil(predicate, timeoutMs = 500) {
+async function waitUntil(predicate, timeoutMs = 5000) {
   const deadline = Date.now() + timeoutMs;
   while (!predicate() && Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, 5));
@@ -129,5 +129,6 @@ test('next close job waits for the shared cooldown after completion', async () =
   assert(mod.exports.getQueueStatus().cooldownRemainingMs > 0);
   await user;
   assert.deepEqual(started.map((item) => item.stockCode), ['600001', '600002']);
-  assert(started[1].at - releasedAt >= 25);
+  assert.equal(mod.exports.requestGapMs(), 3000);
+  assert(started[1].at - releasedAt >= 3000);
 });

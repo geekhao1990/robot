@@ -309,7 +309,7 @@ async function searchCloseStock(stockCode, request = closeApiRequest) {
 }
 
 async function waitCloseTask(taskId) {
-  const pollMs = Math.max(300, Number(process.env.DARK_FUND_CLOSE_POLL_MS) || 800);
+  const pollMs = Math.max(3000, Number(process.env.DARK_FUND_CLOSE_POLL_MS) || 3000);
   const deadline = Date.now() + Math.max(5000, Number(process.env.DARK_FUND_CLOSE_TASK_TIMEOUT_MS) || 90000);
   while (Date.now() < deadline) {
     const task = await closeApiRequest(`/api/task/${encodeURIComponent(taskId)}`);

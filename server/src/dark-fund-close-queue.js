@@ -14,7 +14,7 @@ let lastFinishedAt = 0;
 let pumpTimer = null;
 
 function requestGapMs() {
-  return Math.max(0, Number(process.env.DARK_FUND_CLOSE_REQUEST_GAP_MS) || 3000);
+  return Math.max(3000, Number(process.env.DARK_FUND_CLOSE_REQUEST_GAP_MS) || 3000);
 }
 
 function nextStartAt() {
