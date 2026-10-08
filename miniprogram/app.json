@@ -6,6 +6,7 @@
     "pages/search/search",
     "pages/profile/profile",
     "pages/login/login",
+    "pages/legal/legal",
     "pages/dark-funds/dark-funds",
     "pages/dark-funds-result/dark-funds-result",
     "pages/message-center/message-center",

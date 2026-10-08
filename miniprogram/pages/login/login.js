@@ -4,6 +4,7 @@ const config = require('../../utils/config');
 Page({
   data: {
     loggingIn: false,
+    agreementAccepted: false,
     loginText: config.wechatAuthRemote ? '微信快捷登录' : '注册并进入预览',
     loginTip: config.wechatAuthRemote ? '使用微信账号快捷登录' : '连接本地后台并创建预览账号',
   },
@@ -12,8 +13,29 @@ Page({
     store.captureInvite(options);
   },
 
+  onAgreementChange(event) {
+    const values = (event && event.detail && event.detail.value) || [];
+    this.setData({ agreementAccepted: values.includes('agree') });
+  },
+
+  openUserAgreement() {
+    wx.navigateTo({ url: '/pages/legal/legal?type=terms' });
+  },
+
+  openPrivacyPolicy() {
+    const fallback = () => wx.navigateTo({ url: '/pages/legal/legal?type=privacy' });
+    if (typeof wx.openPrivacyContract !== 'function') return fallback();
+    wx.openPrivacyContract({
+      fail: fallback,
+    });
+  },
+
   onWechatLogin() {
     if (this.data.loggingIn) return;
+    if (!this.data.agreementAccepted) {
+      wx.showToast({ title: '请先阅读并勾选同意协议', icon: 'none' });
+      return;
+    }
     this.setData({ loggingIn: true, loginText: '登录中…' });
     wx.showLoading({ title: config.wechatAuthRemote ? '微信登录中' : '连接后台中' });
     if (!config.wechatAuthRemote) {

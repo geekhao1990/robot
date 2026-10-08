@@ -66,7 +66,26 @@
   bottom: 60rpx;
   left: 60rpx;
   right: 60rpx;
-  text-align: center;
-  font-size: 22rpx;
-  color: #bbb;
+  font-size: 24rpx;
+  color: #777;
+}
+.agreement-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 1.7;
+}
+.agreement-checkbox {
+  flex: 0 0 auto;
+  margin-top: 2rpx;
+  transform: scale(.78);
+  transform-origin: center;
+}
+.agreement-copy {
+  display: inline;
+  max-width: 560rpx;
+}
+.agreement-link {
+  color: #1677ff;
+  text-decoration: underline;
 }

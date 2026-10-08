@@ -1,0 +1,11 @@
+<scroll-view class="legal-page" scroll-y enhanced show-scrollbar="{{false}}">
+  <view class="legal-card">
+    <view class="legal-title">{{title}}</view>
+    <view class="legal-date">更新日期：2026年10月8日</view>
+    <view class="legal-intro">{{intro}}</view>
+    <view wx:for="{{sections}}" wx:key="title" class="legal-section">
+      <view class="legal-section-title">{{index + 1}}. {{item.title}}</view>
+      <view class="legal-section-content">{{item.content}}</view>
+    </view>
+  </view>
+</scroll-view>

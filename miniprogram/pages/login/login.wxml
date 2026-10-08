@@ -12,6 +12,14 @@
   </button>
 
   <view class="agreement">
-    登录即代表同意《用户协议》和《隐私政策》
+    <checkbox-group class="agreement-row" bindchange="onAgreementChange">
+      <checkbox class="agreement-checkbox" value="agree" checked="{{agreementAccepted}}" color="#07c160" />
+      <view class="agreement-copy">
+        我已阅读并同意
+        <text class="agreement-link" catchtap="openUserAgreement">《用户服务协议》</text>
+        和
+        <text class="agreement-link" catchtap="openPrivacyPolicy">《隐私政策》</text>
+      </view>
+    </checkbox-group>
   </view>
 </view>
