@@ -224,7 +224,7 @@ test('trade date exposes real queue counts and wait estimates', async () => {
   assert.equal(result.queue.intraday.ahead, 2);
   assert.equal(result.queue.intraday.estimatedWaitSeconds, 30);
   assert.equal(result.queue.close.ahead, 3);
-  assert.equal(result.queue.close.estimatedWaitSeconds, 9);
+  assert.equal(result.queue.close.estimatedWaitSeconds, 4.5);
 });
 
 test('active gold membership grants one successful close query per Beijing day without consuming normal quota', async () => {

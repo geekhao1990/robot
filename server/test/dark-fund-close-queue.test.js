@@ -100,7 +100,7 @@ test('failed close job immediately releases the queue for the next job', async (
   assert.deepEqual(started, ['600001', '600002']);
 });
 
-test('next close job waits for the shared cooldown after completion', async () => {
+test('user arriving during batch cooldown starts after 1.5 seconds and batch waits 3 seconds', async () => {
   const started = [];
   let releaseFirst;
   const fetchCloseDarkFund = (stockCode) => {
@@ -120,15 +120,21 @@ test('next close job waits for the shared cooldown after completion', async () =
   });
   const first = mod.exports.requestCloseDarkFund('600001', { priority: 'batch' });
   await waitUntil(() => typeof releaseFirst === 'function');
-  const user = mod.exports.requestCloseDarkFund('600002', { priority: 'user' });
+  const batch = mod.exports.requestCloseDarkFund('600003', { priority: 'batch' });
   const releasedAt = Date.now();
   releaseFirst({ stockCode: '600001' });
   await first;
   await new Promise((resolve) => setTimeout(resolve, 10));
+  const user = mod.exports.requestCloseDarkFund('600002', { priority: 'user' });
   assert.deepEqual(started.map((item) => item.stockCode), ['600001']);
   assert(mod.exports.getQueueStatus().cooldownRemainingMs > 0);
   await user;
   assert.deepEqual(started.map((item) => item.stockCode), ['600001', '600002']);
   assert.equal(mod.exports.requestGapMs(), 3000);
-  assert(started[1].at - releasedAt >= 3000);
+  assert.equal(mod.exports.requestGapMs('user'), 1500);
+  assert(started[1].at - releasedAt >= 1500);
+  assert(started[1].at - releasedAt < 2800);
+  await batch;
+  assert.equal(started[2].stockCode, '600003');
+  assert(started[2].at - started[1].at >= 3000);
 });

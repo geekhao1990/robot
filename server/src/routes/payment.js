@@ -46,7 +46,7 @@ function darkFundQueueSnapshot(data) {
   const closeAhead = Math.max(0, Number(closeStatus.userAhead) || 0);
   return {
     intraday: { ahead: intradayAhead, estimatedWaitSeconds: intradayAhead * 15 },
-    close: { ahead: closeAhead, estimatedWaitSeconds: closeAhead * Math.max(3000, Number(process.env.DARK_FUND_CLOSE_REQUEST_GAP_MS) || 3000) / 1000 },
+    close: { ahead: closeAhead, estimatedWaitSeconds: closeAhead * 1.5 },
   };
 }
 

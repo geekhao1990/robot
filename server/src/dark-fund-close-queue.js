@@ -13,12 +13,13 @@ let lastStartedAt = 0;
 let lastFinishedAt = 0;
 let pumpTimer = null;
 
-function requestGapMs() {
+function requestGapMs(priority = 'batch') {
+  if (priority === 'user') return 1500;
   return Math.max(3000, Number(process.env.DARK_FUND_CLOSE_REQUEST_GAP_MS) || 3000);
 }
 
-function nextStartAt() {
-  const gap = requestGapMs();
+function nextStartAt(priority) {
+  const gap = requestGapMs(priority);
   return Math.max(lastStartedAt + gap, lastFinishedAt + gap);
 }
 
@@ -35,11 +36,17 @@ function promote(job) {
 }
 
 function pump() {
+  // 客户在批处理冷却期间入队时，重新计算截止时间，避免沿用3秒定时器。
+  if (pumpTimer) {
+    clearTimeout(pumpTimer);
+    pumpTimer = null;
+  }
   while (active < MAX_ACTIVE) {
     if (!userQueue.length && !batchQueue.length) return;
     // 上游限频按“上一任务完成时间”计算。长任务结束后也必须冷却，
     // 不能因为开始时间已经过去很久就让下一单立即撞向接口。
-    const remaining = nextStartAt() - Date.now();
+    const nextJob = userQueue[0] || batchQueue[0];
+    const remaining = nextStartAt(nextJob.priority) - Date.now();
     if (remaining > 0) {
       if (!pumpTimer) {
         pumpTimer = setTimeout(() => {
@@ -88,7 +95,10 @@ function requestCloseDarkFund(stockCode, options = {}) {
   const priority = options.priority === 'batch' ? 'batch' : 'user';
   const existing = pendingByStock.get(key);
   if (existing) {
-    if (priority === 'user') promote(existing);
+    if (priority === 'user') {
+      promote(existing);
+      queueMicrotask(pump);
+    }
     return existing.promise;
   }
   const job = { stockCode: key, priority, started: false };
@@ -108,7 +118,7 @@ function getQueueStatus() {
     userWaiting: userQueue.length,
     batchWaiting: batchQueue.length,
     pendingStocks: pendingByStock.size,
-    cooldownRemainingMs: Math.max(0, nextStartAt() - Date.now()),
+    cooldownRemainingMs: Math.max(0, nextStartAt((userQueue[0] || batchQueue[0] || {}).priority) - Date.now()),
     // New user requests run ahead of waiting batch jobs, so only active work and
     // already-waiting user requests are actually in front of the next user.
     userAhead: active + userQueue.length,
