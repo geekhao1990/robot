@@ -1,7 +1,7 @@
 // server/src/util.js —— 公共辅助
 
 const { resourceList } = require('./resource-links');
-const { refreshDarkFundQuota, closeDarkFundActiveAt } = require('./membership');
+const { refreshDarkFundQuota, serviceActiveAt, closeDarkFundActiveAt } = require('./membership');
 
 function goldAccess(user) {
   return !!(user && Number(user.goldExpire) > Date.now());
