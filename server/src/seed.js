@@ -6,7 +6,7 @@ const avatar = (n) => `https://app.nankaitechschool.com/assets/avatars/author-${
 const { normalizeType, typeLabel } = require('./content-types');
 
 const YEAR = 365 * 24 * 3600 * 1000;
-const u = (o) => ({ goldExpire: 0, goldQuotaGiftMigrated: true, serviceExpire: 0, servicePlan: '', courseAccessPermanent: false, official: true, darkFundEnabled: false, decisionPioneerEnabled: false, darkFundRemaining: 0, darkFundManualRemaining: 0, darkFundServiceRemaining: 0, darkFundServiceMonth: '', createdAt: 0, tags: [], ...o });
+const u = (o) => ({ goldExpire: 0, goldDarkFundLastUsedDate: '', goldQuotaGiftMigrated: true, serviceExpire: 0, servicePlan: '', courseAccessPermanent: false, official: true, darkFundEnabled: false, decisionPioneerEnabled: false, darkFundRemaining: 0, darkFundManualRemaining: 0, darkFundServiceRemaining: 0, darkFundServiceMonth: '', createdAt: 0, tags: [], ...o });
 const users = [
   u({ id: 'u1', name: '旅行的猫', avatar: avatar(11), desc: '世界那么大，我想去看看 🌍', fans: 12800, follows: 231, likes: 98000 }),
   u({ id: 'u2', name: '美食研究所', avatar: avatar(12), desc: '一个爱做饭的程序员', fans: 45600, follows: 88, likes: 320000, goldExpire: Date.now() + YEAR }),

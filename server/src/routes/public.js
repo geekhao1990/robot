@@ -126,7 +126,7 @@ module.exports = function register(router, HttpError) {
     return pubNote(n);
   });
 
-  // 独立金手指功能：有效金手指卡或服务包用户可查看。
+  // 独立金手指功能：仅有效期内的金手指会员可查看。
   router.get('/api/gold-finger/latest', (ctx) => {
     const data = requireGoldAccess(ctx);
     analytics.record(data, {
@@ -180,6 +180,9 @@ module.exports = function register(router, HttpError) {
     const note = data.notes.find((n) => n.id === ctx.params.id && canViewNote(data, n, reader));
     if (!note) throw new HttpError(404, 'not found');
     if (note.type === 'gold') throw new HttpError(400, '金手指内容请进入会员专属页面查看');
+    if (note.type === 'course' && note.free !== true && !goldAccess(reader)) {
+      throw new HttpError(403, '该课程资料仅限有效期内的金手指会员领取');
+    }
     const resources = resourceList(note);
     if (!resources.length) throw new HttpError(404, '暂未配置获取地址');
     return { resources, url: resources[0].url };

@@ -59,7 +59,10 @@ Page({
       this.setData({ goldFingerAdUnitId: /^adunit-/i.test(id) ? id : '', adLoadFailed: false });
       if (/^adunit-/i.test(interstitialId)) this.createGoldInterstitialAd(interstitialId);
       if (/^adunit-/i.test(rewardedId)) this.createGoldRewardedAd(rewardedId);
-      this.loadData();
+      this.showGoldRewardedAd().then((allowed) => {
+        if (allowed !== false) this.loadData();
+        else wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) });
+      });
     });
   },
 
@@ -89,7 +92,7 @@ Page({
       const statusCode = error && error.statusCode;
       wx.showModal({
         title: statusCode === 403 ? '会员专享功能' : '加载失败',
-        content: statusCode === 403 ? '请前往「我—礼品卡」兑换金手指卡或服务包后使用。' : '数据暂时无法加载，请稍后重试。',
+        content: statusCode === 403 ? '请先开通有效期内的金手指会员。' : '数据暂时无法加载，请稍后重试。',
         showCancel: false,
         success: () => this.goBack(),
       });
@@ -113,7 +116,6 @@ Page({
       // 广告拉取失败不阻断业务刷新。
       if (done) done(true);
     });
-    this.showGoldInterstitialAd();
   },
 
   showGoldInterstitialAd() {
@@ -223,16 +225,7 @@ Page({
     const shouldRequestData = !this.data.nextRefreshAt || this.data.nextRefreshAt <= Date.now();
     this.setData({ refreshing: true });
     wx.showLoading({ title: '加载中', mask: true });
-    const loadUser = shouldRequestData
-      ? store.syncMe().catch(() => store.getUser())
-      : Promise.resolve(store.getUser());
-    loadUser
-      .then((user) => {
-        if (user && user.serviceActive === true) {
-          return this.showGoldInterstitialForRefresh();
-        }
-        return this.showGoldRewardedAd();
-      })
+    this.showGoldInterstitialForRefresh()
       .then((shouldRefresh) => {
         if (!shouldRefresh) {
           wx.hideLoading();

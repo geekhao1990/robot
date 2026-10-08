@@ -285,7 +285,10 @@ Page({
       return wx.navigateTo({ url: '/pages/dark-funds/dark-funds' });
     }
     if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
-    return this.handleGetResource(this.data.note && this.data.note.free === true);
+    if (this.data.note && this.data.note.type === 'course' && this.data.note.free !== true) {
+      return this.handlePaidCourseResource();
+    }
+    return this.handleGetResource(false);
   },
 
   finishGoldTabLoading() {
@@ -293,27 +296,11 @@ Page({
     this._goldTabEntryLoading = false;
   },
   hasGoldAccess(user) {
-    return !!(user && (user.goldAccess || Number(user.goldExpire) > Date.now() || this.hasServiceAccess(user)));
-  },
-  hasServiceAccess(user) {
-    return !!(user && (user.serviceActive || Number(user.serviceExpire) > Date.now()));
-  },
-  hasAnnualServiceAccess(user) {
-    return !!(this.hasServiceAccess(user) && user && user.servicePlan === 'service_year');
-  },
-  showGoldCardRequired() {
-    wx.showModal({
-      title: '需要金手指卡',
-      content: '请前往「我—礼品卡」兑换金手指卡或服务包后使用金手指功能。',
-      confirmText: '去兑换',
-      success: (result) => {
-        if (result.confirm) wx.switchTab({ url: '/pages/profile/profile' });
-      },
-    });
+    return !!(user && (user.goldAccess || Number(user.goldExpire) > Date.now()));
   },
   purchaseGoldAccess(onSuccess) {
     let orderId = '';
-    return confirmPurchase('金手指年卡（360天）', '¥9.90')
+    return confirmPurchase('金手指会员（360天）', '¥99.00')
       .then((confirmed) => {
         if (!confirmed) return null;
         wx.showLoading({ title: '创建订单', mask: true });
@@ -346,8 +333,6 @@ Page({
           });
         }
         if (result.user) store.setUser(result.user);
-        // 本次支付成功只赠送一次免激励广告进入机会；进入后立即消费，不影响后续广告规则。
-        this._skipGoldRewardedAdOnce = true;
         wx.showToast({ title: '金手指已开通', icon: 'success', duration: 1400 });
         return onSuccess();
       })
@@ -356,6 +341,27 @@ Page({
         const message = String((error && (error.errMsg || (error.data && error.data.error) || error.message)) || '请稍后再试');
         if (/cancel/i.test(message) || /取消/.test(message)) return;
         return wx.showModal({ title: '支付失败', content: message, showCancel: false });
+      })
+      .finally(() => this.releaseResourceClaim());
+  },
+  handlePaidCourseResource() {
+    if (this._resourceClaiming) return;
+    const note = this.data.note;
+    if (!note || !note.hasResource) return toast('管理员尚未配置获取地址');
+    this._resourceClaiming = true;
+    this.setData({ resourceClaiming: true });
+    wx.showLoading({ title: '验证权益', mask: true });
+    return store.syncMe()
+      .then((user) => {
+        wx.hideLoading();
+        if (this.hasGoldAccess(user)) return this.showResource();
+        return this.purchaseGoldAccess(() => this.showResource());
+      })
+      .catch((error) => {
+        wx.hideLoading();
+        this.releaseResourceClaim();
+        if (error && error.statusCode === 401) return this.requireLogin();
+        toast('权益验证失败，请稍后重试');
       })
       .finally(() => this.releaseResourceClaim());
   },
@@ -463,27 +469,10 @@ Page({
         wx.hideLoading();
         const open = () => wx.navigateTo({ url: '/pages/gold-finger/gold-finger' });
         if (!this.hasGoldAccess(user)) {
-          return this.purchaseGoldAccess(() => {
-            const skipRewardedAd = this._skipGoldRewardedAdOnce === true;
-            this._skipGoldRewardedAdOnce = false;
-            if (skipRewardedAd) {
-              this.releaseResourceClaim();
-              return open();
-            }
-            return this.showRewardedAd(() => {
-              this.releaseResourceClaim();
-              return open();
-            }, 'goldRewardedVideoAdUnitId');
-          });
+          return this.purchaseGoldAccess(() => open());
         }
-        if (this.hasAnnualServiceAccess(user)) {
-          this.releaseResourceClaim();
-          return open();
-        }
-        return this.showRewardedAd(() => {
-          this.releaseResourceClaim();
-          return open();
-        }, 'goldRewardedVideoAdUnitId');
+        this.releaseResourceClaim();
+        return open();
       })
       .catch((error) => {
         this.releaseResourceClaim();

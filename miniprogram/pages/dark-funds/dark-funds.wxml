@@ -53,6 +53,7 @@
       <view class="query-actions">
         <button wx:if="{{decisionPioneerEnabled}}" class="query-button query-button-live" bindtap="prepareIntradayQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}"><text class="query-button-title">决策查询</text><text class="query-button-queue">前方排队{{intradayQueueAhead}}人，预计等待{{intradayWaitText}}</text></button>
         <button wx:if="{{darkFundEnabled}}" class="query-button query-button-close" bindtap="prepareCloseQuery" loading="{{querying}}" disabled="{{dateLoading || querying}}"><text class="query-button-title">普通查询</text><text class="query-button-queue">前方排队{{closeQueueAhead}}人，预计等待{{closeWaitText}}</text></button>
+        <button class="query-button query-button-gold" bindtap="prepareGoldQuery" loading="{{querying}}" disabled="{{dateLoading || querying || (goldActive && !goldDarkFundAvailable)}}"><text class="query-button-title">金手指查暗盘</text><text class="query-button-queue">{{!goldActive ? '开通会员后每日可查1次' : (goldDarkFundAvailable ? '会员每日1次 · 今日可用' : '今日权益已使用')}}</text></button>
       </view>
       <view class="query-benefits-row">
         <view class="quota-summary">

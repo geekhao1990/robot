@@ -46,7 +46,7 @@ function activateOrder(data, order, transactionId) {
     ? {
       type: 'gold_opened',
       title: '金手指已开通',
-      content: '9.9元金手指年卡购买成功，有效期已增加360天。',
+      content: '99元金手指会员购买成功，有效期已增加360天。',
       targetType: 'gold',
       dedupeKey: `gold-payment:${order.id}`,
     }

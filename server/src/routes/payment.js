@@ -18,7 +18,24 @@ const { pushNotification } = require('../notifications');
 const { lookupStock } = require('../stock-lookup');
 const { latestRanking, publicRanking } = require('../dark-fund-ranking');
 const { requestCloseDarkFund, getQueueStatus = () => ({ userAhead: 0 }) } = require('../dark-fund-close-queue');
-const { reviewModeApplies } = require('../util');
+const { reviewModeApplies, goldAccess } = require('../util');
+
+const activeGoldDailyQueries = new Set();
+
+function beijingDateKey(now = Date.now()) {
+  return new Date(Number(now) + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+function goldDailyState(user, now = Date.now()) {
+  const dateKey = beijingDateKey(now);
+  const active = goldAccess(user);
+  return {
+    goldActive: active,
+    goldExpireAt: active ? Number(user.goldExpire) || 0 : 0,
+    goldDarkFundAvailable: active && String(user.goldDarkFundLastUsedDate || '') !== dateKey,
+    goldDarkFundLastUsedDate: String(user.goldDarkFundLastUsedDate || ''),
+  };
+}
 
 function darkFundQueueSnapshot(data) {
   const intradayAhead = (data.darkFundOrders || []).filter((order) => (
@@ -106,6 +123,7 @@ function orderQuotaResponse(order, quota, duplicate = false, user = null) {
     closeMonthlyActive: closeDarkFundActiveAt(user),
     closeMonthlyExpireAt: closeDarkFundActiveAt(user) ? Number(user.darkFundCloseExpire) : 0,
     decisionPioneerEnabled: user && user.decisionPioneerEnabled === true,
+    ...goldDailyState(user),
   };
 }
 
@@ -136,6 +154,7 @@ module.exports = function register(router, HttpError) {
       decisionPioneerEnabled: user.decisionPioneerEnabled === true,
       darkFundEnabled: user.darkFundEnabled === true,
       queue: darkFundQueueSnapshot(db.get()),
+      ...goldDailyState(user),
     };
   });
 
@@ -145,8 +164,9 @@ module.exports = function register(router, HttpError) {
     return publicRanking(latestRanking(db.get())) || { empty: true, inflow: [], outflow: [] };
   });
 
-  const createDarkFundOrder = async (ctx, forcedQueryMode = '') => {
+  const createDarkFundOrder = async (ctx, forcedQueryMode = '', benefitType = '') => {
     const user = currentUser(ctx);
+    const useGoldDaily = benefitType === 'gold_daily';
     const stockCode = String((ctx.body || {}).stockCode || '').trim();
     const queryMode = forcedQueryMode || String((ctx.body || {}).query_mode || 'intraday').trim().toLowerCase();
     // 查询通道只由用户点击的查询类型决定。普通查询绝不允许落到 Windows 采集器。
@@ -158,7 +178,10 @@ module.exports = function register(router, HttpError) {
     if (!['intraday', 'close'].includes(queryMode)) throw new HttpError(400, '查询类型无效');
     if (!['web', 'collector'].includes(querySource)) throw new HttpError(400, '查询来源无效');
     if (!/^[A-Za-z0-9_-]{12,80}$/.test(requestId)) throw new HttpError(400, '查询请求标识无效');
-    if (queryMode === 'close' && user.darkFundEnabled !== true) {
+    if (useGoldDaily && !goldAccess(user)) {
+      throw new HttpError(403, '金手指会员未开通或已过期');
+    }
+    if (queryMode === 'close' && !useGoldDaily && user.darkFundEnabled !== true) {
       throw new HttpError(403, '普通查询尚未开通');
     }
     if (queryMode === 'intraday' && user.decisionPioneerEnabled !== true) {
@@ -175,9 +198,21 @@ module.exports = function register(router, HttpError) {
       }
       return orderQuotaResponse(existing, refreshDarkFundQuota(user), true, user);
     }
-    const available = refreshDarkFundQuota(user);
-    const useCloseMonthly = queryMode === 'close' && closeDarkFundActiveAt(user);
-    if (!useCloseMonthly && available.total <= 0) throw new HttpError(403, '暗盘资金查询次数已用完');
+    const goldDailyDate = beijingDateKey();
+    const goldDailyKey = `${user.id}:${goldDailyDate}`;
+    if (useGoldDaily) {
+      if (String(user.goldDarkFundLastUsedDate || '') === goldDailyDate) {
+        throw new HttpError(409, '今日金手指查暗盘次数已使用');
+      }
+      if (activeGoldDailyQueries.has(goldDailyKey)) {
+        throw new HttpError(409, '今日金手指查暗盘正在查询中');
+      }
+      activeGoldDailyQueries.add(goldDailyKey);
+    }
+    try {
+      const available = refreshDarkFundQuota(user);
+      const useCloseMonthly = queryMode === 'close' && !useGoldDaily && closeDarkFundActiveAt(user);
+      if (!useGoldDaily && !useCloseMonthly && available.total <= 0) throw new HttpError(403, '暗盘资金查询次数已用完');
     let closeResult = null;
     let closeCacheHit = false;
     let intradayResult = null;
@@ -208,7 +243,9 @@ module.exports = function register(router, HttpError) {
       throw new HttpError(502, '盘后数据未生成，已阻止连接 Windows 采集器');
     }
     if (queryMode === 'intraday') intradayResult = cachedIntradayResult(d, stockCode);
-    const consumed = useCloseMonthly ? { ...available, source: 'close_month' } : consumeDarkFundQuota(user);
+    const consumed = useGoldDaily
+      ? { ...available, source: 'gold_daily' }
+      : (useCloseMonthly ? { ...available, source: 'close_month' } : consumeDarkFundQuota(user));
     if (!consumed) throw new HttpError(403, '暗盘资金查询次数已用完');
     const tradeDate = closeResult ? closeResult.tradeDate : latestTradingDate();
     const order = {
@@ -228,11 +265,12 @@ module.exports = function register(router, HttpError) {
     };
     d.darkFundOrders.push(order);
     if (closeResult) {
+      if (useGoldDaily) user.goldDarkFundLastUsedDate = goldDailyDate;
       order.closeCacheHit = closeCacheHit;
       activateCloseDarkFundOrder(order, closeResult);
       pushNotification(d, order.userId, {
         type: 'dark_ready',
-        title: `${order.stockCode}普通查询已完成`,
+        title: `${order.stockCode}${useGoldDaily ? '金手指查暗盘' : '普通查询'}已完成`,
         content: '盘后数据和图表已经生成，点击查看历史订单',
         targetType: 'dark_history',
         targetId: order.id,
@@ -286,11 +324,15 @@ module.exports = function register(router, HttpError) {
       db.save();
       throw error;
     }
+    } finally {
+      if (useGoldDaily) activeGoldDailyQueries.delete(goldDailyKey);
+    }
   };
 
   // 两个独立入口从路由层固定查询类型，避免请求体缺失或旧客户端字段串线。
   router.post('/api/dark-funds/orders/intraday', (ctx) => createDarkFundOrder(ctx, 'intraday'));
   router.post('/api/dark-funds/orders/close', (ctx) => createDarkFundOrder(ctx, 'close'));
+  router.post('/api/dark-funds/orders/gold', (ctx) => createDarkFundOrder(ctx, 'close', 'gold_daily'));
   router.post('/api/dark-funds/orders', (ctx) => createDarkFundOrder(ctx));
 
   router.get('/api/dark-funds/orders', (ctx) => {

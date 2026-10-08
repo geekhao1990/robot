@@ -139,15 +139,15 @@ test('customer order center only returns the signed-in user payment orders', asy
   assert.equal(result.list[0].paidAt, 200);
 });
 
-test('9.9 gold payment opens 360 days exactly once and uses a clear product description', async () => {
-  const { data, call, paymentInputs } = setup({ amount: 990 });
+test('99 yuan gold payment opens 360 days exactly once and uses a clear product description', async () => {
+  const { data, call, paymentInputs } = setup({ amount: 9900 });
   const before = Date.now();
   const created = await call('POST', '/api/gold/purchase-orders');
-  assert.equal(created.amount, 990);
-  assert.equal(paymentInputs[0].amount, 990);
-  assert.equal(paymentInputs[0].description, '开通金手指（1年）');
+  assert.equal(created.amount, 9900);
+  assert.equal(paymentInputs[0].amount, 9900);
+  assert.equal(paymentInputs[0].description, '开通金手指（360天）');
   assert.equal(paymentInputs[0].merchantGoodsId, 'gold_year');
-  assert.equal(paymentInputs[0].goodsName, '金手指年卡（360天）');
+  assert.equal(paymentInputs[0].goodsName, '金手指会员（360天）');
   const first = await call('GET', `/api/gold/purchase-orders/${created.orderId}`);
   const expireAfterFirstCheck = data.users[0].goldExpire;
   const second = await call('GET', `/api/gold/purchase-orders/${created.orderId}`);

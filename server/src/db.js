@@ -22,6 +22,7 @@ const ENTITLEMENT_KEYS = Object.freeze([
   'courseAccessPermanent', 'darkFundEnabled', 'decisionPioneerEnabled', 'darkFundRemaining',
   'darkFundManualRemaining', 'darkFundServiceRemaining',
   'darkFundServicePeriodStart', 'darkFundServicePeriodExpire', 'darkFundCloseExpire',
+  'goldDarkFundLastUsedDate',
 ]);
 
 const LIFESTYLE_NOTE_UPDATES = Object.freeze({
@@ -398,6 +399,7 @@ function ensureContentTypes() {
       user.goldExpire = 0;
       changed = true;
     }
+    if (typeof user.goldDarkFundLastUsedDate !== 'string') { user.goldDarkFundLastUsedDate = ''; changed = true; }
     if (!Number.isFinite(Number(user.serviceExpire))) { user.serviceExpire = 0; changed = true; }
     if (typeof user.servicePlan !== 'string') { user.servicePlan = ''; changed = true; }
     if (typeof user.courseAccessPermanent !== 'boolean') { user.courseAccessPermanent = false; changed = true; }

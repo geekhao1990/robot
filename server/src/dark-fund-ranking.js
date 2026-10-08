@@ -1,4 +1,3 @@
-const { isReusableCloseResult } = require('./dark-fund-close');
 const { lookupStock } = require('./stock-lookup');
 const { chinaToday, isTradingDay } = require('./trading-date');
 
@@ -87,7 +86,8 @@ function normalizeCandidates(payload) {
 function cachedCloseResult(data, stockCode, tradeDate) {
   const entry = data.darkFundCloseCache && data.darkFundCloseCache[stockCode];
   const result = entry && (entry.result || entry);
-  if (!result || !isReusableCloseResult(result, stockCode) || String(result.tradeDate || '') !== tradeDate) return null;
+  // 榜单重跑按指定交易日复用精确的收盘快照，不受“下个交易日开盘前”这一用户查询缓存窗口影响。
+  if (!result || !isCloseRankingResult(result, stockCode, tradeDate)) return null;
   return JSON.parse(JSON.stringify(result));
 }
 

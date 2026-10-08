@@ -80,7 +80,7 @@ test('service packages and dark-fund cards grant distinct permissions', async ()
   const month = await call('POST', '/api/admin/gift-cards', { type: 'service_month', count: 1 });
   const monthResult = await call('POST', '/api/gift-cards/redeem', { code: month.codes[0] }, 'a');
   assert.equal(monthResult.user.serviceActive, true);
-  assert.equal(monthResult.user.goldAccess, true);
+  assert.equal(monthResult.user.goldAccess, false);
   assert.equal(monthResult.user.courseAccess, undefined);
   assert.equal(monthResult.user.darkFundServiceRemaining, 15);
   assert.equal(monthResult.user.darkFundManualRemaining, 0);

@@ -19,7 +19,7 @@ const PRODUCTS = Object.freeze({
     id: 'dark_fund_1000', amount: 24000, quota: 1000, prefix: 'DF1000', description: '充值暗盘次数（1000次）', goodsName: '暗盘查询次数充值1000次', orderName: '暗盘查询次数 · 1000次',
   }),
   gold_year: Object.freeze({
-    id: 'gold_year', amount: 990, prefix: 'GYP', description: '开通金手指（1年）', goodsName: '金手指年卡（360天）', orderName: '金手指年卡 · 360天',
+    id: 'gold_year', amount: 9900, prefix: 'GYP', description: '开通金手指（360天）', goodsName: '金手指会员（360天）', orderName: '金手指会员 · 360天',
   }),
 });
 

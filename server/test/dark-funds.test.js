@@ -227,6 +227,58 @@ test('trade date exposes real queue counts and wait estimates', async () => {
   assert.equal(result.queue.close.estimatedWaitSeconds, 4.5);
 });
 
+test('active gold membership grants one successful close query per Beijing day without consuming normal quota', async () => {
+  const closeResult = require('../src/dark-fund-close').normalizeCloseDarkFund(
+    require('../src/dark-fund-close').SAMPLE_CLOSE_PAYLOAD,
+    '600105',
+  );
+  const { data, call, closeFetchCount } = setup({ closeResult, isReusableCloseResult: () => true });
+  data.users[0].goldExpire = Date.now() + 360 * 86400000;
+  data.users[0].goldDarkFundLastUsedDate = '';
+  const beforeQuota = data.users[0].darkFundRemaining;
+
+  const state = await call('GET', '/api/dark-funds/trade-date');
+  assert.equal(state.goldActive, true);
+  assert.equal(state.goldDarkFundAvailable, true);
+
+  const created = await call('POST', '/api/dark-funds/orders/gold', {
+    stockCode: '600105', request_id: 'gold_daily_first_001',
+  });
+  assert.equal(created.ready, true);
+  assert.equal(created.quotaSource, 'gold_daily');
+  assert.equal(created.goldDarkFundAvailable, false);
+  assert.equal(data.users[0].darkFundRemaining, beforeQuota);
+  assert.match(data.users[0].goldDarkFundLastUsedDate, /^\d{4}-\d{2}-\d{2}$/);
+  assert.equal(closeFetchCount(), 1);
+
+  await assert.rejects(call('POST', '/api/dark-funds/orders/gold', {
+    stockCode: '600105', request_id: 'gold_daily_second_001',
+  }), { status: 409 });
+  assert.equal(closeFetchCount(), 1);
+  assert.equal(data.users[0].darkFundRemaining, beforeQuota);
+});
+
+test('gold daily close query rejects expired membership and failed upstream does not consume the daily benefit', async () => {
+  const expired = setup();
+  expired.data.users[0].goldExpire = Date.now() - 1;
+  await assert.rejects(expired.call('POST', '/api/dark-funds/orders/gold', {
+    stockCode: '600105', request_id: 'gold_daily_expired_001',
+  }), { status: 403 });
+
+  const failed = setup();
+  failed.data.users[0].goldExpire = Date.now() + 86400000;
+  failed.data.users[0].goldDarkFundLastUsedDate = '';
+  await assert.rejects(failed.call('POST', '/api/dark-funds/orders/gold', {
+    stockCode: '600105', request_id: 'gold_daily_failed_001',
+  }), { status: 503 });
+  assert.equal(failed.data.users[0].goldDarkFundLastUsedDate, '');
+  assert.equal(failed.data.darkFundOrders.length, 0);
+  await assert.rejects(failed.call('POST', '/api/dark-funds/orders/gold', {
+    stockCode: '600105', request_id: 'gold_daily_retry_001',
+  }), { status: 503 });
+  assert.equal(failed.closeFetchCount(), 2);
+});
+
 test('same user and request_id returns the original order without consuming quota twice', async () => {
   const { data, call } = setup();
   const body = { stockCode: '600105', request_id: 'df_20260930_same_request' };

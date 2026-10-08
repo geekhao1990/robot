@@ -16,14 +16,16 @@
 .stock-option-name.unknown { color: #999; font-size: 22rpx; font-weight: 500; }
 .stock-dropdown-tip { justify-content: center; color: #999; }
 .stock-dropdown-error { justify-content: center; color: #ff2442; }
-.query-actions { display: flex; align-items: center; gap: 18rpx; margin-top: 40rpx; }
+.query-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 18rpx; margin-top: 40rpx; }
 .query-button { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 104rpx; margin: 0; padding: 8rpx 12rpx; font-size: 25rpx; font-weight: 700; line-height: normal; border-radius: 999rpx; }
 .query-button { flex: 1; color: #fff; background: #ff2442; }
 .query-button-close { color: #ff2442; background: #fff5f7; border: 2rpx solid #ff2442; }
+.query-button-gold { flex: 0 0 100%; color: #5c3510; background: linear-gradient(110deg,#fff0b5,#eab75b); border: 2rpx solid #d99d32; }
 .query-button-title { display: block; font-size: 26rpx; line-height: 34rpx; font-weight: 800; }
 .query-button-queue { display: block; margin-top: 3rpx; font-size: 19rpx; line-height: 27rpx; font-weight: 500; white-space: nowrap; opacity: .9; }
 .query-button::after { border: none; }
 .query-button[disabled] { color: #fff; background: #ff9aaa; }
+.query-button-gold[disabled] { color: #9d7f4f; background: #f1e4ca; border-color: #ddc69c; }
 .query-benefits-row { display: flex; align-items: stretch; gap: 16rpx; margin-top: 24rpx; margin-bottom: 40rpx; }
 .recharge-actions { display: flex; flex: 0 0 calc(50% - 8rpx); min-width: 0; }
 .recharge-button { display: flex; flex: 1; min-width: 0; align-items: center; justify-content: center; padding: 22rpx 16rpx; background: linear-gradient(115deg,#fff3e8,#fff9f2); border: 1rpx solid #ffd6ad; border-radius: 18rpx; box-sizing: border-box; }

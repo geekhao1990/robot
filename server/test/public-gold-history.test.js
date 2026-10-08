@@ -37,7 +37,7 @@ function setup() {
       { id: 'dark_DF001', type: 'material', visible: true, title: '私有暗盘', content: '暗盘内容', tags: ['暗盘资金'], authorId: 'dark-author', author: { name: '暗盘' }, time: 3 },
     ],
   };
-  const goldAccess = (user) => !!(user && (Number(user.goldExpire) > Date.now() || Number(user.serviceExpire) > Date.now()));
+  const goldAccess = (user) => !!(user && Number(user.goldExpire) > Date.now());
   const mod = { exports: {} };
   const dependencyMap = {
     '../db': { get: () => data, save: () => {} },
@@ -116,12 +116,13 @@ test('gold notes and entry stay visible while feature access remains entitlement
   assert.equal((await call('/api/search', { kw: '金手指' }, 'Bearer u2')).map((note) => note.id).join(','), 'g1');
   assert.equal((await call('/api/notes/g1', {}, 'Bearer u2')).id, 'g1');
 
-  for (const token of ['Bearer u1', 'Bearer u3']) {
+  for (const token of ['Bearer u1']) {
     const settings = await call('/api/settings', {}, token);
     assert.equal(settings.goldAccess, true);
     assert.equal(settings.featuredNoteId, 'g1');
     assert.equal((await call('/api/notes/g1', {}, token)).id, 'g1');
   }
+  assert.equal((await call('/api/settings', {}, 'Bearer u3')).goldAccess, false);
   assert.equal((await call('/api/notes/g1', {}, 'Bearer u4')).id, 'g1');
   await assert.rejects(call('/api/gold-finger/latest', {}, 'Bearer u2'), { status: 403 });
 
@@ -155,12 +156,17 @@ test('gold notes and entry stay visible while feature access remains entitlement
   await assert.rejects(call('/api/notes/g1', {}, 'Bearer u1'), { status: 404 });
 });
 
-test('every registered user can fetch course resources', async () => {
-  const { call } = setup();
+test('free course resources require login while paid course resources require active gold membership', async () => {
+  const { call, data } = setup();
+  assert.equal((await call('/api/notes/n1/resource', {}, 'Bearer u1')).url, 'https://example.com');
+  for (const token of ['Bearer u2', 'Bearer u3', 'Bearer u4']) {
+    await assert.rejects(call('/api/notes/n1/resource', {}, token), { status: 403 });
+  }
+  await assert.rejects(call('/api/notes/n1/resource', {}, ''), { status: 401 });
+  data.notes.find((note) => note.id === 'n1').free = true;
   for (const token of ['Bearer u1', 'Bearer u2', 'Bearer u3', 'Bearer u4']) {
     assert.equal((await call('/api/notes/n1/resource', {}, token)).url, 'https://example.com');
   }
-  await assert.rejects(call('/api/notes/n1/resource', {}, ''), { status: 401 });
 });
 
 test('暗盘笔记不进入公开列表且只有订单本人可直连访问', async () => {

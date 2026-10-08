@@ -294,11 +294,11 @@ function lookupStock(code) {
 }
 
 function createDarkFundOrder(stockCode, requestId, queryMode = 'intraday', source = 'collector') {
-  const mode = queryMode === 'close' ? 'close' : 'intraday';
+  const mode = queryMode === 'gold' ? 'gold' : (queryMode === 'close' ? 'close' : 'intraday');
   return request('POST', `/api/dark-funds/orders/${mode}`, {
     auth: true,
     data: { stockCode, request_id: requestId },
-    timeout: mode === 'close' ? 100000 : 10000,
+    timeout: mode === 'close' || mode === 'gold' ? 100000 : 10000,
   });
 }
 

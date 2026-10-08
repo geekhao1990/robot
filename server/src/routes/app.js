@@ -294,6 +294,7 @@ module.exports = function register(router, HttpError) {
         follows: b.follows || 0,
         likes: b.likes || 0,
         goldExpire: 0,
+        goldDarkFundLastUsedDate: '',
         goldQuotaGiftMigrated: true,
         serviceExpire: 0,
         servicePlan: '',

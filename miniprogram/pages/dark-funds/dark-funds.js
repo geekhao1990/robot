@@ -86,6 +86,9 @@ Page({
     quotaExpiryText: '',
     closeMonthlyActive: false,
     closeMonthlyExpiryText: '',
+    goldActive: false,
+    goldExpiryText: '',
+    goldDarkFundAvailable: false,
     darkFundEnabled: false,
     purchasing: false,
     decisionPioneerEnabled: false,
@@ -332,12 +335,16 @@ Page({
   prepareCloseQuery() {
     return this.prepareQuery('close');
   },
+  prepareGoldQuery() {
+    return this.prepareQuery('gold');
+  },
   prepareQuery(mode) {
     const stockCode = String(this.data.stockCode || '').trim();
-    const queryMode = mode === 'intraday' ? 'intraday' : 'close';
+    const queryMode = mode === 'intraday' ? 'intraday' : (mode === 'gold' ? 'gold' : 'close');
     const source = queryMode === 'intraday' ? 'collector' : 'web';
-    const hasQueryEntitlement = Number(this.data.remaining) > 0
-      || (queryMode === 'close' && this.data.closeMonthlyActive);
+    const hasQueryEntitlement = queryMode === 'gold'
+      ? this.data.goldActive && this.data.goldDarkFundAvailable
+      : (Number(this.data.remaining) > 0 || (queryMode === 'close' && this.data.closeMonthlyActive));
     if (!/^\d{6}$/.test(stockCode)) return wx.showModal({ title: '无法查询', content: '请输入6位代码', showCancel: false });
     if (/^(4|8|92)/.test(stockCode)) return wx.showToast({ title: '系统繁忙', icon: 'none' });
     if (this.data.stockLookupLoading) return wx.showToast({ title: '正在确认股票信息', icon: 'none' });
@@ -345,12 +352,23 @@ Page({
       return wx.showToast({ title: this.data.stockLookupError || '请先确认股票代码', icon: 'none' });
     }
     if (!this.data.compactTradeDate) return wx.showToast({ title: '交易日期接口异常', icon: 'none' });
-    if (!hasQueryEntitlement) return this.openSinglePurchase();
+    if (!hasQueryEntitlement) {
+      if (queryMode === 'gold') {
+        return wx.showModal({
+          title: this.data.goldActive ? '今日权益已使用' : '金手指会员专享',
+          content: this.data.goldActive ? '金手指会员每天可查一次暗盘，明天可再次使用。' : '请先开通有效期内的金手指会员。',
+          showCancel: false,
+        });
+      }
+      return this.openSinglePurchase();
+    }
     const stockName = this.data.stockSuggestion.stockDisplayName
       || displayStockName(this.data.stockSuggestion.stockName, this.data.stockSuggestion.stockInitials);
     const content = queryMode === 'intraday'
       ? `是否进行决策查询：${stockCode}${stockName ? ` ${stockName}` : ''}，查询日期${this.data.compactTradeDate}`
-      : `是否进行普通查询：${stockCode}${stockName ? ` ${stockName}` : ''}，查询近7日暗盘数据`;
+      : (queryMode === 'gold'
+        ? `是否使用今日金手指会员权益查询：${stockCode}${stockName ? ` ${stockName}` : ''}，查询近7日暗盘数据`
+        : `是否进行普通查询：${stockCode}${stockName ? ` ${stockName}` : ''}，查询近7日暗盘数据`);
     wx.showModal({
       title: '确认查询',
       content,
@@ -402,7 +420,7 @@ Page({
             failed,
             stockDisplayName: item.stockDisplayName || displayStockName(item.stockName, item.stockInitials),
             marketStockCode: marketStockCode(item.stockCode),
-            queryTypeText: item.queryMode === 'close' ? '普通查询' : '决策查询',
+            queryTypeText: item.quotaSource === 'gold_daily' ? '金手指查暗盘' : (item.queryMode === 'close' ? '普通查询' : '决策查询'),
             queryTimeText: formatQueryTime(item.createdAt),
             statusText: ready ? '点击查看' : (failed ? darkFundFailure({ message: item.error }, item.queryMode).short : '处理中'),
           };
@@ -520,6 +538,9 @@ Page({
       quotaExpiryText: formatExpiryDate(result && result.quotaExpiresAt),
       closeMonthlyActive: result && result.closeMonthlyActive === true,
       closeMonthlyExpiryText: formatExpiryDate(result && result.closeMonthlyExpireAt),
+      goldActive: result && result.goldActive === true,
+      goldExpiryText: formatExpiryDate(result && result.goldExpireAt),
+      goldDarkFundAvailable: result && result.goldDarkFundAvailable === true,
       decisionPioneerEnabled: result && result.decisionPioneerEnabled === true,
       darkFundEnabled: result && result.darkFundEnabled === true,
     };

@@ -29,7 +29,7 @@ module.exports = {
   darkArticleAdUnitId: '',
   // 金手指详情页底部的横幅广告位；留空时显示占位区。
   goldFingerAdUnitId: 'adunit-eb8346b38d582c11',
-  // 金手指详情页进入，以及服务包用户手动刷新时展示的插屏广告位。
+  // 金手指详情页手动刷新时展示的插屏广告位；进入页面使用上方独立激励视频广告位。
   goldFingerInterstitialAdUnitId: 'adunit-1a677c93cd7ed5e1',
   // 暗盘“六位神奇数字”查询页的横幅广告位；留空时显示占位区。
   darkFundsQueryAdUnitId: '',
