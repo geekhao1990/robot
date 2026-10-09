@@ -1405,6 +1405,7 @@ function renderSettings() {
         <div class="hint" style="margin:8px 0 14px">系统在北京时间交易日 ${esc(rankingSync.schedule || '15:30')} 自动读取同花顺热榜完整100只股票并生成榜单；用户普通查询优先于榜单批处理，当天已有收盘缓存的股票不会重复请求上游。需要临时重跑时可点击下方按钮。</div>
         <div id="darkFundRankingStatus" class="hint">${rankingSync.running ? esc(rankingProgressText(rankingSyncState)) : (ranking ? esc(rankingResultText(ranking)) : (rankingSyncState.status === 'failed' ? `最近更新失败：${esc(rankingSyncState.error || '未知错误')}` : '当前尚未生成榜单'))}</div>
         <button id="darkFundRankingButton" class="btn-primary" style="margin-top:14px" onclick="generateDarkFundRanking()" ${rankingSync.running ? 'disabled' : ''}>${rankingSync.running ? '正在更新…' : '立即更新今日暗盘榜'}</button>
+        <button class="btn-primary" style="margin-top:14px" onclick="generateRankingCopy(this)">生成文案</button>
       </div>
       <div class="card" style="max-width:640px">
         <div class="field" style="padding:14px;border:1px solid #ffb3b3;background:#fff7f7;border-radius:8px">
@@ -1531,6 +1532,46 @@ function generateDarkFundRanking() {
       button.disabled = false;
       button.textContent = '立即更新今日暗盘榜';
     });
+}
+
+function buildRankingCopy(ranking) {
+  if (!ranking || !/^\d{4}-\d{2}-\d{2}$/.test(ranking.tradeDate || '')) throw new Error('请先生成暗盘榜');
+  const [, month, day] = ranking.tradeDate.split('-');
+  const date = `${Number(month)}月${Number(day)}日`;
+  const ranks = ['一','二','三','四','五','六','七','八','九','十'];
+  return [['inflow', '流入'], ['outflow', '流出']].map(([key, direction]) => {
+    const rows = (ranking[key] || []).filter((item) => item.stockName && Number.isFinite(Number(item.grey)) && (key === 'inflow' ? Number(item.grey) > 0 : Number(item.grey) < 0)).slice(0, 10);
+    if (!rows.length) return `${date}同花顺热股暗盘${direction}榜：暂无有效数据`;
+    const title = `${date}同花顺热股暗盘${direction}前${ranks[rows.length - 1]}名`;
+    return title + '，' + rows.map((item, index) => {
+      const value = Math.abs(Number(item.grey));
+      const amount = value >= 1e8 ? `${Number((value / 1e8).toFixed(2))}e` : `${Number((value / 1e4).toFixed(2))}万`;
+      return `第${ranks[index]}名${item.stockName}暗盘${direction}${amount}`;
+    }).join('，');
+  }).join('；\n\n');
+}
+
+async function generateRankingCopy(button) {
+  button.disabled = true;
+  try {
+    const data = await api('/api/admin/dark-fund-ranking');
+    if (data.sync && data.sync.running) throw new Error('榜单正在更新，请完成后再生成文案');
+    const copy = buildRankingCopy(data.ranking);
+    openModal('暗盘榜文案', `<div class="hint">使用榜单交易日期和真实排名；e代表亿，不足亿使用万。可编辑后复制。</div><textarea id="rankingCopyText" style="width:100%;min-height:300px;margin-top:12px">${esc(copy)}</textarea><button class="btn-primary" onclick="copyRankingText()">复制文案</button>`, closeModal);
+  } catch (error) {
+    showAdminToast(error.message, 'error');
+  } finally { button.disabled = false; }
+}
+
+async function copyRankingText() {
+  const input = document.getElementById('rankingCopyText');
+  try {
+    await navigator.clipboard.writeText(input.value);
+    showAdminToast('文案已复制');
+  } catch (_) {
+    input.focus(); input.select();
+    showAdminToast('请长按或按 Ctrl+C 复制已选中文案');
+  }
 }
 
 function rankingProgressText(syncState) {
