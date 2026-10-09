@@ -218,6 +218,7 @@
   <div id="modalRoot"></div>
   <div id="adminToast" class="admin-toast" role="status" aria-live="polite"></div>
 
+<script src="/admin/ranking-poster.js"></script>
 <script>
 const API = '';
 let token = localStorage.getItem('admin_token') || '';
@@ -1406,6 +1407,8 @@ function renderSettings() {
         <div id="darkFundRankingStatus" class="hint">${rankingSync.running ? esc(rankingProgressText(rankingSyncState)) : (ranking ? esc(rankingResultText(ranking)) : (rankingSyncState.status === 'failed' ? `最近更新失败：${esc(rankingSyncState.error || '未知错误')}` : '当前尚未生成榜单'))}</div>
         <button id="darkFundRankingButton" class="btn-primary" style="margin-top:14px" onclick="generateDarkFundRanking()" ${rankingSync.running ? 'disabled' : ''}>${rankingSync.running ? '正在更新…' : '立即更新今日暗盘榜'}</button>
         <button class="btn-primary" style="margin-top:14px" onclick="generateRankingCopy(this)">生成文案</button>
+        <button class="btn-primary" style="margin-top:14px" onclick="generateRankingPoster('inflow',this)">流入分享图</button>
+        <button class="btn-primary" style="margin-top:14px" onclick="generateRankingPoster('outflow',this)">流出分享图</button>
       </div>
       <div class="card" style="max-width:640px">
         <div class="field" style="padding:14px;border:1px solid #ffb3b3;background:#fff7f7;border-radius:8px">
@@ -1532,6 +1535,20 @@ function generateDarkFundRanking() {
       button.disabled = false;
       button.textContent = '立即更新今日暗盘榜';
     });
+}
+
+async function generateRankingPoster(side, button) {
+  button.disabled = true;
+  try {
+    const data = await api('/api/admin/dark-fund-ranking');
+    if (data.sync && data.sync.running) throw new Error('榜单正在更新，请完成后再生成分享图');
+    if (document.fonts) await document.fonts.ready;
+    const canvas = drawRankingPoster(data.ranking, side);
+    const url = canvas.toDataURL('image/png');
+    const name = `${data.ranking.tradeDate}-暗盘${side === 'inflow' ? '流入' : '流出'}榜.png`;
+    openModal('榜单分享图', `<a class="btn-primary" download="${esc(name)}" href="${url}">下载PNG图片</a><img src="${url}" style="display:block;width:100%;margin-top:16px" alt="暗盘榜分享图" />`, closeModal);
+  } catch (error) { showAdminToast(error.message, 'error'); }
+  finally { button.disabled = false; }
 }
 
 function buildRankingCopy(ranking) {
