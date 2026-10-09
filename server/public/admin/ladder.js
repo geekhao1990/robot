@@ -1,7 +1,34 @@
 let ladderImage = '', ladderRevision = 0;
+function renderAiMedia() {
+  ladderRevision++;
+  document.getElementById('content').innerHTML = `<h2>AI自媒体</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:20px;margin-top:20px">
+    <section style="flex:1;min-width:280px;padding:24px;border:1px solid #eee;border-radius:12px;background:#fff">
+      <h3>连板天梯图生成</h3>
+      <p class="hint" style="margin:12px 0">模板来自抖音连扳炒家</p>
+      <p style="margin:12px 0 20px;color:#666">上传截图，确认识别JSON后生成图片。</p>
+      <button class="btn-primary" onclick="switchView('ladder')">进入连板天梯图生成</button>
+    </section>
+    <section style="flex:1;min-width:280px;padding:24px;border:1px solid #eee;border-radius:12px;background:#fff">
+      <h3>暗盘榜分享图与文案</h3>
+      <p id="aiMediaRankingStatus" class="hint" style="margin:12px 0">读取榜单状态中…</p>
+      <p style="margin:12px 0 20px;color:#666">使用已生成的收盘榜单，不重复查询、不扣次数。</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-primary" onclick="generateRankingCopy(this)">生成文案 / 复制</button>
+        <button class="btn-primary" onclick="generateRankingPoster('inflow',this)">流入分享图</button>
+        <button class="btn-primary" onclick="generateRankingPoster('outflow',this)">流出分享图</button>
+      </div>
+    </section>
+  </div>`;
+  const status = document.getElementById('aiMediaRankingStatus');
+  api('/api/admin/dark-fund-ranking').then(data=>{
+    status.textContent=data.sync && data.sync.running ? '榜单正在更新，请完成后生成内容' : data.ranking ? `当前榜单：${data.ranking.tradeDate}` : '暂无榜单，请先在功能设置中生成暗盘榜';
+  }).catch(error=>{status.textContent=error.message||'榜单状态读取失败';});
+}
 function renderLadder() {
   ladderImage = ''; ladderRevision++;
-  document.getElementById('content').innerHTML = `<h2>连板天梯制图</h2>
+  document.getElementById('content').innerHTML = `<button class="btn-sm" onclick="switchView('aiMedia')">← 返回AI自媒体</button><h2 style="margin-top:16px">连板天梯图生成</h2>
+  <p class="hint" style="margin-top:8px">模板来自抖音连扳炒家</p>
   <p style="margin:16px 0">上传截图 → DeepSeek识图提取JSON → 人工确认 → 绘图。截图将直接发送DeepSeek，可能产生接口费用。</p>
   <p id="ladderConfig">正在检查接口配置…</p>
   <input type="file" accept="image/png,image/jpeg" onchange="loadLadderImage(this)" />

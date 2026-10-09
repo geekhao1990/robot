@@ -32,7 +32,6 @@ function drawRankingPoster(ranking, side) {
   if (!date) throw new Error('榜单交易日期无效');
   text(`${Number(date[1])}月${Number(date[2])}日同花顺热股暗盘榜`, 48, 90, 42, ink, 'left', true);
   text(`暗盘${side === 'inflow' ? '流入' : '流出'}前${rows.length === 10 ? '十' : rows.length}名`, 48, 157, 36, side === 'inflow' ? red : green, 'left', true);
-  text('数据来源【指标仓库】小程序', 1032, 157, 24, '#7a8290', 'right');
   box(36, 192, 1008, 65, '#f3f5f8');
   [['股票名称', 110, 'left'], ['涨跌幅', 560, 'right'], ['暗盘资金', 790, 'right'], ['明盘资金', 1015, 'right']].forEach(([label,x,align]) => text(label,x,235,26,'#737b87',align));
   let y = 266;
@@ -71,5 +70,14 @@ function drawRankingPoster(ranking, side) {
     box(48,y-1,984,1,'#e7e9ee');
   });
   text('数据来自互联网和AI工具，不构成投资建议',540,y+55,25,'#8b929c','center');
+  // Match the ladder's alternating edge watermarks, scaled from its 698px layout.
+  const watermarkScale = canvas.width / 698;
+  for (let i=0; (100+i*154)*watermarkScale < canvas.height; i++) {
+    ctx.save();
+    ctx.translate(((i%2?552:-57)+72)*watermarkScale, (100+i*154+12)*watermarkScale);
+    ctx.rotate(-48*Math.PI/180);
+    text('小程序指标仓库',0,0,18*watermarkScale,'rgba(169,63,78,0.095)','center');
+    ctx.restore();
+  }
   return canvas;
 }

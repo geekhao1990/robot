@@ -196,7 +196,7 @@
       <div class="nav-item active" data-view="overview" onclick="switchView('overview')">📊 数据概览</div>
       <div class="nav-item" data-view="notes" onclick="switchView('notes')">📝 笔记管理</div>
       <div class="nav-item" data-view="goldFinger" onclick="switchView('goldFinger')">☝️ 金手指数据</div>
-      <div class="nav-item" data-view="ladder" onclick="switchView('ladder')">🖼️ 连板天梯制图</div>
+      <div class="nav-item" data-view="aiMedia" onclick="switchView('aiMedia')">🖼️ AI自媒体</div>
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
       <div class="nav-item" data-view="darkFundOrders" onclick="switchView('darkFundOrders')">📈 暗盘工单</div>
       <div class="nav-item" data-view="paymentOrders" onclick="switchView('paymentOrders')">🧾 订单管理</div>
@@ -303,14 +303,17 @@ const GIFT_CARD_LABELS = {
   dark_180: '暗盘180次卡',
 };
 TITLES.giftCards = '礼品卡管理';
+TITLES.aiMedia = 'AI自媒体';
+TITLES.ladder = 'AI自媒体 / 连板天梯图生成';
 function switchView(v) {
-  const activeView = v;
+  const activeView = v === 'ladder' ? 'aiMedia' : v;
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === activeView));
   document.getElementById('viewTitle').textContent = TITLES[v];
   if (v === 'overview') renderOverview();
   if (v === 'notes') renderNotes();
   if (v === 'goldFinger') renderGoldFinger();
   if (v === 'ladder') renderLadder();
+  if (v === 'aiMedia') renderAiMedia();
   if (v === 'users') renderUsers();
   if (v === 'darkFundOrders') renderDarkFundOrders();
   if (v === 'paymentOrders') renderPaymentOrders();
@@ -1411,9 +1414,6 @@ function renderSettings() {
         <div class="hint" style="margin:8px 0 14px">系统在北京时间交易日 ${esc(rankingSync.schedule || '15:30')} 自动读取同花顺热榜完整100只股票并生成榜单；用户普通查询优先于榜单批处理，当天已有收盘缓存的股票不会重复请求上游。需要临时重跑时可点击下方按钮。</div>
         <div id="darkFundRankingStatus" class="hint">${rankingSync.running ? esc(rankingProgressText(rankingSyncState)) : (ranking ? esc(rankingResultText(ranking)) : (rankingSyncState.status === 'failed' ? `最近更新失败：${esc(rankingSyncState.error || '未知错误')}` : '当前尚未生成榜单'))}</div>
         <button id="darkFundRankingButton" class="btn-primary" style="margin-top:14px" onclick="generateDarkFundRanking()" ${rankingSync.running ? 'disabled' : ''}>${rankingSync.running ? '正在更新…' : '立即更新今日暗盘榜'}</button>
-        <button class="btn-primary" style="margin-top:14px" onclick="generateRankingCopy(this)">生成文案</button>
-        <button class="btn-primary" style="margin-top:14px" onclick="generateRankingPoster('inflow',this)">流入分享图</button>
-        <button class="btn-primary" style="margin-top:14px" onclick="generateRankingPoster('outflow',this)">流出分享图</button>
       </div>
       <div class="card" style="max-width:640px">
         <div class="field" style="padding:14px;border:1px solid #ffb3b3;background:#fff7f7;border-radius:8px">

@@ -6,7 +6,7 @@ const vm = require('node:vm');
 test('both posters render ten rows and one expanded chart without leaking codes', () => {
   for (const side of ['inflow', 'outflow']) {
     const texts = [];
-    const ctx = { fillText: (t) => texts.push(t), fillRect() {}, beginPath() {}, roundRect() {}, fill() {}, stroke() {}, measureText: (t) => ({ width: t.length * 30 }) };
+    const ctx = { save() {}, restore() {}, translate() {}, rotate() {}, fillText: (t) => texts.push(t), fillRect() {}, beginPath() {}, roundRect() {}, fill() {}, stroke() {}, measureText: (t) => ({ width: t.length * 30 }) };
     const canvas = { getContext: () => ctx };
     const context = { document: { createElement: () => canvas } };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/ranking-poster.js'),'utf8'),context);
@@ -19,6 +19,8 @@ test('both posters render ten rows and one expanded chart without leaking codes'
     assert(texts.includes('+0.50亿'));
     assert(texts.includes('—'));
     assert(!texts.includes('600001'));
+    assert(!texts.includes('数据来源【指标仓库】小程序'));
+    assert(texts.filter(t=>t==='小程序指标仓库').length>3);
     assert.throws(()=>context.drawRankingPoster(null,side),/请先生成/);
   }
 });
