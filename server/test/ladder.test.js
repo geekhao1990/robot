@@ -10,6 +10,16 @@ test('validate confirmed data and reject malformed fields',()=>{
   assert.throws(()=>ladder.validate({...sample,date:''}));
   assert.throws(()=>ladder.validate({...sample,groups:[{height:'1板',stocks:[{name:'股票',broken:'false'}]}]}));
 });
+test('long review warnings are preserved without relaxing canvas field limits',()=>{
+  const warning='首板底部一行15只个股未显示涨停时间与所属板块，需人工确认。'.repeat(10);
+  const data={...sample,warnings:[warning]};
+  assert.equal(ladder.validate(data).warnings[0],warning);
+  assert.doesNotThrow(()=>ladder.validate({...sample,warnings:['字'.repeat(5000)]}));
+  assert.throws(()=>ladder.validate({...sample,warnings:['字'.repeat(5001)]}),/5000/);
+  assert.throws(()=>ladder.validate({...sample,warnings:[{}]}),/warnings/);
+  assert.throws(()=>ladder.validate({...sample,warnings:'不是数组'}),/warnings/);
+  assert.throws(()=>ladder.validate({...sample,market:['字'.repeat(121)]}),/market/);
+});
 test('image goes directly to DeepSeek and result stays unconfirmed',async()=>{
   const keys=['DEEPSEEK_API_KEY'];
   const old=keys.map(k=>process.env[k]);keys.forEach(k=>process.env[k]='test');

@@ -18,7 +18,11 @@ function validate(data) {
     }
   }
   if (!total || total > 200) throw fail('股票数必须在1至200之间');
-  for (const key of ['market','sectors','warnings']) if (data[key] != null && (!Array.isArray(data[key]) || data[key].length > 40 || !data[key].every(v=>str(v)))) throw fail(`${key}必须为短文本数组`);
+  for (const key of ['market','sectors']) if (data[key] != null && (!Array.isArray(data[key]) || data[key].length > 40 || !data[key].every(v=>str(v)))) throw fail(`${key}必须为短文本数组（最多40条，每条120字）`);
+  // Warnings are review notes, not compact canvas labels. Preserve detailed model explanations.
+  if (data.warnings != null && (!Array.isArray(data.warnings) || data.warnings.length > 100 || !data.warnings.every(v=>str(v, 5000)))) {
+    throw fail('warnings必须为文本数组（最多100条，每条5000字）');
+  }
   return data;
 }
 async function recognize(image, fetchImpl = fetch) {
