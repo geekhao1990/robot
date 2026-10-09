@@ -47,27 +47,37 @@ test('routes require admin and explicit confirmation',()=>{
   assert.throws(()=>routes['/api/admin/ladder/confirm']({headers:{authorization:'admin'},body:{data:sample}}),{status:400});
   assert.equal(routes['/api/admin/ladder/confirm']({headers:{authorization:'admin'},body:{data:sample,confirmed:true}}).data,sample);
 });
-test('canvas draws supplied data only and frontend parses',()=>{
-  const texts=[];const ctx={save(){},restore(){},fillRect(){},fillText:t=>texts.push(t),strokeRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){}};
-  const canvas={getContext:()=>ctx};const context={document:{createElement:()=>canvas}};
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/ladder.js'),'utf8'),context);
-  context.drawLadder(sample);
-  assert(texts.includes('新华传媒'));assert(texts.includes('一字板'));assert.equal(canvas.width,1080);
+function layoutContext(extra={}) {
+  const context={...extra};
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/ladder-layout.js'),'utf8'),context);
+  return context;
+}
+test('shared template preserves data, disclaimer and red cross styling',()=>{
+  const context=layoutContext();
+  const html=context.ladderTemplate({...sample,groups:[{height:'4板',stocks:[{name:'上涨股',sector:'电池',change:'2.16%',broken:null},{name:'下跌股',change:'-1.45%',broken:false}]}]});
+  assert.match(html,/stock broken/);assert.match(html,/meta up/);assert.match(html,/meta down/);
+  assert.match(html,/小程序指标仓库/);
+  assert.match(html,/数据来自互联网，图表由AI生成，不构成投资建议，投资需谨慎。/);
+  const css=vm.runInNewContext('LADDER_CSS',context);
+  assert.match(css,/opacity:.5/);assert.match(css,/100% \/ 7/);
+  assert.match(context.ladderTemplate(sample),/一字板/);
 });
-test('change values produce half-opacity red crosses and signed colors; sparse first-board rows compact',()=>{
-  const texts=[],strokes=[];
-  const ctx={globalAlpha:1,save(){this.saved=this.globalAlpha;},restore(){this.globalAlpha=this.saved;},fillRect(){},strokeRect(){},beginPath(){},moveTo(){},lineTo(){},
-    fillText(t){texts.push({text:t,color:this.fillStyle,alpha:this.globalAlpha});},stroke(){strokes.push({color:this.strokeStyle,alpha:this.globalAlpha});}};
-  const canvas={getContext:()=>ctx},context={document:{createElement:()=>canvas}};
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/ladder.js'),'utf8'),context);
-  context.drawLadder({...sample,groups:[{height:'4板',stocks:[{name:'上涨股',sector:'电池',change:'2.16%',broken:null},{name:'下跌股',change:'-1.45%',broken:false}]}]});
-  assert(texts.some(t=>t.text==='2.16%'&&t.color==='#ff3b30'&&t.alpha===0.5));
-  assert(texts.some(t=>t.text==='-1.45%'&&t.color==='#00a84f'&&t.alpha===0.5));
-  assert(texts.some(t=>t.text==='电池'&&t.alpha===0.5));
-  assert.equal(strokes.length,2);assert(strokes.every(s=>s.color==='#ff3b30'&&s.alpha===0.5));
-  assert.equal(ctx.globalAlpha,1);
-  const stocks=Array.from({length:15},()=>({name:'测试股票'}));
-  context.drawLadder({...sample,groups:[{height:'首板',stocks}]});const compact=canvas.height;
-  context.drawLadder({...sample,groups:[{height:'首板',stocks:stocks.map(s=>({...s,time:'09:30',sector:'电池'}))}]});
-  assert.equal(canvas.height-compact,3*(145-58));
+test('compact names stay in first board, are escaped and counted',()=>{
+  const context=layoutContext();
+  const html=context.ladderTemplate({...sample,groups:[{height:'首板',stocks:[{name:'<img src=x onerror=alert(1)>'},{name:'股票二'}]}]});
+  assert.match(html,/首 板<br>\(2\)/);assert.match(html,/class="compact"/);
+  assert.match(html,/&lt;img/);assert.doesNotMatch(html,/<img src=x/);
+  const normal=context.ladderTemplate({...sample,groups:[{height:'首板',stocks:[{name:'股票',time:'09:30',sector:'电池'}]}]});
+  assert.doesNotMatch(normal,/class="compact"/);
+});
+test('Canvas export uses shared HTML at 2x resolution and removes frame on success or failure',async()=>{
+  for(const failure of [false,true]){
+    let removed=false,written='',options;
+    const poster={getBoundingClientRect:()=>({height:1400})};
+    const frame={setAttribute(){},style:{},remove(){removed=true;},contentDocument:{open(){},write(s){written=s;},close(){},fonts:{ready:Promise.resolve()},querySelector:()=>poster}};
+    const context=layoutContext({document:{createElement:()=>frame,body:{appendChild(){}}},html2canvas:async(el,opts)=>{assert.equal(el,poster);options=opts;if(failure)throw Error('render failure');return {width:1396};}});
+    if(failure)await assert.rejects(context.drawLadder(sample),/render failure/);
+    else assert.equal((await context.drawLadder(sample)).width,1396);
+    assert(removed);assert.equal(options.scale,2);assert.equal(options.height,1400);assert.match(written,/新华传媒/);
+  }
 });
