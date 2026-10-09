@@ -102,6 +102,37 @@ test('admin creates a phone Web account with a temporary password that must be c
   }), { status: 409 });
 });
 
+test('temporary passwords are generated server-side and reset for both phone and legacy users', async () => {
+  const { data, call } = setup();
+  const { verifyPassword } = require('../src/user-password');
+  const created = await call('POST', '/api/admin/users', { phone: '13900139001' });
+  assert(created.temporaryPassword.length >= 12);
+  assert(verifyPassword(data.users.at(-1), created.temporaryPassword));
+  for (const id of ['u1', created.id]) {
+    await assert.rejects(call('POST', `/api/admin/users/${id}/temporary-password`, {}, ''), { status: 401 });
+    const first = await call('POST', `/api/admin/users/${id}/temporary-password`);
+    const second = await call('POST', `/api/admin/users/${id}/temporary-password`);
+    const user = data.users.find((item) => item.id === id);
+    assert.notEqual(first.temporaryPassword, second.temporaryPassword);
+    assert(!verifyPassword(user, first.temporaryPassword));
+    assert(verifyPassword(user, second.temporaryPassword));
+    assert.equal(user.mustChangeWebPassword, true);
+    assert.equal(user.temporaryPassword, undefined);
+  }
+  const listed = await call('GET', '/api/admin/users');
+  assert(listed.every((user) => !user.temporaryPassword && !user.webPasswordHash));
+});
+
+test('user list reload retains current pagination and search', async () => {
+  const html = fs.readFileSync(path.join(__dirname, '../public/admin/index.html'), 'utf8');
+  const source = html.match(/function renderUsers\(\) \{[\s\S]*?\n\}/)[0];
+  const context = { _userPage: 3, _userKeyword: '用户', api: async () => [{ id: 'u1' }], drawUsers: () => {} };
+  vm.runInNewContext(source + '\nrenderUsers();', context);
+  await Promise.resolve();
+  assert.equal(context._userPage, 3);
+  assert.equal(context._userKeyword, '用户');
+});
+
 test('admin can set a custom service package expiry date for legacy subscribers', async () => {
   const { data, call } = setup();
   await assert.rejects(call('PUT', '/api/admin/users/u1/service', { action: 'set', expireDate: '2099-12-31' }, ''), { status: 401 });

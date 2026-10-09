@@ -33,4 +33,8 @@ function verifyPassword(user, password) {
   return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
 }
 
-module.exports = { MIN_LENGTH, MAX_LENGTH, setPassword, verifyPassword };
+function generateTemporaryPassword() {
+  return 'Aa9!' + crypto.randomBytes(15).toString('hex');
+}
+
+module.exports = { MIN_LENGTH, MAX_LENGTH, setPassword, verifyPassword, generateTemporaryPassword };

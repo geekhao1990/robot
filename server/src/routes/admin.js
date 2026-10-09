@@ -12,7 +12,7 @@ const { URL } = require('url');
 const { latestRanking, publicRanking } = require('../dark-fund-ranking');
 const darkFundRankingSync = require('../dark-fund-ranking-sync');
 const { buildMonitoringStats } = require('../monitoring-stats');
-const { setPassword } = require('../user-password');
+const { setPassword, generateTemporaryPassword } = require('../user-password');
 const { paymentOrderView } = require('../payment-orders');
 
 module.exports = function register(router, HttpError) {
@@ -625,7 +625,7 @@ module.exports = function register(router, HttpError) {
     const d = db.get();
     const b = ctx.body || {};
     const phone = String(b.phone || '').replace(/\D/g, '');
-    const temporaryPassword = String(b.temporaryPassword || '');
+    const temporaryPassword = generateTemporaryPassword();
     if (!/^1\d{10}$/.test(phone)) throw new HttpError(400, '请输入正确的手机号');
     if (d.users.some((item) => String(item.phone || '').replace(/\D/g, '') === phone)) throw new HttpError(409, '该手机号已绑定其他用户');
     if (temporaryPassword.length < 12 || temporaryPassword.length > 64) throw new HttpError(400, '临时密码必须为12到64位');
@@ -659,7 +659,18 @@ module.exports = function register(router, HttpError) {
     setPassword(user, temporaryPassword);
     d.users.push(user);
     db.save();
-    return adminUserView(user);
+    return { ...adminUserView(user), temporaryPassword };
+  });
+
+  router.post('/api/admin/users/:id/temporary-password', (ctx) => {
+    requireAuth(ctx);
+    const user = db.get().users.find((item) => item.id === ctx.params.id);
+    if (!user) throw new HttpError(404, '用户不存在');
+    const temporaryPassword = generateTemporaryPassword();
+    setPassword(user, temporaryPassword);
+    user.mustChangeWebPassword = true;
+    db.save();
+    return { ...adminUserView(user), temporaryPassword };
   });
 
   router.put('/api/admin/users/:id', (ctx) => {
