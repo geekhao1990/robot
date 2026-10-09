@@ -10,18 +10,22 @@ test('validate confirmed data and reject malformed fields',()=>{
   assert.throws(()=>ladder.validate({...sample,date:''}));
   assert.throws(()=>ladder.validate({...sample,groups:[{height:'1板',stocks:[{name:'股票',broken:'false'}]}]}));
 });
-test('OCR coordinates reach DeepSeek and result stays unconfirmed',async()=>{
-  const keys=['LADDER_OCR_SECRET_ID','LADDER_OCR_SECRET_KEY','DEEPSEEK_API_KEY'];
+test('image goes directly to DeepSeek and result stays unconfirmed',async()=>{
+  const keys=['DEEPSEEK_API_KEY'];
   const old=keys.map(k=>process.env[k]);keys.forEach(k=>process.env[k]='test');
   const calls=[];
   try{
     const result=await ladder.recognize('data:image/png;base64,YQ==',async(url,opts)=>{
-      calls.push({url,opts});return {ok:true,json:async()=>calls.length===1?{Response:{TextDetections:[{DetectedText:'新华传媒',Confidence:99,Polygon:[{X:1,Y:2}]}]}}:{choices:[{finish_reason:'stop',message:{content:JSON.stringify(sample)}}]}};
+      calls.push({url,opts});return {ok:true,json:async()=>({choices:[{finish_reason:'stop',message:{content:JSON.stringify(sample)}}]})};
     });
     assert.equal(result.data.groups[0].stocks[0].name,'新华传媒');
     assert.equal(result.confirmed,undefined);
-    assert.match(calls[0].opts.headers.Authorization,/TC3-HMAC-SHA256/);
-    assert.match(JSON.parse(calls[1].opts.body).messages[1].content,/polygon/);
+    assert.equal(calls.length,1);
+    assert.equal(calls[0].url,'https://api.deepseek.com/chat/completions');
+    const body=JSON.parse(calls[0].opts.body);
+    assert.equal(body.model,'deepseek-flash');
+    assert.equal(body.messages[1].content[1].image_url.url,'data:image/png;base64,YQ==');
+    assert.equal(ladder.status().ocrConfigured,undefined);
   }finally{keys.forEach((k,i)=>old[i]===undefined?delete process.env[k]:process.env[k]=old[i]);}
 });
 test('routes require admin and explicit confirmation',()=>{

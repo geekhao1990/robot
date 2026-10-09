@@ -2,7 +2,7 @@ let ladderImage = '', ladderRevision = 0;
 function renderLadder() {
   ladderImage = ''; ladderRevision++;
   document.getElementById('content').innerHTML = `<h2>连板天梯制图</h2>
-  <p style="margin:16px 0">上传截图 → OCR＋DeepSeek提取JSON → 人工确认 → 绘图。截图将发送腾讯云OCR，识别文字发送DeepSeek，可能产生接口费用。</p>
+  <p style="margin:16px 0">上传截图 → DeepSeek识图提取JSON → 人工确认 → 绘图。截图将直接发送DeepSeek，可能产生接口费用。</p>
   <p id="ladderConfig">正在检查接口配置…</p>
   <input type="file" accept="image/png,image/jpeg" onchange="loadLadderImage(this)" />
   <button id="ladderRecognize" class="btn-primary" onclick="recognizeLadder(this)" disabled>识别并提取JSON</button>
@@ -10,11 +10,11 @@ function renderLadder() {
   <div style="flex:1"><p id="ladderNotice">也可以粘贴已有JSON。断板划线需要对照原图人工确认。</p>
   <textarea id="ladderJson" style="width:100%;height:480px;font-family:monospace" oninput="invalidateLadder()" placeholder="识别后的JSON会显示在这里，可直接修改"></textarea>
   <button class="btn-primary" onclick="confirmLadder(this)">确认JSON并生成图片</button>
-  <details><summary>查看OCR原始文字和坐标</summary><pre id="ladderRaw" style="white-space:pre-wrap"></pre></details></div></div>
+  </div></div>
   <div id="ladderOutput" style="margin-top:20px"></div>`;
   api('/api/admin/ladder/config').then(c=>{
     const el=document.getElementById('ladderConfig');
-    if(el) el.textContent=`腾讯云OCR：${c.ocrConfigured?'已配置':'未配置'}；DeepSeek：${c.deepseekConfigured?'已配置':'未配置'}；模型：${c.model}。未配置时仍可粘贴JSON绘图。`;
+    if(el) el.textContent=`DeepSeek：${c.deepseekConfigured?'已配置':'未配置'}；模型：${c.model}。未配置时仍可粘贴JSON绘图。`;
   }).catch(e=>showAdminToast(e.message,'error'));
 }
 function invalidateLadder(){ladderRevision++;const el=document.getElementById('ladderOutput');if(el)el.innerHTML='';}
@@ -33,7 +33,7 @@ async function loadLadderImage(input){
     if(url.length>900000)throw new Error('图片过大，请裁剪后上传');
     if(revision!==ladderRevision)return;
     ladderImage=url;document.getElementById('ladderSource').src=url;document.getElementById('ladderSource').style.display='block';
-    document.getElementById('ladderJson').value='';document.getElementById('ladderRaw').textContent='';
+    document.getElementById('ladderJson').value='';
     document.getElementById('ladderRecognize').disabled=false;
   }catch(e){showAdminToast(e.message,'error');}
 }
@@ -44,7 +44,6 @@ async function recognizeLadder(button){
     const result=await api('/api/admin/ladder/recognize',{method:'POST',body:JSON.stringify({image:ladderImage})});
     if(revision!==ladderRevision)return;
     document.getElementById('ladderJson').value=JSON.stringify(result.data,null,2);
-    document.getElementById('ladderRaw').textContent=JSON.stringify(result.ocr,null,2);
     document.getElementById('ladderNotice').textContent=result.warning+' '+(result.data.warnings||[]).join('；');
   }catch(e){showAdminToast(e.message,'error');}finally{button.disabled=false;button.textContent='识别并提取JSON';}
 }
