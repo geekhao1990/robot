@@ -33,27 +33,29 @@ function renderAiMedia() {
   }).catch(error=>{status.textContent=error.message||'榜单状态读取失败';});
 }
 function renderLadder(kind = 'ladder') {
+  resetMediaWording();
   mediaKind=kind;
   const isDragon=kind==='dragon', title=isDragon?'游资龙虎榜':'连板天梯';
   ladderImage = ''; ladderRevision++;
   document.getElementById('content').innerHTML = `<button class="btn-sm" onclick="switchView('aiMedia')">← 返回AI自媒体</button><h2 style="margin-top:16px">${title}图生成</h2>
   <p class="hint" style="margin-top:8px">${isDragon?'红色买入、绿色卖出；金额及三日、昨入备注按原图保留。':'模板来自抖音连扳炒家'}</p>
-  <p style="margin:16px 0">上传截图 → DeepSeek识图提取JSON → 人工确认 → 绘图。截图将直接发送DeepSeek，可能产生接口费用。</p>
+  <p style="margin:16px 0">上传截图 → DeepSeek识图提取JSON → 人工确认 → ${MEDIA_WORDING_POLICIES[kind]?'可选文案调整 → ':''}绘图。截图将直接发送DeepSeek，可能产生接口费用。</p>
   <p id="ladderConfig">正在检查接口配置…</p>
   <input type="file" accept="image/png,image/jpeg" onchange="loadLadderImage(this)" />
   <button id="ladderRecognize" class="btn-primary" onclick="recognizeLadder(this)" disabled>识别并提取JSON</button>
   <div style="display:flex;gap:20px;margin-top:20px;align-items:flex-start"><img id="ladderSource" style="width:35%;display:none" alt="原始截图" />
   <div style="flex:1"><p id="ladderNotice">也可以粘贴已有JSON。${isDragon?'核对席位、买卖方向和金额单位，缺失数据不要补造。':'断板划线需要对照原图人工确认。'}</p>
   <textarea id="ladderJson" style="width:100%;height:480px;font-family:monospace" oninput="invalidateLadder()" placeholder="识别后的JSON会显示在这里，可直接修改"></textarea>
-  <button class="btn-primary" onclick="confirmLadder(this)">确认JSON并生成图片</button>
+  <button class="btn-primary" onclick="confirmLadder(this)">${MEDIA_WORDING_POLICIES[kind]?'确认JSON，下一步':'确认JSON并生成图片'}</button>
   </div></div>
+  <div id="mediaWording"></div>
   <div id="ladderOutput" style="margin-top:20px"></div>`;
   api('/api/admin/ladder/config').then(c=>{
     const el=document.getElementById('ladderConfig');
     if(el) el.textContent=`DeepSeek：${c.deepseekConfigured?'已配置':'未配置'}；模型：${c.model}。未配置时仍可粘贴JSON绘图。`;
   }).catch(e=>showAdminToast(e.message,'error'));
 }
-function invalidateLadder(){ladderRevision++;const el=document.getElementById('ladderOutput');if(el)el.innerHTML='';}
+function invalidateLadder(resetWording=true){ladderRevision++;if(resetWording)resetMediaWording();const el=document.getElementById('ladderOutput');if(el)el.innerHTML='';}
 async function loadLadderImage(input){
   invalidateLadder();ladderImage='';document.getElementById('ladderRecognize').disabled=true;
   const file=input.files[0];if(!file)return;
@@ -83,14 +85,19 @@ async function recognizeLadder(button){
     document.getElementById('ladderNotice').textContent=result.warning+' '+(result.data.warnings||[]).join('；');
   }catch(e){showAdminToast(e.message,'error');}finally{button.disabled=false;button.textContent='识别并提取JSON';}
 }
-async function confirmLadder(button){
+async function confirmLadder(button,wordingConfirmed=false){
   const revision=ladderRevision,kind=mediaKind;
   try{
-    const data=JSON.parse(document.getElementById('ladderJson').value);
-    if(!confirm(kind==='dragon'?'已对照原图核对JSON中的席位、股票、日期、买卖方向、金额及备注，确认绘图？':'已对照原图核对JSON中的股票、层级、日期、时间及断板标记，确认绘图？'))return;
+    let data=JSON.parse(document.getElementById('ladderJson').value);
+    if(wordingConfirmed){
+      if(!mediaWordingReview||mediaWordingReview.kind!==kind||mediaWordingReview.source!==document.getElementById('ladderJson').value)throw new Error('JSON已变更，请重新确认JSON');
+      data=applyMediaWording(kind,data,mediaWordingReview.rows);
+    }
+    if(!confirm(wordingConfirmed?'确认采用所选文案生成图片？':kind==='dragon'?'已对照原图核对JSON中的席位、股票、日期、买卖方向、金额及备注，确认绘图？':'已对照原图核对JSON中的股票、层级、日期、时间及断板标记，进入文案选项？'))return;
     button.disabled=true;
     const result=await api(mediaEndpoint(kind)+'/confirm',{method:'POST',body:JSON.stringify({confirmed:true,data})});
     if(revision!==ladderRevision)return;
+    if(MEDIA_WORDING_POLICIES[kind]&&!wordingConfirmed){showMediaWording(kind,result.data);return;}
     if(document.fonts)await document.fonts.ready;
     if(revision!==ladderRevision)return;
     const canvas=await (kind==='dragon'?drawDragon(result.data):drawLadder(result.data));

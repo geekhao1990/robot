@@ -4,6 +4,8 @@ const LADDER_DISCLAIMER = '数据来自互联网，图表由AI生成，不构成
 function ladderEscape(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function ladderTemplate(data) {
   const e=ladderEscape;
+  const p=data.presentation||{};
+  const wording=(key,fallback)=>e(p[key]??fallback);
   const hasChange=s=>s.change!=null&&String(s.change).trim()!=='';
   const broken=s=>hasChange(s)||s.broken===true;
   function stock(s) {
@@ -17,20 +19,20 @@ function ladderTemplate(data) {
     let content='',compact=[];
     const flush=()=>{if(compact.length){content+=`<div class="compact">${compact.map(s=>`<span class="compact-stock ${broken(s)?'broken':''}">${e(s.name)}</span>`).join('、')}</div>`;compact=[];}};
     for(const s of g.stocks){if(first&&!s.time&&!s.sector&&!hasChange(s)&&s.oneWord!==true)compact.push(s);else{flush();content+=stock(s);}}flush();
-    const height=first?`首 板<br>(${g.stocks.length})`:e(g.height);
+    const height=first?`${wording('firstBoard','首 板')}<br>(${g.stocks.length})`:e(g.height);
     return `<div class="tier ${first?'first':g.stocks.length<=7?'short':g.stocks.length<=14?'two':''}"><div class="height">${height}</div><div class="stocks">${content}</div></div>`;
   }).join('');
   const parts=data.date.split('-').map(Number);
   const dateText=`${parts[0]}年${parts[1]}月${parts[2]}日 星期${'日一二三四五六'[new Date(Date.UTC(parts[0],parts[1]-1,parts[2])).getUTCDay()]}`;
-  const market=data.market||[];
+  const market=p.market||data.market||[];
   let top='';
-  const breadth=(market[3]||'').match(/^涨\s*(\d+)\s*跌\s*(\d+)$/);
+  const breadth=(market[3]||'').match(/^(涨|上涨)\s*(\d+)(家?)\s*(跌|下跌)\s*(\d+)(家?)$/);
   if(market.length===4&&breadth){
-    const total=Number(breadth[1])+Number(breadth[2]);
-    top=`<div class="market-line"><span>${e(market[0])}</span><span class="right">${e(market[1])}</span></div><div class="index-line"><span class="red index-value">${e(market[2])}</span><span class="breadth">涨${breadth[1]}<span class="bar"><i style="width:${total?Number(breadth[1])/total*100:50}%"></i><b></b></span><span class="green">跌${breadth[2]}</span></span></div>`;
+    const total=Number(breadth[2])+Number(breadth[5]);
+    top=`<div class="market-line"><span>${e(market[0])}</span><span class="right">${e(market[1])}</span></div><div class="index-line"><span class="red index-value">${e(market[2])}</span><span class="breadth">${breadth[1]}${breadth[2]}${breadth[3]}<span class="bar"><i style="width:${total?Number(breadth[2])/total*100:50}%"></i><b></b></span><span class="green">${breadth[4]}${breadth[5]}${breadth[6]}</span></span></div>`;
   }else{top=market.map(s=>`<div class="market-generic">${e(s)}</div>`).join('');}
   const sectors=(data.sectors||[]).flatMap(s=>s.split(/\s+(?=\S+[（(])/)).map(s=>`<span class="${s.startsWith('电池')?'battery':s.startsWith('出版')?'publish':''}">${e(s)}</span>`).join('');
-  return `<main class="poster"><div class="top">${top}</div><div class="heading"><h1>连板天梯</h1><span>（${e(dateText)}）</span></div><div class="sectors">${sectors}</div><section class="ladder"><div class="table-head"><span class="height-head">高度</span><span class="label">梯队</span><span class="desc">（打叉的表示断板）</span></div>${groups}</section><p class="disclaimer">${LADDER_DISCLAIMER}</p><div class="watermarks" aria-hidden="true">${Array.from({length:70},(_,i)=>`<span style="top:${100+i*154}px;left:${i%2?552:-57}px">小程序指标仓库</span>`).join('')}</div></main>`;
+  return `<main class="poster"><div class="top">${top}</div><div class="heading"><h1>${wording('title','连板天梯')}</h1><span>（${e(dateText)}）</span></div><div class="sectors">${sectors}</div><section class="ladder"><div class="table-head"><span class="height-head">${wording('heightHead','高度')}</span><span class="label">${wording('tierHead','梯队')}</span><span class="desc">（${wording('brokenNote','打叉的表示断板')}）</span></div>${groups}</section><p class="disclaimer">${LADDER_DISCLAIMER}</p><div class="watermarks" aria-hidden="true">${Array.from({length:70},(_,i)=>`<span style="top:${100+i*154}px;left:${i%2?552:-57}px">小程序指标仓库</span>`).join('')}</div></main>`;
 }
 async function drawLadder(data) {
   if(typeof html2canvas!=='function')throw new Error('绘图组件未加载，请刷新后台');

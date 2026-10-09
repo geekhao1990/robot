@@ -20,6 +20,20 @@ function validate(data) {
   if (!total || total > 200) throw fail('股票数必须在1至200之间');
   for (const key of ['market','sectors']) if (data[key] != null && (!Array.isArray(data[key]) || data[key].length > 40 || !data[key].every(v=>str(v)))) throw fail(`${key}必须为短文本数组（最多40条，每条120字）`);
   // Warnings are review notes, not compact canvas labels. Preserve detailed model explanations.
+  if(data.presentation!=null){
+    const p=data.presentation;
+    const limits={title:4,heightHead:3,tierHead:4,firstBoard:3,brokenNote:16};
+    if(typeof p!=='object'||Array.isArray(p))throw fail('文案配置格式错误');
+    for(const key of Object.keys(p)){
+      if(key==='market')continue;
+      if(!limits[key]||!str(p[key],limits[key])||!p[key].trim())throw fail(`文案${key}不能为空且最多${limits[key]||0}字`);
+    }
+    if(p.market!=null){
+      const numbers=v=>JSON.stringify(String(v).match(/[+\-−＋]?\d+(?:\.\d+)?[%％]?/g)||[]);
+      if(!Array.isArray(p.market)||p.market.length!==(data.market||[]).length)throw fail('顶部摘要条数不可改变');
+      p.market.forEach((v,i)=>{if(!str(v)||!v.trim()||numbers(v)!==numbers(data.market[i]))throw fail('文案调整不能改变顶部摘要数值及正负号');});
+    }
+  }
   if (data.warnings != null && (!Array.isArray(data.warnings) || data.warnings.length > 100 || !data.warnings.every(v=>str(v, 5000)))) {
     throw fail('warnings必须为文本数组（最多100条，每条5000字）');
   }
