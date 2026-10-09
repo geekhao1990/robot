@@ -6,7 +6,7 @@ const vm = require('node:vm');
 test('both posters render ten rows and one expanded chart without leaking codes', () => {
   for (const side of ['inflow', 'outflow']) {
     const texts = [];
-    const ctx = { fillText: (t) => texts.push(t), fillRect() {}, measureText: (t) => ({ width: t.length * 30 }) };
+    const ctx = { fillText: (t) => texts.push(t), fillRect() {}, beginPath() {}, roundRect() {}, fill() {}, stroke() {}, measureText: (t) => ({ width: t.length * 30 }) };
     const canvas = { getContext: () => ctx };
     const context = { document: { createElement: () => canvas } };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/ranking-poster.js'),'utf8'),context);

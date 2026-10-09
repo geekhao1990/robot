@@ -5,9 +5,9 @@ function drawRankingPoster(ranking, side) {
   if (!rows.length) throw new Error('请先生成有效暗盘榜');
   const canvas = document.createElement('canvas');
   canvas.width = 1080;
-  canvas.height = 380 + rows.length * 106 + 480;
+  canvas.height = 380 + rows.length * 106 + 640;
   const ctx = canvas.getContext('2d');
-  const red = '#ed3544', green = '#00a86b', ink = '#202735';
+  const red = '#ff3b30', green = '#00a84f', ink = '#202735';
   const number = (v) => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null;
   const color = (v) => number(v) === null ? '#9299a4' : Number(v) >= 0 ? red : green;
   function text(value, x, y, size = 28, fill = ink, align = 'left', bold = false) {
@@ -16,11 +16,15 @@ function drawRankingPoster(ranking, side) {
     ctx.fillText(String(value), x, y);
   }
   function box(x, y, w, h, fill) { ctx.fillStyle = fill; ctx.fillRect(x, y, w, h); }
+  function rounded(x,y,w,h,r,fill,stroke) {
+    ctx.beginPath(); ctx.roundRect(x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.5;ctx.stroke();}
+  }
   function unit(row) {
     return Math.max(...['grey', 'listed', 'main', 'retail'].map((key) => Math.abs(number(row[key]) || 0))) >= 1e8 ? 1e8 : 1e4;
   }
   function money(value, divisor) {
-    return number(value) === null ? '—' : `${Number(value) > 0 ? '+' : ''}${(Number(value) / divisor).toFixed(2)}${divisor === 1e8 ? '亿' : '万'}`;
+    return number(value) === null ? '—' : `${Number(value) > 0 ? '+' : ''}${(Number(value) / divisor).toFixed(divisor === 1e8 ? 2 : 1)}${divisor === 1e8 ? '亿' : '万'}`;
   }
   box(0, 0, 1080, canvas.height, '#ffffff');
   box(0, 0, 1080, 12, side === 'inflow' ? red : green);
@@ -45,21 +49,24 @@ function drawRankingPoster(ranking, side) {
     text(money(row.listed,divisor),1015,y+60,27,color(row.listed),'right');
     y += 106;
     if (index === 0) {
-      box(48,y,984,460,'#f8f9fb');
-      text(`主力流向（${divisor===1e8?'亿元':'万元'}）`,76,y+44,29,ink,'left',true);
-      text(`主力净流入 ${money(row.main,divisor)}`,76,y+92,26,color(row.main));
-      text(`散户流入 ${money(row.retail,divisor)}`,1004,y+92,26,color(row.retail),'right');
+      rounded(48,y,984,620,20,'#fafafa','#e5e5e5');
+      text(`主力流向（${divisor===1e8?'亿元':'万元'}）`,80,y+52,32,ink,'left',true);
+      rounded(80,y+78,920,132,16,'#f0f1f2');
+      text('主力净流入',310,y+126,26,'#777','center');
+      text(money(row.main,divisor),310,y+174,34,color(row.main),'center',true);
+      text('散户流入',770,y+126,26,'#777','center');
+      text(money(row.retail,divisor),770,y+174,34,color(row.retail),'center',true);
       const bars = [['主力明盘',row.listed],['主力暗盘',row.grey],['散户流入',row.retail]];
       const max = Math.max(1,...bars.map(([,v])=>Math.abs(number(v)||0)));
-      const zero = y+250;
-      box(80,zero,920,2,'#cbd0d8');
+      const zero = y+390;
+      box(80,zero,920,1.5,'#cfd3d8');
       bars.forEach(([label,value],i)=>{
-        const x=230+i*310, v=number(value), height=v===null?0:Math.abs(v)/max*100;
-        if(v!==null) box(x-30,v>=0?zero-height:zero,60,height,color(v));
-        text(money(value,divisor),x,v===null?zero-18:v>=0?zero-height-16:zero+height+32,26,color(v),'center');
-        text(label,x,y+425,28,'#626b77','center');
+        const x=233+i*307, v=number(value), height=v===null||v===0?0:Math.max(8,Math.abs(v)/max*128);
+        if(height) box(x-24,v>=0?zero-height:zero,48,height,color(v));
+        text(money(value,divisor),x,v===null?zero-18:v>=0?zero-height-16:zero+height+32,26,color(v),'center',true);
+        text(label,x,y+593,28,'#666','center');
       });
-      y+=480;
+      y+=640;
     }
     box(48,y-1,984,1,'#e7e9ee');
   });

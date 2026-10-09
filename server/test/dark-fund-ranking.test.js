@@ -75,7 +75,7 @@ test('daily ranking reuses same-day close cache and sorts inflow/outflow', async
   const ranking = await generateRanking({
     data,
     tradeDate,
-    payload: { stocks: [{ stockCode: '600105', changePercent: -1.25 }, { stockCode: '600159', changePercent: 3.4567 }] },
+    payload: { stocks: [{ stockCode: '600105', stockName: '热榜名称甲', changePercent: -1.25 }, { stockCode: '600159', stockName: '热榜名称乙', changePercent: 3.4567 }] },
     fetchClose: async (stockCode) => {
       fetchCount += 1;
       return closeResult(stockCode, '大龙地产', tradeDate, 90000000);
@@ -83,6 +83,8 @@ test('daily ranking reuses same-day close cache and sorts inflow/outflow', async
   });
   assert.equal(fetchCount, 1);
   assert.equal(ranking.cacheHitCount, 1);
+  assert.equal(ranking.inflow[0].stockName, '热榜名称乙');
+  assert.equal(ranking.outflow[0].stockName, '热榜名称甲');
   assert.equal(ranking.inflow[0].stockCode, '600159');
   assert.equal(ranking.inflow[0].changePercent, 3.4567);
   assert.equal(ranking.outflow[0].stockCode, '600105');

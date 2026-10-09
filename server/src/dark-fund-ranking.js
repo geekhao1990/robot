@@ -70,7 +70,7 @@ function normalizeCandidates(payload) {
     seen.add(stockCode);
     candidates.push({
       stockCode,
-      stockName: mapped.stockName,
+      stockName: String(typeof row === 'object' && (row.stockName || row.name) || mapped.stockName).trim(),
       stockDisplayName: mapped.stockDisplayName,
       hotRank: Number(typeof row === 'object' && (row.hotRank || row.rank || row.order)) || index + 1,
       changePercent: finiteNumberOrNull(typeof row === 'object'
@@ -137,7 +137,7 @@ function rankingItem(candidate, result, cacheHit) {
   if (!Number.isFinite(funds.grey)) throw new Error('返回结果缺少当日暗盘资金');
   return {
     stockCode: candidate.stockCode,
-    stockName: result.stockName || candidate.stockName,
+    stockName: candidate.stockName,
     stockDisplayName: candidate.stockDisplayName,
     hotRank: candidate.hotRank,
     changePercent: candidate.changePercent,
