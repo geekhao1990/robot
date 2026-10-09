@@ -6,7 +6,7 @@ const path=require('node:path');
 const {validate}=require('../src/ladder-ocr');
 const sample={date:'2026-10-09',market:['沪深总成交：放量 市场情绪：68','无明显偏好，风格整体上涨','上证指数 3813.79 +1.89 +0.05%','涨3297 跌2145'],groups:[{height:'首板',stocks:[{name:'股票甲',time:'09:30',sector:'电池',change:null}]}]};
 const read=name=>fs.readFileSync(path.join(__dirname,'../public/admin',name),'utf8');
-function make(extra={}){vm.runInNewContext(read('ladder-layout.js'),extra);vm.runInNewContext(read('media-wording.js'),extra);return extra;}
+function make(extra={}){vm.runInNewContext(read('ladder-layout.js'),extra);vm.runInNewContext(read('media-wording.js'),extra);vm.runInNewContext(read('media-review.js'),extra);return extra;}
 test('ABC wording preserves facts and original rendering while unknown modules skip',()=>{
   const ctx=make(),before=JSON.stringify(sample);
   for(const variant of ['A','B','C']){

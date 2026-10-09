@@ -34,6 +34,7 @@ function renderAiMedia() {
 }
 function renderLadder(kind = 'ladder') {
   resetMediaWording();
+  mediaReviewOnlyIssues=false;
   mediaKind=kind;
   const isDragon=kind==='dragon', title=isDragon?'游资龙虎榜':'连板天梯';
   ladderImage = ''; ladderRevision++;
@@ -43,13 +44,16 @@ function renderLadder(kind = 'ladder') {
   <p id="ladderConfig">正在检查接口配置…</p>
   <input type="file" accept="image/png,image/jpeg" onchange="loadLadderImage(this)" />
   <button id="ladderRecognize" class="btn-primary" onclick="recognizeLadder(this)" disabled>识别并提取JSON</button>
-  <div style="display:flex;gap:20px;margin-top:20px;align-items:flex-start"><img id="ladderSource" style="width:35%;display:none" alt="原始截图" />
-  <div style="flex:1"><p id="ladderNotice">也可以粘贴已有JSON。${isDragon?'核对席位、买卖方向和金额单位，缺失数据不要补造。':'断板划线需要对照原图人工确认。'}</p>
-  <textarea id="ladderJson" style="width:100%;height:480px;font-family:monospace" oninput="invalidateLadder()" placeholder="识别后的JSON会显示在这里，可直接修改"></textarea>
-  <button class="btn-primary" onclick="confirmLadder(this)">${MEDIA_WORDING_POLICIES[kind]?'确认JSON，下一步':'确认JSON并生成图片'}</button>
+  <style>${MEDIA_REVIEW_CSS}.mr-layout:has(.mr-source img[src=""]){grid-template-columns:1fr}</style>
+  <div class="mr-layout"><div class="mr-source"><p>原图对照 · 点击图片放大/还原，可滚动查看</p><img id="ladderSource" src="" style="display:none" onclick="this.classList.toggle('mr-zoom')" alt="原始截图" /></div>
+  <div style="min-width:0"><p id="ladderNotice">直接在数据框里核对和修改，空白不代表0，待确认不代表否。</p>
+  <div id="mediaReview"></div>
+  <details class="mr-advanced"><summary>高级选项：原始JSON（可粘贴 / 编辑）</summary><textarea id="ladderJson" style="width:100%;height:300px;font-family:monospace" oninput="rawMediaReviewChanged()" placeholder="也可粘贴已有JSON，自动转成数据框"></textarea></details>
+  <button class="btn-primary" onclick="confirmLadder(this)">${MEDIA_WORDING_POLICIES[kind]?'确认数据，下一步':'确认数据并生成图片'}</button>
   </div></div>
   <div id="mediaWording"></div>
   <div id="ladderOutput" style="margin-top:20px"></div>`;
+  renderMediaReview();
   api('/api/admin/ladder/config').then(c=>{
     const el=document.getElementById('ladderConfig');
     if(el) el.textContent=`DeepSeek：${c.deepseekConfigured?'已配置':'未配置'}；模型：${c.model}。未配置时仍可粘贴JSON绘图。`;
@@ -58,6 +62,9 @@ function renderLadder(kind = 'ladder') {
 function invalidateLadder(resetWording=true){ladderRevision++;if(resetWording)resetMediaWording();const el=document.getElementById('ladderOutput');if(el)el.innerHTML='';}
 async function loadLadderImage(input){
   invalidateLadder();ladderImage='';document.getElementById('ladderRecognize').disabled=true;
+  document.getElementById('ladderJson').value='';
+  document.getElementById('ladderSource').src='';document.getElementById('ladderSource').style.display='none';
+  renderMediaReview();
   const file=input.files[0];if(!file)return;
   const revision=ladderRevision;
   try{
@@ -72,6 +79,7 @@ async function loadLadderImage(input){
     if(revision!==ladderRevision)return;
     ladderImage=url;document.getElementById('ladderSource').src=url;document.getElementById('ladderSource').style.display='block';
     document.getElementById('ladderJson').value='';
+    renderMediaReview();
     document.getElementById('ladderRecognize').disabled=false;
   }catch(e){showAdminToast(e.message,'error');}
 }
@@ -82,7 +90,8 @@ async function recognizeLadder(button){
     const result=await api(mediaEndpoint(kind)+'/recognize',{method:'POST',body:JSON.stringify({image:ladderImage})});
     if(revision!==ladderRevision)return;
     document.getElementById('ladderJson').value=JSON.stringify(result.data,null,2);
-    document.getElementById('ladderNotice').textContent=result.warning+' '+(result.data.warnings||[]).join('；');
+    document.getElementById('ladderNotice').textContent=result.warning||'请核对下方数据框，确认后才绘图。';
+    renderMediaReview();
   }catch(e){showAdminToast(e.message,'error');}finally{button.disabled=false;button.textContent='识别并提取JSON';}
 }
 async function confirmLadder(button,wordingConfirmed=false){
@@ -93,7 +102,7 @@ async function confirmLadder(button,wordingConfirmed=false){
       if(!mediaWordingReview||mediaWordingReview.kind!==kind||mediaWordingReview.source!==document.getElementById('ladderJson').value)throw new Error('JSON已变更，请重新确认JSON');
       data=applyMediaWording(kind,data,mediaWordingReview.rows);
     }
-    if(!confirm(wordingConfirmed?'确认采用所选文案生成图片？':kind==='dragon'?'已对照原图核对JSON中的席位、股票、日期、买卖方向、金额及备注，确认绘图？':'已对照原图核对JSON中的股票、层级、日期、时间及断板标记，进入文案选项？'))return;
+    if(!confirm(wordingConfirmed?'确认采用所选文案生成图片？':kind==='dragon'?'已对照原图核对数据框中的席位、股票、日期、买卖方向、金额及备注，确认绘图？':'已对照原图核对数据框中的股票、层级、日期、时间及断板标记，进入文案选项？'))return;
     button.disabled=true;
     const result=await api(mediaEndpoint(kind)+'/confirm',{method:'POST',body:JSON.stringify({confirmed:true,data})});
     if(revision!==ladderRevision)return;
