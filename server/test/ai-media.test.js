@@ -11,6 +11,7 @@ test('AI media owns the three content actions, while settings retains only ranki
   vm.runInNewContext(script,context);context.renderAiMedia();await Promise.resolve();
   assert.match(content.innerHTML,/模板来自抖音连扳炒家/);
   assert.match(content.innerHTML,/switchView\('ladder'\)/);
+  assert.match(content.innerHTML,/switchView\('dragon'\)/);
   assert.match(content.innerHTML,/generateRankingCopy\(this\)/);
   assert.match(content.innerHTML,/generateRankingPoster\('inflow',this\)/);
   assert.match(content.innerHTML,/generateRankingPoster\('outflow',this\)/);
@@ -26,4 +27,6 @@ test('ladder subpage keeps the AI media menu selected',()=>{
   const context={document:{querySelectorAll:()=>[{dataset:{view:'aiMedia'},classList:{toggle:(name,value)=>{selected=value;}}}],getElementById:()=>title},TITLES:{ladder:'AI自媒体 / 连板天梯图生成'},renderLadder:()=>{rendered=true;}};
   vm.runInNewContext(admin.match(/function switchView\(v\) \{[\s\S]*?\n\}/)[0],context);
   context.switchView('ladder');assert(selected);assert(rendered);assert.match(title.textContent,/AI自媒体/);
+  rendered=false;context.TITLES.dragon='AI自媒体 / 游资龙虎榜图生成';
+  context.switchView('dragon');assert(selected);assert(rendered);assert.match(title.textContent,/游资龙虎榜/);
 });

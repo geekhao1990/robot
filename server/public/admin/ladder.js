@@ -1,4 +1,6 @@
 let ladderImage = '', ladderRevision = 0;
+let mediaKind = 'ladder';
+const mediaEndpoint = kind => kind==='dragon'?'/api/admin/ladder/dragon':'/api/admin/ladder';
 function renderAiMedia() {
   ladderRevision++;
   document.getElementById('content').innerHTML = `<h2>AI自媒体</h2>
@@ -19,22 +21,29 @@ function renderAiMedia() {
         <button class="btn-primary" onclick="generateRankingPoster('outflow',this)">流出分享图</button>
       </div>
     </section>
+    <section style="flex:1;min-width:280px;padding:24px;border:1px solid #eee;border-radius:12px;background:#fff">
+      <h3>游资龙虎榜图生成</h3>
+      <p style="margin:12px 0 20px;color:#666">识别席位、买卖方向、金额及备注，确认JSON后统一排版导出。</p>
+      <button class="btn-primary" onclick="switchView('dragon')">进入游资龙虎榜图生成</button>
+    </section>
   </div>`;
   const status = document.getElementById('aiMediaRankingStatus');
   api('/api/admin/dark-fund-ranking').then(data=>{
     status.textContent=data.sync && data.sync.running ? '榜单正在更新，请完成后生成内容' : data.ranking ? `当前榜单：${data.ranking.tradeDate}` : '暂无榜单，请先在功能设置中生成暗盘榜';
   }).catch(error=>{status.textContent=error.message||'榜单状态读取失败';});
 }
-function renderLadder() {
+function renderLadder(kind = 'ladder') {
+  mediaKind=kind;
+  const isDragon=kind==='dragon', title=isDragon?'游资龙虎榜':'连板天梯';
   ladderImage = ''; ladderRevision++;
-  document.getElementById('content').innerHTML = `<button class="btn-sm" onclick="switchView('aiMedia')">← 返回AI自媒体</button><h2 style="margin-top:16px">连板天梯图生成</h2>
-  <p class="hint" style="margin-top:8px">模板来自抖音连扳炒家</p>
+  document.getElementById('content').innerHTML = `<button class="btn-sm" onclick="switchView('aiMedia')">← 返回AI自媒体</button><h2 style="margin-top:16px">${title}图生成</h2>
+  <p class="hint" style="margin-top:8px">${isDragon?'红色买入、绿色卖出；金额及三日、昨入备注按原图保留。':'模板来自抖音连扳炒家'}</p>
   <p style="margin:16px 0">上传截图 → DeepSeek识图提取JSON → 人工确认 → 绘图。截图将直接发送DeepSeek，可能产生接口费用。</p>
   <p id="ladderConfig">正在检查接口配置…</p>
   <input type="file" accept="image/png,image/jpeg" onchange="loadLadderImage(this)" />
   <button id="ladderRecognize" class="btn-primary" onclick="recognizeLadder(this)" disabled>识别并提取JSON</button>
   <div style="display:flex;gap:20px;margin-top:20px;align-items:flex-start"><img id="ladderSource" style="width:35%;display:none" alt="原始截图" />
-  <div style="flex:1"><p id="ladderNotice">也可以粘贴已有JSON。断板划线需要对照原图人工确认。</p>
+  <div style="flex:1"><p id="ladderNotice">也可以粘贴已有JSON。${isDragon?'核对席位、买卖方向和金额单位，缺失数据不要补造。':'断板划线需要对照原图人工确认。'}</p>
   <textarea id="ladderJson" style="width:100%;height:480px;font-family:monospace" oninput="invalidateLadder()" placeholder="识别后的JSON会显示在这里，可直接修改"></textarea>
   <button class="btn-primary" onclick="confirmLadder(this)">确认JSON并生成图片</button>
   </div></div>
@@ -66,29 +75,29 @@ async function loadLadderImage(input){
 }
 async function recognizeLadder(button){
   if(!ladderImage)return;
-  invalidateLadder();const revision=ladderRevision;button.disabled=true;button.textContent='识别中，请稍候…';
+  invalidateLadder();const revision=ladderRevision,kind=mediaKind;button.disabled=true;button.textContent='识别中，请稍候…';
   try{
-    const result=await api('/api/admin/ladder/recognize',{method:'POST',body:JSON.stringify({image:ladderImage})});
+    const result=await api(mediaEndpoint(kind)+'/recognize',{method:'POST',body:JSON.stringify({image:ladderImage})});
     if(revision!==ladderRevision)return;
     document.getElementById('ladderJson').value=JSON.stringify(result.data,null,2);
     document.getElementById('ladderNotice').textContent=result.warning+' '+(result.data.warnings||[]).join('；');
   }catch(e){showAdminToast(e.message,'error');}finally{button.disabled=false;button.textContent='识别并提取JSON';}
 }
 async function confirmLadder(button){
-  const revision=ladderRevision;
+  const revision=ladderRevision,kind=mediaKind;
   try{
     const data=JSON.parse(document.getElementById('ladderJson').value);
-    if(!confirm('已对照原图核对JSON中的股票、层级、日期、时间及断板标记，确认绘图？'))return;
+    if(!confirm(kind==='dragon'?'已对照原图核对JSON中的席位、股票、日期、买卖方向、金额及备注，确认绘图？':'已对照原图核对JSON中的股票、层级、日期、时间及断板标记，确认绘图？'))return;
     button.disabled=true;
-    const result=await api('/api/admin/ladder/confirm',{method:'POST',body:JSON.stringify({confirmed:true,data})});
+    const result=await api(mediaEndpoint(kind)+'/confirm',{method:'POST',body:JSON.stringify({confirmed:true,data})});
     if(revision!==ladderRevision)return;
     if(document.fonts)await document.fonts.ready;
     if(revision!==ladderRevision)return;
-    const canvas=await drawLadder(result.data);
+    const canvas=await (kind==='dragon'?drawDragon(result.data):drawLadder(result.data));
     if(revision!==ladderRevision)return;
     const url=canvas.toDataURL('image/png');
     const output=document.getElementById('ladderOutput');output.innerHTML='';
-    const link=document.createElement('a');link.href=url;link.download=`连板天梯-${data.date}.png`;link.textContent='下载PNG';link.className='btn-primary';output.appendChild(link);
+    const link=document.createElement('a');link.href=url;link.download=`${kind==='dragon'?'游资龙虎榜':'连板天梯'}-${data.date}.png`;link.textContent='下载PNG';link.className='btn-primary';output.appendChild(link);
     const img=document.createElement('img');img.src=url;img.style.cssText='display:block;max-width:100%;width:800px;margin-top:16px';output.appendChild(img);
   }catch(e){showAdminToast(e.message,'error');}finally{button.disabled=false;}
 }

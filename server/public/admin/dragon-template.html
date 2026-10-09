@@ -1,0 +1,31 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>游资龙虎榜模板预览 · 参考截图数据</title><script src="dragon-layout.js"></script><script src="vendor/html2canvas.min.js"></script></head><body><script>
+// Reference screenshot fixture only, never used by the live recognition endpoint.
+const entry=(name,amount,period=null,note=null)=>({name,amount,period,note,direction:amount&&amount.startsWith('-')?'sell':'buy'});
+const previewData={date:'10-09',groups:[
+{name:'量化打板',stocks:[entry('绿盟科技','1.09e'),entry('红豆股份','3606w','三日','昨入228万'),entry('吉林化纤','7603w'),entry('吉视传媒','7247w'),entry('敦煌种业','7085w'),entry('中红医疗','6392w'),entry('格尔软件','5915w'),entry('雄韬股份','3800w','三日'),entry('中文在线','4930w'),entry('麒麟信安','4529w'),entry('新经典','2523w'),entry('天融信','2274w'),entry('三柏硕','1416w','三日'),entry('金牛化工','-7554w'),entry('海欣食品','-3377w',null,'净1583w · 昨入3348万'),entry('金安国纪','-4245w'),entry('贝特利','-3042w',null,'昨入3253万'),entry('华北制药','-1399w',null,'昨入1533万')]},
+{name:'山东帮',stocks:[entry('金安国纪','9764w'),entry('吉视传媒','2150w')]},
+{name:'宁波桑田路',stocks:[entry('芒果超媒','8578w'),entry('金健米业','-3959w')]},
+{name:'上海超短',stocks:[entry('金健米业','8202w')]},
+{name:'温州帮',stocks:[entry('中文在线','7967w'),entry('丰元股份','2449w','三日'),entry('格尔软件','1180w'),entry('宏柏新材','-3615w'),entry('传艺科技','-2192w',null,'昨入2730万')]},
+{name:'炒新一族',stocks:[entry('ST联光','6413w','三日','昨入3433万')]},
+{name:'章盟主',stocks:[entry('东岳硅材','6049w'),entry('众生药业','3477w')]},
+{name:'中山东路',stocks:[entry('天融信','6124w')]},
+{name:'南京帮',stocks:[entry('世联行','2916w',null,'昨入8489万')]},
+{name:'玉兰路',stocks:[entry('大元泵业','-3998w')]},
+{name:'大小说家',stocks:[entry('九阳股份','3552w'),entry('中红医疗','1761w')]},
+{name:'作手新一',stocks:[entry('贝特利','-3137w',null,'昨入3300万'),entry('五方光电','-1538w')]},
+{name:'量化抢筹',stocks:[entry('襄阳轴承','-2652w',null,'昨入2901万')]},
+{name:'湖州劳动路',stocks:[entry('绿盟科技','2656w'),entry('楚环科技','1019w','三日')]},
+{name:'葛卫东',stocks:[entry('神农种业','2352w')]},
+{name:'华泰总部',stocks:[entry('百大集团','2325w'),entry('麒麟信安','1345w')]},
+{name:'益田路',stocks:[entry('天融信','2157w')]},
+{name:'成都系',stocks:[entry('吉视传媒','2023w')]},
+{name:'粉葛',stocks:[entry('华北制药','1670w','三日','昨入1671万')]},
+{name:'流沙河',stocks:[entry('华北制药','1558w')]},
+{name:'浙江帮',stocks:[entry('世联行','1404w')]},
+{name:'思明南路',stocks:[entry('新华传媒','1108w','三日','昨入1125万')]},
+{name:'拉萨天团',stocks:[entry('ST联光',null,'三日'),{...entry('金安国纪',null),direction:'sell'}]}
+]};
+const style=document.createElement('style');style.textContent=DRAGON_CSS;document.head.appendChild(style);document.body.innerHTML=dragonTemplate(previewData);
+if(location.search.includes('canvas'))drawDragon(previewData).then(c=>{const img=document.createElement('img');img.src=c.toDataURL('image/png');img.style.width='1000px';document.body.replaceChildren(img);document.body.dataset.export='ready';}).catch(e=>{document.body.textContent=e.message;document.body.dataset.export='failed';});
+</script></body></html>
