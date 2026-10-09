@@ -34,9 +34,27 @@ test('image goes directly to DeepSeek and result stays unconfirmed',async()=>{
     assert.equal(calls[0].url,'https://api.deepseek.com/chat/completions');
     const body=JSON.parse(calls[0].opts.body);
     assert.equal(body.model,'deepseek-flash');
+    assert.equal(body.thinking.type,'disabled');
+    assert.equal(body.max_tokens,32768);
+    assert.match(body.messages[0].content,/完整保留所有行/);
     assert.equal(body.messages[1].content[1].image_url.url,'data:image/png;base64,YQ==');
     assert.equal(ladder.status().ocrConfigured,undefined);
   }finally{keys.forEach((k,i)=>old[i]===undefined?delete process.env[k]:process.env[k]=old[i]);}
+});
+test('truncated output is rejected, logged safely and never automatically retried',async()=>{
+  const old=process.env.DEEPSEEK_API_KEY,oldWarn=console.warn;
+  process.env.DEEPSEEK_API_KEY='test-secret';const logs=[];console.warn=(...args)=>logs.push(args.join(' '));
+  try{
+    for(const content of ['{"groups":[',JSON.stringify(sample)]){
+      let calls=0;
+      await assert.rejects(ladder.recognize('data:image/png;base64,YQ==',async()=>{
+        calls++;return {ok:true,json:async()=>({usage:{completion_tokens:32768},choices:[{finish_reason:'length',message:{content}}]})};
+      }),e=>e.status===502&&/不是图片被裁切/.test(e.message)&&!/减少图片/.test(e.message));
+      assert.equal(calls,1);
+    }
+    assert.equal(logs.length,2);assert.match(logs[0],/32768/);
+    assert.doesNotMatch(logs.join(' '),/test-secret|base64|新华传媒/);
+  }finally{console.warn=oldWarn;if(old===undefined)delete process.env.DEEPSEEK_API_KEY;else process.env.DEEPSEEK_API_KEY=old;}
 });
 test('routes require admin and explicit confirmation',()=>{
   const routes={};const mod={exports:{}};

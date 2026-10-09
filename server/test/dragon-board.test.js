@@ -18,6 +18,7 @@ test('dragon extraction sends the image with its own prompt, without rendering o
   try{
     const result=await dragon.recognize('data:image/png;base64,YQ==',async(url,opts)=>{
       calls++;const body=JSON.parse(opts.body);
+      assert.equal(body.thinking.type,'disabled');assert.equal(body.max_tokens,32768);
       assert.match(body.messages[0].content,/游资龙虎榜/);
       assert.match(body.messages[0].content,/不得填0/);
       assert.equal(body.messages[1].content[1].image_url.url,'data:image/png;base64,YQ==');
