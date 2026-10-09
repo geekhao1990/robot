@@ -14,6 +14,7 @@ const { reviewModeApplies } = require('./util');
 
 const router = createRouter();
 require('./routes/public')(router, HttpError);
+require('./routes/ladder')(router, HttpError);
 require('./routes/app')(router, HttpError);
 require('./routes/message')(router, HttpError);
 require('./routes/payment')(router, HttpError);
@@ -93,8 +94,17 @@ const server = http.createServer((req, res) => {
   if (!m) return sendJson(res, 404, { error: 'not found' });
 
   const chunks = [];
-  req.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+  let ladderBytes = 0;
+  let ladderTooLarge = false;
+  req.on('data', (chunk) => {
+    if (pathname.startsWith('/api/admin/ladder/')) {
+      ladderBytes += chunk.length;
+      if (ladderBytes > 1200000) { ladderTooLarge = true; chunks.length = 0; return; }
+    }
+    if (!ladderTooLarge) chunks.push(Buffer.from(chunk));
+  });
   req.on('end', () => {
+    if (ladderTooLarge) return sendJson(res, 413, { error: '图片或JSON过大，请缩小后重试' });
     const body = Buffer.concat(chunks).toString('utf8');
     let parsedBody = {};
     if (body) { try { parsedBody = JSON.parse(body); } catch (e) { parsedBody = {}; } }

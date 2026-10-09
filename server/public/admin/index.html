@@ -196,6 +196,7 @@
       <div class="nav-item active" data-view="overview" onclick="switchView('overview')">📊 数据概览</div>
       <div class="nav-item" data-view="notes" onclick="switchView('notes')">📝 笔记管理</div>
       <div class="nav-item" data-view="goldFinger" onclick="switchView('goldFinger')">☝️ 金手指数据</div>
+      <div class="nav-item" data-view="ladder" onclick="switchView('ladder')">🖼️ 连板天梯制图</div>
       <div class="nav-item" data-view="users" onclick="switchView('users')">👤 用户管理</div>
       <div class="nav-item" data-view="darkFundOrders" onclick="switchView('darkFundOrders')">📈 暗盘工单</div>
       <div class="nav-item" data-view="paymentOrders" onclick="switchView('paymentOrders')">🧾 订单管理</div>
@@ -219,6 +220,7 @@
   <div id="adminToast" class="admin-toast" role="status" aria-live="polite"></div>
 
 <script src="/admin/ranking-poster.js"></script>
+<script src="/admin/ladder.js"></script>
 <script>
 const API = '';
 let token = localStorage.getItem('admin_token') || '';
@@ -306,6 +308,7 @@ function switchView(v) {
   if (v === 'overview') renderOverview();
   if (v === 'notes') renderNotes();
   if (v === 'goldFinger') renderGoldFinger();
+  if (v === 'ladder') renderLadder();
   if (v === 'users') renderUsers();
   if (v === 'darkFundOrders') renderDarkFundOrders();
   if (v === 'paymentOrders') renderPaymentOrders();
