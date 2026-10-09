@@ -48,9 +48,26 @@ test('routes require admin and explicit confirmation',()=>{
   assert.equal(routes['/api/admin/ladder/confirm']({headers:{authorization:'admin'},body:{data:sample,confirmed:true}}).data,sample);
 });
 test('canvas draws supplied data only and frontend parses',()=>{
-  const texts=[];const ctx={fillRect(){},fillText:t=>texts.push(t),strokeRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){}};
+  const texts=[];const ctx={save(){},restore(){},fillRect(){},fillText:t=>texts.push(t),strokeRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){}};
   const canvas={getContext:()=>ctx};const context={document:{createElement:()=>canvas}};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/ladder.js'),'utf8'),context);
   context.drawLadder(sample);
   assert(texts.includes('新华传媒'));assert(texts.includes('一字板'));assert.equal(canvas.width,1080);
+});
+test('change values produce half-opacity red crosses and signed colors; sparse first-board rows compact',()=>{
+  const texts=[],strokes=[];
+  const ctx={globalAlpha:1,save(){this.saved=this.globalAlpha;},restore(){this.globalAlpha=this.saved;},fillRect(){},strokeRect(){},beginPath(){},moveTo(){},lineTo(){},
+    fillText(t){texts.push({text:t,color:this.fillStyle,alpha:this.globalAlpha});},stroke(){strokes.push({color:this.strokeStyle,alpha:this.globalAlpha});}};
+  const canvas={getContext:()=>ctx},context={document:{createElement:()=>canvas}};
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/ladder.js'),'utf8'),context);
+  context.drawLadder({...sample,groups:[{height:'4板',stocks:[{name:'上涨股',sector:'电池',change:'2.16%',broken:null},{name:'下跌股',change:'-1.45%',broken:false}]}]});
+  assert(texts.some(t=>t.text==='2.16%'&&t.color==='#ff3b30'&&t.alpha===0.5));
+  assert(texts.some(t=>t.text==='-1.45%'&&t.color==='#00a84f'&&t.alpha===0.5));
+  assert(texts.some(t=>t.text==='电池'&&t.alpha===0.5));
+  assert.equal(strokes.length,2);assert(strokes.every(s=>s.color==='#ff3b30'&&s.alpha===0.5));
+  assert.equal(ctx.globalAlpha,1);
+  const stocks=Array.from({length:15},()=>({name:'测试股票'}));
+  context.drawLadder({...sample,groups:[{height:'首板',stocks}]});const compact=canvas.height;
+  context.drawLadder({...sample,groups:[{height:'首板',stocks:stocks.map(s=>({...s,time:'09:30',sector:'电池'}))}]});
+  assert.equal(canvas.height-compact,3*(145-58));
 });

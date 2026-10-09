@@ -65,24 +65,50 @@ async function confirmLadder(button){
 }
 function drawLadder(data){
   const c=document.createElement('canvas'), columns=6, cell=145;
+  const hasChange=s=>s.change!=null&&String(s.change).trim()!=='';
+  // Keep ordering; start compact first-board entries on their own rows.
+  const layouts=data.groups.map(g=>{
+    const rows=[];
+    g.stocks.forEach(s=>{
+      const compact=/首板/.test(g.height)&&!s.time&&!s.sector&&!hasChange(s)&&s.oneWord!==true;
+      let row=rows[rows.length-1];
+      if(!row||row.stocks.length===columns||row.compact!==compact){row={compact,stocks:[],height:compact?58:cell};rows.push(row);}
+      row.stocks.push(s);
+    });
+    return {group:g,rows,height:Math.max(70,rows.reduce((sum,r)=>sum+r.height,0)+24)};
+  });
   const header=210+(data.market||[]).length*32+(data.sectors||[]).length*30;
-  c.width=1080;c.height=header+data.groups.reduce((sum,g)=>sum+Math.max(1,Math.ceil(g.stocks.length/columns))*cell+24,0)+90;
+  c.width=1080;c.height=header+layouts.reduce((sum,l)=>sum+l.height,0)+90;
   if(c.height>16000)throw new Error('图片过长，请分批生成');
   const x=c.getContext('2d');x.fillStyle='#fffaf4';x.fillRect(0,0,c.width,c.height);
   function t(s,px,py,size=25,color='#343434',max=960){x.font=`${size}px "Microsoft YaHei",sans-serif`;x.fillStyle=color;x.fillText(s||'',px,py,max);}
   t('连板天梯',35,68,52,'#bd2036');t(data.date,740,68,30,'#bd2036');
   let y=115;(data.market||[]).forEach(s=>{t(s,35,y,24);y+=32;});(data.sectors||[]).forEach(s=>{t(s,35,y,24,'#bd2036');y+=30;});
-  y=header-50;x.fillStyle='#bd2036';x.fillRect(25,y,1030,50);t('高度',40,y+34,26,'white');t('梯队（划线表示断板）',160,y+34,26,'white');y+=50;
-  data.groups.forEach(g=>{
-    const h=Math.max(1,Math.ceil(g.stocks.length/columns))*cell+24;
+  y=header-50;x.fillStyle='#bd2036';x.fillRect(25,y,1030,50);t('高度',40,y+34,26,'white');t('梯队（红叉表示未涨停）',160,y+34,26,'white');y+=50;
+  layouts.forEach(({group:g,rows,height:h})=>{
     x.fillStyle='#ffffff';x.fillRect(25,y,1030,h);t(g.height,35,y+60,29,'#bd2036',100);
-    g.stocks.forEach((s,i)=>{
-      const px=160+(i%columns)*148,py=y+Math.floor(i/columns)*cell+35;
-      t(s.oneWord===true?'一字板':s.time||s.change||'',px,py,20,s.oneWord?'#bd2036':'#666',140);
-      t(s.name,px,py+35,24,s.broken?'#999':'#111',140);
-      if(s.broken){x.strokeStyle='#b77d7d';x.beginPath();x.moveTo(px,py+26);x.lineTo(px+135,py+26);x.stroke();}
-      t(s.sector||'',px,py+68,20,'#a65243',140);
-      if(s.time&&s.change)t(s.change,px,py+98,19,'#777',140);
+    let offset=0;
+    rows.forEach(row=>{
+      row.stocks.forEach((s,i)=>{
+        const px=160+i*148,py=y+offset+35;
+        const broken=hasChange(s)||s.broken===true;
+        const change=Number(String(s.change||'').replace(/[％%\s]/g,'').replace(/−/g,'-').replace(/＋/g,'+'));
+        const changeColor=Number.isFinite(change)?(change<0?'#00a84f':change>0?'#ff3b30':'#777'):'#777';
+        x.save();x.globalAlpha=broken?0.5:1;
+        if(row.compact){t(s.name,px,py,24,'#111',140);}
+        else{
+          t(hasChange(s)?s.change:s.oneWord===true?'一字板':s.time||'',px,py,20,hasChange(s)?changeColor:s.oneWord?'#bd2036':'#666',140);
+          t(s.name,px,py+35,24,'#111',140);
+          t(s.sector||'',px,py+68,20,'#a65243',140);
+        }
+        if(broken){
+          const top=row.compact?py-22:py+10,bottom=row.compact?py+4:py+74;
+          x.strokeStyle='#ff3b30';x.lineWidth=2;
+          x.beginPath();x.moveTo(px+8,top);x.lineTo(px+132,bottom);x.moveTo(px+132,top);x.lineTo(px+8,bottom);x.stroke();
+        }
+        x.restore();
+      });
+      offset+=row.height;
     });
     x.strokeStyle='#ddd';x.strokeRect(25,y,1030,h);y+=h;
   });
