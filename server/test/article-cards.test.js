@@ -21,7 +21,7 @@ test('text-only DS rewrite preserves mapping, reports exact changes and needs no
 });
 test('rejects images and invalid inputs before any paid call',async()=>{
  let calls=0;const fetch=()=>{calls++;throw Error('unexpected');};
- for(const body of [{text:source,assetIds:['id']},{text:source,images:['x']},{text:source,image:'data:x'},{text:source,pageCount:0},{text:'[图片]'},{}])await assert.rejects(cards.plan(body,'admin',fetch),{status:400});
+ for(const body of [{text:source,assetIds:['id']},{text:source,images:['x']},{text:source,image:'data:x'},{text:'[图片]'},{}])await assert.rejects(cards.plan(body,'admin',fetch),{status:400});
  assert.equal(calls,0);
 });
 test('pagination preserves every character, avoids heading orphans and bounds dense content',()=>{
@@ -65,10 +65,10 @@ function frontend(){
 }
 test('one action rewrites then draws automatically; change notes stay outside artwork',async()=>{
  const {ctx,elements}=frontend();let calls=0,draws=0;
- ctx.api=async(p,opts)=>{calls++;assert.match(p,/\/plan$/);assert.deepEqual(Object.keys(JSON.parse(opts.body)),['text','pageCount']);return fixture();};
+ ctx.api=async(p,opts)=>{calls++;assert.match(p,/\/plan$/);assert.deepEqual(Object.keys(JSON.parse(opts.body)),['text']);return fixture();};
  ctx.drawArticleCard=async()=>{draws++;return {toDataURL:()=> 'data:image/png;base64,abc'};};
  await ctx.planArticleCards({});assert.match(elements.cardsStatus.textContent,/已生成/);assert.equal(calls,1);assert.equal(draws,2);assert.equal(elements.cardsOutput.children.length,2);assert.equal(elements.cardsReport.hidden,false);assert.equal(elements.cardsArticle.value,rewritten);assert.match(elements.cardsChanges.children[0].children[0].textContent,/句式重组/);
- ctx.renderArticleCards();assert.doesNotMatch(elements.content.innerHTML,/type="file"|确认JSON|cardsJson|cardsEditor|cardsFiles/);
+ ctx.renderArticleCards();assert.doesNotMatch(elements.content.innerHTML,/type="file"|确认JSON|cardsJson|cardsEditor|cardsFiles|cardsCount/);
 });
 test('editing/navigating cancels stale results; redraw retries without another paid request',async()=>{
  const {ctx,elements}=frontend();let resolve,draws=0,calls=0;

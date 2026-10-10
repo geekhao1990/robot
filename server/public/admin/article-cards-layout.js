@@ -16,7 +16,7 @@ async function drawArticleCard(data,page,index){
   try{
     const doc=frame.contentDocument;doc.open();doc.write(`<!doctype html><meta charset="utf-8"><style>${CARDS_CSS}</style>${articleCardsTemplate(data,page,index)}`);doc.close();await doc.fonts.ready;
     const poster=doc.querySelector('.ac-poster'),height=Math.ceil(poster.getBoundingClientRect().height);
-    if(height>5500)throw Error('文章排版过长，请增加长图数量后重试');
+    if(height>5500)throw Error('该内容段落排版过长，请在原文补充小标题或分段后重试');
     frame.style.height=height+'px';
     return await html2canvas(poster,{scale:1.5,width:900,height,windowWidth:900,windowHeight:height,scrollX:0,scrollY:0,logging:false,backgroundColor:'#fff'});
   }finally{frame.remove();}
