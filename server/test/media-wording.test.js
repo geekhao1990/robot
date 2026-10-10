@@ -35,17 +35,34 @@ test('individual deselection and manual text are respected; facts and limits val
   assert.throws(()=>validate({...sample,presentation:{title:'过长过长过长'}}),/最多4/);
   assert.throws(()=>validate({...sample,presentation:{groups:[]}}),/文案/);
 });
-test('ladder waits for wording confirmation; JSON edits invalidate it; dragon draws directly',async()=>{
+test('both templates draw directly; wording is optional and stale wording is rejected',async()=>{
   const elements={};for(const id of ['content','ladderConfig','ladderJson','ladderOutput','mediaWording'])elements[id]={innerHTML:'',value:'',appendChild(){}};
   let draws=0;const errors=[];
-  const ctx=make({document:{getElementById:id=>elements[id],createElement:()=>({style:{}})},api:async(url,opts)=>opts?{data:JSON.parse(opts.body).data}:{},confirm:()=>true,showAdminToast:e=>errors.push(e)});
+  const ctx=make({document:{getElementById:id=>elements[id],createElement:()=>({style:{}})},api:async(url,opts)=>opts?{data:JSON.parse(opts.body).data}:{},confirm:()=>{throw Error('unexpected confirmation');},showAdminToast:e=>errors.push(e)});
   vm.runInNewContext(read('ladder.js'),ctx);
   ctx.drawLadder=ctx.drawDragon=async()=>{draws++;return {toDataURL:()=>''};};
   ctx.renderLadder();elements.ladderJson.value=JSON.stringify(sample);
-  await ctx.confirmLadder({});assert.equal(draws,0);assert.match(elements.mediaWording.innerHTML,/A 保留原文/);
-  ctx.selectMediaWording('C');await ctx.confirmLadder({},true);assert.equal(draws,1);
+  await ctx.confirmLadder({});assert.equal(draws,1);assert.equal(elements.mediaWording.innerHTML,'');
+  ctx.openLadderWording();assert.match(elements.mediaWording.innerHTML,/A 保留原文/);
+  ctx.selectMediaWording('C');await ctx.confirmLadder({},true);assert.equal(draws,2);
   ctx.invalidateLadder();assert.equal(elements.mediaWording.innerHTML,'');
-  await ctx.confirmLadder({},true);assert.equal(draws,1);assert.match(errors[0],/JSON已变更/);
+  await ctx.confirmLadder({},true);assert.equal(draws,2);assert.match(errors[0],/JSON已变更/);
   ctx.renderLadder('dragon');elements.ladderJson.value=JSON.stringify(sample);
-  await ctx.confirmLadder({});assert.equal(draws,2);assert.equal(elements.mediaWording.innerHTML,'');
+  await ctx.confirmLadder({});assert.equal(draws,3);assert.equal(elements.mediaWording.innerHTML,'');
+});
+test('one recognize click calls DS once then draws automatically for both templates',async()=>{
+  for(const kind of ['ladder','dragon']){
+    const elements={};for(const id of ['ladderJson','ladderOutput','ladderNotice','mediaWording'])elements[id]={innerHTML:'',value:'',appendChild(){}};
+    const calls=[],errors=[];let draws=0;
+    const ctx=make({document:{getElementById:id=>elements[id],createElement:()=>({style:{}})},api:async(url,opts)=>{calls.push(url);return {data:url.endsWith('/recognize')?sample:JSON.parse(opts.body).data};},confirm:()=>{throw Error('unexpected confirmation');},showAdminToast:e=>errors.push(e)});
+    vm.runInNewContext(read('ladder.js'),ctx);
+    vm.runInNewContext(`ladderImage='data:image/png;base64,YQ==';mediaKind='${kind}'`,ctx);
+    ctx.renderMediaReview=()=>{};
+    ctx.drawLadder=ctx.drawDragon=async()=>{draws++;return {toDataURL:()=>''};};
+    const button={};await ctx.recognizeLadder(button);
+    assert.equal(calls.filter(p=>p.endsWith('/recognize')).length,1);
+    assert.equal(draws,1);assert.equal(errors.length,0);assert.equal(button.disabled,false);
+    await ctx.confirmLadder({});assert.equal(draws,2);
+    assert.equal(calls.filter(p=>p.endsWith('/recognize')).length,1);
+  }
 });
