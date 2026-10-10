@@ -1,4 +1,14 @@
 /* Render the saved close ranking, with only the first stock expanded. No upstream queries. */
+function rankingPosterStockName(value){
+  const name=String(value||'').trim();
+  if(!name)return '未知股票';
+  if(typeof pinyinPro==='undefined'||typeof pinyinPro.pinyin!=='function')throw new Error('拼音组件未加载，请刷新后台后重新生成');
+  const chars=Array.from(name);
+  const initials=pinyinPro.pinyin(name,{pattern:'first',toneType:'none',type:'array',nonZh:'spaced'});
+  // Use whole-name pronunciation for context, but change only the final two
+  // positions on the canvas. Never modify ranking rows or copywriting data.
+  return chars.map((char,i)=>i>=chars.length-2&&/\p{Script=Han}/u.test(char)&&/^[a-z]$/i.test(initials[i]||'')?initials[i].toUpperCase():char).join('');
+}
 function drawRankingPoster(ranking, side) {
   if (!['inflow', 'outflow'].includes(side)) throw new Error('榜单类型无效');
   const rows = ranking && Array.isArray(ranking[side]) ? ranking[side].slice(0, 10) : [];
@@ -38,11 +48,11 @@ function drawRankingPoster(ranking, side) {
   rows.forEach((row, index) => {
     const divisor = unit(row);
     text(index + 1, 65, y + 60, 30, index === 0 ? red : '#8c939d', 'center', true);
-    // Fit full names without abbreviating or exposing stock codes.
+    const displayName=rankingPosterStockName(row.stockName);
     let size = 30;
     ctx.font = `bold ${size}px "Microsoft YaHei",sans-serif`;
-    while (ctx.measureText(row.stockName || '').width > 305 && size > 18) { size--; ctx.font = `bold ${size}px "Microsoft YaHei",sans-serif`; }
-    text(row.stockName || '未知股票',110,y+60,size,ink,'left',true);
+    while (ctx.measureText(displayName).width > 305 && size > 18) { size--; ctx.font = `bold ${size}px "Microsoft YaHei",sans-serif`; }
+    text(displayName,110,y+60,size,ink,'left',true);
     text(number(row.changePercent) === null ? '—' : `${Number(row.changePercent)>0?'+':''}${Number(row.changePercent).toFixed(2)}%`,560,y+60,27,color(row.changePercent),'right');
     text(money(row.grey,divisor),790,y+60,27,color(row.grey),'right');
     text(money(row.listed,divisor),1015,y+60,27,color(row.listed),'right');
