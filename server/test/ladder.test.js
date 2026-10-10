@@ -106,3 +106,56 @@ test('portrait title is below thumbnail crop and excessive data is rejected rath
   assert.equal(ctx.fitLadderPoster(poster),918/1200);
   content.scrollHeight=1600;assert.throws(()=>ctx.fitLadderPoster(poster),/未裁掉数据/);
 });
+test('recognition fields survive wording and portrait rendering end to end',async()=>{
+  const old=process.env.DEEPSEEK_API_KEY;process.env.DEEPSEEK_API_KEY='test';
+  try{
+    const data={...sample,groups:[{height:'4板',stocks:[
+      {name:'上涨股',change:'2.16%',broken:false,oneWord:false},
+      {name:'下跌股',time:'−1.45％',broken:null,oneWord:false},
+      {name:'一字股',time:'一字板',oneWord:null,broken:false},
+      {name:'划线股',broken:true,oneWord:false},
+      {name:'未识别股'}
+    ]}],warnings:[]};
+    const result=await ladder.recognize('data:image/png;base64,YQ==',async(url,opts)=>{
+      const prompt=JSON.parse(opts.body).messages[0].content;
+      assert.match(prompt,/必须输出change、oneWord、broken/);
+      assert.match(prompt,/oneWord=true/);assert.doesNotMatch(prompt,/不要根据涨跌幅猜断板/);
+      return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify(data)}}]})};
+    });
+    const stocks=result.data.groups[0].stocks;
+    assert.equal(stocks[0].broken,true);assert.equal(stocks[1].change,'−1.45％');
+    assert.equal(stocks[1].time,null);assert.equal(stocks[1].broken,true);
+    assert.equal(stocks[2].oneWord,true);assert.equal(stocks[2].time,null);
+    assert.equal(stocks[4].oneWord,null);assert.equal(stocks[4].broken,null);
+    assert(result.data.warnings.some(w=>w.includes('未识别股')));
+    ladder.validate(result.data);
+    const ctx=layoutContext();
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/media-wording.js'),'utf8'),ctx);
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/media-review.js'),'utf8'),ctx);
+    const output=ctx.applyMediaWording('ladder',result.data,ctx.mediaWordingOptions('ladder',result.data,'B'));
+    assert.equal(JSON.stringify(output.groups),JSON.stringify(result.data.groups));
+    const html=ctx.ladderTemplate(output);
+    assert.match(html,/meta up">2.16%/);assert.match(html,/meta down">−1.45％/);assert.match(html,/<em>一字板<\/em>/);
+    assert.equal((html.match(/class="stock broken/g)||[]).length,3);
+    const issues=ctx.mediaReviewIssues('ladder',output);
+    for(const key of ['change','oneWord','broken'])assert(issues['groups.0.stocks.4.'+key]);
+  }finally{if(old===undefined)delete process.env.DEEPSEEK_API_KEY;else process.env.DEEPSEEK_API_KEY=old;}
+});
+test('upload prefers PNG and never compresses small state markers below quality 0.85',async()=>{
+  for(const mode of ['png','jpeg','too-large']){
+    const elements={ladderRecognize:{},ladderJson:{},ladderSource:{style:{}},ladderOutput:{}};
+    const encodings=[],errors=[];
+    const canvas={getContext:()=>({drawImage(){}}),toDataURL:(type,q)=>{
+      encodings.push([type,q]);
+      return mode==='png'||(mode==='jpeg'&&q===0.9)?'data:image/png;base64,YQ==':'x'.repeat(1000001);
+    }};
+    const ctx={document:{getElementById:id=>elements[id],createElement:()=>canvas},createImageBitmap:async()=>({width:698,height:1378,close(){}}),resetMediaWording(){},renderMediaReview(){},showAdminToast:msg=>errors.push(msg)};
+    vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/ladder.js'),'utf8'),ctx);
+    await ctx.loadLadderImage({files:[{type:'image/png',size:1234}]});
+    assert.equal(encodings[0][0],'image/png');
+    assert(encodings.every(([type,q])=>type==='image/png'||q>=0.85));
+    assert.equal(canvas.width,698);assert.equal(canvas.height,1378);
+    if(mode==='too-large'){assert.equal(elements.ladderRecognize.disabled,true);assert.match(errors[0],/保留小字清晰度/);}
+    else {assert.equal(elements.ladderRecognize.disabled,false);assert.equal(errors.length,0);}
+  }
+});

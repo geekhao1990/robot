@@ -33,6 +33,8 @@ function mediaReviewIssues(kind,data){
         if(s.broken==null)add(`${p}.broken`,'断板状态不确定，请核对红叉/划线');
         if(s.change&&s.broken===false)add(`${p}.broken`,'存在涨跌幅：当前绘图规则会打叉，请确认是否断板');
         if(s.oneWord==null)add(`${p}.oneWord`,'一字板状态未确认，不等于“否”');
+        if(!s.change&&s.oneWord==null&&s.broken==null)add(`${p}.change`,'涨跌幅、一字板、断板均未识别，请放大原图检查');
+        if(s.oneWord===true&&s.change)add(`${p}.oneWord`,'一字板与涨跌幅标记同时存在，请核对是否识别错位');
       }
     });
   });

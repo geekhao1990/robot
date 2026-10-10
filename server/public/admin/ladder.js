@@ -77,9 +77,14 @@ async function loadLadderImage(input){
     const c=document.createElement('canvas'), scale=Math.min(1,1800/image.width,3500/image.height);
     c.width=Math.round(image.width*scale);c.height=Math.round(image.height*scale);
     c.getContext('2d').drawImage(image,0,0,c.width,c.height);image.close();
-    let url=c.toDataURL('image/jpeg',0.9);
-    for(let q=0.8;url.length>900000&&q>=0.4;q-=0.1)url=c.toDataURL('image/jpeg',q);
-    if(url.length>900000)throw new Error('图片过大，请裁剪后上传');
+    // Prefer lossless text edges; never crush faint percentage/cross/badge marks
+    // down to low-quality JPEG merely to squeeze under the request limit.
+    let url=c.toDataURL('image/png');
+    for(const quality of [0.95,0.9,0.85]){
+      if(url.length<=1000000)break;
+      url=c.toDataURL('image/jpeg',quality);
+    }
+    if(url.length>1000000)throw new Error('图片在保留小字清晰度后仍过大，请裁去截图外无关区域或分段上传，勿使用模糊缩略图');
     if(revision!==ladderRevision)return;
     ladderImage=url;document.getElementById('ladderSource').src=url;document.getElementById('ladderSource').style.display='block';
     document.getElementById('ladderJson').value='';
@@ -106,7 +111,7 @@ async function confirmLadder(button,wordingConfirmed=false){
       if(!mediaWordingReview||mediaWordingReview.kind!==kind||mediaWordingReview.source!==document.getElementById('ladderJson').value)throw new Error('JSON已变更，请重新确认JSON');
       data=applyMediaWording(kind,data,mediaWordingReview.rows);
     }
-    if(!confirm(wordingConfirmed?'确认采用所选文案生成图片？':kind==='dragon'?'已对照原图核对数据框中的席位、股票、日期、买卖方向、金额及备注，确认绘图？':'已对照原图核对数据框中的股票、层级、日期、时间及断板标记，进入文案选项？'))return;
+    if(!confirm(wordingConfirmed?'确认采用所选文案生成图片？':kind==='dragon'?'已对照原图核对数据框中的席位、股票、日期、买卖方向、金额及备注，确认绘图？':'已对照原图核对数据框中的股票、层级、日期、时间、涨跌幅、一字板及断板标记，进入文案选项？'))return;
     button.disabled=true;
     const result=await api(mediaEndpoint(kind)+'/confirm',{method:'POST',body:JSON.stringify({confirmed:true,data})});
     if(revision!==ladderRevision)return;
