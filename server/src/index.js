@@ -15,6 +15,7 @@ const { reviewModeApplies } = require('./util');
 const router = createRouter();
 require('./routes/public')(router, HttpError);
 require('./routes/ladder')(router, HttpError);
+require('./routes/fund-article')(router, HttpError);
 require('./routes/app')(router, HttpError);
 require('./routes/message')(router, HttpError);
 require('./routes/payment')(router, HttpError);

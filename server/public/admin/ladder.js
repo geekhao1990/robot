@@ -6,6 +6,10 @@ function renderAiMedia() {
   document.getElementById('content').innerHTML = `<h2>AI自媒体</h2>
   <div style="display:flex;flex-wrap:wrap;gap:20px;margin-top:20px">
     <section style="flex:1;min-width:280px;padding:24px;border:1px solid #eee;border-radius:12px;background:#fff">
+      <h3>暗盘三段论</h3><p style="margin:12px 0 20px;color:#666">输入股票代码，普通查询排队取数，结合行情与公告生成口播文案。</p>
+      <button class="btn-primary" onclick="switchView('fundArticle')">进入文章生成</button>
+    </section>
+    <section style="flex:1;min-width:280px;padding:24px;border:1px solid #eee;border-radius:12px;background:#fff">
       <h3>连板天梯图生成</h3>
       <p class="hint" style="margin:12px 0">模板来自抖音连扳炒家</p>
       <p style="margin:12px 0 20px;color:#666">上传截图，确认识别JSON后生成图片。</p>
