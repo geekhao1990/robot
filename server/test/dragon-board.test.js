@@ -49,21 +49,24 @@ test('dragon template escapes content and preserves labels without inventing mis
   const escaped=ctx.dragonTemplate({...sample,groups:[{name:'<script>',stocks:[{name:'<img>',direction:'unknown'}]}]});
   assert.match(escaped,/&lt;script&gt;/);assert.match(escaped,/&lt;img&gt;/);assert.doesNotMatch(escaped,/<script>/);
 });
-test('dragon exports at 1080x1920 and always cleans up its temporary frame',async()=>{
+test('dragon renders unchanged layout at 2x, exports 9:16 and cleans up its temporary frame',async()=>{
   for(const fail of [false,true]){
     let removed=false,options;
-    const poster={querySelector:s=>s==='.dragon-content'?{style:{},scrollHeight:1000}:{clientHeight:921}};
+    const poster={getBoundingClientRect:()=>({height:2200})};
     const frame={setAttribute(){},style:{},remove(){removed=true;},contentDocument:{open(){},write(){},close(){},fonts:{ready:Promise.resolve()},querySelector:()=>poster}};
-    const ctx=context({document:{createElement:()=>frame,body:{appendChild(){}}},html2canvas:async(el,opts)=>{options=opts;if(fail)throw Error('render failed');return {width:opts.width*opts.scale,height:opts.height*opts.scale};}});
-    if(fail)await assert.rejects(ctx.drawDragon(sample),/render failed/);else {const canvas=await ctx.drawDragon(sample);assert.equal(canvas.width,1080);assert.equal(canvas.height,1920);}
-    assert(removed);assert.equal(options.scale,1.5);assert.equal(options.height,1280);
+    const canvas={getContext:()=>({fillRect(){},drawImage(){}})};
+    const ctx=context({document:{createElement:tag=>tag==='canvas'?canvas:frame,body:{appendChild(){}}},html2canvas:async(el,opts)=>{options=opts;if(fail)throw Error('render failed');return {width:2000,height:4400};}});
+    if(fail)await assert.rejects(ctx.drawDragon(sample),/render failed/);else {const result=await ctx.drawDragon(sample);assert.equal(result.width,1080);assert.equal(result.height,1920);}
+    assert(removed);assert.equal(options.scale,2);assert.equal(options.height,2200);
   }
 });
-test('dragon portrait keeps lowered title fixed while fitting long tables without data loss',()=>{
-  const ctx=context(),css=vm.runInNewContext('DRAGON_PORTRAIT_CSS',ctx);
-  assert.match(css,/top:171px/);assert.match(css,/font-size:44px/);
-  const content={style:{},scrollHeight:1100},poster={querySelector:s=>s==='.dragon-content'?content:{clientHeight:921}};
-  assert(Math.abs(ctx.fitDragonPoster(poster)-921/1100)<0.0001);
-  assert(parseFloat(content.style.width)>100);
-  content.scrollHeight=1800;assert.throws(()=>ctx.fitDragonPoster(poster),/未裁掉数据/);
+test('dragon output only adds background padding, without cropping or stretching',()=>{
+  for(const original of [{width:2000,height:4400},{width:2000,height:2000}]){
+    let draw;const canvas={getContext:()=>({fillRect(){},drawImage:(...args)=>draw=args})};
+    const ctx=context({document:{createElement:()=>canvas}});ctx.dragonPortraitCanvas(original);
+    const [source,x,y,w,h]=draw;assert.equal(source,original);assert.equal(draw.length,5);
+    assert(Math.abs(w/h-original.width/original.height)<1e-9);
+    assert(x>=0&&y>=0&&x+w<=1080.00001&&y+h<=1920.00001);
+    assert.equal(canvas.width,1080);assert.equal(canvas.height,1920);
+  }
 });

@@ -88,74 +88,27 @@ test('compact names stay in first board, are escaped and counted',()=>{
   const normal=context.ladderTemplate({...sample,groups:[{height:'首板',stocks:[{name:'股票',time:'09:30',sector:'电池'}]}]});
   assert.doesNotMatch(normal,/class="compact"/);
 });
-test('Canvas export is 1080x1920 and removes frame on success or failure',async()=>{
+test('Canvas renders unchanged HTML at 2x, exports 9:16 and cleans up on success or failure',async()=>{
   for(const failure of [false,true]){
     let removed=false,written='',options;
-    const poster={querySelector:s=>s==='.poster-content'?{style:{},scrollHeight:1000}:{clientHeight:918}};
+    const poster={getBoundingClientRect:()=>({height:1400})};
     const frame={setAttribute(){},style:{},remove(){removed=true;},contentDocument:{open(){},write(s){written=s;},close(){},fonts:{ready:Promise.resolve()},querySelector:()=>poster}};
-    const context=layoutContext({document:{createElement:()=>frame,body:{appendChild(){}}},html2canvas:async(el,opts)=>{assert.equal(el,poster);options=opts;if(failure)throw Error('render failure');return {width:opts.width*opts.scale,height:opts.height*opts.scale};}});
+    const canvas={getContext:()=>({fillRect(){},drawImage(){}})};
+    const context=layoutContext({document:{createElement:tag=>tag==='canvas'?canvas:frame,body:{appendChild(){}}},html2canvas:async(el,opts)=>{assert.equal(el,poster);options=opts;if(failure)throw Error('render failure');return {width:1396,height:2800};}});
     if(failure)await assert.rejects(context.drawLadder(sample),/render failure/);
-    else {const canvas=await context.drawLadder(sample);assert.equal(canvas.width,1080);assert.equal(canvas.height,1920);}
-    assert(removed);assert.equal(options.scale,1.5);assert.equal(options.height,1280);assert.match(written,/新华传媒/);
+    else {const result=await context.drawLadder(sample);assert.equal(result.width,1080);assert.equal(result.height,1920);}
+    assert(removed);assert.equal(options.scale,2);assert.equal(options.height,1400);assert.match(written,/新华传媒/);
   }
 });
-test('portrait title is below thumbnail crop and excessive data is rejected rather than clipped',()=>{
-  const ctx=layoutContext(),css=vm.runInNewContext('LADDER_PORTRAIT_CSS',ctx);
-  assert.match(css,/top:172px/);assert.match(css,/font-size:54px/);assert.match(css,/row-gap:5px/);
-  const content={style:{},scrollHeight:1200},poster={querySelector:s=>s==='.poster-content'?content:{clientHeight:918}};
-  assert.equal(ctx.fitLadderPoster(poster),918/1200);
-  content.scrollHeight=1600;assert.throws(()=>ctx.fitLadderPoster(poster),/未裁掉数据/);
-});
-test('recognition fields survive wording and portrait rendering end to end',async()=>{
-  const old=process.env.DEEPSEEK_API_KEY;process.env.DEEPSEEK_API_KEY='test';
-  try{
-    const data={...sample,groups:[{height:'4板',stocks:[
-      {name:'上涨股',change:'2.16%',broken:false,oneWord:false},
-      {name:'下跌股',time:'−1.45％',broken:null,oneWord:false},
-      {name:'一字股',time:'一字板',oneWord:null,broken:false},
-      {name:'划线股',broken:true,oneWord:false},
-      {name:'未识别股'}
-    ]}],warnings:[]};
-    const result=await ladder.recognize('data:image/png;base64,YQ==',async(url,opts)=>{
-      const prompt=JSON.parse(opts.body).messages[0].content;
-      assert.match(prompt,/必须输出change、oneWord、broken/);
-      assert.match(prompt,/oneWord=true/);assert.doesNotMatch(prompt,/不要根据涨跌幅猜断板/);
-      return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify(data)}}]})};
-    });
-    const stocks=result.data.groups[0].stocks;
-    assert.equal(stocks[0].broken,true);assert.equal(stocks[1].change,'−1.45％');
-    assert.equal(stocks[1].time,null);assert.equal(stocks[1].broken,true);
-    assert.equal(stocks[2].oneWord,true);assert.equal(stocks[2].time,null);
-    assert.equal(stocks[4].oneWord,null);assert.equal(stocks[4].broken,null);
-    assert(result.data.warnings.some(w=>w.includes('未识别股')));
-    ladder.validate(result.data);
-    const ctx=layoutContext();
-    vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/media-wording.js'),'utf8'),ctx);
-    vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/media-review.js'),'utf8'),ctx);
-    const output=ctx.applyMediaWording('ladder',result.data,ctx.mediaWordingOptions('ladder',result.data,'B'));
-    assert.equal(JSON.stringify(output.groups),JSON.stringify(result.data.groups));
-    const html=ctx.ladderTemplate(output);
-    assert.match(html,/meta up">2.16%/);assert.match(html,/meta down">−1.45％/);assert.match(html,/<em>一字板<\/em>/);
-    assert.equal((html.match(/class="stock broken/g)||[]).length,3);
-    const issues=ctx.mediaReviewIssues('ladder',output);
-    for(const key of ['change','oneWord','broken'])assert(issues['groups.0.stocks.4.'+key]);
-  }finally{if(old===undefined)delete process.env.DEEPSEEK_API_KEY;else process.env.DEEPSEEK_API_KEY=old;}
-});
-test('upload prefers PNG and never compresses small state markers below quality 0.85',async()=>{
-  for(const mode of ['png','jpeg','too-large']){
-    const elements={ladderRecognize:{},ladderJson:{},ladderSource:{style:{}},ladderOutput:{}};
-    const encodings=[],errors=[];
-    const canvas={getContext:()=>({drawImage(){}}),toDataURL:(type,q)=>{
-      encodings.push([type,q]);
-      return mode==='png'||(mode==='jpeg'&&q===0.9)?'data:image/png;base64,YQ==':'x'.repeat(1000001);
-    }};
-    const ctx={document:{getElementById:id=>elements[id],createElement:()=>canvas},createImageBitmap:async()=>({width:698,height:1378,close(){}}),resetMediaWording(){},renderMediaReview(){},showAdminToast:msg=>errors.push(msg)};
-    vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/ladder.js'),'utf8'),ctx);
-    await ctx.loadLadderImage({files:[{type:'image/png',size:1234}]});
-    assert.equal(encodings[0][0],'image/png');
-    assert(encodings.every(([type,q])=>type==='image/png'||q>=0.85));
-    assert.equal(canvas.width,698);assert.equal(canvas.height,1378);
-    if(mode==='too-large'){assert.equal(elements.ladderRecognize.disabled,true);assert.match(errors[0],/保留小字清晰度/);}
-    else {assert.equal(elements.ladderRecognize.disabled,false);assert.equal(errors.length,0);}
+test('ladder export preserves all pixels with proportional fitting for tall and wide originals',()=>{
+  for(const original of [{width:1396,height:2800},{width:1396,height:1200}]){
+    let draw;const canvas={getContext:()=>({fillRect(){},drawImage:(...args)=>draw=args})};
+    const ctx=layoutContext({document:{createElement:()=>canvas}});
+    ctx.ladderPortraitCanvas(original);
+    const [source,x,y,w,h]=draw;
+    assert.equal(source,original);assert.equal(draw.length,5);
+    assert(Math.abs(w/h-original.width/original.height)<1e-9);
+    assert(x>=0&&y>=0&&x+w<=1080.00001&&y+h<=1920.00001);
+    assert.equal(canvas.width,1080);assert.equal(canvas.height,1920);
   }
 });

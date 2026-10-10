@@ -19,10 +19,9 @@ const tiers=[
 
 const previewData={date:'2026-10-09',market:['沪深总成交：放量 市场情绪：68','无明显偏好，风格整体上涨','上证指数 3813.79 +1.89 +0.05%','涨3297 跌2145'],sectors:['电池(7) 出版(5) 软件开发(5) 一般零售(4) 影视院线(4)','化学制品(3) 化学制药(3) 其他(44)'],groups:tiers.map(([height,cls,stocks])=>({height:cls==='first'?'首板':height,stocks:stocks.map(([name,meta,sector])=>({name,sector,time:meta.includes(':')?meta:null,change:meta.includes('%')?meta:null,oneWord:meta==='一字板'}))}))};
 previewData.groups.at(-1).stocks.push(...'郑中设计、振华股份、众生药业、中文在线、掌阅科技、百洋股份、芒果超媒、新筑股份、雷赛智能、梦天家居、中交发展、澳弘电子、文投控股、海南橡胶、三人行'.split('、').map(name=>({name})));
-const style=document.createElement('style');style.textContent=LADDER_CSS+LADDER_PORTRAIT_CSS;document.head.appendChild(style);
+const style=document.createElement('style');style.textContent=LADDER_CSS;document.head.appendChild(style);
 const variant=new URLSearchParams(location.search).get('wording')||'A';
 const displayData=applyMediaWording('ladder',previewData,mediaWordingOptions('ladder',previewData,variant));
 document.body.insertAdjacentHTML('beforeend',ladderTemplate(displayData));
-document.fonts.ready.then(()=>fitLadderPoster(document.querySelector('.poster')));
 if(location.search.includes('canvas'))drawLadder(displayData).then(c=>{const img=document.createElement('img');img.src=c.toDataURL('image/png');img.style.cssText='display:block;width:698px';document.body.replaceChildren(img);document.body.dataset.export='ready';}).catch(e=>{document.body.textContent=e.message;document.body.dataset.export='failed';});
 </script></body></html>
