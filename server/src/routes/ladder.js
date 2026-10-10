@@ -7,15 +7,9 @@ module.exports = (router, HttpError) => {
   const check = ctx => { if (!auth.isAdmin(ctx.headers.authorization)) throw new HttpError(401,'未登录或登录失效'); };
   let busy = false;
   let articleBusy=false;
-  router.post('/api/admin/ladder/article-cards/asset',ctx=>{check(ctx);return cards.saveAsset(ctx.body,ctx.headers.authorization);});
   router.post('/api/admin/ladder/article-cards/plan',async ctx=>{
-    check(ctx);if(articleBusy)throw new HttpError(409,'已有图文任务，请等待完成');articleBusy=true;
+    check(ctx);if(articleBusy)throw new HttpError(409,'已有文章任务，请等待完成');articleBusy=true;
     try{return await cards.plan(ctx.body,ctx.headers.authorization);}finally{articleBusy=false;}
-  });
-  router.post('/api/admin/ladder/article-cards/confirm',ctx=>{
-    check(ctx);if(ctx.body.confirmed!==true)throw new HttpError(400,'请先确认图文JSON');
-    if(!Array.isArray(ctx.body.imageIds)||ctx.body.imageIds.length>8||!Array.isArray(ctx.body.sourceIds)||ctx.body.sourceIds.length>250)throw new HttpError(400,'素材编号或段落编号格式错误');
-    return {data:cards.validateCards(ctx.body.data,ctx.body.imageIds,ctx.body.sourceIds)};
   });
   router.post('/api/admin/ladder/article/rewrite',async ctx=>{
     check(ctx);

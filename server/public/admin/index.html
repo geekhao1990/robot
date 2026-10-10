@@ -312,7 +312,7 @@ TITLES.giftCards = '礼品卡管理';
 TITLES.aiMedia = 'AI自媒体';
 TITLES.ladder = 'AI自媒体 / 连板天梯图生成';
 TITLES.dragon = 'AI自媒体 / 游资龙虎榜图生成';
-TITLES.articleRewrite = 'AI自媒体 / 图文转多图';
+TITLES.articleRewrite = 'AI自媒体 / 复盘文章改写成图';
 function switchView(v) {
   const activeView = ['ladder','dragon','articleRewrite'].includes(v) ? 'aiMedia' : v;
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === activeView));

@@ -27,8 +27,8 @@ function renderAiMedia() {
       <button class="btn-primary" onclick="switchView('dragon')">进入游资龙虎榜图生成</button>
     </section>
     <section style="flex:1;min-width:280px;padding:24px;border:1px solid #eee;border-radius:12px;background:#fff">
-      <h3>图文转多图</h3><p style="margin:12px 0 20px;color:#666">文章＋多张图片联合理解，确认分页JSON后生成多张图文。复杂图表直接引用原图。</p>
-      <button class="btn-primary" onclick="switchView('articleRewrite')">进入图文生成</button>
+      <h3>复盘文章改写成图</h3><p style="margin:12px 0 20px;color:#666">纯文字同义改写为复盘文章，自动生成连续阅读长图，并说明具体改动，无需确认文案。</p>
+      <button class="btn-primary" onclick="switchView('articleRewrite')">进入文章生成</button>
     </section>
   </div>`;
   const status = document.getElementById('aiMediaRankingStatus');
