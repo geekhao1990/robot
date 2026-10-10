@@ -1,4 +1,26 @@
 const SECTION_NAMES=['情绪量化','涨停跌停数','市场整体情绪','大肉大面数','实盘赛'];
+function indexSection(text){
+  const matches=[[/上证(?:指数|综指)|沪指/,'上证指数'],[/创业板(?:指数|指)?/,'创业板'],[/微盘股(?:指数)?/,'微盘股'],[/尾盘股(?:指数)?/,'尾盘股']].filter(([re])=>re.test(text));
+  // Mixed-index comparisons remain intact; do not arbitrarily assign one index.
+  return matches.length===1&&!/三大(?:指数|股指)/.test(text)?matches[0][1]:'';
+}
+function stripLeadingHeader(text){
+  const date='(?:(?:\\d{4}[年./-])?(?:0?[1-9]|1[0-2])[月./-](?:0?[1-9]|[12]\\d|3[01])日?)';
+  const time='(?:[01]?\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d)?';
+  const stamp=new RegExp('^(?:(?:日期|时间|发布时间)[：:]\\s*)?(?:'+date+'(?:\\s*'+time+')?|'+time+')(?:\\s*[（(]?(?:星期|周)[一二三四五六日天][）)]?)?\\s*[：:]?$');
+  const greetingDate=new RegExp('^(大家好)[，,！!：:\\s]*(?:'+date+')(?:\\s*'+time+')?\\s*[：:]?$');
+  const datedTitle=new RegExp('^(?:'+date+'\\s*(?:市场)?复盘|(?:市场)?复盘\\s*[|｜·：:-]?\\s*'+date+')[：:]?$');
+  let leading=true;
+  return text.split('\n').flatMap(line=>{
+    if(!leading)return [line];
+    const t=line.trim().replace(/^#{1,6}\s*/,'').replace(/^\*\*|\*\*$/g,'').trim();
+    if(!t)return [line];
+    if(/^(?:市场复盘|小程序指标仓库\s*[·・—-]?\s*市场观察)[：:]?$/.test(t)||stamp.test(t)||datedTitle.test(t))return [];
+    const greeting=t.match(greetingDate);if(greeting)return [greeting[1]+'，'];
+    if(/^大家好[，,！!：:]?$/.test(t))return [line];
+    leading=false;return [line];
+  }).join('\n');
+}
 function headingName(text){
   return String(text||'').trim().replace(/^#{1,6}\s*/,'').replace(/[：:]\s*$/,'').trim();
 }
@@ -9,7 +31,7 @@ function isHeading(text){
 function prepareText(text){
   if(typeof text!=='string')return text;
   // Support pasted headings on one line and "实盘赛：普遍亏损…".
-  let result=text.replace(/\r\n?/g,'\n');
+  let result=stripLeadingHeader(text.replace(/\r\n?/g,'\n'));
   const re=new RegExp('(^|\\n)([ \\t]*(?:#{1,6}\\s*)?(?:'+SECTION_NAMES.join('|')+')[：:])[ \\t]*(?=\\S)','g');
   for(let i=0;i<SECTION_NAMES.length;i++)result=result.replace(re,'$1$2\n');
   return result.split('\n').flatMap(line=>{
@@ -25,6 +47,7 @@ function prepareText(text){
   }).join('\n');
 }
 function inferredSection(text){
+  const index=indexSection(text);if(index)return index;
   if(/(?:上涨|下跌|涨跌)(?:家数|个股|股票).*占比|上涨家数占比/.test(text))return '情绪量化';
   if(/大肉|大面/.test(text)&&/\d/.test(text))return '大肉大面数';
   if(/正反馈|负反馈|赚钱效应|情绪.{0,8}(?:修复|分化|退潮)/.test(text))return '市场整体情绪';
@@ -33,8 +56,8 @@ function inferredSection(text){
   return '';
 }
 function arrangeSections(paragraphs){
-  const sections=[],moves=[];let ordinary=[],region=[];
-  const pushOrdinary=()=>{if(ordinary.length){sections.push({paragraphs:ordinary});ordinary=[];}};
+  const sections=[],moves=[];let ordinary=[],region=[],ordinaryName='';
+  const pushOrdinary=()=>{if(ordinary.length){sections.push({...(ordinaryName?{name:ordinaryName}:{}),paragraphs:ordinary});ordinary=[];}ordinaryName='';};
   const pushRegion=()=>{
     if(!region.length)return;
     const groups=[],entries=[];let current;
@@ -55,8 +78,14 @@ function arrangeSections(paragraphs){
     sections.push(...groups);region=[];
   };
   for(const p of paragraphs){
-    const text=p.original??p.rewritten,name=headingName(text);
-    if(isHeading(text)&&SECTION_NAMES.includes(name)){pushOrdinary();region.push(p);}
+    const text=p.original??p.rewritten,name=headingName(text),index=indexSection(text);
+    if(index){
+      pushRegion();
+      if(isHeading(text)){pushOrdinary();ordinaryName=index;ordinary.push(p);}
+      else {ordinary.push(p);ordinaryName=index;pushOrdinary();}
+    }
+    else if(ordinaryName&&!isHeading(text)){ordinary.push(p);pushOrdinary();}
+    else if(isHeading(text)&&SECTION_NAMES.includes(name)){pushOrdinary();region.push(p);}
     else if(isHeading(text)){pushRegion();pushOrdinary();ordinary.push(p);}
     else if(region.length)region.push(p);
     else ordinary.push(p);
@@ -84,4 +113,4 @@ function paginateSections(sections){
   }
   return pages;
 }
-module.exports={SECTION_NAMES,prepareText,arrangeSections,paginateSections};
+module.exports={SECTION_NAMES,prepareText,arrangeSections,paginateSections,stripLeadingHeader,indexSection};

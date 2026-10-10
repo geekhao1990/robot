@@ -45,8 +45,8 @@ test('article artwork has no pagination or card boxes and escapes text',()=>{
  const ctx={};vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/article-cards-layout.js'),'utf8'),ctx);
  const d=fixture().data;d.title='<script>alert(1)</script>';d.pages[0].blocks[0].text='<img onerror=x>';
  const first=ctx.articleCardsTemplate(d,d.pages[0],0),last=ctx.articleCardsTemplate(d,d.pages[1],1);
- assert.doesNotMatch(first+last,/<script>|<img|\b1\/2\b|第一张|第二张|ac-block/);assert.match(first,/&lt;script&gt;/);
- assert.match(first,/ac-title/);assert.doesNotMatch(last,/ac-title|ac-brand/);assert.doesNotMatch(first,/不构成投资建议/);assert.match(last,/不构成投资建议/);
+ assert.doesNotMatch(first+last,/<script>|<img|\b1\/2\b|第一张|第二张|ac-block/);assert.match(first,/&lt;img onerror=x&gt;/);
+ assert.doesNotMatch(first+last,/ac-title|ac-brand|市场复盘|市场观察/);assert.doesNotMatch(first,/不构成投资建议/);assert.match(last,/不构成投资建议/);
  assert.throws(()=>ctx.articleCardsTemplate(d,{blocks:[{type:'image'}]},0),/仅支持文字/);
 });
 test('canvas renderer uses full measured height and cleans up success/failure',async()=>{

@@ -25,6 +25,7 @@ async function rewrite(body,fetchImpl=fetch){
   const {text,removed}=cleanArticle(body?.text);
   const recap=body?.format==='recapCards';
   const paragraphs=splitParagraphs(recap?require('./article-sections').prepareText(text):text);
+  if(!paragraphs.length)throw fail('去掉头部信息后没有正文，请粘贴完整复盘文章');
   if(paragraphs.length>250)throw fail('段落超过250条，请分两篇改写');
   const style=body?.style||'smooth',voice=body?.voice||'neutral';
   if(!['light','smooth'].includes(style)||!['neutral','original'].includes(voice))throw fail('改写选项无效');
@@ -37,6 +38,7 @@ ${style==='light'?'轻度改写：保留原有口吻，同义替换和适度调�
 ${voice==='neutral'?'作者实盘、持仓、历史判断、交流群及个人经历用“原文作者”“作者表示”等归属表达，不冒充使用者的经历；一般市场分析保持自然叙述。':'这是使用者自己的文章，保留原文第一人称和个人经历，不新增操作记录。'}
 ${body?.format==='recapCards'?'用于公众号复盘文章：把可改写的叙述写成自然、流畅、专业但易读的复盘口吻，减少口头赘词，理顺每段句式及段落衔接；不是把原句换几个词，也不是摘要或宣传海报。适合盘面回顾、题材表现、市场情绪、后续观察等文章语境，但没有依据的主题不新增。仍逐段对应保留全部信息，不新增操作建议。不上传、不理解图片，不假定看过原配图，不写“如图”“见下图”等新引导。不得新增“1/3”“第一张图”“第二张图”“本页”“下一页”等分页文字，切图仅是呈现方式。changes逐条写清原表达如何改成新表达、句式或衔接如何改变，原文未改则如实说明，不泛泛写“优化文案”。':''}
 ${recap?'为每段额外返回section字段，可选“情绪量化”“涨停跌停数”“市场整体情绪”“大肉大面数”“实盘赛”或空字符串。此字段只用于系统在已有标题间整理文字，不改变id顺序。标题本身保留原名称，不同义改写标题。上涨家数占比及据此得出的冰点/微热等量化描述归“情绪量化”；昨日/今日大肉、大面、涨停、跌停的组合数字归“大肉大面数”；负反馈、正反馈、情绪修复和赚钱效应的定性描述归“市场整体情绪”；单独涨停跌停统计归“涨停跌停数”；实盘赛盈亏归“实盘赛”。其余或不能可靠判断填空字符串，保持位置，不强行分类；不补充原文不存在的数字。':''}
+${recap?'正文直接开始，不新增“市场复盘”总标题、头部日期时间或“小程序指标仓库 · 市场观察”署名。正文里与行情、政策、事件相关的日期和时间照原文保留。上证指数、创业板、微盘股或尾盘股的描述保持各自段落，便于在各段之后插入对应图表，不合并成总述。':''}
 只返回JSON，不加前后解释。warnings简短具体，不复述全文。`;
   let response,result;
   try{

@@ -6,7 +6,7 @@ function renderArticleCards(){
   <p>粘贴文章 → 同义改写为自然流畅的复盘文章 → 自动生成公众号长图，并列出改了什么。无需上传图片，也无需确认文案。</p>
   <p class="hint">仅发送文字至DeepSeek，可能产生费用；不识别图片、不自动发布。保留原文事实、数据和观点，发布前请检查结果。</p>
   <textarea id="cardsText" style="width:100%;height:300px" maxlength="20000" oninput="invalidateArticleCards()" placeholder="粘贴复盘文章，图片占位及无意义图片链接会自动清理"></textarea>
-  <p>按“情绪量化、涨停跌停数、市场整体情绪、大肉大面数、实盘赛”等标题分图，相关描述归到对应标题下，段尾留出插入配图的位置。不均分、不显示页码。</p>
+  <p>上证指数、创业板、微盘股／尾盘股描述后分别截断；情绪量化等部分仍按标题分图。成图直接从正文开始，不显示总标题、头部时间、品牌抬头和页码。</p>
   <button id="cardsPlan" class="btn-primary" onclick="planArticleCards(this)">同义改写并生成长图</button><p id="cardsStatus" role="status"></p>
   <section id="cardsReport" hidden><h3>本次改写说明</h3><p id="cardsCleanup"></p><div id="cardsWarnings" style="white-space:pre-wrap;color:#9c6413"></div><div id="cardsChanges"></div>
   <details><summary>完整改写文章（可复制到公众号）</summary><textarea id="cardsArticle" readonly style="width:100%;height:320px"></textarea></details>

@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const {prepareText,arrangeSections,paginateSections}=require('../src/article-sections');
+const {prepareText,arrangeSections,paginateSections,stripLeadingHeader}=require('../src/article-sections');
 const {splitParagraphs}=require('../src/article-rewrite');
 const cards=require('../src/article-cards');
 const sample=`大家好，今天复盘，市场震荡，先看量化数据与情绪变化。
@@ -16,6 +16,29 @@ const sample=`大家好，今天复盘，市场震荡，先看量化数据与情
 题材梳理：
 电池板块表现较强，不更改这部分内容。`;
 const records=text=>splitParagraphs(prepareText(text)).map(p=>({...p,rewritten:p.original,changes:['保留信息'],warnings:[]}));
+test('leading title/date/brand removed but dates and times in factual prose survive',()=>{
+ const body='上证指数盘中下探，收阴线。\n2026年10月8日公布政策。\n盘中10:30出现回落。\n10.09';
+ assert.equal(prepareText('市场复盘\n2026-10-10 15:30\n小程序指标仓库 · 市场观察\n'+body),body);
+ assert.equal(prepareText('大家好，10.08：\n'+body),'大家好，\n'+body);
+ for(const header of ['2026年10月10日 星期六','10月10日','时间：15:30','2026.10.10','10月10日复盘','市场复盘：2026-10-10'])assert.equal(stripLeadingHeader(header+'\n'+body),body);
+ assert.equal(prepareText('2026年10月8日，上证指数盘中下探。'),'2026年10月8日，上证指数盘中下探。');
+});
+test('each index description ends its own image without adding index headings',()=>{
+ const raw='大家好，10.08：\n上证指数盘中下探，收阴线。\n创业板冲高回落，收阴线。\n微盘股指数也是冲高回落，收阴线。\n盘面亮点：\n三大指数冲高回落，创业板跌超3%。';
+ const source=records(raw),pages=paginateSections(arrangeSections(source).sections);
+ assert.deepEqual(pages.map(p=>p.section),['上证指数','创业板','微盘股','']);
+ assert.ok(pages.slice(0,3).every(p=>p.insertImageAfter));assert.equal(pages[3].insertImageAfter,false);
+ assert.equal(pages[0].blocks.at(-1).text,'上证指数盘中下探，收阴线。');
+ assert.equal(pages[1].blocks.length,1);assert.equal(pages[2].blocks.length,1);
+ assert.equal(pages.flatMap(p=>p.blocks).map(b=>b.text).join(''),source.map(p=>p.rewritten).join(''));
+ const tail=paginateSections(arrangeSections(records('尾盘股指数下跌。\n情绪量化：\n上涨家数占比58%。')).sections);
+ assert.equal(tail[0].section,'尾盘股');assert.equal(tail[0].insertImageAfter,true);
+});
+test('index headings retain their description, pasted sentences split, mixed comparisons stay intact',()=>{
+ const pages=paginateSections(arrangeSections(records('上证指数：\n盘中下探，收阴线。\n创业板冲高回落。微盘股指数下跌。')).sections);
+ assert.deepEqual(pages.map(p=>p.section),['上证指数','创业板','微盘股']);assert.equal(pages[0].blocks.length,2);
+ const mixed='上证指数与创业板走势不同。';assert.equal(paginateSections(arrangeSections(records(mixed)).sections)[0].section,'');
+});
 test('user example groups metrics, daily counts and feedback under their own headings',()=>{
  const source=records(sample),layout=arrangeSections(source),pages=paginateSections(layout.sections);
  const get=name=>pages.filter(p=>p.section===name).flatMap(p=>p.blocks).map(b=>b.text);
