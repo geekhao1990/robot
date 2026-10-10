@@ -112,3 +112,21 @@ test('ladder export preserves all pixels with proportional fitting for tall and 
     assert.equal(canvas.width,1080);assert.equal(canvas.height,1920);
   }
 });
+test('market header uses template styling regardless of row count or order without changing JSON',()=>{
+  const ctx=layoutContext();
+  const market=['沪深总成交：放量 市场情绪：68','无明显偏好，风格整体上涨','上证指数 3813.79 +1.89 +0.05%','涨3297 跌2145'];
+  const data={...sample,market},before=JSON.stringify(data),html=ctx.ladderTemplate(data);
+  assert.equal(JSON.stringify(data),before);
+  assert.doesNotMatch(html,/市场情绪|无明显偏好|风格整体上涨/);
+  assert.match(html,/沪深总成交：放量/);assert.match(html,/class="index-line"/);assert.match(html,/class="bar"/);
+  assert.match(html,/3813.79 \+1.89 \+0.05%/);assert.match(html,/涨3297/);assert.match(html,/跌2145/);
+  const variants=[['上涨家数：3,297','上证指数：3813.79 -1.89 -0.05%','下跌家数：2,145'],['上涨3297家，下跌2145家','上证指数 3813.79 +1.89 +0.05%']];
+  for(const rows of variants){const output=ctx.ladderMarketTop(rows);assert.match(output,/class="bar"/);assert.match(output,/class="index-value"/);}
+  assert.match(ctx.ladderMarketTop(variants[0]),/class="green">3813.79 -1.89 -0.05%/);
+});
+test('market header does not invent missing breadth and safely escapes unknown notes',()=>{
+  const ctx=layoutContext();
+  const html=ctx.ladderMarketTop(['市场情绪：68','风格偏好不明显','上证指数：3800 +0.1%','上涨2000家','<img src=x>']);
+  assert.doesNotMatch(html,/市场情绪|偏好|class="bar"|下跌/);
+  assert.match(html,/上涨2000家/);assert.match(html,/&lt;img/);assert.doesNotMatch(html,/<img/);
+});
