@@ -88,14 +88,21 @@ test('compact names stay in first board, are escaped and counted',()=>{
   const normal=context.ladderTemplate({...sample,groups:[{height:'首板',stocks:[{name:'股票',time:'09:30',sector:'电池'}]}]});
   assert.doesNotMatch(normal,/class="compact"/);
 });
-test('Canvas export uses shared HTML at 2x resolution and removes frame on success or failure',async()=>{
+test('Canvas export is 1080x1920 and removes frame on success or failure',async()=>{
   for(const failure of [false,true]){
     let removed=false,written='',options;
-    const poster={getBoundingClientRect:()=>({height:1400})};
+    const poster={querySelector:s=>s==='.poster-content'?{style:{},scrollHeight:1000}:{clientHeight:918}};
     const frame={setAttribute(){},style:{},remove(){removed=true;},contentDocument:{open(){},write(s){written=s;},close(){},fonts:{ready:Promise.resolve()},querySelector:()=>poster}};
-    const context=layoutContext({document:{createElement:()=>frame,body:{appendChild(){}}},html2canvas:async(el,opts)=>{assert.equal(el,poster);options=opts;if(failure)throw Error('render failure');return {width:1396};}});
+    const context=layoutContext({document:{createElement:()=>frame,body:{appendChild(){}}},html2canvas:async(el,opts)=>{assert.equal(el,poster);options=opts;if(failure)throw Error('render failure');return {width:opts.width*opts.scale,height:opts.height*opts.scale};}});
     if(failure)await assert.rejects(context.drawLadder(sample),/render failure/);
-    else assert.equal((await context.drawLadder(sample)).width,1396);
-    assert(removed);assert.equal(options.scale,2);assert.equal(options.height,1400);assert.match(written,/新华传媒/);
+    else {const canvas=await context.drawLadder(sample);assert.equal(canvas.width,1080);assert.equal(canvas.height,1920);}
+    assert(removed);assert.equal(options.scale,1.5);assert.equal(options.height,1280);assert.match(written,/新华传媒/);
   }
+});
+test('portrait title is below thumbnail crop and excessive data is rejected rather than clipped',()=>{
+  const ctx=layoutContext(),css=vm.runInNewContext('LADDER_PORTRAIT_CSS',ctx);
+  assert.match(css,/top:172px/);assert.match(css,/font-size:54px/);assert.match(css,/row-gap:5px/);
+  const content={style:{},scrollHeight:1200},poster={querySelector:s=>s==='.poster-content'?content:{clientHeight:918}};
+  assert.equal(ctx.fitLadderPoster(poster),918/1200);
+  content.scrollHeight=1600;assert.throws(()=>ctx.fitLadderPoster(poster),/未裁掉数据/);
 });

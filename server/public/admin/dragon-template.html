@@ -26,6 +26,7 @@ const previewData={date:'10-09',groups:[
 {name:'思明南路',stocks:[entry('新华传媒','1108w','三日','昨入1125万')]},
 {name:'拉萨天团',stocks:[entry('ST联光',null,'三日'),{...entry('金安国纪',null),direction:'sell'}]}
 ]};
-const style=document.createElement('style');style.textContent=DRAGON_CSS;document.head.appendChild(style);document.body.innerHTML=dragonTemplate(previewData);
+const style=document.createElement('style');style.textContent=DRAGON_CSS+DRAGON_PORTRAIT_CSS;document.head.appendChild(style);document.body.innerHTML=dragonTemplate(previewData);
+document.fonts.ready.then(()=>fitDragonPoster(document.querySelector('.dragon-poster')));
 if(location.search.includes('canvas'))drawDragon(previewData).then(c=>{const img=document.createElement('img');img.src=c.toDataURL('image/png');img.style.width='1000px';document.body.replaceChildren(img);document.body.dataset.export='ready';}).catch(e=>{document.body.textContent=e.message;document.body.dataset.export='failed';});
 </script></body></html>
