@@ -48,29 +48,23 @@ test('manual blanks remain absent, explicit zero retained, bounds checked',()=>{
 test('three paragraph output and fixed CTA',()=>{
   const text='观察资金变化需要结合多个交易日的数据，不能只看单日流向就下结论，也不能推断后续涨跌。';
   const result=a.validateOutput({title:'这只股票的资金方向是否出现新的分歧',hook:'明盘和暗盘是否一致，先看看今天的数据变化',body:[text,text,text].join('\n\n'),cta:'wrong'});
-  assert.equal(result.cta,'想查其他股票，评论区留下代码。');assert.throws(()=>a.validateOutput({...result,body:'太短'}));
+  assert.match(result.cta,/指标仓库/);assert.doesNotMatch(result.cta,/9\.9|一年/);assert.throws(()=>a.validateOutput({...result,body:''}));
 });
 const notice={artCode:'AN1',date:'2026-10-09',title:'公告'};
 test('format-only validation can retain complete draft without truncation',()=>{
   const body=['甲'.repeat(70),'乙'.repeat(70),'丙'.repeat(70)].join('\n\n');
   const r=a.validateOutput({title:'标题',hook:'开场',body},{allowFormatWarnings:true});
-  assert.equal(r.body,body);assert.match(r.warnings.join('；'),/210字/);
+  assert.equal(r.body,body);assert.equal(r.warnings.length,0);
   assert.throws(()=>a.validateOutput({title:'标题',hook:'开场',body:''},{allowFormatWarnings:true}));
 });
-test('one automatic repair fixes length; persistent or failed repair keeps editable draft',async()=>{
+test('long marketing articles and short drafts use one DS call without length repair',async()=>{
   const previous=process.env.DEEPSEEK_API_KEY;process.env.DEEPSEEK_API_KEY='test-only';
   const draft=length=>({title:'这只股票的资金方向是否出现新的分歧',hook:'明盘和暗盘是否一致，先看看今天的数据变化',body:['甲'.repeat(length),'乙'.repeat(length),'丙'.repeat(length)].join('\n\n')});
   const response=data=>({ok:true,json:async()=>({choices:[{finish_reason:'stop',message:{content:JSON.stringify(data)}}]})});
   try{
     let calls=0;
-    const fixed=await a.generate({stockCode:'000001'},async(url,opts)=>{calls++;const req=JSON.parse(opts.body);if(calls===2)assert.match(req.messages.at(-1).content,/210字/);return response(draft(calls===1?70:50));});
-    assert.equal(calls,2);assert.equal(fixed.warnings.length,0);assert.equal(fixed.formatAdjusted,true);
-    calls=0;
-    const long=await a.generate({},async()=>{calls++;return response(draft(70));});
-    assert.equal(calls,2);assert.equal(long.body,draft(70).body);assert.ok(long.warnings.length);
-    calls=0;
-    const failed=await a.generate({},async()=>{calls++;if(calls===2)throw Error('offline');return response(draft(70));});
-    assert.equal(calls,2);assert.equal(failed.body,draft(70).body);assert.match(failed.warnings.join('；'),/保留原稿/);
+    const long=await a.generate({stockCode:'000001'},async(url,opts)=>{calls++;const req=JSON.parse(opts.body);assert.equal(req.max_tokens,4096);assert.match(req.messages[0].content,/具体现象＋反向证据/);assert.match(req.messages[0].content,/不能把幅度差异写成方向相反/);return response({...draft(250),body:draft(250).body+'\n\n观察后续变化。'});});
+    assert.equal(calls,1);assert.equal(long.warnings.length,0);assert.ok(long.body.length>750);
     calls=0;
     await a.generate({},async()=>{calls++;return response(draft(50));});assert.equal(calls,1);
   }finally{if(previous===undefined)delete process.env.DEEPSEEK_API_KEY;else process.env.DEEPSEEK_API_KEY=previous;}
