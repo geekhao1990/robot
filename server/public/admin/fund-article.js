@@ -11,9 +11,9 @@ function renderFundArticle(){
   <label>涨跌幅（%）<input id="faChange" type="number" step="any"></label><br>
   <label>收盘价（元）<input id="faClose" type="number" step="any" min="0"></label><br>
   <label>换手率（%）<input id="faTurnover" type="number" step="any" min="0"></label><br>
-  <label>公告补充（选填）<textarea id="faNotice" maxlength="3000" style="width:100%;height:100px"></textarea></label>
+  <label>粘贴公告正文（选填，最多6万字）<textarea id="faNotice" maxlength="60000" style="width:100%;height:160px"></textarea></label>
   <button class="btn-primary" onclick="generateFundArticle()">按已有及补充数据生成</button><button class="btn-sm" onclick="document.getElementById('faMissing').close()">稍后生成</button></dialog>
-  <div id="faActions" hidden><label><input type="checkbox" id="faNotices" checked>使用近期公告标题背景</label>
+  <div id="faActions" hidden><label><input type="checkbox" id="faNotices" checked>结合近期公告正文分析</label>
   <button class="btn-sm" onclick="showFundArticleMissing()">补充/修改行情</button><button id="faGenerate" class="btn-primary" onclick="generateFundArticle()">生成 / 重新生成</button></div>
   <section id="faOutput" hidden><p>以下内容可直接编辑；请对照数据核对后发布。复制全文不重复附加视频开场。</p>
   ${[['title','标题'],['hook','视频开场'],['body','三段正文'],['cta','引导语']].map(([key,label])=>`<label>${label}<textarea id="fa-${key}" style="display:block;width:100%;height:${key==='body'?180:60}px"></textarea></label><button class="btn-sm" onclick="copyFundArticle('${key}')">复制${label}</button>`).join('')}
@@ -37,7 +37,7 @@ function renderFundArticleData(job){
   <table><thead><tr><th>日期</th><th>主力净流入</th><th>明盘</th><th>暗盘</th></tr></thead><tbody>${f.days.map(d=>`<tr><td>${esc(d.date)}</td><td>${esc(d.main)}</td><td>${esc(d.bright)}</td><td>${esc(d.dark)}</td></tr>`).join('')}</tbody></table>
   <p>收盘价：${esc(q.close??'缺失')}元；涨跌幅：${esc(q.changePercent??'缺失')}%；换手率：${esc(q.turnover??'缺失')}%</p>
   <p style="color:#ad6400">${esc(job.extra.warnings.join('；'))}</p>
-  <details><summary>近期公告（仅标题，未解析正文）</summary>${job.extra.notices.map(n=>`<p>${esc(n.date)} <a href="${esc(n.url)}" target="_blank" rel="noopener noreferrer">${esc(n.title)}</a></p>`).join('')||'<p>近30日未取得匹配公告，不代表没有公告。</p>'}</details>`;
+  <details><summary>近期公告正文（近30日，最多5篇）</summary>${job.extra.notices.map(n=>`<details><summary>${esc(n.date)} ${esc(n.title)} — ${n.status==='ready'?`已读取${n.content.length}字 / ${n.pages}页`:'正文读取失败，未用于分析'}</summary><p><a href="${esc(n.url)}" target="_blank" rel="noopener noreferrer">查看原文</a></p>${n.status==='ready'?`<pre style="white-space:pre-wrap;max-height:360px;overflow:auto">${esc(n.content)}</pre>`:`<p style="color:#ad6400">${esc(n.error||'未取得正文')}，可手动粘贴补充。</p>`}</details>`).join('')||'<p>近30日未取得匹配公告，不代表没有公告。</p>'}</details>`;
   document.getElementById('faActions').hidden=false;
 }
 async function pollFundArticle(id,view,auto){

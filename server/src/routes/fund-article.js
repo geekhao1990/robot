@@ -26,7 +26,7 @@ module.exports=(router,HttpError)=>{
       job.funds=article.prepareFunds(result);
       const data=db.get();data.darkFundCloseCache ||= {};
       data.darkFundCloseCache[code]={stockCode:code,tradeDate:result.tradeDate,versionKey:result.versionKey,cachedAt:Date.now(),result};await db.save();
-      job.stage='资金已取得，正在补充同日行情和近期公告';
+      job.stage='资金已取得，正在补充同日行情并读取近期公告正文';
       job.extra=await article.supplement(code,result.tradeDate);
       if(job.funds.days.length<7)job.extra.warnings.push(`仅取得${job.funds.days.length}个交易日，不补造历史数据`);
       job.status='ready';job.stage='数据已就绪';
@@ -41,7 +41,7 @@ module.exports=(router,HttpError)=>{
     if(!process.env.DEEPSEEK_API_KEY)throw new HttpError(503,'请在服务器配置DEEPSEEK_API_KEY');
     const manual=article.manualFields(ctx.body.manual);
     const {notice,...quote}=manual;
-    const input={...job.funds,quote:{...job.extra.quote,...quote},notices:ctx.body.useNotices===false?[]:job.extra.notices,manualNotice:notice};
+    const input={...job.funds,quote:{...job.extra.quote,...quote},notices:ctx.body.useNotices===false?[]:job.extra.notices.filter(n=>n.status==='ready'&&n.content),manualNotice:notice};
     job.status='generating';job.stage='DS正在生成三段论';job.error='';job.output=null;
     article.generate(input).then(output=>{job.output=output;job.status='done';job.stage='生成完成';}).catch(e=>{job.status='generation_failed';job.error=e.message;});
     return {id:job.id};
