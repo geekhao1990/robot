@@ -15,7 +15,7 @@ function renderFundArticle(){
   <button class="btn-primary" onclick="generateFundArticle()">按已有及补充数据生成</button><button class="btn-sm" onclick="document.getElementById('faMissing').close()">稍后生成</button></dialog>
   <div id="faActions" hidden><label><input type="checkbox" id="faNotices" checked>结合近期公告正文分析</label>
   <button class="btn-sm" onclick="showFundArticleMissing()">补充/修改行情</button><button id="faGenerate" class="btn-primary" onclick="generateFundArticle()">生成 / 重新生成</button></div>
-  <section id="faOutput" hidden><p>以下内容可直接编辑；请对照数据核对后发布。复制全文不重复附加视频开场。</p>
+  <section id="faOutput" hidden><p>以下内容可直接编辑；请对照数据核对后发布。复制全文不重复附加视频开场。格式不合要求时最多自动修整一次，会额外调用DS。</p><p id="faOutputWarnings" style="color:#ad6400;white-space:pre-wrap" role="status"></p>
   ${[['title','标题'],['hook','视频开场'],['body','三段正文'],['cta','引导语']].map(([key,label])=>`<label>${label}<textarea id="fa-${key}" style="display:block;width:100%;height:${key==='body'?180:60}px"></textarea></label><button class="btn-sm" onclick="copyFundArticle('${key}')">复制${label}</button>`).join('')}
   <p><button class="btn-primary" onclick="copyFundArticle()">复制标题＋正文＋引导语</button></p></section>`;
   const id=sessionStorage.getItem('fundArticleJob');if(id)pollFundArticle(id,view,false);
@@ -48,7 +48,7 @@ async function pollFundArticle(id,view,auto){
     const busy=['querying','generating'].includes(job.status);faBusy(busy);
     if(busy){setTimeout(()=>pollFundArticle(id,view,auto),2000);return;}
     renderFundArticleData(job);
-    if(job.output){for(const key of ['title','hook','body','cta'])document.getElementById('fa-'+key).value=job.output[key];document.getElementById('faOutput').hidden=false;}
+    if(job.output){for(const key of ['title','hook','body','cta'])document.getElementById('fa-'+key).value=job.output[key];document.getElementById('faOutputWarnings').textContent=(job.output.warnings||[]).join('\n');document.getElementById('faOutput').hidden=false;}
     if(auto&&job.status==='ready'){
       if(job.extra.warnings.length||['close','changePercent','turnover'].some(k=>job.extra.quote[k]==null))showFundArticleMissing();else generateFundArticle();
     }
