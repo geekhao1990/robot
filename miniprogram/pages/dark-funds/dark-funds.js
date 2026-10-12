@@ -388,22 +388,25 @@ Page({
     try {
       const [trade, settings] = await Promise.all([api.getDarkFundTradeDate(), api.getAppSettings()]);
       if (this._queryPageUnloaded) return;
-      if (tradingTimeForAd(trade) === false && settings.rewardedAdEnabled !== false) {
-        const id = queryMode === 'gold'
+      const trading = tradingTimeForAd(trade);
+      if (trading === true || (trading === false && settings.rewardedAdEnabled !== false)) {
+        const id = trading
+          ? (settings.darkFundsCloseInterstitialAdUnitId || config.darkFundsCloseInterstitialAdUnitId)
+          : queryMode === 'gold'
           ? (settings.goldRewardedVideoAdUnitId || config.goldRewardedVideoAdUnitId || settings.rewardedVideoAdUnitId)
           : (settings.rewardedVideoAdUnitId || config.rewardedVideoAdUnitId);
-        this._queryAd = showQueryAd(wx, String(id || ''));
+        this._queryAd = showQueryAd(wx, String(id || ''), trading ? 'interstitial' : 'rewarded');
         const allowed = await this._queryAd.promise;
         this._queryAd = null;
         if (this._queryPageUnloaded) return;
         if (!allowed) return wx.showToast({title:'请完整观看广告后查询',icon:'none'});
       }
-      return this.query(stockCode, queryMode, source);
+      return this.query(stockCode, queryMode, source, true);
     } catch (error) {
       if (!this._queryPageUnloaded) wx.showModal({title:'无法查询',content:(error.data && error.data.error) || error.message || '交易时段检查失败，请稍后重试',showCancel:false});
     } finally { this._queryAdPending = false; }
   },
-  query(stockCode, queryMode, source) {
+  query(stockCode, queryMode, source, skipResultAd = false) {
     if (this.data.querying) return;
     this.setData({ querying: true });
     wx.showLoading({ title: '提交中', mask: true });
@@ -416,7 +419,7 @@ Page({
         this.clearQueryRequestId(requestId);
         this.loadOrders(true, 1);
         if (order.ready && order.resultType === 'close_snapshot') {
-          return wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?id=${encodeURIComponent(order.orderId)}` });
+          return wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?id=${encodeURIComponent(order.orderId)}${skipResultAd ? '&skipAd=1' : ''}` });
         }
         wx.showModal({ title: order.ready ? '查询完成' : '已提交', content: order.ready ? '盘后数据已生成，请在订单列表查看' : '工单处理中，请到订单列表手动刷新状态', showCancel: false });
       })

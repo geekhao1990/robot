@@ -105,6 +105,7 @@ Page({
     skeletonRows: [1, 2, 3, 4, 5],
   },
   onLoad(options) {
+    this.skipResultAd = String(options && options.skipAd || '') === '1';
     const currentUser = store.getUser();
     const isOfficial = !!(currentUser && currentUser.official === true);
     const requestedPoster = String(options && options.poster || '');
@@ -141,7 +142,7 @@ Page({
         closeBannerAdUnitId: /^adunit-/i.test(bannerId) ? bannerId : '',
         closeBannerAdLoadFailed: false,
       });
-      this.showCloseInterstitial(interstitialId);
+      if (!this.skipResultAd) this.showCloseInterstitial(interstitialId);
     }).catch(() => {});
   },
   showCloseInterstitial(adUnitId) {

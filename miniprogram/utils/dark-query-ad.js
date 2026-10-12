@@ -1,5 +1,5 @@
 // One ad per confirmed query. A closed/left page must never submit an order.
-function showQueryAd(wxApi, adUnitId) {
+function showQueryAd(wxApi, adUnitId, type = 'rewarded') {
   let cancel = () => {};
   const promise = new Promise(resolve => {
     let ad, timer, done = false;
@@ -14,12 +14,13 @@ function showQueryAd(wxApi, adUnitId) {
       }
       resolve(allowed);
     };
-    const onClose = result => finish(!result || result.isEnded === true);
+    const onClose = result => finish(type === 'interstitial' || !result || result.isEnded === true);
     const onError = () => finish(true); // Match existing gold-page unavailable-ad fallback.
     cancel = () => finish(false);
-    if (!wxApi.createRewardedVideoAd || !/^adunit-(?!x+$)[\w-]+$/i.test(adUnitId || '')) return finish(true);
+    const create = type === 'interstitial' ? wxApi.createInterstitialAd : wxApi.createRewardedVideoAd;
+    if (!create || !/^adunit-(?!x+$)[\w-]+$/i.test(adUnitId || '')) return finish(true);
     try {
-      ad = wxApi.createRewardedVideoAd({adUnitId});
+      ad = create.call(wxApi, {adUnitId});
       ad.onClose(onClose);ad.onError(onError);
       timer = setTimeout(onError, 8000);
       Promise.resolve(ad.load ? ad.load() : undefined)
