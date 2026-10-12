@@ -11,6 +11,10 @@ const MAX = 5 * 1024 * 1024 + 256 * 1024; // 文件5MB，额外空间用于 mult
 const EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/gif': '.gif', 'image/webp': '.webp' };
 const MAX_DIMENSION = 12000;
 const MAX_PIXELS = 40000000;
+function normalizedImageType(value) {
+  const type = String(value || '').split(';')[0].trim().toLowerCase();
+  return ({ 'image/jpg': 'image/jpeg', 'image/pjpeg': 'image/jpeg', 'image/x-png': 'image/png' })[type] || type;
+}
 
 function jpegDimensions(data) {
   let offset = 2;
@@ -102,19 +106,21 @@ function handleUpload(req, res, sendJson) {
   let aborted = false;
   req.on('data', (c) => {
     size += c.length;
-    if (size > MAX) { aborted = true; req.destroy(); return; }
+    if (aborted) return;
+    if (size > MAX) { aborted = true; chunks.length = 0; sendJson(res, 413, { error: '图片过大（上限5MB）' }); return; }
     chunks.push(c);
   });
   req.on('error', () => { if (!aborted) sendJson(res, 400, { error: '上传中断' }); });
   req.on('end', async () => {
-    if (aborted) return sendJson(res, 413, { error: '图片过大（上限 8MB）' });
+    if (aborted) return;
     try {
       const file = parseFirstFile(Buffer.concat(chunks), req.headers['content-type']);
       if (!file || !file.data || !file.data.length) return sendJson(res, 400, { error: '未收到文件' });
       if (file.data.length > 5 * 1024 * 1024) return sendJson(res, 413, { error: '图片过大（上限5MB）' });
       const detectedType = detectedImageType(file.data);
       if (!detectedType || !EXT[detectedType]) return sendJson(res, 415, { error: '仅支持真实的 JPG、PNG、GIF、WebP 图片' });
-      if (file.contentType && file.contentType.toLowerCase() !== detectedType) return sendJson(res, 415, { error: '文件内容与图片类型不一致' });
+      const declaredType = normalizedImageType(file.contentType);
+      if (declaredType && declaredType !== 'application/octet-stream' && declaredType !== detectedType) return sendJson(res, 415, { error: '文件内容与图片类型不一致，请重新导出为JPG或PNG' });
       const dimensions = imageDimensions(file.data, detectedType);
       if (!dimensions || !dimensions.width || !dimensions.height) return sendJson(res, 415, { error: '图片结构无效或已损坏' });
       if (dimensions.width > MAX_DIMENSION || dimensions.height > MAX_DIMENSION || dimensions.width * dimensions.height > MAX_PIXELS) {
@@ -137,4 +143,4 @@ function handleUpload(req, res, sendJson) {
   });
 }
 
-module.exports = { handleUpload, UPLOAD_DIR, detectedImageType, imageDimensions };
+module.exports = { handleUpload, UPLOAD_DIR, detectedImageType, imageDimensions, normalizedImageType };

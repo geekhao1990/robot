@@ -513,10 +513,11 @@ function editNote(id) {
     </select><div class="hint">开启后，笔记详情自动显示：数据来自交易所和互联网公开数据，由本人整理发布，不构成投资建议</div></div>
     <div class="field"><label>图片</label>
       <div id="imgGrid" class="img-grid"></div>
-      <div class="hint">支持多图上传；拖拽图片可调整顺序，第一张为封面</div>
+      <div class="hint">支持JPG/JPEG、PNG、GIF、WebP；BMP、AVIF自动转PNG（需浏览器支持）。单张上限5MB；拖拽排序，第一张为封面。</div>
     </div>
     ${id ? `<div class="hint">互动数据：赞 ${n.likes || 0} · 藏 ${n.collects || 0}（不可修改）</div>` : ''}
   `, () => {
+    if (_noteImageUploads) { showAdminToast('图片正在上传，请完成后再保存', 'error'); return; }
     const baiduUrl = document.getElementById('f_baidu').value.trim();
     const quarkUrl = document.getElementById('f_quark').value.trim();
     const category = document.getElementById('f_category').value;
@@ -588,21 +589,49 @@ function endImageDrag() {
   document.querySelectorAll('.img-cell').forEach((cell) => cell.classList.remove('dragging', 'drag-over'));
 }
 function removeModalImage(i) { _modalImages.splice(i, 1); renderImgGrid(); }
-function onPickImages(e) {
+let _noteImageUploads = 0;
+async function onPickImages(e) {
   const files = Array.from(e.target.files || []);
   if (!files.length) return;
   const grid = document.getElementById('imgGrid');
+  _noteImageUploads++;
   if (grid) grid.style.opacity = '.5';
-  Promise.all(files.map(uploadAdminImage))
-    .then((urls) => { _modalImages = _modalImages.concat(urls.filter(Boolean)); renderImgGrid(); })
-    .catch(() => alert('图片上传失败'))
-    .then(() => { if (grid) grid.style.opacity = '1'; });
+  try {
+    const results = await Promise.allSettled(files.map(uploadAdminImage));
+    if (document.getElementById('imgGrid') !== grid) return;
+    _modalImages = _modalImages.concat(results.filter(r=>r.status==='fulfilled').map(r=>r.value));
+    renderImgGrid();
+    const errors=results.flatMap((r,i)=>r.status==='rejected'?[`${files[i].name}：${r.reason.message}`]:[]);
+    if(errors.length)alert(errors.join('\n'));
+  } finally {
+    _noteImageUploads--;
+    if (grid) grid.style.opacity = '1';
+    e.target.value='';
+  }
 }
-function uploadAdminImage(file) {
+async function uploadAdminImage(file) {
+  if(file.size>5*1024*1024)throw new Error('图片过大，单张上限5MB');
+  if(/\.(bmp|avif)$/i.test(file.name)||/^image\/(bmp|x-ms-bmp|avif)$/i.test(file.type)) {
+    let bitmap;
+    try {
+      bitmap=await createImageBitmap(file);
+      if(bitmap.width>12000||bitmap.height>12000||bitmap.width*bitmap.height>40000000)throw new Error('图片尺寸过大');
+      const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
+      canvas.getContext('2d').drawImage(bitmap,0,0);
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+      if(!blob)throw new Error('转换失败');
+      file=new File([blob],file.name.replace(/\.[^.]+$/,'')+'.png',{type:'image/png'});
+    } catch(error) { throw new Error('无法转换此图片，请先导出为JPG或PNG：'+error.message); }
+    finally { if(bitmap)bitmap.close(); }
+  }
+  if(file.size>5*1024*1024)throw new Error('转换后的图片超过5MB，请缩小图片后上传');
   const fd = new FormData();
   fd.append('file', file);
-  return fetch('/api/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd })
-    .then((r) => r.json()).then((d) => d.url);
+  const response=await fetch(API + '/api/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error || (response.status===413?'图片超过服务器上传大小限制':`图片上传失败（HTTP ${response.status}）`));
+  if(typeof data.url!=='string'||!data.url)throw new Error('上传接口未返回图片地址，请重试');
+  return data.url;
 }
 
 function delNote(id) {
