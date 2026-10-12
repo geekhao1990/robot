@@ -69,19 +69,20 @@
     <view class="card history-card">
       <view class="detail-title">30日主力趋势与 GS 信号</view>
       <view class="history-hint">实际{{historyBars.length}}日 · 单位：元（万/亿自动换算）· 左右滑动</view>
-      <view class="history-selected">{{historySelected.date}} <text class="{{historySelected.main >= 0 ? 'up' : 'down'}}">{{historySelected.mainText}}</text> <text>{{historySelected.gsText}}</text></view>
+      <view class="history-selected">{{historySelected.date}} <text class="{{historySelected.main >= 0 ? 'up' : 'down'}}">{{historySelected.mainText}}</text> <text class="history-signal-label {{historySelected.gsClass}}">{{historySelected.gsLabel}}</text></view>
       <scroll-view scroll-x scroll-left="{{historyScroll}}" class="history-scroll">
         <view class="history-track">
           <view wx:for="{{historyBars}}" wx:key="tradeDate" data-index="{{item.index}}" bindtap="openHistoryDay" class="history-column {{historySelected.index === item.index ? 'selected' : ''}}">
             <view class="history-plot"><view class="history-zero"></view><view class="history-bar {{item.main >= 0 ? 'positive' : 'negative'}}" style="height:{{item.height}}px"></view></view>
-            <view class="history-gs {{item.gsText === 'S' ? 'signal-s' : ''}}"><text wx:if="{{item.gsChanged}}" class="history-change">◆</text>{{item.gsText}}</view><view class="history-date">{{item.date}}</view>
+            <view class="history-gs {{item.gsClass}}">{{item.gsBadge}}</view><view class="history-date">{{item.date}}</view>
           </view>
         </view>
       </scroll-view>
+      <view class="history-legend"><text class="history-gs signal-g signal-change">G</text> G信号 <text class="history-gs signal-g">g</text> g区间 <text class="history-gs signal-s signal-change">S</text> S信号 <text class="history-gs signal-s">s</text> s区间 <text class="history-gs signal-none"></text> 暂无</view>
     </view>
     <view wx:if="{{historyModal}}" class="history-mask" bindtap="closeHistoryDay" catchtouchmove="stopHistoryTap">
       <view class="history-sheet" catchtap="stopHistoryTap">
-        <view class="detail-title">{{historySelected.tradeDate}}（周{{historySelected.weekday}}） <text wx:if="{{historySelected.gsChanged}}" class="history-change">◆</text>{{historySelected.gsText}}</view>
+        <view class="detail-title">{{historySelected.tradeDate}}（周{{historySelected.weekday}}） <text class="history-signal-label {{historySelected.gsClass}}">{{historySelected.gsLabel}}</text></view>
         <view class="history-hint"><text class="up">■ 净流入</text>　<text class="down">■ 净流出</text>　单位：万/亿</view>
         <view class="history-metrics"><view wx:for="{{historySelected.metrics}}" wx:key="key" class="history-metric {{index < 3 ? 'core' : ''}}"><view>{{item.label}}</view><text class="{{item.positive ? 'up' : 'down'}}">{{item.text}}</text></view></view>
         <view class="history-actions"><button disabled="{{historySelected.index === 0}}" data-step="-1" bindtap="stepHistoryDay">← 前一日</button><button disabled="{{historySelected.index === historyBars.length - 1}}" data-step="1" bindtap="stepHistoryDay">后一日 →</button><button bindtap="closeHistoryDay">关闭</button></view>

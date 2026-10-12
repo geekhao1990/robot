@@ -19,6 +19,13 @@ test('服务端原样保留GS字符串和未知编码', () => {
     assert.equal(result.historyDays[0].gs,gs);
   }
 });
+test('切换日为大写信号、延续为小写区间，缺失不伪造切换', () => {
+  const gs = ['G','g','S','s','G',null,'S',4];
+  const rows = historyChart({days:gs.map((value,i)=>({tradeDate:`2026-09-${14+i}`,gs:value,main:0}))});
+  assert.deepEqual(rows.map(row=>row.gsLabel),['g区间','g区间','S信号','s区间','G信号','暂无','s区间','暂无']);
+  assert.equal(rows[2].gsBadge,'S');
+  assert.equal(rows[3].gsBadge,'s');
+});
 test('历史用于窗口预热，展示七点而非从零开始', () => {
   const historyDays = Array.from({length:30}, (_,i)=>({tradeDate:`2026-09-${String(i+1).padStart(2,'0')}`,grey:i+1}));
   const result = { historyDays, days: historyDays.slice(-7) };

@@ -90,9 +90,15 @@
 .history-bar { position: absolute; width: 22px; left: 7px; border-radius: 3px; }
 .history-bar.positive { bottom: 102px; background: #db3931; }
 .history-bar.negative { top: 102px; background: #218207; }
-.history-gs { color: #c83029; font-size: 10px; margin-top: 8px; }
-.history-gs.signal-s { color: #218207; }
-.history-change { color: #d68a00; margin-right: 3px; }
+.history-gs { display: inline-block; width: 18px; height: 18px; line-height: 18px; box-sizing: border-box; text-align: center; border-radius: 4px; font-size: 11px; font-weight: 700; margin-top: 8px; }
+.signal-g { color: #cf342c; background: #fff0ee; border: 1px solid #f3b7af; }
+.signal-s { color: #218207; background: #edf7e8; border: 1px solid #b9dba8; }
+.signal-g.signal-change { color: white; background: #cf342c; border-color: #cf342c; }
+.signal-s.signal-change { color: white; background: #218207; border-color: #218207; }
+.signal-none { color: #7c899b; background: #edf1f6; border: 1px solid #edf1f6; }
+.history-signal-label { display: inline-block; padding: 3rpx 12rpx; border-radius: 18rpx; font-size: 22rpx; vertical-align: middle; }
+.history-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 8rpx; font-size: 20rpx; color: #64748b; margin-top: 20rpx; }
+.history-legend .history-gs { margin-top: 0; }
 .history-scroll { width: 100%; white-space: nowrap; }
 .history-sheet .detail-title { font-size: 31rpx; }
 .history-date { font-size: 9px; color: #64748b; margin-top: 6px; }

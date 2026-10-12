@@ -29,14 +29,20 @@ function historyChart(result) {
     const n = Number(value), absolute = Math.abs(n);
     return `${n > 0 ? '+' : n < 0 ? '-' : ''}${(absolute / (absolute >= 1e8 ? 1e8 : 1e4)).toFixed(absolute >= 1e8 ? 2 : 1)}${absolute >= 1e8 ? '亿' : '万'}`;
   };
-  return days.map((row,index) => ({
+  return days.map((row,index) => {
+    const current = signal(row);
+    const changed = !!(index && current && signal(days[index - 1]) && current !== signal(days[index - 1]));
+    return {
     ...row, index, date: row.tradeDate.slice(5),
     weekday: '日一二三四五六'[new Date(`${row.tradeDate}T00:00:00Z`).getUTCDay()],
     height: Math.abs(Number(row.main) || 0) / maximum * 100,
-    gsText: signal(row) || '—',
-    gsChanged: !!(index && signal(row) && signal(days[index - 1]) && signal(row) !== signal(days[index - 1])),
+    gsText: current || '—',
+    gsChanged: changed,
+    gsBadge: current ? (changed ? current : current.toLowerCase()) : '',
+    gsLabel: current ? `${changed ? current : current.toLowerCase()}${changed ? '信号' : '区间'}` : '暂无',
+    gsClass: current ? `${current === 'S' ? 'signal-s' : 'signal-g'}${changed ? ' signal-change' : ''}` : 'signal-none',
     metrics: [['main','主力合计'],['grey','暗盘'],['listed','明盘'],['super_large','特大单'],['large','大单'],['middle','中单'],['small','小单']].map(([key,label])=>({key,label,text:amount(row[key]),positive:Number(row[key])>=0})),
     mainText: amount(row.main),
-  }));
+  }; });
 }
 module.exports = { historyFor, rollingHistory, snapshotLabel, historyChart };
