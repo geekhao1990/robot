@@ -9,6 +9,34 @@ function rankingPosterStockName(value){
   // positions on the canvas. Never modify ranking rows or copywriting data.
   return chars.map((char,i)=>i>=chars.length-2&&/\p{Script=Han}/u.test(char)&&/^[a-z]$/i.test(initials[i]||'')?initials[i].toUpperCase():char).join('');
 }
+function drawRankingCover(original, tradeDate, side) {
+  const date = String(tradeDate || '').match(/^\d{4}-(\d{2})-(\d{2})$/);
+  if (!date || !['inflow','outflow'].includes(side)) throw new Error('榜单封面参数无效');
+  const canvas=document.createElement('canvas');
+  canvas.width=original.width;canvas.height=original.height;
+  const ctx=canvas.getContext('2d');ctx.drawImage(original,0,0);
+  const lines=[`${Number(date[1])}月${Number(date[2])}日`,'同花顺热榜暗盘',`${side==='inflow'?'流入':'流出'}前十名`];
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';
+  let size=140;
+  const font=()=>{ctx.font=`900 ${size}px "Microsoft YaHei",sans-serif`;};
+  font();
+  while(Math.max(...lines.map(line=>ctx.measureText(line).width))>canvas.width-100&&size>40){size--;font();}
+  const centerY=Math.min(680,canvas.height*.42), step=size*1.22;
+  lines.forEach((line,i)=>{
+    const x=canvas.width/2,y=centerY+(i-1)*step;
+    ctx.strokeStyle='#171717';ctx.lineWidth=26;ctx.strokeText(line,x+3,y+5);
+    ctx.strokeStyle='#fff';ctx.lineWidth=20;ctx.strokeText(line,x,y);
+    ctx.strokeStyle='#171717';ctx.lineWidth=10;ctx.strokeText(line,x,y);
+    ctx.fillStyle='#ffda28';ctx.fillText(line,x,y);
+  });
+  return canvas;
+}
+function buildRankingPosters(ranking) {
+  // Both sides use the same saved ranking snapshot. Originals remain untouched.
+  const originals=['inflow','outflow'].map(side=>({side,canvas:drawRankingPoster(ranking,side)}));
+  return [...originals.map(({side,canvas})=>({canvas,name:`${ranking.tradeDate}-暗盘${side==='inflow'?'流入':'流出'}榜.png`})),
+    ...originals.map(({side,canvas})=>({canvas:drawRankingCover(canvas,ranking.tradeDate,side),name:`${ranking.tradeDate}-暗盘${side==='inflow'?'流入':'流出'}榜-大字封面.png`}))];
+}
 function drawRankingPoster(ranking, side) {
   if (!['inflow', 'outflow'].includes(side)) throw new Error('榜单类型无效');
   const rows = ranking && Array.isArray(ranking[side]) ? ranking[side].slice(0, 10) : [];

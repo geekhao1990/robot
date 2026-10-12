@@ -3,6 +3,30 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+test('one batch produces two originals and two independent three-line covers',()=>{
+  const canvases=[];
+  const context={document:{createElement(){
+    const texts=[],draws=[];
+    const ctx={save(){},restore(){},translate(){},rotate(){},fillText:t=>texts.push(t),strokeText(){},drawImage:source=>draws.push(source),fillRect(){},beginPath(){},roundRect(){},fill(){},stroke(){},measureText:t=>({width:t.length*120})};
+    const canvas={texts,draws,getContext:()=>ctx};canvases.push(canvas);return canvas;
+  }}};
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/vendor/pinyin-pro.js'),'utf8'),context);
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/ranking-poster.js'),'utf8'),context);
+  const rows=Array.from({length:10},()=>({stockName:'长鑫科技',grey:100000,listed:200000,main:300000,retail:-300000}));
+  const ranking={tradeDate:'2026-09-30',inflow:rows,outflow:rows};const before=JSON.stringify(ranking);
+  const posters=context.buildRankingPosters(ranking);
+  assert.equal(posters.length,4);assert.equal(new Set(posters.map(p=>p.canvas)).size,4);
+  for(let i=0;i<2;i++){
+    const cover=posters[i+2].canvas,original=posters[i].canvas;
+    assert.equal(cover.draws[0],original);
+    assert.deepEqual(cover.texts,['9月30日','同花顺热榜暗盘',i?'流出前十名':'流入前十名']);
+    assert.equal(cover.width,original.width);assert.equal(cover.height,original.height);
+    assert.equal(original.texts.filter(t=>t.startsWith('主力流向')).length,1);
+  }
+  assert.equal(JSON.stringify(ranking),before);
+  const ui=fs.readFileSync(path.join(__dirname,'../public/admin/ladder.js'),'utf8');
+  assert.match(ui,/generateRankingPosters\(this\)/);assert.doesNotMatch(ui,/generateRankingPoster\('/);
+});
 test('both posters render ten rows and one expanded chart without leaking codes', () => {
   for (const side of ['inflow', 'outflow']) {
     const texts = [];

@@ -21,8 +21,7 @@ function renderAiMedia() {
       <p style="margin:12px 0 20px;color:#666">使用已生成的收盘榜单，不重复查询、不扣次数。</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn-primary" onclick="generateRankingCopy(this)">生成文案 / 复制</button>
-        <button class="btn-primary" onclick="generateRankingPoster('inflow',this)">流入分享图</button>
-        <button class="btn-primary" onclick="generateRankingPoster('outflow',this)">流出分享图</button>
+        <button class="btn-primary" onclick="generateRankingPosters(this)">一键生成4张分享图</button>
       </div>
     </section>
     <section style="flex:1;min-width:280px;padding:24px;border:1px solid #eee;border-radius:12px;background:#fff">

@@ -1556,16 +1556,17 @@ function generateDarkFundRanking() {
     });
 }
 
-async function generateRankingPoster(side, button) {
+async function generateRankingPosters(button) {
   button.disabled = true;
   try {
     const data = await api('/api/admin/dark-fund-ranking');
     if (data.sync && data.sync.running) throw new Error('榜单正在更新，请完成后再生成分享图');
     if (document.fonts) await document.fonts.ready;
-    const canvas = drawRankingPoster(data.ranking, side);
-    const url = canvas.toDataURL('image/png');
-    const name = `${data.ranking.tradeDate}-暗盘${side === 'inflow' ? '流入' : '流出'}榜.png`;
-    openModal('榜单分享图', `<a class="btn-primary" download="${esc(name)}" href="${url}">下载PNG图片</a><img src="${url}" style="display:block;width:100%;margin-top:16px" alt="暗盘榜分享图" />`, closeModal);
+    const posters = buildRankingPosters(data.ranking);
+    openModal('榜单分享图 · 共4张', `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px">${posters.map(({canvas,name})=>{
+      const url=canvas.toDataURL('image/png');
+      return `<section><a class="btn-primary" download="${esc(name)}" href="${url}">下载${esc(name)}</a><img src="${url}" style="display:block;width:100%;margin-top:16px" alt="${esc(name)}" /></section>`;
+    }).join('')}</div>`, closeModal);
   } catch (error) { showAdminToast(error.message, 'error'); }
   finally { button.disabled = false; }
 }
