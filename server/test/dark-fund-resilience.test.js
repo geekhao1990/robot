@@ -38,6 +38,24 @@ test('1至7日均可生成结果页与分享图；不足周期不伪造累计值
     if (count < 3) assert.equal(metrics.day3Text, '数据不足');
     if (count < 5) assert.equal(metrics.day5Text, '数据不足');
   }
+  const historyDays = Array.from({length:30},(_,i)=>({...page.data.result.days[0],tradeDate:`2026-09-${String(i+1).padStart(2,'0')}`}));
+  page.applyResult({...page.data.result,historyDays,days:historyDays.slice(-7)});
+  assert.equal(page.data.detailPages,5);
+  for(let i=0;i<4;i++)page.changeDetailPage({currentTarget:{dataset:{step:1}}});
+  assert.equal(page.data.rows.length,2);
+  assert.equal(page.data.rows[1].tradeDate,'2026-09-01');
+  page.changeDetailPage({currentTarget:{dataset:{step:1}}});
+  assert.equal(page.data.detailPage,5);
+  page._historyWidth=300;
+  page.onHistoryScroll({detail:{scrollLeft:0}});
+  assert.equal(page.data.historyEarlierVisible,false);
+  assert.equal(page.data.historyTodayVisible,true);
+  page.onHistoryScroll({detail:{scrollLeft:780}});
+  assert.equal(page.data.historyEarlierVisible,true);
+  assert.equal(page.data.historyTodayVisible,false);
+  page.onHistoryScroll({detail:{scrollLeft:300}});
+  assert.equal(page.data.historyEarlierVisible,true);
+  assert.equal(page.data.historyTodayVisible,true);
 });
 
 test('服务端具体错误优先于 request:ok；网络超时和空错误可辨识', () => {

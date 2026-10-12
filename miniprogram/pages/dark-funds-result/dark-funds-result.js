@@ -2,7 +2,7 @@ const api = require('../../utils/api');
 const config = require('../../utils/config');
 const store = require('../../utils/store');
 const { darkFundError } = require('../../utils/dark-fund-error');
-const { rollingHistory, snapshotLabel, historyChart, historySummary, updatedMinute } = require('../../utils/dark-fund-history');
+const { rollingHistory, snapshotLabel, historyChart, historySummary, updatedMinute, historyFor } = require('../../utils/dark-fund-history');
 const { exactAmount, posterMetrics } = require('../../utils/dark-fund-poster');
 
 const YELLOW = '#ffe50a';
@@ -89,6 +89,11 @@ Page({
     historySelected: null,
     historyModal: false,
     historyScroll: 0,
+    historyEarlierVisible: false,
+    historyTodayVisible: false,
+    detailPage: 1,
+    detailPages: 1,
+    detailTotal: 0,
     fundView: 'main',
     detailView: 'core',
     trendMetricLabel: '',
@@ -167,6 +172,7 @@ Page({
     result.days = days;
     result.snapshotLabel = snapshotLabel(result);
     result.updatedMinute = updatedMinute(result.updatedAt);
+    result.headerVersion = result.versionLabel || (result.kind === 'intraday' ? '盘中' : '收盘');
     const latest = days[days.length - 1];
     const unit = chooseUnit([latest.main, latest.listed, latest.grey]);
     const main = Number(latest.main) || 0;
@@ -180,7 +186,7 @@ Page({
       { label: '主力暗盘', value: Number(latest.grey) || 0, text: formatRoundedUnit(balancedLatest.greyValue, unit) },
       { label: '散户流入', value: -main, text: formatByUnit(-main, unit) },
     ]);
-    const rows = days.slice().reverse().slice(0, 7).map((row) => {
+    const detailRows = historyFor(result).slice(-30).reverse().map((row) => {
       const mainUnit = chooseUnit([row.main, row.grey, row.listed]);
       return {
         ...row,
@@ -190,11 +196,15 @@ Page({
       };
     });
     result.displayName = hybridStockName(result.stockName, result.stockInitials);
+    this.detailRows = detailRows;
+    const rows = detailRows.slice(0, 7);
+    this.setData({ detailPage: 1, detailPages: Math.max(1, Math.ceil(detailRows.length / 7)), detailTotal: detailRows.length });
     result.displayCode = marketStockCode(result.stockCode);
     this.trends = { trend3: rollingHistory(result, 3), trend5: rollingHistory(result, 5) };
     const historyBars = historyChart(result);
     this.setData({ historySummary: historySummary(result) });
     this.setData({ historyBars, historySelected: historyBars[historyBars.length - 1], historyScroll: Math.max(0, historyBars.length * 36), historyModal: false, loading: false, result, unitLabel: unit.label, summary, dayBars, rows }, () => {
+      wx.nextTick(() => this.measureHistory());
       if (this.autoPosterWithoutQr) {
         this.autoPosterWithoutQr = false;
         wx.nextTick(() => this.generateSharePoster({ currentTarget: { dataset: { noQr: 'true' } } }));
@@ -226,6 +236,11 @@ Page({
   switchDetailView(event) {
     this.setData({ detailView: event.currentTarget.dataset.view === 'orders' ? 'orders' : 'core' });
   },
+  changeDetailPage(event) {
+    const page = this.data.detailPage + Number(event.currentTarget.dataset.step);
+    if (page < 1 || page > this.data.detailPages) return;
+    this.setData({ detailPage: page, rows: this.detailRows.slice((page - 1) * 7, page * 7) });
+  },
   openHistoryDay(event) {
     const index = Number(event.currentTarget.dataset.index);
     const row = this.data.historyBars[index];
@@ -236,13 +251,31 @@ Page({
     if (this.data.historyBars[index]) this.setData({ historySelected: this.data.historyBars[index], historyScroll: Math.max(0, (index - 4) * 36) });
   },
   closeHistoryDay() { this.setData({ historyModal: false }); },
-  onHistoryScroll(event) { this._historyScrollLeft = Number(event.detail.scrollLeft) || 0; },
+  onHistoryScroll(event) {
+    this._historyScrollLeft = Number(event.detail.scrollLeft) || 0;
+    this.updateHistoryEdges();
+  },
+  updateHistoryEdges() {
+    if (!this._historyWidth) return;
+    const total = this.data.historyBars.length * 36;
+    const left = Math.min(Math.max(0, this._historyScrollLeft || 0), Math.max(0, total - this._historyWidth));
+    this.setData({ historyEarlierVisible: left >= 36, historyTodayVisible: left + this._historyWidth <= total - 36 });
+  },
+  measureHistory() {
+    wx.createSelectorQuery().in(this).select('.history-scroll').boundingClientRect().exec(rects => {
+      if (!rects || !rects[0]) return;
+      this._historyWidth = rects[0].width;
+      if (this._historyScrollLeft == null) this._historyScrollLeft = this.data.historyScroll;
+      this.updateHistoryEdges();
+    });
+  },
   navigateHistory(event) {
     const target = event.currentTarget.dataset.edge === 'earlier' ? 0 : this.data.historyBars.length * 36;
     this.setData({ historyScroll: this._historyScrollLeft || 0 }, () => this.setData({ historyScroll: target }));
   },
   stopHistoryTap() {},
   onResize() {
+    this.measureHistory();
     const series = this.trends && this.trends[this.data.fundView];
     if (series && this.data.trendHasData) wx.nextTick(() => this.drawTrend(series));
   },

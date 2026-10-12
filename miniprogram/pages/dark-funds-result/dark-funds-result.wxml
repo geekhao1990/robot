@@ -20,13 +20,13 @@
       <view class="query-heading">
       <view class="query-heading-info">
         <view class="hero-stock"><text class="stock-name">{{result.stockName}}</text><text class="stock-code">{{result.displayCode}}</text></view>
-        <view class="trade-date">数据日期 {{result.tradeDate}} · 版本：{{result.snapshotLabel}} · 更新于 {{result.updatedMinute}}</view>
       </view>
       <view class="query-heading-actions">
-        <view class="query-version">● {{result.snapshotLabel}}</view>
+        <view class="query-version">● {{result.headerVersion}}</view>
         <view class="hero-poster-button {{posterGenerating ? 'disabled' : ''}}" hover-class="hero-poster-button-hover" bindtap="generateSharePoster"><view class="hero-share-icon"></view><text>{{posterGenerating ? '生成中' : '生成分享图'}}</text></view>
       </view>
       </view>
+      <view class="header-meta"><view>数据日期 {{result.tradeDate}} · 版本：{{result.headerVersion}} ·</view><view>更新于 {{result.updatedMinute}}</view></view>
       <view wx:if="{{isOfficial}}" class="hero-action-row">
         <view wx:if="{{isOfficial}}" class="hero-poster-button hero-poster-button-secondary {{posterGenerating ? 'disabled' : ''}}" hover-class="hero-poster-button-hover" data-no-qr="true" bindtap="generateSharePoster">
           <view class="hero-share-icon hero-share-icon-red"></view>
@@ -73,7 +73,7 @@
       <view class="detail-title">30日主力趋势与 GS 信号</view>
       <view class="history-hint">实际{{historyBars.length}}日 · 单位：元（万/亿自动换算）· 左右滑动</view>
       <view class="history-selected">{{historySelected.date}} <text class="{{historySelected.main >= 0 ? 'up' : 'down'}}">{{historySelected.mainText}}</text> <text class="history-signal-label {{historySelected.gsClass}}">{{historySelected.gsLabel}}</text></view>
-      <view class="history-navigation"><view data-edge="earlier" bindtap="navigateHistory">‹ 更早</view><view data-edge="today" bindtap="navigateHistory">今天 ›</view></view>
+      <view class="history-navigation"><view wx:if="{{historyEarlierVisible}}" data-edge="earlier" bindtap="navigateHistory">‹ 更早</view><view wx:if="{{historyTodayVisible}}" class="history-today" data-edge="today" bindtap="navigateHistory">今天 ›</view></view>
       <scroll-view scroll-x scroll-with-animation scroll-left="{{historyScroll}}" bindscroll="onHistoryScroll" class="history-scroll">
         <view class="history-track">
           <view wx:for="{{historyBars}}" wx:key="tradeDate" data-index="{{item.index}}" bindtap="openHistoryDay" class="history-column {{historySelected.index === item.index ? 'selected' : ''}}">
@@ -94,7 +94,7 @@
       </view>
     </view>
     <view class="card detail-card">
-      <view class="detail-title">近{{rows.length}}日资金情况</view>
+      <view class="detail-title">资金明细</view>
       <view class="segment-control">
         <view class="segment {{detailView === 'core' ? 'active' : ''}}" data-view="core" bindtap="switchDetailView">主力资金</view>
         <view class="segment {{detailView === 'orders' ? 'active' : ''}}" data-view="orders" bindtap="switchDetailView">资金结构</view>
@@ -108,6 +108,7 @@
         <view wx:for="{{rows}}" wx:key="tradeDate" class="tr"><text>{{item.displayDate}}</text><text class="{{item.super_large >= 0 ? 'up' : 'down'}}">{{item.super_largeText}}</text><text class="{{item.large >= 0 ? 'up' : 'down'}}">{{item.largeText}}</text><text class="{{item.middle >= 0 ? 'up' : 'down'}}">{{item.middleText}}</text><text class="{{item.small >= 0 ? 'up' : 'down'}}">{{item.smallText}}</text></view>
       </view>
     </view>
+    <view class="detail-pagination"><button disabled="{{detailPage <= 1}}" data-step="-1" bindtap="changeDetailPage">上一页</button><text>{{detailPage}} / {{detailPages}} · 共{{detailTotal}}日</text><button disabled="{{detailPage >= detailPages}}" data-step="1" bindtap="changeDetailPage">下一页</button></view>
     <view wx:if="{{closeBannerAdUnitId && !closeBannerAdLoadFailed}}" class="close-banner-ad">
       <ad unit-id="{{closeBannerAdUnitId}}" binderror="onCloseBannerAdError" />
     </view>
