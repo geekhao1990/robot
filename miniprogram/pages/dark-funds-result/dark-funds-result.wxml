@@ -16,18 +16,21 @@
   <view wx:elif="{{error}}" class="error">{{error}}</view>
   <block wx:else>
     <view class="card hero">
-      <view class="hero-main-row">
-        <view class="hero-stock"><text class="stock-name">{{result.displayName}}</text><text class="stock-code">{{result.displayCode}}</text></view>
-        <view class="trade-date">{{result.tradeDate}} · {{result.snapshotLabel}}</view>
+      <view class="query-complete">● 查询完成</view>
+      <view class="query-heading">
+      <view class="query-heading-info">
+        <view class="hero-stock"><text class="stock-name">{{result.stockName}}</text><text class="stock-code">{{result.displayCode}}</text></view>
+        <view class="trade-date">数据日期 {{result.tradeDate}} · 版本：{{result.snapshotLabel}} · 更新于 {{result.updatedMinute}}</view>
       </view>
-      <view class="hero-action-row">
+      <view class="query-heading-actions">
+        <view class="query-version">● {{result.snapshotLabel}}</view>
+        <view class="hero-poster-button {{posterGenerating ? 'disabled' : ''}}" hover-class="hero-poster-button-hover" bindtap="generateSharePoster"><view class="hero-share-icon"></view><text>{{posterGenerating ? '生成中' : '生成分享图'}}</text></view>
+      </view>
+      </view>
+      <view wx:if="{{isOfficial}}" class="hero-action-row">
         <view wx:if="{{isOfficial}}" class="hero-poster-button hero-poster-button-secondary {{posterGenerating ? 'disabled' : ''}}" hover-class="hero-poster-button-hover" data-no-qr="true" bindtap="generateSharePoster">
           <view class="hero-share-icon hero-share-icon-red"></view>
           <text>无二维码分享图</text>
-        </view>
-        <view class="hero-poster-button {{posterGenerating ? 'disabled' : ''}}" hover-class="hero-poster-button-hover" bindtap="generateSharePoster">
-          <view class="hero-share-icon"></view>
-          <text>{{posterGenerating ? '生成中' : '生成分享图'}}</text>
         </view>
       </view>
     </view>
@@ -70,7 +73,8 @@
       <view class="detail-title">30日主力趋势与 GS 信号</view>
       <view class="history-hint">实际{{historyBars.length}}日 · 单位：元（万/亿自动换算）· 左右滑动</view>
       <view class="history-selected">{{historySelected.date}} <text class="{{historySelected.main >= 0 ? 'up' : 'down'}}">{{historySelected.mainText}}</text> <text class="history-signal-label {{historySelected.gsClass}}">{{historySelected.gsLabel}}</text></view>
-      <scroll-view scroll-x scroll-left="{{historyScroll}}" class="history-scroll">
+      <view class="history-navigation"><view data-edge="earlier" bindtap="navigateHistory">‹ 更早</view><view data-edge="today" bindtap="navigateHistory">今天 ›</view></view>
+      <scroll-view scroll-x scroll-with-animation scroll-left="{{historyScroll}}" bindscroll="onHistoryScroll" class="history-scroll">
         <view class="history-track">
           <view wx:for="{{historyBars}}" wx:key="tradeDate" data-index="{{item.index}}" bindtap="openHistoryDay" class="history-column {{historySelected.index === item.index ? 'selected' : ''}}">
             <view class="history-plot"><view class="history-zero"></view><view class="history-bar {{item.main >= 0 ? 'positive' : 'negative'}}" style="height:{{item.height}}px"></view></view>
@@ -79,6 +83,7 @@
         </view>
       </scroll-view>
       <view class="history-legend"><text class="history-gs signal-g signal-change">G</text> G信号 <text class="history-gs signal-g">g</text> g区间 <text class="history-gs signal-s signal-change">S</text> S信号 <text class="history-gs signal-s">s</text> s区间 <text class="history-gs signal-none"></text> 暂无</view>
+      <view class="history-summary">{{historySummary}}</view>
     </view>
     <view wx:if="{{historyModal}}" class="history-mask" bindtap="closeHistoryDay" catchtouchmove="stopHistoryTap">
       <view class="history-sheet" catchtap="stopHistoryTap">

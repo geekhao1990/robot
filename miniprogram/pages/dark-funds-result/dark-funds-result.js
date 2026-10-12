@@ -2,7 +2,7 @@ const api = require('../../utils/api');
 const config = require('../../utils/config');
 const store = require('../../utils/store');
 const { darkFundError } = require('../../utils/dark-fund-error');
-const { rollingHistory, snapshotLabel, historyChart } = require('../../utils/dark-fund-history');
+const { rollingHistory, snapshotLabel, historyChart, historySummary, updatedMinute } = require('../../utils/dark-fund-history');
 const { exactAmount, posterMetrics } = require('../../utils/dark-fund-poster');
 
 const YELLOW = '#ffe50a';
@@ -166,6 +166,7 @@ Page({
     const days = result.days.slice().sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
     result.days = days;
     result.snapshotLabel = snapshotLabel(result);
+    result.updatedMinute = updatedMinute(result.updatedAt);
     const latest = days[days.length - 1];
     const unit = chooseUnit([latest.main, latest.listed, latest.grey]);
     const main = Number(latest.main) || 0;
@@ -192,6 +193,7 @@ Page({
     result.displayCode = marketStockCode(result.stockCode);
     this.trends = { trend3: rollingHistory(result, 3), trend5: rollingHistory(result, 5) };
     const historyBars = historyChart(result);
+    this.setData({ historySummary: historySummary(result) });
     this.setData({ historyBars, historySelected: historyBars[historyBars.length - 1], historyScroll: Math.max(0, historyBars.length * 36), historyModal: false, loading: false, result, unitLabel: unit.label, summary, dayBars, rows }, () => {
       if (this.autoPosterWithoutQr) {
         this.autoPosterWithoutQr = false;
@@ -234,6 +236,11 @@ Page({
     if (this.data.historyBars[index]) this.setData({ historySelected: this.data.historyBars[index], historyScroll: Math.max(0, (index - 4) * 36) });
   },
   closeHistoryDay() { this.setData({ historyModal: false }); },
+  onHistoryScroll(event) { this._historyScrollLeft = Number(event.detail.scrollLeft) || 0; },
+  navigateHistory(event) {
+    const target = event.currentTarget.dataset.edge === 'earlier' ? 0 : this.data.historyBars.length * 36;
+    this.setData({ historyScroll: this._historyScrollLeft || 0 }, () => this.setData({ historyScroll: target }));
+  },
   stopHistoryTap() {},
   onResize() {
     const series = this.trends && this.trends[this.data.fundView];

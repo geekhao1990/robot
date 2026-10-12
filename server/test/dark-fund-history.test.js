@@ -3,8 +3,19 @@ const assert = require('node:assert/strict');
 const { rollingHistory, snapshotLabel } = require('../../miniprogram/utils/dark-fund-history');
 const { normalizeCloseDarkFund, SAMPLE_CLOSE_PAYLOAD } = require('../src/dark-fund-close');
 const { historyChart } = require('../../miniprogram/utils/dark-fund-history');
+const {historySummary,updatedMinute}=require('../../miniprogram/utils/dark-fund-history');
+test('依据上游明确编码渲染，不覆盖接口信号为推测区间',()=>{
+  const days=[1,2,3,4,null].map((gs,i)=>({tradeDate:`2026-10-${String(i+8).padStart(2,'0')}`,gs,main:i*10000}));
+  assert.deepEqual(historyChart({days}).map(r=>r.gsLabel),['s区间','S信号','G信号','g区间','暂无']);
+  const text=historySummary({days,kind:'intraday'});
+  assert.match(text,/5日中4日净流入/);
+  assert.match(text,/10-12净流入最高/);
+  assert.match(text,/已持续2个交易日/);
+  assert.match(text,/当日信号收盘后更新/);
+  assert.equal(updatedMinute('2026-10-12T11:51:41+08:00'),'2026-10-12 11:51');
+});
 test('30日柱状图金额与GS互不推断，缺失信号不产生切换', () => {
-  const days = ['G','S',null,'G',4].map((gs,i)=>({tradeDate:`2026-09-${14+i}`,main:-240000000,grey:0,listed:-240000000,gs}));
+  const days = ['G','S',null,'G',9].map((gs,i)=>({tradeDate:`2026-09-${14+i}`,main:-240000000,grey:0,listed:-240000000,gs}));
   const chart = historyChart({days});
   assert.equal(chart[0].mainText,'-2.40亿');
   assert.equal(chart[0].height,100);
@@ -20,7 +31,7 @@ test('服务端原样保留GS字符串和未知编码', () => {
   }
 });
 test('切换日为大写信号、延续为小写区间，缺失不伪造切换', () => {
-  const gs = ['G','g','S','s','G',null,'S',4];
+  const gs = ['G','g','S','s','G',null,'S',9];
   const rows = historyChart({days:gs.map((value,i)=>({tradeDate:`2026-09-${14+i}`,gs:value,main:0}))});
   assert.deepEqual(rows.map(row=>row.gsLabel),['g区间','g区间','S信号','s区间','G信号','暂无','s区间','暂无']);
   assert.equal(rows[2].gsBadge,'S');
