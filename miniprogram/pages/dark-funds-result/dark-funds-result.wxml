@@ -37,7 +37,6 @@
         <view class="segment {{fundView === 'main' ? 'active' : ''}}" data-view="main" bindtap="switchFundView">1日暗盘</view>
         <view class="segment {{fundView === 'trend3' ? 'active' : ''}}" data-view="trend3" bindtap="switchFundView">3日暗盘</view>
         <view class="segment {{fundView === 'trend5' ? 'active' : ''}}" data-view="trend5" bindtap="switchFundView">5日暗盘</view>
-        <view class="segment {{fundView === 'trend7' ? 'active' : ''}}" data-view="trend7" bindtap="switchFundView">7日暗盘</view>
       </view>
       <block wx:if="{{fundView === 'main'}}">
         <view class="chart-inline-title">

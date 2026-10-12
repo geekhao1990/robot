@@ -5,7 +5,7 @@ const { normalizeCloseDarkFund, SAMPLE_CLOSE_PAYLOAD } = require('../src/dark-fu
 test('历史用于窗口预热，展示七点而非从零开始', () => {
   const historyDays = Array.from({length:30}, (_,i)=>({tradeDate:`2026-09-${String(i+1).padStart(2,'0')}`,grey:i+1}));
   const result = { historyDays, days: historyDays.slice(-7) };
-  for (const size of [3,5,7]) {
+  for (const size of [3,5]) {
     const points = rollingHistory(result,size);
     assert.equal(points.length,7);
     assert.equal(points[0].value, historyDays.slice(24-size,24).reduce((s,r)=>s+r.grey,0));

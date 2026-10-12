@@ -185,7 +185,7 @@ Page({
     });
     result.displayName = hybridStockName(result.stockName, result.stockInitials);
     result.displayCode = marketStockCode(result.stockCode);
-    this.trends = { trend3: rollingHistory(result, 3), trend5: rollingHistory(result, 5), trend7: rollingHistory(result, 7) };
+    this.trends = { trend3: rollingHistory(result, 3), trend5: rollingHistory(result, 5) };
     this.setData({ loading: false, result, unitLabel: unit.label, summary, dayBars, rows }, () => {
       if (this.autoPosterWithoutQr) {
         this.autoPosterWithoutQr = false;
@@ -198,7 +198,7 @@ Page({
   },
   switchFundView(event) {
     const fundView = String(event.currentTarget.dataset.view || 'main');
-    if (!['main', 'trend3', 'trend5', 'trend7'].includes(fundView) || fundView === this.data.fundView) return;
+    if (!['main', 'trend3', 'trend5'].includes(fundView) || fundView === this.data.fundView) return;
     if (fundView === 'main') return this.setData({ fundView });
     const size = Number(fundView.slice(5));
     const series = this.trends && this.trends[fundView] || [];
