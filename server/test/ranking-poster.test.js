@@ -6,9 +6,9 @@ const vm = require('node:vm');
 test('one batch produces two originals and two independent three-line covers',()=>{
   const canvases=[];
   const context={document:{createElement(){
-    const texts=[],draws=[];
-    const ctx={save(){},restore(){},translate(){},rotate(){},fillText:t=>texts.push(t),strokeText(){},drawImage:source=>draws.push(source),fillRect(){},beginPath(){},roundRect(){},fill(){},stroke(){},measureText:t=>({width:t.length*120})};
-    const canvas={texts,draws,getContext:()=>ctx};canvases.push(canvas);return canvas;
+    const texts=[],draws=[],positions=[];
+    const ctx={save(){},restore(){},translate(){},rotate(){},fillText:(t,x,y)=>{texts.push(t);positions.push({x,y});},strokeText(){},drawImage:source=>draws.push(source),fillRect(){},beginPath(){},roundRect(){},fill(){},stroke(){},measureText:t=>({width:t.length*120})};
+    const canvas={texts,draws,positions,getContext:()=>ctx};canvases.push(canvas);return canvas;
   }}};
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/vendor/pinyin-pro.js'),'utf8'),context);
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/ranking-poster.js'),'utf8'),context);
@@ -21,6 +21,8 @@ test('one batch produces two originals and two independent three-line covers',()
     assert.equal(cover.draws[0],original);
     assert.deepEqual(cover.texts,['9月30日','同花顺热榜暗盘',i?'流出前十名':'流入前十名']);
     assert.equal(cover.width,original.width);assert.equal(cover.height,original.height);
+    assert.equal(cover.positions[1].y,cover.height/2);
+    assert.equal((cover.positions[0].y+cover.positions[2].y)/2,cover.height/2);
     assert.equal(original.texts.filter(t=>t.startsWith('主力流向')).length,1);
   }
   assert.equal(JSON.stringify(ranking),before);

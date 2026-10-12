@@ -21,7 +21,7 @@ function drawRankingCover(original, tradeDate, side) {
   const font=()=>{ctx.font=`900 ${size}px "Microsoft YaHei",sans-serif`;};
   font();
   while(Math.max(...lines.map(line=>ctx.measureText(line).width))>canvas.width-100&&size>40){size--;font();}
-  const centerY=Math.min(680,canvas.height*.42), step=size*1.22;
+  const centerY=canvas.height/2, step=size*1.22;
   lines.forEach((line,i)=>{
     const x=canvas.width/2,y=centerY+(i-1)*step;
     ctx.strokeStyle='#171717';ctx.lineWidth=26;ctx.strokeText(line,x+3,y+5);

@@ -77,6 +77,10 @@ test('shared template preserves data, disclaimer and red cross styling',()=>{
   assert.match(html,/指标仓库/);
   assert.doesNotMatch(html,/小程序指标仓库/);
   assert.match(html,/数据仅供参考，请勿作为投资依据。/);
+  assert.match(html,/class="ladder-signature">由【指标仓库】整理/);
+  assert.equal((context.ladderTemplate(sample,'自定义水印').match(/自定义水印/g)||[]).length,1);
+  assert.match(context.ladderTemplate(sample,''),/<div class="watermarks" aria-hidden="true"><\/div>/);
+  assert.match(context.ladderTemplate(sample,'<水印>'),/&lt;水印&gt;/);
   const css=vm.runInNewContext('LADDER_CSS',context);
   assert.match(css,/opacity:.5/);assert.match(css,/100% \/ 7/);
   assert.match(context.ladderTemplate(sample),/一字板/);
