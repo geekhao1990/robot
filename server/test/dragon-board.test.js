@@ -49,16 +49,22 @@ test('dragon template escapes content and preserves labels without inventing mis
   const escaped=ctx.dragonTemplate({...sample,groups:[{name:'<script>',stocks:[{name:'<img>',direction:'unknown'}]}]});
   assert.match(escaped,/&lt;script&gt;/);assert.match(escaped,/&lt;img&gt;/);assert.doesNotMatch(escaped,/<script>/);
 });
-test('dragon renders unchanged layout at 2x, exports 9:16 and cleans up its temporary frame',async()=>{
+test('dragon lays out full-width 9:16 at 2x and cleans up its temporary frame',async()=>{
   for(const fail of [false,true]){
     let removed=false,options;
-    const poster={getBoundingClientRect:()=>({height:2200})};
+    const poster={scrollHeight:1920,style:{setProperty(){}}};
     const frame={setAttribute(){},style:{},remove(){removed=true;},contentDocument:{open(){},write(){},close(){},fonts:{ready:Promise.resolve()},querySelector:()=>poster}};
     const canvas={getContext:()=>({fillRect(){},drawImage(){}})};
     const ctx=context({document:{createElement:tag=>tag==='canvas'?canvas:frame,body:{appendChild(){}}},html2canvas:async(el,opts)=>{options=opts;if(fail)throw Error('render failed');return {width:2000,height:4400};}});
     if(fail)await assert.rejects(ctx.drawDragon(sample),/render failed/);else {const result=await ctx.drawDragon(sample);assert.equal(result.width,1080);assert.equal(result.height,1920);}
-    assert(removed);assert.equal(options.scale,2);assert.equal(options.height,2200);
+    assert(removed);assert.equal(options.scale,2);assert.equal(options.height,1920);assert.equal(options.width,1080);
   }
+});
+test('dragon fits dense content without changing data and rejects overflow instead of clipping',()=>{
+  const ctx=context();let size;
+  const poster={style:{setProperty(key,value){if(key==='--stock-size')size=parseInt(value);}},get scrollHeight(){return size>26?2000:1920;}};
+  ctx.fitDragonPoster(poster);assert.equal(size,26);
+  assert.throws(()=>ctx.fitDragonPoster({style:{setProperty(){}},scrollHeight:2100}),/拆分榜单/);
 });
 test('dragon output only adds background padding, without cropping or stretching',()=>{
   for(const original of [{width:2000,height:4400},{width:2000,height:2000}]){
