@@ -188,10 +188,10 @@ Page({
     ]);
     const historyBars = historyChart(result).map(row => {
       const unit = chooseUnit([row.main, row.listed, row.grey]);
-      const balanced = balancedMainGroup(row, unit);
+      const balanced = balancedMainGroup(row, unit, true);
       return { ...row, unitLabel: unit.label,
-        flowSummary: [{label:'主力净流入',value:row.main},{label:'散户流入',value:-row.main}].map(item=>({...item,text:formatByUnit(item.value,unit),positive:item.value>=0})),
-        flowBars: withBars([{label:'主力明盘',value:row.listed,text:balanced.listedText},{label:'主力暗盘',value:row.grey,text:balanced.greyText},{label:'散户流入',value:-row.main,text:formatByUnit(-row.main,unit)}]),
+        flowSummary: [{label:'主力净流入',value:row.main},{label:'散户流入',value:-row.main}].map(item=>({...item,text:formatByUnit(item.value,unit,true),positive:item.value>=0})),
+        flowBars: withBars([{label:'主力明盘',value:row.listed,text:balanced.listedText},{label:'主力暗盘',value:row.grey,text:balanced.greyText},{label:'散户流入',value:-row.main,text:formatByUnit(-row.main,unit,true)}]),
         tierMetrics: row.metrics.slice(3),
       };
     });
