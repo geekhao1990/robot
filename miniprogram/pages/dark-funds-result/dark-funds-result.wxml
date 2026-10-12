@@ -82,14 +82,24 @@
           </view>
         </view>
       </scroll-view>
-      <view class="history-legend"><text class="history-gs signal-g signal-change">G</text> G信号 <text class="history-gs signal-g">g</text> g区间 <text class="history-gs signal-s signal-change">S</text> S信号 <text class="history-gs signal-s">s</text> s区间 <text class="history-gs signal-none"></text> 暂无</view>
+      <view class="history-legend"><text class="history-gs signal-g signal-change">G</text> G信号 <text class="history-gs signal-g">g</text> G区间 <text class="history-gs signal-s signal-change">S</text> S信号 <text class="history-gs signal-s">s</text> S区间 <text class="history-gs signal-none"></text> 暂无</view>
       <view class="history-summary">{{historySummary}}</view>
     </view>
     <view wx:if="{{historyModal}}" class="history-mask" bindtap="closeHistoryDay" catchtouchmove="stopHistoryTap">
       <view class="history-sheet" catchtap="stopHistoryTap">
+        <view class="history-handle"></view>
         <view class="detail-title">{{historySelected.tradeDate}}（周{{historySelected.weekday}}） <text class="history-signal-label {{historySelected.gsClass}}">{{historySelected.gsLabel}}</text></view>
         <view class="history-hint"><text class="up">■ 净流入</text>　<text class="down">■ 净流出</text>　单位：万/亿</view>
-        <view class="history-metrics"><view wx:for="{{historySelected.metrics}}" wx:key="key" class="history-metric {{index < 3 ? 'core' : ''}}"><view>{{item.label}}</view><text class="{{item.positive ? 'up' : 'down'}}">{{item.text}}</text></view></view>
+        <view class="history-flow">
+          <view class="chart-inline-title"><view class="chart-title-mark"></view><text>主力流向({{historySelected.unitLabel}})</text></view>
+          <view class="summary-grid"><view wx:for="{{historySelected.flowSummary}}" wx:key="label" class="summary-item"><text>{{item.label}}</text><text class="summary-value {{item.positive ? 'up' : 'down'}}">{{item.text}}</text></view></view>
+          <view class="flow-chart"><view class="zero-line"></view><view class="flow-columns"><view wx:for="{{historySelected.flowBars}}" wx:key="label" class="flow-column">
+            <view wx:if="{{item.positive}}" class="flow-stack positive" style="bottom:50%"><text class="flow-value up">{{item.text}}</text><view class="flow-bar bar-up" style="height:{{item.height}}rpx"></view></view>
+            <view wx:else class="flow-stack negative" style="top:50%"><view class="flow-bar bar-down" style="height:{{item.height}}rpx"></view><text class="flow-value down">{{item.text}}</text></view>
+            <text class="flow-name">{{item.label}}</text>
+          </view></view></view>
+        </view>
+        <view class="history-metrics"><view wx:for="{{historySelected.tierMetrics}}" wx:key="key" class="history-metric"><view>{{item.label}}</view><text class="{{item.positive ? 'up' : 'down'}}">{{item.text}}</text></view></view>
         <view class="history-actions"><button disabled="{{historySelected.index === 0}}" data-step="-1" bindtap="stepHistoryDay">← 前一日</button><button disabled="{{historySelected.index === historyBars.length - 1}}" data-step="1" bindtap="stepHistoryDay">后一日 →</button><button bindtap="closeHistoryDay">关闭</button></view>
       </view>
     </view>

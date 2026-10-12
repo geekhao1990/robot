@@ -23,6 +23,9 @@ test('1至7日均可生成结果页与分享图；不足周期不伪造累计值
     page.openHistoryDay({currentTarget:{dataset:{index:0}}});
     assert.equal(page.data.historyModal,true);
     assert.equal(page.data.historySelected.index,0);
+    assert.equal(page.data.historySelected.flowBars.length,3);
+    assert.equal(page.data.historySelected.tierMetrics.length,4);
+    assert.equal(page.data.historySelected.flowBars[1].value,page.data.historySelected.grey);
     page.stepHistoryDay({currentTarget:{dataset:{step:-1}}});
     assert.equal(page.data.historySelected.index,0);
     if(count>1) {

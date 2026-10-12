@@ -6,7 +6,7 @@ const { historyChart } = require('../../miniprogram/utils/dark-fund-history');
 const {historySummary,updatedMinute}=require('../../miniprogram/utils/dark-fund-history');
 test('依据上游明确编码渲染，不覆盖接口信号为推测区间',()=>{
   const days=[1,2,3,4,null].map((gs,i)=>({tradeDate:`2026-10-${String(i+8).padStart(2,'0')}`,gs,main:i*10000}));
-  assert.deepEqual(historyChart({days}).map(r=>r.gsLabel),['s区间','S信号','G信号','g区间','暂无']);
+  assert.deepEqual(historyChart({days}).map(r=>r.gsLabel),['S区间','S信号','G信号','G区间','暂无']);
   const text=historySummary({days,kind:'intraday'});
   assert.match(text,/5日中4日净流入/);
   assert.match(text,/10-12净流入最高/);
@@ -33,7 +33,7 @@ test('服务端原样保留GS字符串和未知编码', () => {
 test('切换日为大写信号、延续为小写区间，缺失不伪造切换', () => {
   const gs = ['G','g','S','s','G',null,'S',9];
   const rows = historyChart({days:gs.map((value,i)=>({tradeDate:`2026-09-${14+i}`,gs:value,main:0}))});
-  assert.deepEqual(rows.map(row=>row.gsLabel),['g区间','g区间','S信号','s区间','G信号','暂无','s区间','暂无']);
+  assert.deepEqual(rows.map(row=>row.gsLabel),['G区间','G区间','S信号','S区间','G信号','暂无','S区间','暂无']);
   assert.equal(rows[2].gsBadge,'S');
   assert.equal(rows[3].gsBadge,'s');
 });

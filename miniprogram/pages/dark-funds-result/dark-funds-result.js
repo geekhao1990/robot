@@ -186,7 +186,15 @@ Page({
       { label: '主力暗盘', value: Number(latest.grey) || 0, text: formatRoundedUnit(balancedLatest.greyValue, unit) },
       { label: '散户流入', value: -main, text: formatByUnit(-main, unit) },
     ]);
-    const historyBars = historyChart(result);
+    const historyBars = historyChart(result).map(row => {
+      const unit = chooseUnit([row.main, row.listed, row.grey]);
+      const balanced = balancedMainGroup(row, unit);
+      return { ...row, unitLabel: unit.label,
+        flowSummary: [{label:'主力净流入',value:row.main},{label:'散户流入',value:-row.main}].map(item=>({...item,text:formatByUnit(item.value,unit),positive:item.value>=0})),
+        flowBars: withBars([{label:'主力明盘',value:row.listed,text:balanced.listedText},{label:'主力暗盘',value:row.grey,text:balanced.greyText},{label:'散户流入',value:-row.main,text:formatByUnit(-row.main,unit)}]),
+        tierMetrics: row.metrics.slice(3),
+      };
+    });
     const detailRows = historyBars.slice().reverse().map((row) => {
       const mainUnit = chooseUnit([row.main, row.grey, row.listed]);
       return {

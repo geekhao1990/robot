@@ -44,7 +44,7 @@ function historyChart(result) {
     gsText: current || '—',
     gsChanged: changed,
     gsBadge: current ? (changed ? current : current.toLowerCase()) : '',
-    gsLabel: current ? `${changed ? current : current.toLowerCase()}${changed ? '信号' : '区间'}` : '暂无',
+    gsLabel: current ? `${current}${changed ? '信号' : '区间'}` : '暂无',
     gsClass: current ? `${current === 'S' ? 'signal-s' : 'signal-g'}${changed ? ' signal-change' : ''}` : 'signal-none',
     metrics: [['main','主力合计'],['grey','暗盘'],['listed','明盘'],['super_large','特大单'],['large','大单'],['middle','中单'],['small','小单']].map(([key,label])=>({key,label,text:amount(row[key]),positive:Number(row[key])>=0})),
     mainText: amount(row.main),
