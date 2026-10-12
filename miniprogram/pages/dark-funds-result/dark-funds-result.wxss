@@ -151,3 +151,6 @@
 .history-flow .flow-value { font-size: 24rpx; }
 .core-table .th text:first-child, .orders-table .th text:first-child { flex: 0 0 192rpx; }
 .history-selected-amount { font-size: 34rpx; font-weight: 800; }
+.history-date-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 14rpx; margin: 8rpx 8rpx 24rpx; color: #20252b; }
+.history-date-title { font-family: "Songti SC", "STSong", "SimSun", serif; font-size: 36rpx; font-weight: 700; line-height: 1.4; }
+.history-date-heading .history-signal-label { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 20rpx; line-height: 1.3; padding: 3rpx 12rpx; }

@@ -71,7 +71,6 @@
     </view>
     <view class="card history-card">
       <view class="detail-title">30日主力趋势与 GS 信号</view>
-      <view class="history-hint">实际{{historyBars.length}}日 · 单位：元（万/亿自动换算）· 左右滑动</view>
       <view class="history-selected">{{historySelected.date}} <text class="history-selected-amount {{historySelected.main >= 0 ? 'up' : 'down'}}">{{historySelected.mainText}}</text> <text class="history-signal-label {{historySelected.gsClass}}">{{historySelected.gsLabel}}</text></view>
       <view class="history-navigation"><view wx:if="{{historyEarlierVisible}}" data-edge="earlier" bindtap="navigateHistory">‹ 更早</view><view wx:if="{{historyTodayVisible}}" class="history-today" data-edge="today" bindtap="navigateHistory">今天 ›</view></view>
       <scroll-view scroll-x scroll-with-animation scroll-left="{{historyScroll}}" bindscroll="onHistoryScroll" class="history-scroll">
@@ -88,10 +87,9 @@
     <view wx:if="{{historyModal}}" class="history-mask" bindtap="closeHistoryDay" catchtouchmove="stopHistoryTap">
       <view class="history-sheet" catchtap="stopHistoryTap">
         <view class="history-handle"></view>
-        <view class="detail-title">{{historySelected.tradeDate}}（周{{historySelected.weekday}}） <text class="history-signal-label {{historySelected.gsClass}}">{{historySelected.gsLabel}}</text></view>
-        <view class="history-hint"><text class="up">■ 净流入</text>　<text class="down">■ 净流出</text></view>
+        <view class="history-date-heading"><text class="history-date-title">{{historySelected.tradeDate}}（周{{historySelected.weekday}}）</text><text class="history-signal-label {{historySelected.gsClass}}">{{historySelected.gsLabel}}</text></view>
         <view class="history-flow">
-          <view class="chart-inline-title"><view class="chart-title-mark"></view><text>主力流向</text></view>
+          <view class="chart-inline-title"><view class="chart-title-mark"></view><text>主力流向({{historySelected.unitLabel}})</text></view>
           <view class="summary-grid"><view wx:for="{{historySelected.flowSummary}}" wx:key="label" class="summary-item"><text>{{item.label}}</text><text class="summary-value {{item.positive ? 'up' : 'down'}}">{{item.text}}</text></view></view>
           <view class="flow-chart"><view class="zero-line"></view><view class="flow-columns"><view wx:for="{{historySelected.flowBars}}" wx:key="label" class="flow-column">
             <view wx:if="{{item.positive}}" class="flow-stack positive" style="bottom:50%"><text class="flow-value up">{{item.text}}</text><view class="flow-bar bar-up" style="height:{{item.height}}rpx"></view></view>
