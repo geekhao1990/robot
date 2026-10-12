@@ -2,6 +2,7 @@ const api = require('../../utils/api');
 const config = require('../../utils/config');
 const store = require('../../utils/store');
 const { darkFundError } = require('../../utils/dark-fund-error');
+const { rollingHistory, snapshotLabel } = require('../../utils/dark-fund-history');
 const { exactAmount, posterMetrics } = require('../../utils/dark-fund-poster');
 
 const YELLOW = '#ffe50a';
@@ -51,15 +52,6 @@ function formatGroup(row, keys) {
   const output = {};
   keys.forEach((key) => { output[`${key}Text`] = formatByUnit(row[key], unit, true); });
   return output;
-}
-
-function rolling(days, size) {
-  return days.map((row, index) => ({
-    date: row.tradeDate.slice(5),
-    value: index + 1 < size
-      ? null
-      : days.slice(index - size + 1, index + 1).reduce((sum, item) => sum + Number(item.grey || 0), 0),
-  }));
 }
 
 function withBars(items) {
@@ -168,6 +160,7 @@ Page({
   applyResult(result) {
     const days = result.days.slice().sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
     result.days = days;
+    result.snapshotLabel = snapshotLabel(result);
     const latest = days[days.length - 1];
     const unit = chooseUnit([latest.main, latest.listed, latest.grey]);
     const main = Number(latest.main) || 0;
@@ -192,7 +185,7 @@ Page({
     });
     result.displayName = hybridStockName(result.stockName, result.stockInitials);
     result.displayCode = marketStockCode(result.stockCode);
-    this.trends = { trend3: rolling(days, 3), trend5: rolling(days, 5) };
+    this.trends = { trend3: rollingHistory(result, 3), trend5: rollingHistory(result, 5), trend7: rollingHistory(result, 7) };
     this.setData({ loading: false, result, unitLabel: unit.label, summary, dayBars, rows }, () => {
       if (this.autoPosterWithoutQr) {
         this.autoPosterWithoutQr = false;
@@ -205,9 +198,9 @@ Page({
   },
   switchFundView(event) {
     const fundView = String(event.currentTarget.dataset.view || 'main');
-    if (!['main', 'trend3', 'trend5'].includes(fundView) || fundView === this.data.fundView) return;
+    if (!['main', 'trend3', 'trend5', 'trend7'].includes(fundView) || fundView === this.data.fundView) return;
     if (fundView === 'main') return this.setData({ fundView });
-    const size = fundView === 'trend5' ? 5 : 3;
+    const size = Number(fundView.slice(5));
     const series = this.trends && this.trends[fundView] || [];
     const latest = series.slice().reverse().find((item) => item.value !== null);
     const unit = chooseUnit([latest ? latest.value : 0]);
@@ -304,16 +297,6 @@ Page({
       context.fillStyle = TREND_AREA_GREEN;
       context.fill();
       context.restore();
-      if (valid[0].index > 0) {
-        context.beginPath();
-        context.setLineDash([5, 4]);
-        context.strokeStyle = YELLOW;
-        context.lineWidth = 2;
-        context.moveTo(xAt(0), zeroY);
-        context.lineTo(xAt(valid[0].index), yAt(valid[0].value));
-        context.stroke();
-        context.setLineDash([]);
-      }
       context.beginPath();
       valid.forEach((item, index) => {
         const x = xAt(item.index);
@@ -492,7 +475,7 @@ Page({
     roundRect(34, 205, 682, 840, 26); context.fillStyle = 'rgba(5,12,18,.90)'; context.fill(); context.strokeStyle = 'rgba(255,55,62,.55)'; context.lineWidth = 2; context.stroke();
     fillText(metrics.stockName, 62, 266, 46, '#fff', '800');
     fillText(metrics.stockCode, 690, 270, 22, '#b8c2cf', '400', 'right');
-    fillText(`${metrics.tradeDate} 收盘暗盘数据`, 63, 312, 21, '#aab7c6');
+    fillText(`${metrics.tradeDate} ${snapshotLabel(this.data.result)}暗盘数据`, 63, 312, 21, '#aab7c6');
     roundRect(52, 350, 418, 246, 20); context.fillStyle = 'rgba(0,64,54,.28)'; context.fill(); context.strokeStyle = 'rgba(0,228,168,.34)'; context.stroke();
     fillText('1日暗盘', 78, 397, 33, '#fff', '700');
     fillText(metrics.day1Text, 78, 476, 70, valueColor(metrics.day1), '800');

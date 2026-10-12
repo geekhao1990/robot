@@ -122,7 +122,7 @@ function normalizeCloseDarkFund(payload, expectedCode = '') {
   if (!validTradeDate(tradeDate)) throw new Error('交易日期格式不正确或不是交易日');
   if (!Array.isArray(payload.days) || !payload.days.length) throw new Error('盘后资金明细为空');
   const seenDates = new Set();
-  const days = payload.days.map((item, index) => {
+  const historyDays = payload.days.map((item, index) => {
     const rowDate = String(item && item.trade_date || '').trim();
     if (!validTradeDate(rowDate)) throw new Error(`第${index + 1}条交易日期格式不正确或不是交易日`);
     if (seenDates.has(rowDate)) throw new Error(`盘后资金明细日期${rowDate}重复`);
@@ -133,7 +133,9 @@ function normalizeCloseDarkFund(payload, expectedCode = '') {
       throw new Error(`${rowDate}主力明盘与暗盘加总误差超过2%`);
     }
     return row;
-  }).sort((a, b) => a.tradeDate.localeCompare(b.tradeDate)).slice(-7);
+  }).sort((a, b) => a.tradeDate.localeCompare(b.tradeDate)).slice(-30);
+  // 保留旧客户端的七日契约，新增历史仅供新客户端计算滚动趋势。
+  const days = historyDays.slice(-7);
   const latest = days[days.length - 1];
   if (latest.tradeDate !== tradeDate) throw new Error('交易日期与最新资金明细不一致');
   return {
@@ -148,6 +150,7 @@ function normalizeCloseDarkFund(payload, expectedCode = '') {
     kind,
     updatedAt: String(payload.updated_at || '').trim(),
     days,
+    historyDays,
   };
 }
 

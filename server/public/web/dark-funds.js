@@ -218,7 +218,21 @@ function wdfBalanced(row, unit) {
 }
 
 function wdfRolling(days, size) {
-  return days.map((row, index) => ({ date: row.tradeDate.slice(5), value: index + 1 < size ? null : days.slice(index - size + 1, index + 1).reduce((sum, item) => sum + wdfNumber(item.grey), 0) }));
+  return days.map((row, index) => ({ tradeDate: row.tradeDate, date: row.tradeDate.slice(5), value: index + 1 < size ? null : days.slice(index - size + 1, index + 1).reduce((sum, item) => sum + wdfNumber(item.grey), 0) }));
+}
+
+function wdfHistoryTrend(result, size) {
+  const rows = new Map();
+  [...(result.historyDays || []), ...result.days].forEach(row => rows.set(row.tradeDate, row));
+  const days = [...rows.values()].sort((a,b) => a.tradeDate.localeCompare(b.tradeDate));
+  const visible = new Set(result.days.map(row => row.tradeDate));
+  return wdfRolling(days, size).filter(row => visible.has(row.tradeDate)).slice(-7);
+}
+
+function wdfSnapshotLabel(result) {
+  if (result.kind !== 'intraday' && result.versionLabel !== '盘中') return result.versionLabel || '收盘';
+  const match = String(result.versionKey || '').match(/T(\d{2}):?(\d{2})/);
+  return match ? `盘中 ${match[1]}:${match[2]}` : '盘中（快照时间未知）';
 }
 
 function wdfTrendSvg(series, unit) {
@@ -272,14 +286,14 @@ function wdfResultContent() {
   const view = state.webDarkFundView;
   let chart = wdfDayChart(latest, unit);
   if (view !== 'main') {
-    const size = view === 'trend5' ? 5 : 3;
-    const series = wdfRolling(days, size);
+    const size = view === 'trend7' ? 7 : view === 'trend5' ? 5 : 3;
+    const series = wdfHistoryTrend(result, size);
     const latestTrend = series.slice().reverse().find((item) => item.value !== null);
     const trendUnit = wdfChooseUnit([latestTrend ? latestTrend.value : 0]);
     chart = `<div class="wdf-trend-summary"><span>${size}日暗盘净流入</span><b class="${!latestTrend || latestTrend.value >= 0 ? 'money-up':'money-down'}">${latestTrend ? wdfUnitText(latestTrend.value,trendUnit,true):'—'}</b></div>${wdfTrendSvg(series,trendUnit)}`;
   }
   const rows = days.slice().reverse().slice(0,7);
-  return `<section class="wdf-result-card"><h3>暗盘资金</h3><div class="wdf-segments"><button class="${view==='main'?'active':''}" data-wdf-fund-view="main">1日暗盘</button><button class="${view==='trend3'?'active':''}" data-wdf-fund-view="trend3">3日暗盘</button><button class="${view==='trend5'?'active':''}" data-wdf-fund-view="trend5">5日暗盘</button></div>${view === 'main' ? `<h4 class="wdf-flow-title"><i></i>主力流向(${unit.label})<span></span></h4><div class="wdf-result-summary"><div><span>主力净流入</span><b class="${main>=0?'money-up':'money-down'}">${wdfUnitText(main,unit)}</b></div><div><span>散户流入</span><b class="${-main>=0?'money-up':'money-down'}">${wdfUnitText(-main,unit)}</b></div></div>` : ''}${chart}</section>
+  return `<section class="wdf-result-card"><h3>暗盘资金</h3><div class="wdf-segments"><button class="${view==='main'?'active':''}" data-wdf-fund-view="main">1日暗盘</button><button class="${view==='trend3'?'active':''}" data-wdf-fund-view="trend3">3日暗盘</button><button class="${view==='trend5'?'active':''}" data-wdf-fund-view="trend5">5日暗盘</button><button class="${view==='trend7'?'active':''}" data-wdf-fund-view="trend7">7日暗盘</button></div>${view === 'main' ? `<h4 class="wdf-flow-title"><i></i>主力流向(${unit.label})<span></span></h4><div class="wdf-result-summary"><div><span>主力净流入</span><b class="${main>=0?'money-up':'money-down'}">${wdfUnitText(main,unit)}</b></div><div><span>散户流入</span><b class="${-main>=0?'money-up':'money-down'}">${wdfUnitText(-main,unit)}</b></div></div>` : ''}${chart}</section>
     <section class="wdf-result-card"><h3>近${rows.length}日资金情况</h3><div class="wdf-segments"><button class="${state.webDarkDetailView==='core'?'active':''}" data-wdf-detail-view="core">主力资金</button><button class="${state.webDarkDetailView==='orders'?'active':''}" data-wdf-detail-view="orders">资金结构</button></div>${wdfResultTable(rows,state.webDarkDetailView==='orders')}</section>`;
 }
 
@@ -294,7 +308,7 @@ function renderCloseDarkResultEnhanced(order) {
   state.webDarkDetailView = 'core';
   state.route = 'dark-result';
   setChrome();
-  app.innerHTML = `<div class="wdf-result-page"><header class="page-nav"><button class="back" data-action="back">‹</button><div class="nav-title">普通查询结果</div></header><section class="wdf-result-hero"><div class="wdf-result-stock"><strong>${escapeHtml(result.displayName)}</strong><span>${escapeHtml(result.displayCode)}</span><small>${escapeHtml(result.tradeDate)} · ${escapeHtml(result.versionLabel || '收盘')}</small></div><div class="wdf-poster-actions">${state.user && state.user.official ? '<button class="secondary" data-wdf-poster="noqr">无二维码分享图</button>' : ''}<button data-wdf-poster="qr">⇧ 生成分享图</button></div></section><div id="wdfResultContent">${wdfResultContent()}</div><p class="wdf-disclaimer">数据和图表来自互联网，由AI生成，仅供参考，不构成投资建议</p></div>`;
+  app.innerHTML = `<div class="wdf-result-page"><header class="page-nav"><button class="back" data-action="back">‹</button><div class="nav-title">普通查询结果</div></header><section class="wdf-result-hero"><div class="wdf-result-stock"><strong>${escapeHtml(result.displayName)}</strong><span>${escapeHtml(result.displayCode)}</span><small>${escapeHtml(result.tradeDate)} · ${escapeHtml(wdfSnapshotLabel(result))}</small></div><div class="wdf-poster-actions">${state.user && state.user.official ? '<button class="secondary" data-wdf-poster="noqr">无二维码分享图</button>' : ''}<button data-wdf-poster="qr">⇧ 生成分享图</button></div></section><div id="wdfResultContent">${wdfResultContent()}</div><p class="wdf-disclaimer">数据和图表来自互联网，由AI生成，仅供参考，不构成投资建议</p></div>`;
 }
 
 renderCloseDarkResult = renderCloseDarkResultEnhanced;
@@ -344,7 +358,7 @@ function wdfDrawPoster(context,m,bg,qr,withoutQr){
   context.save();context.translate(48,96);context.transform(1,0,-.13,1,0,0);context.font='900 68px "Microsoft YaHei",sans-serif';context.lineJoin='bevel';context.lineWidth=3;context.shadowColor='rgba(0,0,0,.88)';context.shadowBlur=9;context.shadowOffsetX=7;context.shadowOffsetY=8;const white=context.createLinearGradient(0,-38,0,38);white.addColorStop(0,'#fff');white.addColorStop(.53,'#aeb5bd');white.addColorStop(.72,'#fff');white.addColorStop(1,'#858d96');context.strokeStyle='#111820';context.strokeText('暗盘',0,0);context.fillStyle=white;context.fillText('暗盘',0,0);const first=context.measureText('暗盘').width+4,red=context.createLinearGradient(0,-38,0,38);red.addColorStop(0,'#ff5a5f');red.addColorStop(.5,'#a70d18');red.addColorStop(.72,'#ff343b');red.addColorStop(1,'#830812');context.strokeStyle='#3a0509';context.strokeText('追踪',first,0);context.fillStyle=red;context.fillText('追踪',first,0);context.restore();
   fill('主力资金 · 先人一步',50,142,23,'#d5dbe3');context.fillStyle='#ef343b';context.fillRect(48,174,654,3);
   wdfRoundRect(context,34,205,682,840,26);context.fillStyle='rgba(5,12,18,.90)';context.fill();context.strokeStyle='rgba(255,55,62,.55)';context.lineWidth=2;context.stroke();
-  fill(m.stockName,62,266,46,'#fff','800');fill(m.stockCode,690,270,22,'#b8c2cf','400','right');fill(`${m.tradeDate} 收盘暗盘数据`,63,312,21,'#aab7c6');
+  fill(m.stockName,62,266,46,'#fff','800');fill(m.stockCode,690,270,22,'#b8c2cf','400','right');fill(`${m.tradeDate} ${wdfSnapshotLabel(state.webDarkResult)}暗盘数据`,63,312,21,'#aab7c6');
   wdfRoundRect(context,52,350,418,246,20);context.fillStyle='rgba(0,64,54,.28)';context.fill();context.strokeStyle='rgba(0,228,168,.34)';context.stroke();fill('1日暗盘',78,397,33,'#fff','700');fill(m.day1Text,78,476,70,valueColor(m.day1),'800');fill(m.day1>=0?'今日暗盘资金净流入':'今日暗盘资金净流出',78,552,22,'#b6cbd2');
   [['3日暗盘净流入',m.day3Text,m.day3],['5日暗盘净流入',m.day5Text,m.day5]].forEach((item,index)=>{const y=350+index*123;wdfRoundRect(context,488,y,208,108,15);context.fillStyle='rgba(19,28,35,.92)';context.fill();context.strokeStyle='rgba(255,255,255,.08)';context.stroke();fill(item[0],510,y+31,18,'#dce3ea');fill(item[1],510,y+75,32,valueColor(item[2]),'700');});
   fill('1日暗盘资金截图',62,644,27,'#fff','700');fill('(单位：万元)',62,680,17,'#a8b4c1');const bars=[{label:'主力明盘',value:wdfNumber(m.latest.listed)},{label:'主力暗盘',value:wdfNumber(m.latest.grey)},{label:'散户流入',value:-wdfNumber(m.latest.main)}],maximum=Math.max(...bars.map(item=>Math.abs(item.value)),1),zeroY=826;context.strokeStyle='#89949f';context.beginPath();context.moveTo(65,zeroY);context.lineTo(685,zeroY);context.stroke();bars.forEach((bar,index)=>{const x=145+index*215,h=Math.max(18,Math.round(Math.abs(bar.value)/maximum*125));context.fillStyle=valueColor(bar.value);wdfRoundRect(context,x-24,bar.value>=0?zeroY-h:zeroY,48,h,5);context.fill();fill(m.barTexts[index]||wdfExactAmount(bar.value),x,bar.value>=0?zeroY-h-25:zeroY+h+25,20,valueColor(bar.value),'700','center');fill(bar.label,x,1015,21,'#d7dee6','400','center');});

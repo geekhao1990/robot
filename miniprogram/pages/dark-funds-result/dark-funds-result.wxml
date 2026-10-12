@@ -18,7 +18,7 @@
     <view class="card hero">
       <view class="hero-main-row">
         <view class="hero-stock"><text class="stock-name">{{result.displayName}}</text><text class="stock-code">{{result.displayCode}}</text></view>
-        <view class="trade-date">{{result.tradeDate}} · {{result.versionLabel}}</view>
+        <view class="trade-date">{{result.tradeDate}} · {{result.snapshotLabel}}</view>
       </view>
       <view class="hero-action-row">
         <view wx:if="{{isOfficial}}" class="hero-poster-button hero-poster-button-secondary {{posterGenerating ? 'disabled' : ''}}" hover-class="hero-poster-button-hover" data-no-qr="true" bindtap="generateSharePoster">
@@ -37,6 +37,7 @@
         <view class="segment {{fundView === 'main' ? 'active' : ''}}" data-view="main" bindtap="switchFundView">1日暗盘</view>
         <view class="segment {{fundView === 'trend3' ? 'active' : ''}}" data-view="trend3" bindtap="switchFundView">3日暗盘</view>
         <view class="segment {{fundView === 'trend5' ? 'active' : ''}}" data-view="trend5" bindtap="switchFundView">5日暗盘</view>
+        <view class="segment {{fundView === 'trend7' ? 'active' : ''}}" data-view="trend7" bindtap="switchFundView">7日暗盘</view>
       </view>
       <block wx:if="{{fundView === 'main'}}">
         <view class="chart-inline-title">
