@@ -47,6 +47,10 @@ test('dragon template escapes content and preserves labels without inventing mis
   assert.match(html,/指标仓库/);assert.doesNotMatch(html,/小程序指标仓库|马仔数据/);
   assert.match(html,/数据仅供参考，请勿作为投资依据。/);
   assert.match(ctx.dragonTemplate(sample,'自定义<水印>'),/自定义&lt;水印&gt;/);
+  assert.doesNotMatch(html,/红色为买入|绿色为卖出|灰色为方向待确认/);
+  assert.match(html,/class="dragon-signature">指标仓库/);
+  assert.equal((ctx.dragonTemplate(sample,'中央测试').match(/中央测试/g)||[]).length,1);
+  assert.match(ctx.dragonTemplate(sample,''),/<div class="dragon-watermarks"><\/div>/);
   const escaped=ctx.dragonTemplate({...sample,groups:[{name:'<script>',stocks:[{name:'<img>',direction:'unknown'}]}]});
   assert.match(escaped,/&lt;script&gt;/);assert.match(escaped,/&lt;img&gt;/);assert.doesNotMatch(escaped,/<script>/);
 });

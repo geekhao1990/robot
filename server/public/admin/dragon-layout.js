@@ -17,13 +17,15 @@ const DRAGON_PORTRAIT_CSS=`
 .dragon-row:nth-child(odd){background:#f3f7f6}
 .dragon-seat{flex:0 0 164px;border:0;padding:var(--row-pad) 6px;font-size:calc(var(--stock-size) - 2px);font-weight:800;line-height:1.2;color:#121820}
 .dragon-entries{padding:var(--row-pad) 6px;column-gap:18px;row-gap:3px;align-items:baseline}
-.dragon-entry{margin:0;font-size:var(--stock-size);font-weight:800;line-height:1.25}
+.dragon-entry{margin:0;font-size:calc(var(--stock-size) * .83);font-weight:800;line-height:1.25}
 .dragon-entry.buy{color:#bd2736}.dragon-entry.sell{color:#168044}
 .dragon-period{font-size:inherit;font-weight:inherit;margin-left:0}
 .dragon-amount{font-size:inherit;margin-left:7px;letter-spacing:-.5px}
-.dragon-note{display:inline;font-size:calc(var(--stock-size) * .64);font-weight:700;color:inherit;margin-left:6px;line-height:inherit}
-.dragon-footer{flex:none;margin-top:12px;font-size:15px;line-height:1.4;color:#606660}
-.dragon-watermarks span{font-size:28px;color:rgba(100,110,110,.09)}
+.dragon-note{display:inline;font-size:calc(var(--stock-size) * .54);font-weight:700;color:inherit;margin-left:6px;line-height:inherit}
+.dragon-footer{flex:none;margin-top:12px;font-size:15px;line-height:1.4;color:#606660;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:12px}
+.dragon-footer .dragon-disclaimer{grid-column:2}.dragon-signature{grid-column:3;justify-self:end;font-size:14px;white-space:nowrap}
+.dragon-watermarks{display:flex;align-items:center;justify-content:center}
+.dragon-watermarks span{position:static;font-size:110px;font-weight:800;color:rgba(100,110,110,.09);transform:rotate(-25deg)}
 `;
 function fitDragonPoster(poster){
   // Reduce spacing before type; never crop data or add wide side borders.
@@ -39,7 +41,7 @@ function dragonTemplate(data, watermark = '指标仓库'){
   const parts=String(data.date).split('-');
   const date=`${Number(parts.at(-2))}月${Number(parts.at(-1))}日`;
   const groups=data.groups.map(group=>`<div class="dragon-row"><div class="dragon-seat">${e(group.name)}</div><div class="dragon-entries">${group.stocks.map(s=>`<div class="dragon-entry ${['buy','sell'].includes(s.direction)?s.direction:'unknown'}"><span>${e(s.name)}</span>${s.period?`<span class="dragon-period">(${e(s.period)})</span>`:''}${s.amount!=null?`<span class="dragon-amount">${e(s.amount)}</span>`:''}${s.note?`<span class="dragon-note">${e(s.note)}</span>`:''}</div>`).join('')}</div></div>`).join('');
-  return `<main class="dragon-poster"><header class="dragon-head"><div class="dragon-kicker">资金动向 · 席位观察</div><h1><span class="dragon-date">${date}</span>游资龙虎榜</h1><div class="dragon-legend"><span>红色为买入</span><span>绿色为卖出</span><span>灰色为方向待确认</span></div></header><section class="dragon-table"><div class="dragon-labels"><b>游资 / 席位</b><span>股票 · 金额 · 备注</span></div>${groups}</section><footer class="dragon-footer">数据仅供参考，请勿作为投资依据。</footer><div class="dragon-watermarks">${Array.from({length:80},(_,i)=>`<span style="top:${140+i*220}px;left:${i%2?790:-65}px">${e(watermark)}</span>`).join('')}</div></main>`;
+  return `<main class="dragon-poster"><header class="dragon-head"><div class="dragon-kicker">资金动向 · 席位观察</div><h1><span class="dragon-date">${date}</span>游资龙虎榜</h1></header><section class="dragon-table"><div class="dragon-labels"><b>游资 / 席位</b><span>股票 · 金额 · 备注</span></div>${groups}</section><footer class="dragon-footer"><span class="dragon-disclaimer">数据仅供参考，请勿作为投资依据。</span><span class="dragon-signature">指标仓库</span></footer><div class="dragon-watermarks">${watermark?`<span style="font-size:${Math.min(110,760/Math.max(1,Array.from(watermark).length))}px">${e(watermark)}</span>`:''}</div></main>`;
 }
 async function drawDragon(data, watermark = '指标仓库'){
   if(typeof html2canvas!=='function')throw new Error('绘图组件未加载，请刷新后台');
