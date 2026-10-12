@@ -110,22 +110,22 @@ function relativeFundError(main, listed, grey) {
 }
 
 function normalizeCloseDarkFund(payload, expectedCode = '') {
-  if (!payload || typeof payload !== 'object') throw new Error('盘后数据为空');
+  if (!payload || typeof payload !== 'object') throw new Error('普通查询数据为空');
   const stockCode = stockCodeFrom(payload.stock || payload.stock_code);
   const name = String(payload.name || payload.stock_name || '').trim();
   const tradeDate = String(payload.trade_date || '').trim();
   const versionLabel = String(payload.version_label || '收盘').trim() || '收盘';
   const kind = String(payload.kind || '').trim().toLowerCase() || 'close';
   if (!/^\d{6}$/.test(stockCode)) throw new Error('股票代码缺失');
-  if (expectedCode && stockCode !== expectedCode) throw new Error('盘后数据股票代码不匹配');
+  if (expectedCode && stockCode !== expectedCode) throw new Error('普通查询数据股票代码不匹配');
   if (!name) throw new Error('股票名称缺失');
   if (!validTradeDate(tradeDate)) throw new Error('交易日期格式不正确或不是交易日');
-  if (!Array.isArray(payload.days) || !payload.days.length) throw new Error('盘后资金明细为空');
+  if (!Array.isArray(payload.days) || !payload.days.length) throw new Error('普通查询资金明细为空');
   const seenDates = new Set();
   const historyDays = payload.days.map((item, index) => {
     const rowDate = String(item && item.trade_date || '').trim();
     if (!validTradeDate(rowDate)) throw new Error(`第${index + 1}条交易日期格式不正确或不是交易日`);
-    if (seenDates.has(rowDate)) throw new Error(`盘后资金明细日期${rowDate}重复`);
+    if (seenDates.has(rowDate)) throw new Error(`普通查询资金明细日期${rowDate}重复`);
     seenDates.add(rowDate);
     const row = { tradeDate: rowDate };
     MONEY_FIELDS.forEach((field) => { row[field] = finiteNumber(item[field], `${rowDate} ${field}`); });
@@ -225,14 +225,14 @@ function csrfFromHtml(html) {
 async function loginCloseService(config = closeConfig()) {
   const { base, username, password } = config;
   if (!username || !password) {
-    throw Object.assign(new Error('盘后数据账号尚未配置'), { status: 503 });
+    throw Object.assign(new Error('普通查询数据账号尚未配置'), { status: 503 });
   }
   const cookies = new Map();
   const loginPage = await requestWithTimeout(`${base}/`, { headers: { Accept: 'text/html' } });
   mergeCookies(cookies, loginPage.headers);
   const loginHtml = await loginPage.text();
   const loginCsrf = csrfFromHtml(loginHtml);
-  if (!loginPage.ok || !loginCsrf) throw Object.assign(new Error('盘后数据登录页不可用'), { status: 502 });
+  if (!loginPage.ok || !loginCsrf) throw Object.assign(new Error('普通查询数据登录页不可用'), { status: 502 });
   const body = new URLSearchParams({ username, password, csrf_token: loginCsrf });
   const loginResponse = await requestWithTimeout(`${base}/login`, {
     method: 'POST',
@@ -247,7 +247,7 @@ async function loginCloseService(config = closeConfig()) {
   });
   mergeCookies(cookies, loginResponse.headers);
   if (![200, 302, 303].includes(loginResponse.status)) {
-    throw Object.assign(new Error(`盘后数据登录失败（${loginResponse.status}）`), { status: 502 });
+    throw Object.assign(new Error(`普通查询数据登录失败（${loginResponse.status}）`), { status: 502 });
   }
   const appPage = await requestWithTimeout(`${base}/`, {
     headers: { Accept: 'text/html', Cookie: cookieHeader(cookies) },
@@ -256,7 +256,7 @@ async function loginCloseService(config = closeConfig()) {
   const appHtml = await appPage.text();
   const csrf = csrfFromHtml(appHtml);
   if (!appPage.ok || !csrf || /<title>\s*登录\s*-/i.test(appHtml)) {
-    throw Object.assign(new Error('盘后数据账号或密码不正确'), { status: 502 });
+    throw Object.assign(new Error('普通查询数据账号或密码不正确'), { status: 502 });
   }
   return { base, cookies, csrf, createdAt: Date.now(), configKey: config.key };
 }
@@ -291,7 +291,7 @@ async function closeApiRequest(path, options = {}, retryLogin = true) {
   let payload = null;
   try { payload = await response.json(); } catch (error) { payload = {}; }
   if (!response.ok) {
-    const message = payload && payload.error ? payload.error : `盘后数据接口返回${response.status}`;
+    const message = payload && payload.error ? payload.error : `普通查询数据接口返回${response.status}`;
     throw Object.assign(new Error(message), { status: response.status === 429 ? 429 : 502 });
   }
   return payload;
@@ -304,10 +304,14 @@ function exactSearchStock(items, stockCode) {
 
 async function searchCloseStock(stockCode, request = closeApiRequest) {
   const items = await request(`/api/search?q=${encodeURIComponent(stockCode)}`);
+  if (!Array.isArray(items)) {
+    const detail = items && typeof items.error === 'string' ? items.error : '预期股票列表，实际返回格式不符';
+    throw Object.assign(new Error(`普通查询搜索接口异常：${detail}`), { status: 502 });
+  }
   const found = exactSearchStock(items, stockCode);
   if (found) return found;
   const count = Array.isArray(items) ? items.length : 0;
-  throw Object.assign(new Error(`盘后数据源搜索不到${stockCode}（返回${count}项）`), { status: 404 });
+  throw Object.assign(new Error(`普通查询未匹配到股票${stockCode}（上游搜索返回${count}项）`), { status: 404 });
 }
 
 async function waitCloseTask(taskId) {
@@ -333,7 +337,7 @@ async function fetchCloseDarkFund(stockCode) {
   try {
     const found = await searchCloseStock(stockCode);
     const stock = String(found.code || found.stock || '').trim();
-    if (!/^(sh|sz|bj)\d{6}$/i.test(stock)) throw Object.assign(new Error('盘后数据源返回的股票代码无效'), { status: 502 });
+    if (!/^(sh|sz|bj)\d{6}$/i.test(stock)) throw Object.assign(new Error('普通查询数据源返回的股票代码无效'), { status: 502 });
     const created = await closeApiRequest('/api/query', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -342,7 +346,7 @@ async function fetchCloseDarkFund(stockCode) {
     if (!created || !created.task_id) throw Object.assign(new Error('普通查询未返回任务编号'), { status: 502 });
     return normalizeCloseDarkFund(await waitCloseTask(created.task_id), stockCode);
   } catch (error) {
-    if (error && error.name === 'AbortError') throw Object.assign(new Error('盘后数据接口响应超时'), { status: 504 });
+    if (error && error.name === 'AbortError') throw Object.assign(new Error('普通查询数据接口响应超时'), { status: 504 });
     throw error;
   }
 }

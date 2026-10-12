@@ -81,3 +81,9 @@ test('盘后股票搜索失败只请求一次', async () => {
   }), { status: 404 });
   assert.equal(requestCount, 1);
 });
+
+test('普通查询区分股票未匹配与上游格式异常', async () => {
+  await assert.rejects(searchCloseStock('600102', async () => []), /普通查询未匹配到股票600102/);
+  await assert.rejects(searchCloseStock('600102', async () => ({error:'查询过于频繁'})), /搜索接口异常：查询过于频繁/);
+  await assert.rejects(searchCloseStock('600102', async () => ({})), /返回格式不符/);
+});
