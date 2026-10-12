@@ -31,13 +31,13 @@ function drawRankingCover(original, tradeDate, side) {
   });
   return canvas;
 }
-function buildRankingPosters(ranking) {
+function buildRankingPosters(ranking, watermark = '指标仓库') {
   // Both sides use the same saved ranking snapshot. Originals remain untouched.
-  const originals=['inflow','outflow'].map(side=>({side,canvas:drawRankingPoster(ranking,side)}));
+  const originals=['inflow','outflow'].map(side=>({side,canvas:drawRankingPoster(ranking,side,watermark)}));
   return [...originals.map(({side,canvas})=>({canvas,name:`${ranking.tradeDate}-暗盘${side==='inflow'?'流入':'流出'}榜.png`})),
     ...originals.map(({side,canvas})=>({canvas:drawRankingCover(canvas,ranking.tradeDate,side),name:`${ranking.tradeDate}-暗盘${side==='inflow'?'流入':'流出'}榜-大字封面.png`}))];
 }
-function drawRankingPoster(ranking, side) {
+function drawRankingPoster(ranking, side, watermark = '指标仓库') {
   if (!['inflow', 'outflow'].includes(side)) throw new Error('榜单类型无效');
   const rows = ranking && Array.isArray(ranking[side]) ? ranking[side].slice(0, 10) : [];
   if (!rows.length) throw new Error('请先生成有效暗盘榜');
@@ -107,14 +107,14 @@ function drawRankingPoster(ranking, side) {
     }
     box(48,y-1,984,1,'#e7e9ee');
   });
-  text('数据来自互联网和AI工具，不构成投资建议',540,y+55,25,'#8b929c','center');
+  text('数据仅供参考，请勿作为投资依据。',540,y+55,25,'#8b929c','center');
   // Match the ladder's alternating edge watermarks, scaled from its 698px layout.
   const watermarkScale = canvas.width / 698;
   for (let i=0; (100+i*154)*watermarkScale < canvas.height; i++) {
     ctx.save();
     ctx.translate(((i%2?552:-57)+72)*watermarkScale, (100+i*154+12)*watermarkScale);
     ctx.rotate(-48*Math.PI/180);
-    text('小程序指标仓库',0,0,18*watermarkScale,'rgba(169,63,78,0.095)','center');
+    text(watermark,0,0,18*watermarkScale,'rgba(169,63,78,0.095)','center');
     ctx.restore();
   }
   return canvas;

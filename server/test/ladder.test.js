@@ -74,8 +74,9 @@ test('shared template preserves data, disclaimer and red cross styling',()=>{
   const context=layoutContext();
   const html=context.ladderTemplate({...sample,groups:[{height:'4板',stocks:[{name:'上涨股',sector:'电池',change:'2.16%',broken:null},{name:'下跌股',change:'-1.45%',broken:false}]}]});
   assert.match(html,/stock broken/);assert.match(html,/meta up/);assert.match(html,/meta down/);
-  assert.match(html,/小程序指标仓库/);
-  assert.match(html,/数据来自互联网，图表由AI生成，不构成投资建议，投资需谨慎。/);
+  assert.match(html,/指标仓库/);
+  assert.doesNotMatch(html,/小程序指标仓库/);
+  assert.match(html,/数据仅供参考，请勿作为投资依据。/);
   const css=vm.runInNewContext('LADDER_CSS',context);
   assert.match(css,/opacity:.5/);assert.match(css,/100% \/ 7/);
   assert.match(context.ladderTemplate(sample),/一字板/);

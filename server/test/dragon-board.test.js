@@ -44,8 +44,9 @@ test('dragon template escapes content and preserves labels without inventing mis
   assert.match(html,/10月9日/);assert.match(html,/1.09e/);assert.match(html,/三日/);assert.match(html,/昨入228万/);
   assert.match(html,/dragon-entry buy/);assert.match(html,/dragon-entry sell/);
   assert.equal((html.match(/class="dragon-amount"/g)||[]).length,1);
-  assert.match(html,/小程序指标仓库/);assert.doesNotMatch(html,/马仔数据/);
-  assert.match(html,/数据来自互联网，图表由AI生成，不构成投资建议，投资需谨慎。/);
+  assert.match(html,/指标仓库/);assert.doesNotMatch(html,/小程序指标仓库|马仔数据/);
+  assert.match(html,/数据仅供参考，请勿作为投资依据。/);
+  assert.match(ctx.dragonTemplate(sample,'自定义<水印>'),/自定义&lt;水印&gt;/);
   const escaped=ctx.dragonTemplate({...sample,groups:[{name:'<script>',stocks:[{name:'<img>',direction:'unknown'}]}]});
   assert.match(escaped,/&lt;script&gt;/);assert.match(escaped,/&lt;img&gt;/);assert.doesNotMatch(escaped,/<script>/);
 });

@@ -34,20 +34,20 @@ function fitDragonPoster(poster){
   }
   throw new Error('榜单内容过多，单张9:16图片无法清晰容纳，请拆分榜单后生成');
 }
-function dragonTemplate(data){
+function dragonTemplate(data, watermark = '指标仓库'){
   const e=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const parts=String(data.date).split('-');
   const date=`${Number(parts.at(-2))}月${Number(parts.at(-1))}日`;
   const groups=data.groups.map(group=>`<div class="dragon-row"><div class="dragon-seat">${e(group.name)}</div><div class="dragon-entries">${group.stocks.map(s=>`<div class="dragon-entry ${['buy','sell'].includes(s.direction)?s.direction:'unknown'}"><span>${e(s.name)}</span>${s.period?`<span class="dragon-period">(${e(s.period)})</span>`:''}${s.amount!=null?`<span class="dragon-amount">${e(s.amount)}</span>`:''}${s.note?`<span class="dragon-note">${e(s.note)}</span>`:''}</div>`).join('')}</div></div>`).join('');
-  return `<main class="dragon-poster"><header class="dragon-head"><div class="dragon-kicker">资金动向 · 席位观察</div><h1><span class="dragon-date">${date}</span>游资龙虎榜</h1><div class="dragon-legend"><span>红色为买入</span><span>绿色为卖出</span><span>灰色为方向待确认</span></div></header><section class="dragon-table"><div class="dragon-labels"><b>游资 / 席位</b><span>股票 · 金额 · 备注</span></div>${groups}</section><footer class="dragon-footer">数据来自互联网，图表由AI生成，不构成投资建议，投资需谨慎。</footer><div class="dragon-watermarks">${Array.from({length:80},(_,i)=>`<span style="top:${140+i*220}px;left:${i%2?790:-65}px">小程序指标仓库</span>`).join('')}</div></main>`;
+  return `<main class="dragon-poster"><header class="dragon-head"><div class="dragon-kicker">资金动向 · 席位观察</div><h1><span class="dragon-date">${date}</span>游资龙虎榜</h1><div class="dragon-legend"><span>红色为买入</span><span>绿色为卖出</span><span>灰色为方向待确认</span></div></header><section class="dragon-table"><div class="dragon-labels"><b>游资 / 席位</b><span>股票 · 金额 · 备注</span></div>${groups}</section><footer class="dragon-footer">数据仅供参考，请勿作为投资依据。</footer><div class="dragon-watermarks">${Array.from({length:80},(_,i)=>`<span style="top:${140+i*220}px;left:${i%2?790:-65}px">${e(watermark)}</span>`).join('')}</div></main>`;
 }
-async function drawDragon(data){
+async function drawDragon(data, watermark = '指标仓库'){
   if(typeof html2canvas!=='function')throw new Error('绘图组件未加载，请刷新后台');
   const frame=document.createElement('iframe');frame.setAttribute('aria-hidden','true');
   frame.style.cssText='position:fixed;left:-10000px;top:0;width:1080px;height:1920px;border:0;pointer-events:none';
   document.body.appendChild(frame);
   try{
-    const doc=frame.contentDocument;doc.open();doc.write(`<!doctype html><html><head><meta charset="utf-8"><style>${DRAGON_CSS}${DRAGON_PORTRAIT_CSS}</style></head><body>${dragonTemplate(data)}</body></html>`);doc.close();await doc.fonts.ready;
+    const doc=frame.contentDocument;doc.open();doc.write(`<!doctype html><html><head><meta charset="utf-8"><style>${DRAGON_CSS}${DRAGON_PORTRAIT_CSS}</style></head><body>${dragonTemplate(data, watermark)}</body></html>`);doc.close();await doc.fonts.ready;
     const poster=doc.querySelector('.dragon-poster');fitDragonPoster(poster);
     const original=await html2canvas(poster,{scale:2,width:1080,height:1920,windowWidth:1080,windowHeight:1920,scrollX:0,scrollY:0,backgroundColor:'#fff',logging:false});
     return dragonPortraitCanvas(original);

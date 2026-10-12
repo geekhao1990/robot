@@ -116,7 +116,10 @@ async function confirmLadder(button,wordingConfirmed=false){
     if(MEDIA_WORDING_POLICIES[kind]&&!wordingConfirmed){showMediaWording(kind,result.data);return;}
     if(document.fonts)await document.fonts.ready;
     if(revision!==ladderRevision)return;
-    const canvas=await (kind==='dragon'?drawDragon(result.data):drawLadder(result.data));
+    const watermark=prompt('请确认本次图片水印，可修改；留空则不显示水印。','指标仓库');
+    if(watermark===null)return;
+    if(watermark.trim().length>30)throw new Error('水印请控制在30字以内');
+    const canvas=await (kind==='dragon'?drawDragon(result.data,watermark.trim()):drawLadder(result.data,watermark.trim()));
     if(revision!==ladderRevision)return;
     const url=canvas.toDataURL('image/png');
     const output=document.getElementById('ladderOutput');output.innerHTML='';

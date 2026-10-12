@@ -47,7 +47,8 @@ test('both posters render ten rows and one expanded chart without leaking codes'
     assert(texts.includes('—'));
     assert(!texts.includes('600001'));
     assert(!texts.includes('数据来源【指标仓库】小程序'));
-    assert(texts.filter(t=>t==='小程序指标仓库').length>3);
+    assert(texts.filter(t=>t==='指标仓库').length>3);
+    assert(!texts.includes('小程序指标仓库'));
     assert.throws(()=>context.drawRankingPoster(null,side),/请先生成/);
   }
 });
