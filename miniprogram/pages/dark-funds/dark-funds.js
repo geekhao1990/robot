@@ -2,6 +2,7 @@ const api = require('../../utils/api');
 const store = require('../../utils/store');
 const { confirmPurchase } = require('../../utils/payment-ui');
 const config = require('../../utils/config');
+const { showQueryAd } = require('../../utils/dark-query-ad');
 
 function formatQueryTime(timestamp) {
   const date = new Date(Number(timestamp) || 0);
@@ -339,6 +340,7 @@ Page({
     return this.prepareQuery('gold');
   },
   prepareQuery(mode) {
+    if (this._queryAdPending || this.data.querying) return;
     const stockCode = String(this.data.stockCode || '').trim();
     const queryMode = mode === 'intraday' ? 'intraday' : (mode === 'gold' ? 'gold' : 'close');
     const source = queryMode === 'intraday' ? 'collector' : 'web';
@@ -371,13 +373,36 @@ Page({
         : `是否进行普通查询：${stockCode}${stockName ? ` ${stockName}` : ''}，查询近7日暗盘数据`);
     wx.showModal({
       title: '确认查询',
-      content,
+      content: content + (queryMode === 'intraday' ? '' : '。非交易时段将展示激励广告，完整观看后提交查询。'),
       confirmText: '确定',
       success: (result) => {
         if (!result.confirm) return;
-        return this.query(stockCode, queryMode, source);
+        return this.queryWithRewardedAd(stockCode, queryMode, source);
       },
     });
+  },
+  async queryWithRewardedAd(stockCode, queryMode, source) {
+    if (this._queryAdPending || this.data.querying || this._queryPageUnloaded) return;
+    if (queryMode === 'intraday') return this.query(stockCode, queryMode, source);
+    this._queryAdPending = true;
+    try {
+      const [trade, settings] = await Promise.all([api.getDarkFundTradeDate(), api.getAppSettings()]);
+      if (this._queryPageUnloaded) return;
+      if (typeof trade.isTradingTime !== 'boolean') throw new Error('交易时段信息不可用，请更新服务端后重试');
+      if (!trade.isTradingTime && settings.rewardedAdEnabled !== false) {
+        const id = queryMode === 'gold'
+          ? (settings.goldRewardedVideoAdUnitId || config.goldRewardedVideoAdUnitId || settings.rewardedVideoAdUnitId)
+          : (settings.rewardedVideoAdUnitId || config.rewardedVideoAdUnitId);
+        this._queryAd = showQueryAd(wx, String(id || ''));
+        const allowed = await this._queryAd.promise;
+        this._queryAd = null;
+        if (this._queryPageUnloaded) return;
+        if (!allowed) return wx.showToast({title:'请完整观看广告后查询',icon:'none'});
+      }
+      return this.query(stockCode, queryMode, source);
+    } catch (error) {
+      if (!this._queryPageUnloaded) wx.showModal({title:'无法查询',content:(error.data && error.data.error) || error.message || '交易时段检查失败，请稍后重试',showCancel:false});
+    } finally { this._queryAdPending = false; }
   },
   query(stockCode, queryMode, source) {
     if (this.data.querying) return;
@@ -647,6 +672,8 @@ Page({
     this.openEnterpriseWechat();
   },
   onUnload() {
+    this._queryPageUnloaded = true;
+    if (this._queryAd) this._queryAd.cancel();
     if (this.closeInterstitialAd && this.closeInterstitialAd.destroy) this.closeInterstitialAd.destroy();
     this.closeInterstitialAd = null;
   },

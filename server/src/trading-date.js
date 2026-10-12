@@ -43,4 +43,11 @@ function compactDate(value) {
   return String(value || '').replaceAll('-', '').slice(2);
 }
 
-module.exports = { HOLIDAYS, chinaToday, isTradingDay, latestTradingDate, compactDate };
+function isTradingTime(timestamp = Date.now()) {
+  if (!isTradingDay(chinaToday(timestamp))) return false;
+  const date = new Date(timestamp + 8 * 3600 * 1000);
+  const minutes = date.getUTCHours() * 60 + date.getUTCMinutes();
+  return (minutes >= 570 && minutes < 690) || (minutes >= 780 && minutes < 900);
+}
+
+module.exports = { HOLIDAYS, chinaToday, isTradingDay, isTradingTime, latestTradingDate, compactDate };

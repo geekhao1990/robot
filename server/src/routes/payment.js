@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const db = require('../db');
 const auth = require('../auth');
 const { refreshDarkFundQuota, consumeDarkFundQuota, refundDarkFundQuota, closeDarkFundActiveAt } = require('../membership');
-const { latestTradingDate, compactDate } = require('../trading-date');
+const { latestTradingDate, compactDate, isTradingTime } = require('../trading-date');
 const {
   attachDarkFundImages,
   activateCloseDarkFundOrder,
@@ -145,6 +145,7 @@ module.exports = function register(router, HttpError) {
     return {
       tradeDate,
       compactTradeDate: compactDate(tradeDate),
+      isTradingTime: isTradingTime(),
       remaining: quota.total,
       expiringRemaining: quota.service,
       permanentRemaining: quota.manual,
