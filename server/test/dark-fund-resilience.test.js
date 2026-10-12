@@ -20,6 +20,17 @@ test('1至7日均可生成结果页与分享图；不足周期不伪造累计值
     assert.equal(page.data.rows.length, count);
     assert.equal(page.data.dayBars.length, 3);
     assert.equal(page.data.loading, false);
+    page.openHistoryDay({currentTarget:{dataset:{index:0}}});
+    assert.equal(page.data.historyModal,true);
+    assert.equal(page.data.historySelected.index,0);
+    page.stepHistoryDay({currentTarget:{dataset:{step:-1}}});
+    assert.equal(page.data.historySelected.index,0);
+    if(count>1) {
+      page.stepHistoryDay({currentTarget:{dataset:{step:1}}});
+      assert.equal(page.data.historySelected.index,1);
+    }
+    page.closeHistoryDay();
+    assert.equal(page.data.historyModal,false);
     assert.equal(page.trends.trend3.filter(item => item.value !== null).length, Math.max(0, count - 2));
     const metrics = posterMetrics(result);
     assert.equal(metrics.day3 === null, count < 3);

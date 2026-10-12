@@ -79,3 +79,29 @@
 .tr:not(.th) text { font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; font-size: 27rpx; font-weight: 700; line-height: 1; transform: scaleX(.86); }
 .disclaimer { padding: 8rpx 20rpx 40rpx; color: #aaa; font-size: 20rpx; line-height: 1.7; text-align: center; }
 .share-poster-canvas { position: fixed; left: -2000px; top: 0; width: 750px; height: 1334px; pointer-events: none; }
+.history-hint { font-size: 22rpx; color: #64748b; margin: 16rpx 0; }
+.history-selected { font-size: 26rpx; margin: 12rpx 0; }
+.history-selected text { margin-left: 18rpx; }
+.history-track { display: inline-flex; padding: 8px 0; }
+.history-column { width: 36px; flex-shrink: 0; text-align: center; border-radius: 12px; }
+.history-column.selected { background: #edf1f6; }
+.history-plot { height: 204px; position: relative; }
+.history-zero { position: absolute; top: 102px; width: 100%; border-top: 1px solid #ccd5df; }
+.history-bar { position: absolute; width: 22px; left: 7px; border-radius: 3px; }
+.history-bar.positive { bottom: 102px; background: #db3931; }
+.history-bar.negative { top: 102px; background: #218207; }
+.history-gs { color: #c83029; font-size: 10px; margin-top: 8px; }
+.history-gs.signal-s { color: #218207; }
+.history-change { color: #d68a00; margin-right: 3px; }
+.history-scroll { width: 100%; white-space: nowrap; }
+.history-sheet .detail-title { font-size: 31rpx; }
+.history-date { font-size: 9px; color: #64748b; margin-top: 6px; }
+.history-mask { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1000; display: flex; align-items: flex-end; }
+.history-sheet { width: 100%; box-sizing: border-box; border-radius: 32rpx 32rpx 0 0; background: white; padding: 32rpx 20rpx calc(32rpx + env(safe-area-inset-bottom)); }
+.history-metrics { display: flex; flex-wrap: wrap; background: #f5f7fa; border-radius: 24rpx; overflow: hidden; }
+.history-metric { width: 25%; box-sizing: border-box; padding: 24rpx 4rpx; text-align: center; border: 1rpx solid #e0e5ec; color: #64748b; font-size: 22rpx; }
+.history-metric.core { width: 33.3333%; }
+.history-metric text { display: block; margin-top: 12rpx; font-size: 25rpx; font-weight: 700; }
+.history-actions { display: flex; gap: 12rpx; margin-top: 30rpx; }
+.history-actions button { flex: 1; padding: 0; font-size: 28rpx; background: #1b5bd7; color: white; }
+.history-actions button[disabled] { background: #cbd5e1; color: #64748b; }

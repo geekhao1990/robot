@@ -2,7 +2,7 @@ const api = require('../../utils/api');
 const config = require('../../utils/config');
 const store = require('../../utils/store');
 const { darkFundError } = require('../../utils/dark-fund-error');
-const { rollingHistory, snapshotLabel } = require('../../utils/dark-fund-history');
+const { rollingHistory, snapshotLabel, historyChart } = require('../../utils/dark-fund-history');
 const { exactAmount, posterMetrics } = require('../../utils/dark-fund-poster');
 
 const YELLOW = '#ffe50a';
@@ -85,6 +85,10 @@ Page({
     summary: [],
     dayBars: [],
     rows: [],
+    historyBars: [],
+    historySelected: null,
+    historyModal: false,
+    historyScroll: 0,
     fundView: 'main',
     detailView: 'core',
     trendMetricLabel: '',
@@ -186,7 +190,8 @@ Page({
     result.displayName = hybridStockName(result.stockName, result.stockInitials);
     result.displayCode = marketStockCode(result.stockCode);
     this.trends = { trend3: rollingHistory(result, 3), trend5: rollingHistory(result, 5) };
-    this.setData({ loading: false, result, unitLabel: unit.label, summary, dayBars, rows }, () => {
+    const historyBars = historyChart(result);
+    this.setData({ historyBars, historySelected: historyBars[historyBars.length - 1], historyScroll: Math.max(0, historyBars.length * 36), historyModal: false, loading: false, result, unitLabel: unit.label, summary, dayBars, rows }, () => {
       if (this.autoPosterWithoutQr) {
         this.autoPosterWithoutQr = false;
         wx.nextTick(() => this.generateSharePoster({ currentTarget: { dataset: { noQr: 'true' } } }));
@@ -218,6 +223,17 @@ Page({
   switchDetailView(event) {
     this.setData({ detailView: event.currentTarget.dataset.view === 'orders' ? 'orders' : 'core' });
   },
+  openHistoryDay(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    const row = this.data.historyBars[index];
+    if (row) this.setData({ historySelected: row, historyModal: true });
+  },
+  stepHistoryDay(event) {
+    const index = this.data.historySelected.index + Number(event.currentTarget.dataset.step);
+    if (this.data.historyBars[index]) this.setData({ historySelected: this.data.historyBars[index], historyScroll: Math.max(0, (index - 4) * 36) });
+  },
+  closeHistoryDay() { this.setData({ historyModal: false }); },
+  stopHistoryTap() {},
   onResize() {
     const series = this.trends && this.trends[this.data.fundView];
     if (series && this.data.trendHasData) wx.nextTick(() => this.drawTrend(series));

@@ -128,6 +128,8 @@ function normalizeCloseDarkFund(payload, expectedCode = '') {
     if (seenDates.has(rowDate)) throw new Error(`普通查询资金明细日期${rowDate}重复`);
     seenDates.add(rowDate);
     const row = { tradeDate: rowDate };
+    // 原样保留上游 GS；不能根据资金金额或未经确认的数字编码推断 G/S。
+    if (typeof item.gs === 'string' || (typeof item.gs === 'number' && Number.isFinite(item.gs))) row.gs = item.gs;
     MONEY_FIELDS.forEach((field) => { row[field] = finiteNumber(item[field], `${rowDate} ${field}`); });
     if (relativeFundError(row.main, row.listed, row.grey) > 0.02) {
       throw new Error(`${rowDate}主力明盘与暗盘加总误差超过2%`);

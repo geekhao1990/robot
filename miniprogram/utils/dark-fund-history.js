@@ -20,4 +20,23 @@ function snapshotLabel(result) {
   const version = String(result.versionKey || '').match(/T(\d{2}):?(\d{2})/);
   return version ? `盘中 ${version[1]}:${version[2]}` : '盘中（快照时间未知）';
 }
-module.exports = { historyFor, rollingHistory, snapshotLabel };
+function historyChart(result) {
+  const days = historyFor(result).slice(-30);
+  const signal = row => row && /^[GS]$/i.test(String(row.gs || '').trim()) ? String(row.gs).trim().toUpperCase() : '';
+  const maximum = Math.max(1, ...days.map(row => Math.abs(Number(row.main) || 0)));
+  const amount = value => {
+    if (value == null || !Number.isFinite(Number(value))) return '—';
+    const n = Number(value), absolute = Math.abs(n);
+    return `${n > 0 ? '+' : n < 0 ? '-' : ''}${(absolute / (absolute >= 1e8 ? 1e8 : 1e4)).toFixed(absolute >= 1e8 ? 2 : 1)}${absolute >= 1e8 ? '亿' : '万'}`;
+  };
+  return days.map((row,index) => ({
+    ...row, index, date: row.tradeDate.slice(5),
+    weekday: '日一二三四五六'[new Date(`${row.tradeDate}T00:00:00Z`).getUTCDay()],
+    height: Math.abs(Number(row.main) || 0) / maximum * 100,
+    gsText: signal(row) || '—',
+    gsChanged: !!(index && signal(row) && signal(days[index - 1]) && signal(row) !== signal(days[index - 1])),
+    metrics: [['main','主力合计'],['grey','暗盘'],['listed','明盘'],['super_large','特大单'],['large','大单'],['middle','中单'],['small','小单']].map(([key,label])=>({key,label,text:amount(row[key]),positive:Number(row[key])>=0})),
+    mainText: amount(row.main),
+  }));
+}
+module.exports = { historyFor, rollingHistory, snapshotLabel, historyChart };
