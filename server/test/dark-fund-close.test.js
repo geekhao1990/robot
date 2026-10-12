@@ -20,6 +20,26 @@ test('盘后暗盘 JSON 被标准化为独立快照结果', () => {
   assert.equal(result.days[6].grey + result.days[6].listed, result.days[6].main);
 });
 
+test('超过7日的上游数据按日期取最近7日，不依赖返回顺序或修改原始数据', () => {
+  const original = JSON.parse(JSON.stringify(SAMPLE_CLOSE_PAYLOAD));
+  original.days.push({...original.days[0],trade_date:'2026-09-18'}, {...original.days[0],trade_date:'2026-09-17'});
+  const before = JSON.stringify(original);
+  const expected = SAMPLE_CLOSE_PAYLOAD.days.map(d=>d.trade_date).sort();
+  for (const rows of [original.days, [...original.days].reverse(), [...original.days.slice(3), ...original.days.slice(0,3)]]) {
+    const result = normalizeCloseDarkFund({...original,days:rows}, '600105');
+    assert.deepEqual(result.days.map(d=>d.tradeDate),expected);
+    assert.equal(result.days.length,7);
+  }
+  assert.equal(JSON.stringify(original),before);
+});
+
+test('不足7日保留实际条数，超过7日仍拒绝重复日期和错误交易日期', () => {
+  const short={...SAMPLE_CLOSE_PAYLOAD,days:SAMPLE_CLOSE_PAYLOAD.days.slice(0,3)};
+  assert.equal(normalizeCloseDarkFund(short,'600105').days.length,3);
+  assert.throws(()=>normalizeCloseDarkFund({...SAMPLE_CLOSE_PAYLOAD,days:[...SAMPLE_CLOSE_PAYLOAD.days,SAMPLE_CLOSE_PAYLOAD.days[0]]},'600105'),/重复/);
+  assert.throws(()=>normalizeCloseDarkFund({...SAMPLE_CLOSE_PAYLOAD,trade_date:'2026-09-29'},'600105'),/最新资金明细不一致/);
+});
+
 test('盘后暗盘 JSON 拒绝错股和明暗资金误差', () => {
   assert.throws(() => normalizeCloseDarkFund(SAMPLE_CLOSE_PAYLOAD, '600106'), /代码不匹配/);
   const invalid = JSON.parse(JSON.stringify(SAMPLE_CLOSE_PAYLOAD));

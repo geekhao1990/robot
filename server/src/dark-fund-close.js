@@ -121,7 +121,6 @@ function normalizeCloseDarkFund(payload, expectedCode = '') {
   if (!name) throw new Error('股票名称缺失');
   if (!validTradeDate(tradeDate)) throw new Error('交易日期格式不正确或不是交易日');
   if (!Array.isArray(payload.days) || !payload.days.length) throw new Error('盘后资金明细为空');
-  if (payload.days.length > 7) throw new Error('盘后资金明细超过7个交易日');
   const seenDates = new Set();
   const days = payload.days.map((item, index) => {
     const rowDate = String(item && item.trade_date || '').trim();
@@ -134,7 +133,7 @@ function normalizeCloseDarkFund(payload, expectedCode = '') {
       throw new Error(`${rowDate}主力明盘与暗盘加总误差超过2%`);
     }
     return row;
-  }).sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
+  }).sort((a, b) => a.tradeDate.localeCompare(b.tradeDate)).slice(-7);
   const latest = days[days.length - 1];
   if (latest.tradeDate !== tradeDate) throw new Error('交易日期与最新资金明细不一致');
   return {
