@@ -2,7 +2,7 @@ const api = require('../../utils/api');
 const store = require('../../utils/store');
 const { confirmPurchase } = require('../../utils/payment-ui');
 const config = require('../../utils/config');
-const { showQueryAd } = require('../../utils/dark-query-ad');
+const { showQueryAd, tradingTimeForAd } = require('../../utils/dark-query-ad');
 const { darkFundError } = require('../../utils/dark-fund-error');
 
 function formatQueryTime(timestamp) {
@@ -373,7 +373,7 @@ Page({
         : `是否进行普通查询：${stockCode}${stockName ? ` ${stockName}` : ''}，查询近7日暗盘数据`);
     wx.showModal({
       title: '确认查询',
-      content: content + (queryMode === 'intraday' ? '' : '。非交易时段将展示激励广告，完整观看后提交查询。'),
+      content,
       confirmText: '确定',
       success: (result) => {
         if (!result.confirm) return;
@@ -388,8 +388,7 @@ Page({
     try {
       const [trade, settings] = await Promise.all([api.getDarkFundTradeDate(), api.getAppSettings()]);
       if (this._queryPageUnloaded) return;
-      if (typeof trade.isTradingTime !== 'boolean') throw new Error('交易时段信息不可用，请更新服务端后重试');
-      if (!trade.isTradingTime && settings.rewardedAdEnabled !== false) {
+      if (tradingTimeForAd(trade) === false && settings.rewardedAdEnabled !== false) {
         const id = queryMode === 'gold'
           ? (settings.goldRewardedVideoAdUnitId || config.goldRewardedVideoAdUnitId || settings.rewardedVideoAdUnitId)
           : (settings.rewardedVideoAdUnitId || config.rewardedVideoAdUnitId);

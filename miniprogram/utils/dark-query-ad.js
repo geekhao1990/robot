@@ -29,4 +29,14 @@ function showQueryAd(wxApi, adUnitId) {
   });
   return {promise, cancel: () => cancel()};
 }
-module.exports = {showQueryAd};
+function tradingTimeForAd(trade, timestamp = Date.now()) {
+  if (trade && typeof trade.isTradingTime === 'boolean') return trade.isTradingTime;
+  const now = new Date(timestamp + 8 * 3600 * 1000);
+  const today = now.toISOString().slice(0, 10);
+  const minutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+  if (now.getUTCDay() === 0 || now.getUTCDay() === 6) return false;
+  if (!trade || !/^\d{4}-\d{2}-\d{2}$/.test(trade.tradeDate || '')) return null;
+  if (trade.tradeDate !== today) return false;
+  return (minutes >= 570 && minutes < 690) || (minutes >= 780 && minutes < 900);
+}
+module.exports = {showQueryAd, tradingTimeForAd};
