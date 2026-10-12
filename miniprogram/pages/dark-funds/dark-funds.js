@@ -3,6 +3,7 @@ const store = require('../../utils/store');
 const { confirmPurchase } = require('../../utils/payment-ui');
 const config = require('../../utils/config');
 const { showQueryAd } = require('../../utils/dark-query-ad');
+const { darkFundError } = require('../../utils/dark-fund-error');
 
 function formatQueryTime(timestamp) {
   const date = new Date(Number(timestamp) || 0);
@@ -57,17 +58,16 @@ function formatRankingAmount(value, sharedUnit) {
 }
 
 function darkFundFailure(error, mode = 'close') {
-  const raw = (error && (error.errMsg || (error.data && error.data.error) || error.message)) || '';
-  const message = /require\s*:?\s*ok/i.test(String(raw)) ? '' : String(raw).trim();
+  const message = darkFundError(error);
   const statusCode = Number(error && error.statusCode) || 0;
   if (/次数|额度|用完|余额不足/.test(message)) {
-    return { title: '额度不足', content: '暗盘查询次数不足，请先充值暗盘次数', short: '额度不足' };
+    return { title: '额度不足', content: message, short: '额度不足' };
   }
   if (mode === 'close') {
-    return { title: '查询失败', content: '查询失败，请稍后再试', short: '查询失败' };
+    return { title: '查询失败', content: message, short: '查询失败' };
   }
   if (mode === 'intraday' && (statusCode >= 500 || !message || /采集|Windows|collector|ECONN|dispatch|连接|超时/i.test(message))) {
-    return { title: '采集器异常', content: '采集器异常，请稍后再试', short: '采集器异常' };
+    return { title: '查询失败', content: message, short: '查询失败' };
   }
   return { title: '查询失败', content: message || '接口异常，请稍后再试', short: '查询失败' };
 }

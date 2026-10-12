@@ -40,6 +40,18 @@ function setup() {
   return { data, call };
 }
 
+test('新注册开启普通暗盘但不赠次数；再次登录不覆盖后台关闭权限', async () => {
+  const { data, call } = setup();
+  const response = await call('POST', '/api/login', { code: 'new-user' });
+  const user = data.users.find(item => item.id === response.user.id);
+  assert.equal(user.darkFundEnabled, true);
+  assert.equal(user.darkFundRemaining, 0);
+  assert.equal(user.decisionPioneerEnabled, false);
+  user.darkFundEnabled = false;
+  await call('POST', '/api/login', { code: 'new-user' });
+  assert.equal(user.darkFundEnabled, false);
+});
+
 test('mini-program user can set a password and log into Web with the same user ID', async () => {
   const { data, call } = setup();
   const updated = await call('PUT', '/api/me/profile', {

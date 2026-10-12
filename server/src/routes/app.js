@@ -300,7 +300,7 @@ module.exports = function register(router, HttpError) {
         servicePlan: '',
         courseAccessPermanent: false,
         official: false,
-        darkFundEnabled: false,
+        darkFundEnabled: true,
         decisionPioneerEnabled: false,
         darkFundRemaining: 0,
         darkFundManualRemaining: 0,

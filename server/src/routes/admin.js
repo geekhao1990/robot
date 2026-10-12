@@ -647,7 +647,7 @@ module.exports = function register(router, HttpError) {
       servicePlan: '',
       courseAccessPermanent: false,
       official: b.official === true,
-      darkFundEnabled: false,
+      darkFundEnabled: true,
       decisionPioneerEnabled: false,
       mustChangeWebPassword: true,
       darkFundRemaining: 0,

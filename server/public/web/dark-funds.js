@@ -280,7 +280,7 @@ function wdfResultContent() {
   }
   const rows = days.slice().reverse().slice(0,7);
   return `<section class="wdf-result-card"><h3>暗盘资金</h3><div class="wdf-segments"><button class="${view==='main'?'active':''}" data-wdf-fund-view="main">1日暗盘</button><button class="${view==='trend3'?'active':''}" data-wdf-fund-view="trend3">3日暗盘</button><button class="${view==='trend5'?'active':''}" data-wdf-fund-view="trend5">5日暗盘</button></div>${view === 'main' ? `<h4 class="wdf-flow-title"><i></i>主力流向(${unit.label})<span></span></h4><div class="wdf-result-summary"><div><span>主力净流入</span><b class="${main>=0?'money-up':'money-down'}">${wdfUnitText(main,unit)}</b></div><div><span>散户流入</span><b class="${-main>=0?'money-up':'money-down'}">${wdfUnitText(-main,unit)}</b></div></div>` : ''}${chart}</section>
-    <section class="wdf-result-card"><h3>近7日资金情况</h3><div class="wdf-segments"><button class="${state.webDarkDetailView==='core'?'active':''}" data-wdf-detail-view="core">主力资金</button><button class="${state.webDarkDetailView==='orders'?'active':''}" data-wdf-detail-view="orders">资金结构</button></div>${wdfResultTable(rows,state.webDarkDetailView==='orders')}</section>`;
+    <section class="wdf-result-card"><h3>近${rows.length}日资金情况</h3><div class="wdf-segments"><button class="${state.webDarkDetailView==='core'?'active':''}" data-wdf-detail-view="core">主力资金</button><button class="${state.webDarkDetailView==='orders'?'active':''}" data-wdf-detail-view="orders">资金结构</button></div>${wdfResultTable(rows,state.webDarkDetailView==='orders')}</section>`;
 }
 
 function renderCloseDarkResultEnhanced(order) {
@@ -313,9 +313,9 @@ function wdfMaskedAmount(value) {
 }
 
 function wdfPosterMetrics(result) {
-  const days = result.days, latest = days[days.length-1], sum = (size) => days.slice(-size).reduce((total,row)=>total+wdfNumber(row.grey),0);
+  const days = result.days, latest = days[days.length-1], sum = (size) => days.length < size ? null : days.slice(-size).reduce((total,row)=>total+wdfNumber(row.grey),0);
   const unit = wdfChooseUnit([latest.main,latest.grey,latest.listed]), balanced = wdfBalanced(latest,unit);
-  return { stockName: result.stockName || result.displayName, stockCode: result.displayCode || result.stockCode, tradeDate: result.tradeDate || latest.tradeDate, latest, day1:wdfNumber(latest.grey), day3:sum(3), day5:sum(5), day1Text:`${balanced.grey.toFixed(unit.digits)}${unit.suffix}`, day3Text:wdfMaskedAmount(sum(3)), day5Text:wdfMaskedAmount(sum(5)), barTexts:[balanced.listed.toFixed(unit.digits),balanced.grey.toFixed(unit.digits),wdfUnitText(-wdfNumber(latest.main),unit)] };
+  return { stockName: result.stockName || result.displayName, stockCode: result.displayCode || result.stockCode, tradeDate: result.tradeDate || latest.tradeDate, latest, day1:wdfNumber(latest.grey), day3:sum(3), day5:sum(5), day1Text:`${balanced.grey.toFixed(unit.digits)}${unit.suffix}`, day3Text:days.length < 3 ? '数据不足' : wdfMaskedAmount(sum(3)), day5Text:days.length < 5 ? '数据不足' : wdfMaskedAmount(sum(5)), barTexts:[balanced.listed.toFixed(unit.digits),balanced.grey.toFixed(unit.digits),wdfUnitText(-wdfNumber(latest.main),unit)] };
 }
 
 function wdfLoadImage(source) {

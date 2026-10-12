@@ -36,7 +36,7 @@ function posterMetrics(result, display = {}) {
     ? result.days.slice().sort((a, b) => String(a.tradeDate).localeCompare(String(b.tradeDate)))
     : [];
   const latest = days[days.length - 1] || {};
-  const sum = (size) => days.slice(-size).reduce((total, row) => total + number(row.grey), 0);
+  const sum = (size) => days.length < size ? null : days.slice(-size).reduce((total, row) => total + number(row.grey), 0);
   const suffix = String(display.unitLabel || '').replace(/元$/, '');
   const bars = Array.isArray(display.dayBars) ? display.dayBars : [];
   const barTexts = bars.map((item) => String(item && item.text || ''));
@@ -49,8 +49,8 @@ function posterMetrics(result, display = {}) {
     day3: sum(3),
     day5: sum(5),
     day1Text: barTexts[1] ? `${barTexts[1]}${suffix}` : exactAmount(latest.grey),
-    day3Text: maskedAmount(sum(3)),
-    day5Text: maskedAmount(sum(5)),
+    day3Text: days.length < 3 ? '数据不足' : maskedAmount(sum(3)),
+    day5Text: days.length < 5 ? '数据不足' : maskedAmount(sum(5)),
     barTexts,
   };
 }

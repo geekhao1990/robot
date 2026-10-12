@@ -67,7 +67,7 @@
       </block>
     </view>
     <view class="card detail-card">
-      <view class="detail-title">近7日资金情况</view>
+      <view class="detail-title">近{{rows.length}}日资金情况</view>
       <view class="segment-control">
         <view class="segment {{detailView === 'core' ? 'active' : ''}}" data-view="core" bindtap="switchDetailView">主力资金</view>
         <view class="segment {{detailView === 'orders' ? 'active' : ''}}" data-view="orders" bindtap="switchDetailView">资金结构</view>

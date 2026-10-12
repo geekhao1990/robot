@@ -72,6 +72,11 @@ function pump() {
         db.save();
         job.resolve(result);
       }, (error) => {
+        console.error('[普通查询][上游失败]', JSON.stringify({
+          stockCode: job.stockCode, source: job.priority,
+          status: Number(error && error.status) || 502,
+          error: String(error && error.message || '上游未提供错误详情').slice(0, 500),
+        }));
         const reason = analytics.classifyFailure(error);
         analytics.record(db.get(), {
           type: 'dark_close_api', source: job.priority, stockCode: job.stockCode,

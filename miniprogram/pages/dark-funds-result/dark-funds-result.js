@@ -1,6 +1,7 @@
 const api = require('../../utils/api');
 const config = require('../../utils/config');
 const store = require('../../utils/store');
+const { darkFundError } = require('../../utils/dark-fund-error');
 const { exactAmount, posterMetrics } = require('../../utils/dark-fund-poster');
 
 const YELLOW = '#ffe50a';
@@ -123,7 +124,7 @@ Page({
           if (!result || result.type !== 'close_snapshot' || !Array.isArray(result.days) || !result.days.length) throw new Error('榜单数据不存在');
           this.applyResult(result);
         })
-        .catch((error) => this.setData({ loading: false, error: error && (error.errMsg || error.message) || '加载失败' }));
+        .catch((error) => this.setData({ loading: false, error: darkFundError(error, '加载失败，接口未返回错误详情') }));
       return;
     }
     this.orderId = String(options && options.id || '');
@@ -134,7 +135,7 @@ Page({
         if (!result || result.type !== 'close_snapshot' || !Array.isArray(result.days) || !result.days.length) throw new Error('盘后数据不存在');
         this.applyResult(result);
       })
-      .catch((error) => this.setData({ loading: false, error: error && (error.errMsg || error.message) || '加载失败' }));
+      .catch((error) => this.setData({ loading: false, error: darkFundError(error, '加载失败，接口未返回错误详情') }));
   },
   loadCloseAds() {
     api.getAppSettings().then((settings) => {
