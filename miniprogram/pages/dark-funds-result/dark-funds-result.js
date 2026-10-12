@@ -186,7 +186,8 @@ Page({
       { label: '主力暗盘', value: Number(latest.grey) || 0, text: formatRoundedUnit(balancedLatest.greyValue, unit) },
       { label: '散户流入', value: -main, text: formatByUnit(-main, unit) },
     ]);
-    const detailRows = historyFor(result).slice(-30).reverse().map((row) => {
+    const historyBars = historyChart(result);
+    const detailRows = historyBars.slice().reverse().map((row) => {
       const mainUnit = chooseUnit([row.main, row.grey, row.listed]);
       return {
         ...row,
@@ -201,7 +202,6 @@ Page({
     this.setData({ detailPage: 1, detailPages: Math.max(1, Math.ceil(detailRows.length / 7)), detailTotal: detailRows.length });
     result.displayCode = marketStockCode(result.stockCode);
     this.trends = { trend3: rollingHistory(result, 3), trend5: rollingHistory(result, 5) };
-    const historyBars = historyChart(result);
     this.setData({ historySummary: historySummary(result) });
     this.setData({ historyBars, historySelected: historyBars[historyBars.length - 1], historyScroll: Math.max(0, historyBars.length * 36), historyModal: false, loading: false, result, unitLabel: unit.label, summary, dayBars, rows }, () => {
       wx.nextTick(() => this.measureHistory());

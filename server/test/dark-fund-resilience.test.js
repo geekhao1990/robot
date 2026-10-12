@@ -44,6 +44,10 @@ test('1至7日均可生成结果页与分享图；不足周期不伪造累计值
   for(let i=0;i<4;i++)page.changeDetailPage({currentTarget:{dataset:{step:1}}});
   assert.equal(page.data.rows.length,2);
   assert.equal(page.data.rows[1].tradeDate,'2026-09-01');
+  page.openHistoryDay({currentTarget:{dataset:{index:page.data.rows[1].index}}});
+  assert.equal(page.data.historySelected.tradeDate,'2026-09-01');
+  assert.equal(page.data.historyModal,true);
+  page.closeHistoryDay();
   page.changeDetailPage({currentTarget:{dataset:{step:1}}});
   assert.equal(page.data.detailPage,5);
   page._historyWidth=300;

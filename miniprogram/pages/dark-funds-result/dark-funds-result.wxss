@@ -129,3 +129,8 @@
 .history-navigation .history-today { margin-left: auto; }
 .detail-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12rpx; margin: 0 0 24rpx; font-size: 23rpx; color: #64748b; }
 .detail-pagination button { margin: 0; padding: 0 22rpx; font-size: 24rpx; background: white; }
+.detail-date-cell { flex: .9; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6rpx; padding: 12rpx 4rpx; box-sizing: border-box; }
+.detail-date-link { font-size: 26rpx; color: #1769df; text-decoration: underline; text-underline-offset: 4rpx; }
+.detail-gs-tag { display: inline-block; font-size: 19rpx; line-height: 1.3; padding: 2rpx 8rpx; border-radius: 18rpx; white-space: nowrap; }
+.detail-row-hover { background: #f0f5fc; }
+.core-table .th text:first-child, .orders-table .th text:first-child { flex: .9; }

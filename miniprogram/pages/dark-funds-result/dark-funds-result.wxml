@@ -101,11 +101,11 @@
       </view>
       <view wx:if="{{detailView === 'core'}}" class="table core-table">
         <view class="tr th"><text>日期</text><text>主力净流入</text><text>暗盘</text><text>明盘</text></view>
-        <view wx:for="{{rows}}" wx:key="tradeDate" class="tr"><text>{{item.displayDate}}</text><text class="{{item.main >= 0 ? 'up' : 'down'}}">{{item.mainText}}</text><text class="{{item.grey >= 0 ? 'up' : 'down'}}">{{item.greyText}}</text><text class="{{item.listed >= 0 ? 'up' : 'down'}}">{{item.listedText}}</text></view>
+        <view wx:for="{{rows}}" wx:key="tradeDate" class="tr detail-data-row" data-index="{{item.index}}" bindtap="openHistoryDay" hover-class="detail-row-hover"><view class="detail-date-cell"><view class="detail-date-link">{{item.displayDate}}</view><view wx:if="{{item.gsText !== '—'}}" class="detail-gs-tag {{item.gsClass}}">{{item.gsLabel}}</view></view><text class="{{item.main >= 0 ? 'up' : 'down'}}">{{item.mainText}}</text><text class="{{item.grey >= 0 ? 'up' : 'down'}}">{{item.greyText}}</text><text class="{{item.listed >= 0 ? 'up' : 'down'}}">{{item.listedText}}</text></view>
       </view>
       <view wx:else class="table orders-table">
         <view class="tr th"><text>日期</text><text>特大单</text><text>大单</text><text>中单</text><text>小单</text></view>
-        <view wx:for="{{rows}}" wx:key="tradeDate" class="tr"><text>{{item.displayDate}}</text><text class="{{item.super_large >= 0 ? 'up' : 'down'}}">{{item.super_largeText}}</text><text class="{{item.large >= 0 ? 'up' : 'down'}}">{{item.largeText}}</text><text class="{{item.middle >= 0 ? 'up' : 'down'}}">{{item.middleText}}</text><text class="{{item.small >= 0 ? 'up' : 'down'}}">{{item.smallText}}</text></view>
+        <view wx:for="{{rows}}" wx:key="tradeDate" class="tr detail-data-row" data-index="{{item.index}}" bindtap="openHistoryDay" hover-class="detail-row-hover"><view class="detail-date-cell"><view class="detail-date-link">{{item.displayDate}}</view><view wx:if="{{item.gsText !== '—'}}" class="detail-gs-tag {{item.gsClass}}">{{item.gsLabel}}</view></view><text class="{{item.super_large >= 0 ? 'up' : 'down'}}">{{item.super_largeText}}</text><text class="{{item.large >= 0 ? 'up' : 'down'}}">{{item.largeText}}</text><text class="{{item.middle >= 0 ? 'up' : 'down'}}">{{item.middleText}}</text><text class="{{item.small >= 0 ? 'up' : 'down'}}">{{item.smallText}}</text></view>
       </view>
     </view>
     <view class="detail-pagination"><button disabled="{{detailPage <= 1}}" data-step="-1" bindtap="changeDetailPage">上一页</button><text>{{detailPage}} / {{detailPages}} · 共{{detailTotal}}日</text><button disabled="{{detailPage >= detailPages}}" data-step="1" bindtap="changeDetailPage">下一页</button></view>
