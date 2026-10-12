@@ -11,6 +11,15 @@ function backend(){
   }[id]||require(id))});return module.exports;
 }
 const jpg=Buffer.from('ffd8ffc00011080001000103011100021100031100ffd9','hex');
+test('JPEG trailer is removed without changing image bytes; missing end markers stay invalid',()=>{
+  const upload=backend();
+  const source=Buffer.concat([jpg,Buffer.from('347b7ad3000000002d4845cb914e89077c7f71e647dc990a','hex')]);
+  assert.deepEqual(upload.normalizeImageBytes(source),jpg);
+  assert.equal(upload.detectedImageType(upload.normalizeImageBytes(source)),'image/jpeg');
+  assert.equal(upload.detectedImageType(upload.normalizeImageBytes(jpg.subarray(0,-2))),'');
+  const text=Buffer.from('<script>not a JPEG</script>');
+  assert.equal(upload.detectedImageType(upload.normalizeImageBytes(text)),'');
+});
 test('JPEG MIME aliases and missing binary MIME upload successfully',async()=>{
   const upload=backend();
   for(const type of ['image/jpeg','image/jpg','image/pjpeg','IMAGE/JPEG; charset=binary','application/octet-stream','']){

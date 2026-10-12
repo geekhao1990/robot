@@ -11,6 +11,15 @@ const MAX = 5 * 1024 * 1024 + 256 * 1024; // 文件5MB，额外空间用于 mult
 const EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/gif': '.gif', 'image/webp': '.webp' };
 const MAX_DIMENSION = 12000;
 const MAX_PIXELS = 40000000;
+// Messaging/export tools may append metadata after JPEG's end marker.
+// Store only the JPEG bytes, never the unrelated trailing payload.
+function normalizeImageBytes(data) {
+  if (Buffer.isBuffer(data) && data.length >= 4 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) {
+    const end = data.lastIndexOf(Buffer.from([0xff, 0xd9]));
+    if (end >= 3 && end + 2 < data.length) return data.subarray(0, end + 2);
+  }
+  return data;
+}
 function normalizedImageType(value) {
   const type = String(value || '').split(';')[0].trim().toLowerCase();
   return ({ 'image/jpg': 'image/jpeg', 'image/pjpeg': 'image/jpeg', 'image/x-png': 'image/png' })[type] || type;
@@ -117,6 +126,7 @@ function handleUpload(req, res, sendJson) {
       const file = parseFirstFile(Buffer.concat(chunks), req.headers['content-type']);
       if (!file || !file.data || !file.data.length) return sendJson(res, 400, { error: '未收到文件' });
       if (file.data.length > 5 * 1024 * 1024) return sendJson(res, 413, { error: '图片过大（上限5MB）' });
+      file.data = normalizeImageBytes(file.data);
       const detectedType = detectedImageType(file.data);
       if (!detectedType || !EXT[detectedType]) return sendJson(res, 415, { error: '仅支持真实的 JPG、PNG、GIF、WebP 图片' });
       const declaredType = normalizedImageType(file.contentType);
@@ -143,4 +153,4 @@ function handleUpload(req, res, sendJson) {
   });
 }
 
-module.exports = { handleUpload, UPLOAD_DIR, detectedImageType, imageDimensions, normalizedImageType };
+module.exports = { handleUpload, UPLOAD_DIR, detectedImageType, imageDimensions, normalizedImageType, normalizeImageBytes };
