@@ -292,6 +292,9 @@ function getDarkFundTradeDate() {
 function lookupStock(code) {
   return request('GET', '/api/stocks/lookup', { auth: true, data: { code } });
 }
+function searchStocks(q) {
+  return request('GET', '/api/stocks/search', { auth: true, data: { q } });
+}
 
 function createDarkFundOrder(stockCode, requestId, queryMode = 'intraday', source = 'collector') {
   const mode = queryMode === 'gold' ? 'gold' : (queryMode === 'close' ? 'close' : 'intraday');
@@ -540,6 +543,7 @@ module.exports = {
   updateMyProfile,
   getDarkFundTradeDate,
   lookupStock,
+  searchStocks,
   createDarkFundOrder,
   getDarkFundOrders,
   getDarkFundOrder,

@@ -1,6 +1,15 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { isBeijingStockCode, lookupStock, marketFor } = require('../src/stock-lookup');
+const { isBeijingStockCode, lookupStock, searchStocks, marketFor } = require('../src/stock-lookup');
+test('fuzzy lookup supports code, full/partial Chinese and case-insensitive initials',()=>{
+  for(const q of ['600519','贵州茅台','gzmt','GZMT'])assert.equal(searchStocks(q).list[0].stockCode,'600519');
+  assert(searchStocks('贵州').list.some(row=>row.stockCode==='600519'));
+  assert.equal(searchStocks('ztkj').list[0].stockName,'中天科技');
+  assert(searchStocks('6005').list.length>1);
+  assert(searchStocks('a').list.length<=20);
+  assert.deepEqual(searchStocks('不存在的股票名称'),{list:[]});
+  assert.deepEqual(searchStocks(''),{list:[]});
+});
 
 test('stock market routing rejects Beijing exchange codes', async () => {
   assert.equal(isBeijingStockCode('920001'), true);

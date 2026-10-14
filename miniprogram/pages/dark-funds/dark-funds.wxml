@@ -40,14 +40,17 @@
   <view wx:if="{{tab === 'query'}}" class="query-page">
     <view class="query-card">
       <view class="code-box">
-        <input class="code-input" type="number" maxlength="6" value="{{stockCode}}" placeholder="请输入6位代码" bindinput="onCodeInput" focus />
+        <input class="code-input" type="text" maxlength="30" value="{{stockSearchText}}" placeholder="如 600519 / 贵州茅台 / ztkj" placeholder-class="stock-search-placeholder" bindinput="onCodeInput" focus />
       </view>
-      <view wx:if="{{stockLookupLoading || stockSuggestion || stockLookupError}}" class="stock-dropdown">
+      <view wx:if="{{stockLookupLoading || stockSuggestion || stockSuggestions.length || stockLookupError}}" class="stock-dropdown">
         <view wx:if="{{stockLookupLoading}}" class="stock-dropdown-tip">正在查询股票名称…</view>
         <view wx:elif="{{stockSuggestion}}" class="stock-option">
           <text class="stock-option-code">{{stockSuggestion.stockCode}}</text>
-          <text class="stock-option-name {{stockSuggestion.matched ? '' : 'unknown'}}">{{stockSuggestion.stockDisplayName || '新股或未收录，可继续提交'}}</text>
+          <text class="stock-option-name {{stockSuggestion.matched ? '' : 'unknown'}}">{{stockSuggestion.stockName || '新股或未收录，可继续提交'}}</text>
         </view>
+        <scroll-view wx:elif="{{stockSuggestions.length}}" scroll-y style="max-height:440rpx">
+          <view wx:for="{{stockSuggestions}}" wx:key="stockCode" class="stock-option" data-code="{{item.stockCode}}" bindtap="selectStock"><text class="stock-option-code">{{item.stockCode}}</text><text class="stock-option-name">{{item.stockName}} · {{item.stockInitials}}</text></view>
+        </scroll-view>
         <view wx:else class="stock-dropdown-error">{{stockLookupError}}</view>
       </view>
       <view class="query-actions">

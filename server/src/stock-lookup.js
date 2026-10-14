@@ -61,4 +61,15 @@ function lookupStock(code) {
   };
 }
 
-module.exports = { isBeijingStockCode, lookupStock, marketFor, stockDisplayName, stockInitials };
+let searchIndex;
+function searchStocks(query) {
+  const value=String(query || '').trim().toUpperCase();
+  if(!value || value.length>30)return {list:[]};
+  if(/^\d{6}$/.test(value))return {list:[lookupStock(value)]};
+  if(!searchIndex)searchIndex=Object.keys(stockMap).filter(code=>!isBeijingStockCode(code)).map(lookupStock);
+  const score=row=>row.stockCode===value||row.stockName.toUpperCase()===value||row.stockInitials===value?0:
+    row.stockCode.startsWith(value)||row.stockName.toUpperCase().startsWith(value)||row.stockInitials.startsWith(value)?1:2;
+  return {list:searchIndex.filter(row=>row.stockCode.includes(value)||row.stockName.toUpperCase().includes(value)||row.stockInitials.includes(value))
+    .sort((a,b)=>score(a)-score(b)||a.stockCode.localeCompare(b.stockCode)).slice(0,20)};
+}
+module.exports = { isBeijingStockCode, lookupStock, searchStocks, marketFor, stockDisplayName, stockInitials };

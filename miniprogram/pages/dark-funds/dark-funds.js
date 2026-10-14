@@ -76,6 +76,8 @@ Page({
   data: {
     tab: 'query',
     stockCode: '',
+    stockSearchText: '',
+    stockSuggestions: [],
     stockSuggestion: null,
     stockLookupLoading: false,
     stockLookupError: '',
@@ -178,6 +180,15 @@ Page({
     if (tab === 'ranking') this.loadRanking();
   },
   loadRanking() {
+    if(!this._rankingAdRequested) {
+      this._rankingAdRequested=true;
+      api.getAppSettings().then(settings=>{
+        if(this._queryPageUnloaded || this.data.tab!=='ranking')return;
+        const id=settings.darkFundsCloseInterstitialAdUnitId || config.darkFundsCloseInterstitialAdUnitId;
+        this._rankingAd=showQueryAd(wx,String(id || ''),'interstitial');
+        this._rankingAd.promise.catch(()=>{});
+      }).catch(()=>{});
+    }
     if (this._rankingRequesting) return Promise.resolve();
     this._rankingRequesting = true;
     this.setData({ rankingLoading: true });
@@ -290,38 +301,29 @@ Page({
       .finally(() => this.setData({ dateLoading: false }));
   },
   onCodeInput(e) {
-    const stockCode = String(e.detail.value || '').replace(/\D/g, '').slice(0, 6);
-    const sequence = (this._stockLookupSequence || 0) + 1;
-    this._stockLookupSequence = sequence;
-    this.setData({ stockCode, stockSuggestion: null, stockLookupError: '', stockLookupLoading: false });
-    if (!/^\d{6}$/.test(stockCode)) return;
-    if (/^(4|8|92)/.test(stockCode)) {
-      this.setData({ stockLookupError: '系统繁忙' });
-      wx.showToast({ title: '系统繁忙', icon: 'none' });
-      return;
-    }
-    this.setData({ stockLookupLoading: true });
-    api.lookupStock(stockCode)
-      .then((result) => {
-        if (sequence !== this._stockLookupSequence || this.data.stockCode !== stockCode) return;
-        this.setData({
-          stockSuggestion: {
-            stockCode: String(result.stockCode || stockCode),
-            stockName: String(result.stockName || ''),
-            stockInitials: String(result.stockInitials || ''),
-            stockDisplayName: String(result.stockDisplayName || '') || displayStockName(result.stockName || '', result.stockInitials),
-            matched: result.matched === true,
-          },
-          stockLookupError: '',
-        });
-      })
-      .catch((error) => {
-        if (sequence !== this._stockLookupSequence || this.data.stockCode !== stockCode) return;
-        this.setData({ stockSuggestion: null, stockLookupError: this.errorText(error) });
-      })
-      .finally(() => {
-        if (sequence === this._stockLookupSequence) this.setData({ stockLookupLoading: false });
+    const text=String(e.detail.value || '').trim().slice(0,30);
+    const sequence=(this._stockLookupSequence || 0)+1;
+    this._stockLookupSequence=sequence;
+    clearTimeout(this._stockSearchTimer);
+    this.setData({stockSearchText:text,stockCode:'',stockSuggestion:null,stockSuggestions:[],stockLookupError:'',stockLookupLoading:!!text});
+    if(!text)return;
+    this._stockSearchTimer=setTimeout(()=>{
+      api.searchStocks(text).then(result=>{
+        if(sequence!==this._stockLookupSequence || this._queryPageUnloaded)return;
+        const list=(result && result.list)||[];
+        const exact=/^\d{6}$/.test(text)?list.find(row=>row.stockCode===text):null;
+        this.setData({stockSuggestions:exact?[]:list,stockSuggestion:exact,stockCode:exact?exact.stockCode:'',stockLookupError:list.length?'':'未找到匹配股票，请换名称、代码或首字母'});
+      }).catch(error=>{
+        if(sequence===this._stockLookupSequence && !this._queryPageUnloaded)this.setData({stockLookupError:this.errorText(error)});
+      }).finally(()=>{
+        if(sequence===this._stockLookupSequence && !this._queryPageUnloaded)this.setData({stockLookupLoading:false});
       });
+    },300);
+  },
+  selectStock(e) {
+    const row=this.data.stockSuggestions.find(item=>item.stockCode===String(e.currentTarget.dataset.code));
+    if(!row)return;
+    this.setData({stockCode:row.stockCode,stockSearchText:row.stockCode,stockSuggestion:row,stockSuggestions:[],stockLookupError:''});
   },
   prepareIntradayQuery() {
     return this.prepareQuery('intraday');
@@ -340,7 +342,7 @@ Page({
     const hasQueryEntitlement = queryMode === 'gold'
       ? this.data.goldActive && this.data.goldDarkFundAvailable
       : (Number(this.data.remaining) > 0 || (queryMode === 'close' && this.data.closeMonthlyActive));
-    if (!/^\d{6}$/.test(stockCode)) return wx.showModal({ title: '无法查询', content: '请输入6位代码', showCancel: false });
+    if (!/^\d{6}$/.test(stockCode)) return wx.showModal({ title: '无法查询', content: '请输入股票代码、中文名称或拼音首字母，并选择匹配股票', showCancel: false });
     if (/^(4|8|92)/.test(stockCode)) return wx.showToast({ title: '系统繁忙', icon: 'none' });
     if (this.data.stockLookupLoading) return wx.showToast({ title: '正在确认股票信息', icon: 'none' });
     if (!this.data.stockSuggestion || this.data.stockSuggestion.stockCode !== stockCode) {
@@ -667,6 +669,9 @@ Page({
     this.openEnterpriseWechat();
   },
   onUnload() {
+    clearTimeout(this._stockSearchTimer);
+    this._stockLookupSequence=(this._stockLookupSequence || 0)+1;
+    if(this._rankingAd)this._rankingAd.cancel();
     this._queryPageUnloaded = true;
     if (this._queryAd) this._queryAd.cancel();
     if (this.closeInterstitialAd && this.closeInterstitialAd.destroy) this.closeInterstitialAd.destroy();
