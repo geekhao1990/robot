@@ -100,9 +100,6 @@
       <view class="history-page-number">第 {{historyPage}} / {{historyTotalPages}} 页</view>
       <view class="history-page-button {{historyPage >= historyTotalPages ? 'disabled' : ''}}" data-page="{{historyPage + 1}}" bindtap="changeHistoryPage">下一页</view>
     </view>
-    <view wx:if="{{!historyLoading && orders.length && historyAdUnitId && !historyAdLoadFailed}}" class="history-ad-slot">
-      <ad unit-id="{{historyAdUnitId}}" binderror="onHistoryAdError" />
-    </view>
   </view>
 </view>
 <view wx:if="{{topupVisible}}" class="topup-mask" bindtap="closeTopupModal">

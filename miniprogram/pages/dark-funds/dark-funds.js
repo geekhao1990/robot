@@ -100,9 +100,6 @@ Page({
     queryAdUnitId: /^adunit-/i.test(String(config.darkFundsQueryAdUnitId || ''))
       ? String(config.darkFundsQueryAdUnitId)
       : '',
-    historyAdUnitId: /^adunit-/i.test(String(config.darkFundsHistoryAdUnitId || ''))
-      ? String(config.darkFundsHistoryAdUnitId)
-      : '',
     queryAdLoadFailed: false,
     dateLoading: true,
     historyLoading: false,
@@ -112,7 +109,6 @@ Page({
     historyTotalPages: 1,
     historyTotal: 0,
     historyBadge: 0,
-    historyAdLoadFailed: false,
     rankingLoading: false,
     rankingEmpty: true,
     ranking: { inflow: [], outflow: [] },
@@ -152,12 +148,9 @@ Page({
         return true;
       }
       const id = String((settings && settings.darkFundsQueryAdUnitId) || config.darkFundsQueryAdUnitId || '');
-      const historyId = String((settings && settings.darkFundsHistoryAdUnitId) || config.darkFundsHistoryAdUnitId || '');
       this.setData({
         queryAdUnitId: /^adunit-/i.test(id) ? id : '',
-        historyAdUnitId: /^adunit-/i.test(historyId) ? historyId : '',
         queryAdLoadFailed: false,
-        historyAdLoadFailed: false,
       });
       if (tab === 'ranking') this.loadRanking();
       return false;
@@ -681,9 +674,6 @@ Page({
   },
   onQueryAdError() {
     this.setData({ queryAdLoadFailed: true });
-  },
-  onHistoryAdError() {
-    this.setData({ historyAdLoadFailed: true });
   },
   openEnterpriseWechat() {
     this.setData({

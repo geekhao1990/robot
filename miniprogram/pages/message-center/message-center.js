@@ -1,7 +1,6 @@
 const api = require('../../utils/api');
 const { openGoldEntry } = require('../../utils/gold-entry');
 const store = require('../../utils/store');
-const config = require('../../utils/config');
 
 function formatTime(timestamp) {
   const value = Number(timestamp) || 0;
@@ -30,28 +29,12 @@ Page({
     page: 1,
     totalPages: 1,
     total: 0,
-    messageCenterAdUnitId: /^adunit-/i.test(String(config.messageCenterAdUnitId || '')) ? String(config.messageCenterAdUnitId) : '',
-    messageCenterBottomAdUnitId: /^adunit-/i.test(String(config.messageCenterBottomAdUnitId || '')) ? String(config.messageCenterBottomAdUnitId) : '',
-    messageCenterAdLoadFailed: false,
-    messageCenterBottomAdLoadFailed: false,
   },
 
   onLoad() {
     if (!store.isLogin()) return wx.redirectTo({ url: '/pages/login/login' });
-    api.getAppSettings().then((settings) => {
-      const id = String((settings && settings.messageCenterAdUnitId) || config.messageCenterAdUnitId || '');
-      const bottomId = String((settings && settings.messageCenterBottomAdUnitId) || config.messageCenterBottomAdUnitId || '');
-      this.setData({
-        messageCenterAdUnitId: /^adunit-/i.test(id) ? id : '',
-        messageCenterBottomAdUnitId: /^adunit-/i.test(bottomId) ? bottomId : '',
-        messageCenterAdLoadFailed: false,
-        messageCenterBottomAdLoadFailed: false,
-      });
-    });
     this.load();
   },
-  onMessageCenterAdError() { this.setData({ messageCenterAdLoadFailed: true }); },
-  onMessageCenterBottomAdError() { this.setData({ messageCenterBottomAdLoadFailed: true }); },
 
   load(page = 1) {
     if (this.data.loading && this._loadedOnce) return Promise.resolve();
