@@ -49,9 +49,6 @@
 .history-title-row { display: flex; align-items: center; justify-content: space-between; }
 .history-title { padding-left: 22rpx; color: #242424; font-size: 36rpx; font-weight: 850; border-left: 9rpx solid #ff2442; }
 .history-actions { display: flex; align-items: center; gap: 12rpx; }
-.history-poster { display: flex; align-items: center; justify-content: center; gap: 8rpx; height: 64rpx; padding: 0 18rpx; color: #9a6714; font-size: 24rpx; font-weight: 700; background: #fff7e3; border: 1rpx solid #e7c067; border-radius: 999rpx; box-sizing: border-box; }
-.history-poster-icon { flex: 0 0 27rpx; width: 27rpx; height: 27rpx; background: center / 100% 100% no-repeat url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWE2NzE0IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lamVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj48cGF0aCBkPSJNNCwxMnY3YTEsMSAwIDAgMCAxLDFoMTRhMSwxIDAgMCAwIDEtMXYtNyIvPjxwYXRoIGQ9Ik0xMiwzVjE1Ii8+PHBhdGggZD0iTTcuNSw3LjVMMTIsM2w0LjUsNC41Ii8+PC9zdmc+"); }
-.history-poster.disabled { opacity: .58; pointer-events: none; }
 .history-refresh { display: flex; align-items: center; justify-content: center; min-width: 176rpx; height: 64rpx; padding: 0 26rpx; color: #fff; font-size: 25rpx; font-weight: 600; background: #ff2442; border-radius: 999rpx; box-shadow: 0 8rpx 18rpx rgba(255,36,66,.2); box-sizing: border-box; }
 .history-refresh.disabled { opacity: .58; pointer-events: none; }
 .history-grid { display: flex; align-items: center; width: 100%; }
@@ -81,5 +78,4 @@
 .banner-image { display: block; width: 100%; height: 100%; }
 .gold-ad-slot { width: 100%; margin: 28rpx 0 8rpx; overflow: hidden; border-radius: 12rpx; }
 .disclaimer { padding: 24rpx 0 50rpx; color: #aaa095; font-size: 20rpx; text-align: center; }
-.gold-share-poster-canvas { position: fixed; top: 0; left: -2000px; width: 750px; height: 1440px; pointer-events: none; }
 .history-reading-note { margin: 12rpx 0 20rpx; color: #8a7864; font-size: 23rpx; line-height: 1.7; }

@@ -38,10 +38,15 @@ Page({
       wx.showModal({
         title: '用户协议与隐私政策',
         content: '您是否已阅读并同意《用户服务协议》和《隐私政策》？可取消后点击页面中的协议链接阅读。',
-        confirmText: '同意并登录',
+        confirmText: '同意',
         cancelText: '暂不同意',
         success: ({ confirm }) => {
           if (confirm) this.setData({ agreementAccepted: true }, () => this.onWechatLogin());
+        },
+        fail: (error) => {
+          this._agreementPromptPending = false;
+          console.error('[LoginAgreementModal]', error);
+          wx.showToast({ title: '协议弹窗打开失败，请重试', icon: 'none' });
         },
         complete: () => { this._agreementPromptPending = false; },
       });

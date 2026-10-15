@@ -29,7 +29,6 @@
         <view class="history-title-row">
           <view class="history-title">点金历史</view>
           <view class="history-actions">
-            <view class="history-poster {{posterGenerating ? 'disabled' : ''}}" bindtap="generateSharePoster"><view class="history-poster-icon"></view><text>{{posterGenerating ? '生成中…' : '生成分享图'}}</text></view>
             <view class="history-refresh {{refreshing ? 'disabled' : ''}}" bindtap="refreshGoldFinger">{{refreshing ? '刷新中…' : '手动刷新'}}</view>
           </view>
         </view>
@@ -63,5 +62,4 @@
       <view class="disclaimer">数据来自互联网，仅供参考不构成投资建议</view>
     </block>
   </scroll-view>
-  <canvas type="2d" id="goldSharePosterCanvas" class="gold-share-poster-canvas"></canvas>
 </view>
