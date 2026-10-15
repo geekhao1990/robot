@@ -128,8 +128,8 @@ Page({
     topupSkus: [
       { sku: 'dark_fund_10', times: 10, price: '6元', unitPrice: '0.60元/次' },
       { sku: 'dark_fund_100', times: 100, price: '50元', unitPrice: '0.50元/次' },
+      { sku: 'dark_fund_month', label: '包月', price: '30元', unitPrice: '普通查询 · 30天不限次', badge: '最划算' },
       { sku: 'dark_fund_300', times: 300, price: '99元', unitPrice: '0.33元/次' },
-      { sku: 'dark_fund_month', label: '包月', price: '30元', unitPrice: '普通查询 · 30天不限次' },
     ],
   },
   onLoad(options) {

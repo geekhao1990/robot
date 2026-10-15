@@ -22,8 +22,8 @@
 .stock-dropdown-tip { justify-content: center; color: #999; }
 .stock-dropdown-error { justify-content: center; color: #ff2442; }
 .query-actions { margin-top: 40rpx; }
-.query-pair { display: flex; flex-wrap: nowrap; width: 750rpx; margin-left: -56rpx; }
-.query-pair .query-button { flex: 0 0 50%; width: 50%; min-width: 0; box-sizing: border-box; }
+.query-pair { display: flex; flex-wrap: nowrap; gap: 20rpx; width: 750rpx; margin-left: -56rpx; padding: 0 24rpx; box-sizing: border-box; }
+.query-pair .query-button { flex: 1 1 0; width: 0; min-width: 0; box-sizing: border-box; }
 .query-actions:not(.has-gold) .query-pair .query-button { flex-basis: 100%; width: 100%; }
 .query-actions .query-button-live { width: 100%; margin-bottom: 18rpx; }
 .query-button { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 104rpx; margin: 0; padding: 8rpx 12rpx; font-size: 25rpx; font-weight: 700; line-height: normal; border-radius: 999rpx; }
@@ -140,6 +140,7 @@
 .topup-unit { display: block; margin-top: 6rpx; color: #999; font-size: 19rpx; }
 .topup-price { color: #f04424; font-size: 31rpx; font-weight: 800; }
 .topup-check { position: absolute; top: -2rpx; right: -2rpx; display: flex; align-items: center; justify-content: center; width: 36rpx; height: 36rpx; color: #fff; font-size: 21rpx; font-weight: 800; background: #ff6b2c; border-radius: 0 18rpx 0 16rpx; }
+.topup-best { position: absolute; top: -14rpx; left: 18rpx; padding: 3rpx 12rpx; color: #fff; font-size: 20rpx; line-height: 28rpx; font-weight: 700; background: #ff6b2c; border-radius: 8rpx; }
 .topup-pay { display: flex; align-items: center; justify-content: center; height: 88rpx; margin: 30rpx 0 0; color: #fff; font-size: 28rpx; font-weight: 800; line-height: normal; background: linear-gradient(100deg,#ff7138,#f04424); border-radius: 999rpx; box-shadow: 0 10rpx 24rpx rgba(240,68,36,.2); }
 .topup-pay::after { border: 0; }
 .topup-pay[disabled] { color: #fff; opacity: .7; }

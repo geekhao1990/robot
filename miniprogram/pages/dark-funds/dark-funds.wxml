@@ -125,6 +125,7 @@
       <view wx:for="{{topupSkus}}" wx:key="sku" class="topup-sku {{selectedTopupSku === item.sku ? 'selected' : ''}}" data-sku="{{item.sku}}" bindtap="selectTopupSku">
         <view><text class="topup-times">{{item.label || (item.times + '次')}}</text><text class="topup-unit">{{item.unitPrice}}</text></view>
         <text class="topup-price">{{item.price}}</text>
+        <text wx:if="{{item.badge}}" class="topup-best">{{item.badge}}</text>
         <view wx:if="{{selectedTopupSku === item.sku}}" class="topup-check">✓</view>
       </view>
     </view>

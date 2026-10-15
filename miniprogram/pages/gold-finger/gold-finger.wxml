@@ -28,9 +28,9 @@
       <view class="history-card">
         <view class="history-title-row">
           <view class="history-title">点金历史</view>
-          <view class="history-update-note">非实时更新，<text>每半小时更新一次</text></view>
+          <view class="history-update-note">非实时更新，每半小时更新一次。</view>
           <view class="history-actions">
-            <view class="history-refresh {{refreshing ? 'disabled' : ''}}" bindtap="refreshGoldFinger">{{refreshing ? '刷新中…' : '手动刷新'}}</view>
+            <view class="history-refresh {{refreshing ? 'disabled' : ''}}" bindtap="refreshGoldFinger" role="button" aria-label="{{refreshing ? '刷新中' : '手动刷新'}}"><view class="refresh-icon {{refreshing ? 'spinning' : ''}}"></view></view>
           </view>
         </view>
         <view class="history-head history-grid">
@@ -55,7 +55,7 @@
         </view>
       </view>
 
-      <view class="history-reading-note">Tips：以设定更新时间为准。阴阳谱接近20时，关注反转机会/风险，不代表必然反转。</view>
+      <view class="history-reading-note">Tips：阴阳谱接近20时，关注反转机会/风险，不代表必然反转。</view>
       <view wx:if="{{goldFingerAdUnitId && !adLoadFailed}}" class="gold-ad-slot">
         <ad unit-id="{{goldFingerAdUnitId}}" binderror="onAdError" />
       </view>
