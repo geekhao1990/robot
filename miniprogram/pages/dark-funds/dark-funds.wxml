@@ -82,7 +82,7 @@
         <view class="fund-reading-text">按数据源口径，估算可能拆成小单的主力成交，用于辅助观察资金方向，不能据此确认隐藏意图或真实交易主体。</view>
         <view class="fund-reading-label">明盘</view>
         <view class="fund-reading-text">成交时的大额主动买卖，可能体现资金抢筹或短期分歧，不能仅凭大单判断抢筹或诱多。</view>
-        <view class="fund-reading-label">G / S 信号每日收盘后更新</view>
+        <view class="fund-reading-label">G / S 信号<text class="fund-update-tag">每日收盘后更新</text></view>
         <view class="fund-reading-text">G信号表示趋势走强，S信号表示趋势走弱，仅为指标提示，不代表后续必然涨跌。</view>
       </view>
       <view wx:if="{{queryAdUnitId && !queryAdLoadFailed}}" class="query-ad-slot">

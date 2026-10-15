@@ -8,15 +8,16 @@ test('fund reading guide and gold update notice are visible in their intended se
   const dark=read('dark-funds'),gold=read('gold-finger');
   assert.match(dark,/bindtap="switchTab">资金流向/);
   assert.match(dark,/怎么读这份资金流向/);
-  assert.match(dark,/G \/ S 信号每日收盘后更新/);
+  assert.match(dark,/G \/ S 信号<text class="fund-update-tag">每日收盘后更新<\/text>/);
   assert(gold.indexOf('history-update-note')>gold.indexOf('点金历史'));
-  assert(gold.indexOf('history-update-note')<gold.indexOf('手动刷新'));
+  assert(gold.indexOf('history-update-note')<gold.indexOf('bindtap="refreshGoldFinger"'));
   assert(gold.indexOf('history-reading-note')>gold.indexOf('history-head history-grid'));
   assert(gold.indexOf('history-reading-note')<gold.indexOf('class="gold-ad-slot"'));
   assert.match(gold, /history-reading-note">Tips：/);
   assert.doesNotMatch(gold, /以设定更新时间为准/);
   assert.match(gold, /history-update-note">非实时更新，每半小时更新一次。<\/view>/);
-  assert.match(gold, /bindtap="refreshGoldFinger"[^>]*><view class="refresh-icon/);
+  assert.match(gold, /<button class="history-refresh" bindtap="refreshGoldFinger"[^>]*>\{\{refreshing \? '刷新中' : '刷新'\}\}<\/button>/);
+  assert.match(gold, /history-position-col">建议仓位/);
 });
 
 test('monthly package precedes 300 uses and has the best-value badge',()=>{
@@ -31,10 +32,9 @@ test('daily free button is member-only and shares a row equally with ordinary qu
   const base=path.join(__dirname,'../../miniprogram/pages/dark-funds/dark-funds');
   const wxml=fs.readFileSync(base+'.wxml','utf8'),css=fs.readFileSync(base+'.wxss','utf8');
   assert.match(wxml,/<button wx:if="\{\{goldActive\}\}"[^>]+bindtap="prepareGoldQuery"[^>]+><text class="query-button-title">会员查询/);
-  assert.match(css, /width: 750rpx; margin-left: -56rpx/);
+  assert.match(css, /gap: 20rpx; width: 100%; margin: 0 auto/);
   assert.match(css, /flex: 1 1 0; width: 0/);
-  assert.match(css, /gap: 20rpx; width: 750rpx/);
-  assert.match(css, /padding: 0 24rpx; box-sizing: border-box/);
+  assert.match(css, /padding-left: 6rpx; padding-right: 6rpx/);
   assert.match(wxml, /class="query-pair"/);
   assert.match(wxml,/dateLoading \|\| querying \|\| !goldDarkFundAvailable/);
 });
