@@ -3,6 +3,15 @@ const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const fs=require('node:fs');
 const path=require('node:path');
+test('fund reading guide and gold update notice are visible in their intended sections',()=>{
+  const read=name=>fs.readFileSync(path.join(__dirname,`../../miniprogram/pages/${name}/${name}.wxml`),'utf8');
+  const dark=read('dark-funds'),gold=read('gold-finger');
+  assert.match(dark,/bindtap="switchTab">资金流向/);
+  assert.match(dark,/怎么读这份资金流向/);
+  assert.match(dark,/G \/ S 信号每日收盘后更新/);
+  assert(gold.indexOf('history-reading-note')>gold.indexOf('手动刷新'));
+  assert(gold.indexOf('history-reading-note')<gold.indexOf('history-head history-grid'));
+});
 test('daily free button is member-only and shares a row equally with ordinary query',()=>{
   const base=path.join(__dirname,'../../miniprogram/pages/dark-funds/dark-funds');
   const wxml=fs.readFileSync(base+'.wxml','utf8'),css=fs.readFileSync(base+'.wxss','utf8');

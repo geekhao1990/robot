@@ -24,7 +24,7 @@ test('mini-program gold entry, refresh and course resource rules match the rebui
   assert.match(goldPage, /refreshGoldFinger\(\)[\s\S]*this\.showGoldInterstitialForRefresh\(\)/);
   assert.doesNotMatch(goldPage, /refreshGoldFinger\(\)[\s\S]*serviceActive[\s\S]*showGoldRewardedAd/);
 
-  assert.match(darkView, /金手指查暗盘/);
+  assert.match(darkView, /会员查询/);
   assert.match(darkPage, /prepareGoldQuery/);
   assert.match(darkPage, /goldDarkFundAvailable/);
   assert.match(api, /queryMode === 'gold'/);

@@ -82,3 +82,4 @@
 .gold-ad-slot { width: 100%; margin: 28rpx 0 8rpx; overflow: hidden; border-radius: 12rpx; }
 .disclaimer { padding: 24rpx 0 50rpx; color: #aaa095; font-size: 20rpx; text-align: center; }
 .gold-share-poster-canvas { position: fixed; top: 0; left: -2000px; width: 750px; height: 1440px; pointer-events: none; }
+.history-reading-note { margin: 12rpx 0 20rpx; color: #8a7864; font-size: 23rpx; line-height: 1.7; }
