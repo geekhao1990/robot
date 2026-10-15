@@ -57,6 +57,21 @@ function setup(options = {}) {
   return { data, call, paymentInputs };
 }
 
+test('monthly plan charges 30 yuan, extends 30 days and is idempotent', async () => {
+  const { data, call, paymentInputs } = setup({ amount: 3000 });
+  const originalExpiry = Date.now() + 86400000;
+  data.users[0].darkFundCloseExpire = originalExpiry;
+  const order = await call('POST', '/api/dark-funds/topup-orders', { sku: 'dark_fund_month', amount: 1 });
+  assert.equal(paymentInputs[0].amount, 3000);
+  const first = await call('GET', `/api/dark-funds/topup-orders/${order.orderId}`);
+  await call('GET', `/api/dark-funds/topup-orders/${order.orderId}`);
+  assert.equal(data.users[0].darkFundCloseExpire, originalExpiry + 30 * 86400000);
+  assert.equal(first.closeMonthlyActive, true);
+  assert.equal(first.creditedQuota, 0);
+  assert.equal(data.users[0].darkFundManualRemaining, 0);
+  assert.equal(data.systemNotifications.u1.length, 1);
+});
+
 test('0.99 dark-fund payment creates a native mini-program payment order', async () => {
   const { data, call, paymentInputs } = setup();
   const created = await call('POST', '/api/dark-funds/purchase-orders');
@@ -109,15 +124,15 @@ test('dark-fund bulk topups credit 300 and 1000 permanent uses at their exact pr
   );
   const first = await threeHundred.call('POST', '/api/dark-funds/topup-orders', { sku: 'dark_fund_300' });
   assert.equal(threeHundred.paymentInputs[0].amount, 9900);
-  assert.equal(threeHundred.paymentInputs[0].goodsName, '暗盘查询同价包月300次');
+  assert.equal(threeHundred.paymentInputs[0].goodsName, '暗盘查询次数充值300次');
   const firstPaid = await threeHundred.call('GET', `/api/dark-funds/topup-orders/${first.orderId}`);
   assert.equal(firstPaid.creditedQuota, 300);
   assert.equal(threeHundred.data.users[0].darkFundManualRemaining, 300);
 
   const oneThousand = setup({ amount: 24000 });
-  const second = await oneThousand.call('POST', '/api/dark-funds/topup-orders', { sku: 'dark_fund_1000' });
-  assert.equal(oneThousand.paymentInputs[0].amount, 24000);
-  assert.equal(oneThousand.paymentInputs[0].goodsName, '暗盘查询次数充值1000次');
+  await assert.rejects(oneThousand.call('POST', '/api/dark-funds/topup-orders', { sku: 'dark_fund_1000' }), { status: 400 });
+  const second = { orderId: 'legacy1000' };
+  oneThousand.data.paymentOrders.push({ id: second.orderId, userId: 'u1', product: 'dark_fund_1000', amount: 24000, status: 'NOTPAY' });
   const secondPaid = await oneThousand.call('GET', `/api/dark-funds/topup-orders/${second.orderId}`);
   assert.equal(secondPaid.creditedQuota, 1000);
   assert.equal(oneThousand.data.users[0].darkFundManualRemaining, 1000);
@@ -134,7 +149,7 @@ test('customer order center only returns the signed-in user payment orders', asy
   const result = await call('GET', '/api/payment-orders');
   assert.equal(result.total, 1);
   assert.equal(result.list[0].orderId, 'DF300-order');
-  assert.equal(result.list[0].productName, '暗盘同价包月 · 300次');
+  assert.equal(result.list[0].productName, '暗盘查询次数 · 300次');
   assert.equal(result.list[0].statusLabel, '已付款');
   assert.equal(result.list[0].paidAt, 200);
 });

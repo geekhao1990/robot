@@ -47,7 +47,7 @@ function wdfQuotaHtml(date) {
       <div class="wdf-quota-row"><span>30天内到期</span><strong>${Number(date.expiringRemaining) || 0} 次${quotaExpiry ? `<small>（有效至 ${quotaExpiry}）</small>` : ''}</strong></div>
       <div class="wdf-quota-row"><span>长期有效</span><strong>${Number(date.permanentRemaining) || 0} 次</strong></div>
     </section>
-    <section class="wdf-recharge" data-action="enterprise-contact"><i>企</i><div><b>充值暗盘次数</b><span>暗盘查询低至2毛4</span><span>更多套餐请咨询企业微信</span></div></section>
+    <section class="wdf-recharge" data-action="enterprise-contact"><i>企</i><div><b>充值暗盘次数</b><span>包月30元 · 300次99元</span><span>更多套餐请咨询企业微信</span></div></section>
   </div>`;
 }
 

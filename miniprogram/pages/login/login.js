@@ -33,7 +33,18 @@ Page({
   onWechatLogin() {
     if (this.data.loggingIn) return;
     if (!this.data.agreementAccepted) {
-      wx.showToast({ title: '请先阅读并勾选同意协议', icon: 'none' });
+      if (this._agreementPromptPending) return;
+      this._agreementPromptPending = true;
+      wx.showModal({
+        title: '用户协议与隐私政策',
+        content: '您是否已阅读并同意《用户服务协议》和《隐私政策》？可取消后点击页面中的协议链接阅读。',
+        confirmText: '同意并登录',
+        cancelText: '暂不同意',
+        success: ({ confirm }) => {
+          if (confirm) this.setData({ agreementAccepted: true }, () => this.onWechatLogin());
+        },
+        complete: () => { this._agreementPromptPending = false; },
+      });
       return;
     }
     this.setData({ loggingIn: true, loginText: '登录中…' });

@@ -16,7 +16,9 @@ test('daily free button is member-only and shares a row equally with ordinary qu
   const base=path.join(__dirname,'../../miniprogram/pages/dark-funds/dark-funds');
   const wxml=fs.readFileSync(base+'.wxml','utf8'),css=fs.readFileSync(base+'.wxss','utf8');
   assert.match(wxml,/<button wx:if="\{\{goldActive\}\}"[^>]+bindtap="prepareGoldQuery"[^>]+><text class="query-button-title">会员查询/);
-  assert.match(css,/\.query-actions\.has-gold \.query-button-close,\s*\.query-actions\.has-gold \.query-button-gold \{ flex: 1 1 calc\(50% - 9rpx\)/);
+  assert.match(css, /width: 750rpx; margin-left: -56rpx/);
+  assert.match(css, /flex: 0 0 50%; width: 50%/);
+  assert.match(wxml, /class="query-pair"/);
   assert.match(wxml,/dateLoading \|\| querying \|\| !goldDarkFundAvailable/);
 });
 function page(api){

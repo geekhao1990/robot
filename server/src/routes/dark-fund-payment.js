@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const db = require('../db');
 const auth = require('../auth');
 const wechatPay = require('../wechat-pay');
-const { addManualDarkFundQuota, refreshDarkFundQuota } = require('../membership');
+const { addManualDarkFundQuota, refreshDarkFundQuota, activateCloseDarkFund, closeDarkFundActiveAt } = require('../membership');
 const { pubUser, reviewModeApplies } = require('../util');
 const { pushNotification } = require('../notifications');
 const { PRODUCTS, paymentOrderView } = require('../payment-orders');
@@ -32,6 +32,8 @@ function activateOrder(data, order, transactionId) {
   if (product && product.quota) {
     addManualDarkFundQuota(user, product.quota);
     user.darkFundEnabled = true;
+  } else if (order.product === PRODUCTS.dark_fund_month.id) {
+    activateCloseDarkFund(user);
   } else if (order.product === PRODUCTS.gold_year.id) {
     const now = Date.now();
     user.goldExpire = Math.max(Number(user.goldExpire) || 0, now) + 360 * DAY_MS;
@@ -52,8 +54,8 @@ function activateOrder(data, order, transactionId) {
     }
     : {
       type: 'dark_recharge',
-      title: '暗盘查询次数到账',
-      content: `${(order.amount / 100).toFixed(2)}元购买成功，已增加${product.quota}次长期有效暗盘查询。`,
+      title: order.product === 'dark_fund_month' ? '普通查询包月已开通' : '暗盘查询次数到账',
+      content: order.product === 'dark_fund_month' ? '30元包月购买成功，普通查询包月有效期已增加30天。' : `${(order.amount / 100).toFixed(2)}元购买成功，已增加${product.quota}次长期有效暗盘查询。`,
       targetType: 'dark_history',
       dedupeKey: `dark-fund-payment:${order.id}`,
     };
@@ -68,6 +70,8 @@ function publicOrder(order, user) {
     ...paymentOrderView(order),
     creditedQuota: Number((PRODUCTS[order.product] || {}).quota) || 0,
     remaining: quota.total,
+    closeMonthlyActive: closeDarkFundActiveAt(user),
+    closeMonthlyExpireAt: Number(user.darkFundCloseExpire) || 0,
     expiringRemaining: quota.service,
     permanentRemaining: quota.manual,
     user: pubUser(user),
@@ -148,14 +152,14 @@ module.exports = function register(router, HttpError) {
   router.get('/api/dark-funds/purchase-orders/:id', (ctx) => getOrder(ctx, PRODUCTS.dark_fund_once));
   router.post('/api/dark-funds/topup-orders', (ctx) => {
     const sku = String((ctx.body || {}).sku || '').trim();
-    const product = [PRODUCTS.dark_fund_10, PRODUCTS.dark_fund_100, PRODUCTS.dark_fund_300, PRODUCTS.dark_fund_1000].find((item) => item.id === sku);
+    const product = [PRODUCTS.dark_fund_10, PRODUCTS.dark_fund_100, PRODUCTS.dark_fund_300, PRODUCTS.dark_fund_month].find((item) => item.id === sku);
     if (!product) throw new HttpError(400, '请选择有效的暗盘次数套餐');
     return createOrder(ctx, product);
   });
   router.get('/api/dark-funds/topup-orders/:id', (ctx) => {
     const data = db.get();
     const order = (data.paymentOrders || []).find((item) => item.id === ctx.params.id);
-    const product = order && [PRODUCTS.dark_fund_10, PRODUCTS.dark_fund_100, PRODUCTS.dark_fund_300, PRODUCTS.dark_fund_500, PRODUCTS.dark_fund_1000].find((item) => item.id === order.product);
+    const product = order && [PRODUCTS.dark_fund_10, PRODUCTS.dark_fund_100, PRODUCTS.dark_fund_300, PRODUCTS.dark_fund_month, PRODUCTS.dark_fund_500, PRODUCTS.dark_fund_1000].find((item) => item.id === order.product);
     if (!product) throw new HttpError(404, '支付订单不存在');
     return getOrder(ctx, product);
   });
