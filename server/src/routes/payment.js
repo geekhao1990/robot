@@ -27,6 +27,15 @@ function beijingDateKey(now = Date.now()) {
   return new Date(Number(now) + 8 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
+// Support older deployed trading-date modules during rolling/partial updates.
+function tradingTimeNow(now = Date.now()) {
+  if (typeof isTradingTime === 'function') return isTradingTime(now);
+  if (latestTradingDate(now) !== beijingDateKey(now)) return false;
+  const date = new Date(now + 8 * 3600 * 1000);
+  const minutes = date.getUTCHours() * 60 + date.getUTCMinutes();
+  return (minutes >= 570 && minutes < 690) || (minutes >= 780 && minutes < 900);
+}
+
 function goldDailyState(user, now = Date.now()) {
   const dateKey = beijingDateKey(now);
   const active = goldAccess(user);
@@ -148,7 +157,7 @@ module.exports = function register(router, HttpError) {
     return {
       tradeDate,
       compactTradeDate: compactDate(tradeDate),
-      isTradingTime: isTradingTime(),
+      isTradingTime: tradingTimeNow(),
       remaining: quota.total + trialRemaining(user),
       ordinaryTrialRemaining: trialRemaining(user),
       expiringRemaining: quota.service,

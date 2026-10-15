@@ -45,7 +45,7 @@ function setup(options = {}) {
     '../auth': { userIdFor: (token) => token === 'Bearer u2' ? 'u2' : (token === 'Bearer u1' ? 'u1' : ''), isAdmin: (token) => token === 'admin' },
     '../membership': require('../src/membership'), '../util': require('../src/util'),
     '../dark-fund-trial': require('../src/dark-fund-trial'),
-    '../trading-date': require('../src/trading-date'), '../dark-fund-orders': require('../src/dark-fund-orders'),
+    '../trading-date': options.legacyTradingDate ? { ...require('../src/trading-date'), isTradingTime: undefined } : require('../src/trading-date'), '../dark-fund-orders': require('../src/dark-fund-orders'),
     '../dark-fund-close': {
       fetchCloseDarkFund: fetchCloseStub,
       isReusableCloseResult: options.isReusableCloseResult || require('../src/dark-fund-close').isReusableCloseResult,
@@ -90,6 +90,25 @@ function successCallback(order) {
     },
   };
 }
+
+test('legacy trading-date without isTradingTime still serves the trade-date endpoint', async () => {
+  const { call } = setup({ legacyTradingDate: true });
+  const result = await call('GET', '/api/dark-funds/trade-date');
+  assert.equal(typeof result.isTradingTime, 'boolean');
+  assert.match(result.tradeDate, /^\d{4}-\d{2}-\d{2}$/);
+});
+
+test('legacy time fallback matches trading sessions including lunch and holidays', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../src/routes/payment.js'), 'utf8');
+  const helpers = source.slice(source.indexOf('function beijingDateKey'), source.indexOf('function goldDailyState'));
+  const context = { isTradingTime: undefined, latestTradingDate };
+  vm.createContext(context);
+  vm.runInContext(helpers, context);
+  for (const value of ['2026-10-12T10:00:00+08:00','2026-10-12T12:00:00+08:00','2026-10-12T14:00:00+08:00','2026-10-12T15:00:00+08:00','2026-10-11T10:00:00+08:00','2026-10-01T10:00:00+08:00']) {
+    const now = Date.parse(value);
+    assert.equal(context.tradingTimeNow(now), require('../src/trading-date').isTradingTime(now), value);
+  }
+});
 
 test('unused users receive one ordinary-only trial; repeat visits and concurrent queries cannot duplicate it', async () => {
   const { normalizeCloseDarkFund, SAMPLE_CLOSE_PAYLOAD } = require('../src/dark-fund-close');
