@@ -53,7 +53,7 @@ Component({
 
     openQuickEntry() {
       wx.showActionSheet({
-        itemList: ['查看暗盘', '查看金手指'],
+        itemList: ['实时暗盘', '金手指阴阳谱'],
         success: ({ tapIndex }) => {
           if (tapIndex === 0) {
             wx.navigateTo({
