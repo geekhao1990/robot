@@ -26,7 +26,7 @@
         <view class="hero-poster-button {{posterGenerating ? 'disabled' : ''}}" hover-class="hero-poster-button-hover" bindtap="generateSharePoster"><view class="hero-share-icon"></view><text>{{posterGenerating ? '生成中' : '生成分享图'}}</text></view>
       </view>
       </view>
-      <view class="header-meta"><view>数据日期 {{result.tradeDate}} · 版本：{{result.headerVersion}} ·</view><view>更新于 {{result.updatedMinute}}</view></view>
+      <view class="header-meta"><view>数据日期 {{result.tradeDate}}</view><view>快照时间 {{result.updatedMinute}}</view></view>
       <view wx:if="{{isOfficial}}" class="hero-action-row">
         <view wx:if="{{isOfficial}}" class="hero-poster-button hero-poster-button-secondary {{posterGenerating ? 'disabled' : ''}}" hover-class="hero-poster-button-hover" data-no-qr="true" bindtap="generateSharePoster">
           <view class="hero-share-icon hero-share-icon-red"></view>
@@ -117,9 +117,6 @@
       </view>
     </view>
     <view class="detail-pagination"><button disabled="{{detailPage <= 1}}" data-step="-1" bindtap="changeDetailPage">上一页</button><button disabled="{{detailPage >= detailPages}}" data-step="1" bindtap="changeDetailPage">下一页</button></view>
-    <view wx:if="{{closeBannerAdUnitId && !closeBannerAdLoadFailed}}" class="close-banner-ad">
-      <ad unit-id="{{closeBannerAdUnitId}}" binderror="onCloseBannerAdError" />
-    </view>
     <view class="disclaimer">数据和图表来自互联网，由AI生成，仅供参考，不构成投资建议</view>
     <canvas type="2d" id="sharePosterCanvas" class="share-poster-canvas"></canvas>
   </block>

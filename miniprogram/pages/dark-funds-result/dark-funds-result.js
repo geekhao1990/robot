@@ -2,7 +2,7 @@ const api = require('../../utils/api');
 const config = require('../../utils/config');
 const store = require('../../utils/store');
 const { darkFundError } = require('../../utils/dark-fund-error');
-const { rollingHistory, snapshotLabel, historyChart, historySummary, updatedMinute, historyFor } = require('../../utils/dark-fund-history');
+const { rollingHistory, historyChart, historySummary, updatedMinute, historyFor } = require('../../utils/dark-fund-history');
 const { exactAmount, posterMetrics } = require('../../utils/dark-fund-poster');
 
 const YELLOW = '#ffe50a';
@@ -100,16 +100,13 @@ Page({
     trendMetricText: '',
     trendMetricPositive: true,
     trendHasData: false,
-    closeBannerAdUnitId: /^adunit-/i.test(String(config.darkFundsCloseBannerAdUnitId || ''))
-      ? String(config.darkFundsCloseBannerAdUnitId)
-      : '',
-    closeBannerAdLoadFailed: false,
     posterGenerating: false,
     posterPath: '',
     isOfficial: false,
     skeletonRows: [1, 2, 3, 4, 5],
   },
   onLoad(options) {
+    this._unloaded = false;
     this.skipResultAd = String(options && options.skipAd || '') === '1';
     const currentUser = store.getUser();
     const isOfficial = !!(currentUser && currentUser.official === true);
@@ -134,45 +131,39 @@ Page({
     api.getDarkFundOrder(this.orderId)
       .then((order) => {
         const result = order && order.snapshot && order.snapshot.result;
-        if (!result || result.type !== 'close_snapshot' || !Array.isArray(result.days) || !result.days.length) throw new Error('盘后数据不存在');
+        if (!result || result.type !== 'close_snapshot' || !Array.isArray(result.days) || !result.days.length) throw new Error('查询快照不存在');
         this.applyResult(result);
       })
       .catch((error) => this.setData({ loading: false, error: darkFundError(error, '加载失败，接口未返回错误详情') }));
   },
   loadCloseAds() {
     api.getAppSettings().then((settings) => {
-      const bannerId = String((settings && settings.darkFundsCloseBannerAdUnitId) || config.darkFundsCloseBannerAdUnitId || '');
+      if (this._unloaded) return;
       const interstitialId = String((settings && settings.darkFundsCloseInterstitialAdUnitId) || config.darkFundsCloseInterstitialAdUnitId || '');
-      this.setData({
-        closeBannerAdUnitId: /^adunit-/i.test(bannerId) ? bannerId : '',
-        closeBannerAdLoadFailed: false,
-      });
       if (!this.skipResultAd) this.showCloseInterstitial(interstitialId);
     }).catch(() => {});
   },
   showCloseInterstitial(adUnitId) {
+    if (this._unloaded || this.closeInterstitialAd) return;
     if (!/^adunit-/i.test(String(adUnitId || '')) || typeof wx.createInterstitialAd !== 'function') return;
     try {
       const ad = wx.createInterstitialAd({ adUnitId });
       this.closeInterstitialAd = ad;
       Promise.resolve(ad.show()).catch(() => (typeof ad.load === 'function'
-        ? Promise.resolve(ad.load()).then(() => ad.show()).catch(() => {})
+        ? Promise.resolve(ad.load()).then(() => { if (!this._unloaded) return ad.show(); }).catch(() => {})
         : undefined));
     } catch (error) {}
   },
-  onCloseBannerAdError() {
-    this.setData({ closeBannerAdLoadFailed: true });
-  },
   onUnload() {
+    this._unloaded = true;
     if (this.closeInterstitialAd && typeof this.closeInterstitialAd.destroy === 'function') this.closeInterstitialAd.destroy();
     this.closeInterstitialAd = null;
   },
   applyResult(result) {
     const days = result.days.slice().sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
     result.days = days;
-    result.snapshotLabel = snapshotLabel(result);
     result.updatedMinute = updatedMinute(result.updatedAt);
-    result.headerVersion = result.versionLabel || (result.kind === 'intraday' ? '盘中' : '收盘');
+    result.headerVersion = '查询快照';
     const latest = days[days.length - 1];
     const unit = chooseUnit([latest.main, latest.listed, latest.grey]);
     const main = Number(latest.main) || 0;
@@ -540,7 +531,7 @@ Page({
     roundRect(34, 205, 682, 840, 26); context.fillStyle = 'rgba(5,12,18,.90)'; context.fill(); context.strokeStyle = 'rgba(255,55,62,.55)'; context.lineWidth = 2; context.stroke();
     fillText(metrics.stockName, 62, 266, 46, '#fff', '800');
     fillText(metrics.stockCode, 690, 270, 22, '#b8c2cf', '400', 'right');
-    fillText(`${metrics.tradeDate} ${snapshotLabel(this.data.result)}暗盘数据`, 63, 312, 21, '#aab7c6');
+    fillText(`${metrics.tradeDate} 资金流向快照`, 63, 312, 21, '#aab7c6');
     roundRect(52, 350, 418, 246, 20); context.fillStyle = 'rgba(0,64,54,.28)'; context.fill(); context.strokeStyle = 'rgba(0,228,168,.34)'; context.stroke();
     fillText('1日暗盘', 78, 397, 33, '#fff', '700');
     fillText(metrics.day1Text, 78, 476, 70, valueColor(metrics.day1), '800');
