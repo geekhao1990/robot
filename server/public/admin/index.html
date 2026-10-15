@@ -301,7 +301,7 @@ function showAdminToast(message, type = 'success') {
 const TITLES = { overview: '数据概览', notes: '笔记管理', goldFinger: '金手指数据', users: '用户管理', darkFundOrders: '暗盘工单', paymentOrders: '订单管理', withdrawals: '提现审核', points: '积分记录', logs: '操作日志', categories: '笔记类型', settings: '功能设置' };
 const BASE_CATEGORIES = ['资料', '课程', '金手指', '广告'];
 const GIFT_CARD_LABELS = {
-  gold: '金手指卡（360天 + 5次暗盘）',
+  gold: '金手指卡（自定义天数 + 5次暗盘）',
   service_month: '服务包月卡（30天 + 每30天15次暗盘）',
   service_year: '服务包年卡（360天 + 每30天15次暗盘）',
   dark_month: '暗盘包月卡（30天普通查询无限）',
@@ -708,7 +708,7 @@ function drawUsers() {
         <td>${serviceStatus}</td>
         <td>${darkFundStatus}</td>
         <td>
-          <button class="btn-sm" ${goldActive ? 'disabled' : ''} onclick='setGold("${u.id}","open")'>开通金手指卡</button>
+          <button class="btn-sm" onclick='setGold("${u.id}","${goldActive ? 'set' : 'open'}")'>${goldActive ? '调整金手指有效期' : '开通金手指卡'}</button>
           <button class="btn-sm del" ${goldActive ? '' : 'disabled'} onclick='setGold("${u.id}","cancel")'>取消金手指卡</button>
           <button class="btn-sm" onclick='setServiceExpire("${u.id}")'>设置服务包</button>
           <button class="btn-sm del" ${serviceActive ? '' : 'disabled'} onclick='cancelService("${u.id}")'>取消服务包</button>
@@ -773,11 +773,23 @@ function saveUserPhone(id, input) {
 }
 
 function setGold(id, action) {
-  const label = action === 'open' ? '开通360天金手指卡' : '取消金手指卡';
-  if (!confirm(`确定为该用户「${label}」吗？`)) return;
-  api('/api/admin/users/' + id + '/gold', { method: 'PUT', body: JSON.stringify({ action }) })
-    .then(() => { showAdminToast(action === 'open' ? '金手指已开通' : '金手指已取消'); renderUsers(); })
-    .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
+  if (action === 'cancel') {
+    if (!confirm('确定取消该用户的金手指卡吗？')) return;
+    return api('/api/admin/users/' + id + '/gold', { method: 'PUT', body: JSON.stringify({ action }) })
+      .then(() => { showAdminToast('金手指已取消'); renderUsers(); })
+      .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
+  }
+  openModal(action === 'set' ? '调整金手指有效期' : '开通金手指卡', `
+    <div class="field"><label>有效天数</label><input id="goldDays" type="number" min="1" max="3650" step="1" value="360" /></div>
+    <div class="toolbar"><button class="btn-sm" onclick="document.getElementById('goldDays').value=30">一个月（30天）</button><button class="btn-sm" onclick="document.getElementById('goldDays').value=360">一年（360天）</button></div>
+    <div class="hint">可自定义1至3650天，从保存时开始计算。调整有效期将覆盖原到期时间，不会重复赠送暗盘次数。</div>
+  `, () => {
+    const days = Number(document.getElementById('goldDays').value);
+    if (!Number.isInteger(days) || days < 1 || days > 3650) return showAdminToast('请输入1至3650的整数天数', 'error');
+    api('/api/admin/users/' + id + '/gold', { method: 'PUT', body: JSON.stringify({ action, days }) })
+      .then(() => { closeModal(); showAdminToast('金手指有效期已保存'); renderUsers(); })
+      .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
+  });
 }
 function setServiceExpire(id) {
   const user = _users.find((item) => item.id === id);
@@ -1731,7 +1743,7 @@ function renderGiftCards(page = 1) {
     const rows = result.list.map((card) => {
       const code = card.code || '';
       const copyButton = code ? `<button class="btn-sm" onclick='copyGiftCode(${JSON.stringify(code)})'>复制卡密</button>` : '<span class="hint">历史卡密不可复制</span>';
-      const typeLabel = GIFT_CARD_LABELS[card.type] || '已停用卡种';
+      const typeLabel = card.type === 'gold' ? `金手指卡（${card.days === undefined ? 360 : card.days}天 + 5次暗盘）` : (GIFT_CARD_LABELS[card.type] || '已停用卡种');
       const label = code || typeLabel;
       return `<tr><td style="font-family:monospace">${esc(code || '—')}</td><td>${esc(typeLabel)}</td><td>${card.status === 'redeemed' ? '已兑换' : '未兑换'}</td><td>${esc(card.redeemedBy || '—')}</td><td>${fmtDate(card.createdAt)}</td><td>${card.redeemedAt ? fmtDate(card.redeemedAt) : '—'}</td><td>${copyButton}<button class="btn-sm del" onclick='deleteGiftCard(${JSON.stringify(card.id)},${JSON.stringify(label)})'>删除</button></td></tr>`;
     }).join('');
@@ -1739,7 +1751,8 @@ function renderGiftCards(page = 1) {
       <div class="card" style="margin-bottom:20px"><h3>生成礼品卡</h3>
         <div class="hint">全部权益仅通过礼品卡兑换。服务包包含课程、金手指和每月15次暗盘；暗盘次卡包含课程但不包含金手指。</div>
         <div class="toolbar" style="display:flex;flex-wrap:wrap;gap:16px;margin-top:16px">
-          <label>类型 <select id="giftType">${Object.entries(GIFT_CARD_LABELS).map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}</select></label>
+          <label>类型 <select id="giftType" onchange="document.getElementById('giftGoldDuration').hidden=this.value!=='gold'">${Object.entries(GIFT_CARD_LABELS).map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}</select></label>
+          <div id="giftGoldDuration"><label>有效天数 <input id="giftGoldDays" type="number" min="1" max="3650" step="1" value="360" style="width:90px" /></label><button class="btn-sm" onclick="document.getElementById('giftGoldDays').value=30">一个月（30天）</button><button class="btn-sm" onclick="document.getElementById('giftGoldDays').value=360">一年（360天）</button><div class="hint">从兑换时起计算；已有有效期则顺延。</div></div>
           <label>生成数量 <input id="giftCount" type="number" min="1" max="10" value="10" style="width:80px" /></label>
           <button class="btn-primary" id="giftGenerate" onclick="generateGiftCards()">生成卡密</button>
         </div>
@@ -1753,11 +1766,13 @@ function generateGiftCards() {
   if (_giftGenerating) return;
   const type = document.getElementById('giftType').value;
   const count = Number(document.getElementById('giftCount').value);
+  const days = type === 'gold' ? Number(document.getElementById('giftGoldDays').value) : undefined;
+  if (type === 'gold' && (!Number.isInteger(days) || days < 1 || days > 3650)) return showAdminToast('请输入1至3650的整数天数', 'error');
   if (!Number.isInteger(count) || count < 1 || count > 10) return showAdminToast('一次生成1至10张', 'error');
   _giftGenerating = true;
   const button = document.getElementById('giftGenerate');
   button.disabled = true;
-  api('/api/admin/gift-cards', { method: 'POST', body: JSON.stringify({ type, count }) }).then(() => {
+  api('/api/admin/gift-cards', { method: 'POST', body: JSON.stringify({ type, count, days }) }).then(() => {
     if (!token) return;
     renderGiftCards();
     showAdminToast('卡密已生成');

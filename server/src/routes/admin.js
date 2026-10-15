@@ -733,7 +733,7 @@ module.exports = function register(router, HttpError) {
     return { ok: true };
   });
 
-  // 金手指权益固定开通一年（360天）；已开通时不可重复开通，未开通时不可取消。
+  // 金手指支持自定义天数；调整有效期不会重复赠送暗盘次数。
   router.put('/api/admin/users/:id/gold', (ctx) => {
     requireAuth(ctx);
     const d = db.get();
@@ -741,17 +741,22 @@ module.exports = function register(router, HttpError) {
     if (!user) throw new HttpError(404, '用户不存在');
     const action = (ctx.body || {}).action;
     const active = Number(user.goldExpire) > Date.now();
-    if (action === 'open') {
-      if (active) throw new HttpError(409, '该用户已开通金手指');
-      user.goldExpire = Date.now() + 360 * 24 * 3600 * 1000;
-      addManualDarkFundQuota(user, 5);
-      user.goldQuotaGiftMigrated = true;
+    if (action === 'open' || action === 'set') {
+      if (action === 'open' && active) throw new HttpError(409, '该用户已开通金手指');
+      if (action === 'set' && !active) throw new HttpError(409, '该用户未开通金手指');
+      const days = ctx.body.days === undefined ? 360 : Number(ctx.body.days);
+      if (!Number.isInteger(days) || days < 1 || days > 3650) throw new HttpError(400, '金手指有效天数须为1至3650的整数');
+      user.goldExpire = Date.now() + days * 24 * 3600 * 1000;
+      if (action === 'open') {
+        addManualDarkFundQuota(user, 5);
+        user.goldQuotaGiftMigrated = true;
+      }
       user.darkFundEnabled = true;
     } else if (action === 'cancel') {
       if (!active) throw new HttpError(409, '该用户未开通金手指');
       user.goldExpire = 0;
     } else {
-      throw new HttpError(400, 'action 须为 open/cancel');
+      throw new HttpError(400, 'action 须为 open/set/cancel');
     }
     db.save();
     return user;

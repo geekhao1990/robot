@@ -23,11 +23,25 @@ function setup(data = { users: [{ id: 'a' }, { id: 'b' }] }) {
   return { data, db, call };
 }
 
+test('gold durations validate input and legacy cards default to 360 days', async () => {
+  const { call, data } = setup();
+  for (const days of [0, -1, 1.5, 3651, 'bad']) {
+    await assert.rejects(call('POST', '/api/admin/gift-cards', { type: 'gold', days }), { status: 400 });
+  }
+  const batch = await call('POST', '/api/admin/gift-cards', { type: 'gold', count: 1 });
+  delete data.giftCards[0].days;
+  const before = Date.now();
+  const result = await call('POST', '/api/gift-cards/redeem', { code: batch.codes[0] }, 'a');
+  assert.equal(result.days, 360);
+  assert(result.expireAt >= before + 360 * 86400000);
+});
+
 test('only admin can generate 1-10 unique codes; admin history can copy codes', async () => {
   const { call, data } = setup();
   await assert.rejects(call('POST', '/api/admin/gift-cards', { type: 'gold' }, 'a'), { status: 401 });
   await assert.rejects(call('POST', '/api/admin/gift-cards', { type: 'gold', count: 11 }), { status: 400 });
   const batch = await call('POST', '/api/admin/gift-cards', { type: 'gold', days: 30 });
+  assert.equal(batch.days, 30);
   assert.equal(new Set(batch.codes).size, 10);
   assert(JSON.stringify(data).includes(batch.codes[0]));
   const history = await call('GET', '/api/admin/gift-cards');
@@ -59,7 +73,7 @@ test('gold redemption extends gold and adds five permanent dark-fund uses exactl
     call('POST', '/api/gift-cards/redeem', body, 'b'),
   ]);
   assert.equal(results.filter((item) => item.status === 'fulfilled').length, 1);
-  assert.equal(data.users[0].goldExpire, future + 360 * 86400000);
+  assert.equal(data.users[0].goldExpire, future + 7 * 86400000);
   assert.equal(data.users[0].vip, undefined);
   assert.equal(data.users[0].darkFundManualRemaining, 5);
   assert.equal(data.users[0].courseAccessPermanent, undefined);
@@ -70,7 +84,8 @@ test('gold redemption extends gold and adds five permanent dark-fund uses exactl
   const restarted = setup(JSON.parse(JSON.stringify(data)));
   const retry = await restarted.call('POST', '/api/gift-cards/redeem', body, 'a');
   assert.equal(retry.alreadyRedeemed, true);
-  assert.equal(retry.user.goldExpire, future + 360 * 86400000);
+  assert.equal(retry.user.goldExpire, future + 7 * 86400000);
+  assert.equal(retry.days, 7);
   assert.equal(retry.user.darkFundManualRemaining, 5);
   await assert.rejects(restarted.call('POST', '/api/gift-cards/redeem', body, 'b'), { status: 409 });
 });

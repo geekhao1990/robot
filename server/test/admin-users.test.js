@@ -59,6 +59,18 @@ test('admin gold entitlement enforces open and cancel states', async () => {
   await assert.rejects(call('PUT', '/api/admin/users/u1/gold', { action: 'cancel' }), { status: 409 });
 });
 
+test('admin can open one month and adjust custom duration without duplicate gifts', async () => {
+  const { data, call } = setup();
+  await assert.rejects(call('PUT', '/api/admin/users/u1/gold', { action: 'open', days: 0 }), { status: 400 });
+  const before = Date.now();
+  await call('PUT', '/api/admin/users/u1/gold', { action: 'open', days: 30 });
+  assert(data.users[0].goldExpire >= before + 30 * 86400000);
+  assert(data.users[0].goldExpire <= Date.now() + 30 * 86400000);
+  await call('PUT', '/api/admin/users/u1/gold', { action: 'set', days: 45 });
+  assert(data.users[0].goldExpire >= before + 45 * 86400000);
+  assert.equal(data.users[0].darkFundManualRemaining, 5);
+});
+
 test('admin dark-fund ranking uses direct automatic source without JSON input', async () => {
   const { call } = setup();
   const status = await call('GET', '/api/admin/dark-fund-ranking');

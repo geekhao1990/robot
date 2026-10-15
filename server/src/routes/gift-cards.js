@@ -57,8 +57,11 @@ module.exports = function register(router, HttpError) {
     const body = ctx.body || {};
     const type = String(body.type || 'gold');
     const count = body.count === undefined ? 10 : Number(body.count);
-    const definition = CARD_TYPES[type];
-    if (!definition) throw new HttpError(400, '请选择有效的礼品卡类型');
+    const baseDefinition = CARD_TYPES[type];
+    if (!baseDefinition) throw new HttpError(400, '请选择有效的礼品卡类型');
+    const days = type === 'gold' && body.days !== undefined ? Number(body.days) : baseDefinition.days;
+    if (type === 'gold' && (!Number.isInteger(days) || days < 1 || days > 3650)) throw new HttpError(400, '金手指有效天数须为1至3650的整数');
+    const definition = { ...baseDefinition, ...(type === 'gold' ? { days } : {}) };
     if (!Number.isInteger(count) || count < 1 || count > 10) throw new HttpError(400, '一次可生成1至10张礼品卡');
     return serialize(async () => {
       const data = db.get();
@@ -103,8 +106,11 @@ module.exports = function register(router, HttpError) {
       if (!user) throw new HttpError(401, '用户不存在');
       const card = (data.giftCards || []).find((item) => item.codeHash === digest(code));
       if (!card) throw new HttpError(400, '卡密无效，请检查后重试');
-      const definition = CARD_TYPES[card.type];
-      if (!definition) throw new HttpError(410, '该卡种已停用，请联系管理员更换礼品卡');
+      const baseDefinition = CARD_TYPES[card.type];
+      if (!baseDefinition) throw new HttpError(410, '该卡种已停用，请联系管理员更换礼品卡');
+      const days = card.days === undefined ? baseDefinition.days : Number(card.days);
+      if (card.type === 'gold' && (!Number.isInteger(days) || days < 1 || days > 3650)) throw new HttpError(400, '卡片有效天数异常，请联系管理员');
+      const definition = { ...baseDefinition, ...(card.type === 'gold' ? { days } : {}) };
       if (card.status !== 'unused') {
         if (card.status === 'redeemed' && card.redeemedBy === userId) return { alreadyRedeemed: true, type: card.type, label: definition.label, days: definition.days || 0, quota: definition.quota, expireAt: expireAtFor(user, card.type), user: pubUser(user, true) };
         throw new HttpError(409, '该卡密已被使用');
