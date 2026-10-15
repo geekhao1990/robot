@@ -21,6 +21,7 @@ const { requestCloseDarkFund, getQueueStatus = () => ({ userAhead: 0 }) } = requ
 const { reviewModeApplies, goldAccess } = require('../util');
 
 const activeGoldDailyQueries = new Set();
+const { trialRemaining, ensureTrial, consumeTrial } = require('../dark-fund-trial');
 
 function beijingDateKey(now = Date.now()) {
   return new Date(Number(now) + 8 * 3600 * 1000).toISOString().slice(0, 10);
@@ -116,7 +117,8 @@ function orderQuotaResponse(order, quota, duplicate = false, user = null) {
     orderId: order.id,
     request_id: order.clientRequestId || '',
     duplicate,
-    remaining: quota.total,
+    remaining: quota.total + trialRemaining(user),
+    ordinaryTrialRemaining: trialRemaining(user),
     expiringRemaining: quota.service,
     permanentRemaining: quota.manual,
     quotaExpiresAt: quota.serviceExpireAt,
@@ -134,6 +136,7 @@ module.exports = function register(router, HttpError) {
     if (!uid) throw new HttpError(401, '未登录');
     const user = db.get().users.find((item) => item.id === uid);
     if (!user) throw new HttpError(401, '用户不存在');
+    if (ensureTrial(db.get(), user)) db.save();
     return user;
   };
 
@@ -146,7 +149,8 @@ module.exports = function register(router, HttpError) {
       tradeDate,
       compactTradeDate: compactDate(tradeDate),
       isTradingTime: isTradingTime(),
-      remaining: quota.total,
+      remaining: quota.total + trialRemaining(user),
+      ordinaryTrialRemaining: trialRemaining(user),
       expiringRemaining: quota.service,
       permanentRemaining: quota.manual,
       quotaExpiresAt: quota.serviceExpireAt,
@@ -213,7 +217,8 @@ module.exports = function register(router, HttpError) {
     try {
       const available = refreshDarkFundQuota(user);
       const useCloseMonthly = queryMode === 'close' && !useGoldDaily && closeDarkFundActiveAt(user);
-      if (!useGoldDaily && !useCloseMonthly && available.total <= 0) throw new HttpError(403, '暗盘资金查询次数已用完');
+      const canUseTrial = queryMode === 'close' && !useGoldDaily && !useCloseMonthly;
+      if (!useGoldDaily && !useCloseMonthly && available.total <= 0 && !(canUseTrial && trialRemaining(user))) throw new HttpError(403, '暗盘资金查询次数已用完');
     let closeResult = null;
     let closeCacheHit = false;
     let intradayResult = null;
@@ -246,7 +251,8 @@ module.exports = function register(router, HttpError) {
     if (queryMode === 'intraday') intradayResult = cachedIntradayResult(d, stockCode);
     const consumed = useGoldDaily
       ? { ...available, source: 'gold_daily' }
-      : (useCloseMonthly ? { ...available, source: 'close_month' } : consumeDarkFundQuota(user));
+      : (useCloseMonthly ? { ...available, source: 'close_month' }
+        : (canUseTrial && consumeTrial(user) ? { ...available, source: 'ordinary_trial' } : consumeDarkFundQuota(user)));
     if (!consumed) throw new HttpError(403, '暗盘资金查询次数已用完');
     const tradeDate = closeResult ? closeResult.tradeDate : latestTradingDate();
     const order = {

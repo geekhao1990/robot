@@ -44,6 +44,7 @@ function wdfQuotaHtml(date) {
     <section class="wdf-quota">
       ${date.closeMonthlyActive === true ? `<div class="wdf-quota-main">普通查询包月：<b>无限查询</b>${monthlyExpiry ? `<small>有效至 ${monthlyExpiry}</small>` : ''}</div>` : ''}
       <div class="wdf-quota-main">剩余次数：<b>${remaining}</b></div>
+      ${date.ordinaryTrialRemaining ? `<div class="wdf-quota-row"><span>新用户赠送（仅普通查询）</span><strong>${Number(date.ordinaryTrialRemaining)} 次</strong></div>` : ''}
       <div class="wdf-quota-row"><span>30天内到期</span><strong>${Number(date.expiringRemaining) || 0} 次${quotaExpiry ? `<small>（有效至 ${quotaExpiry}）</small>` : ''}</strong></div>
       <div class="wdf-quota-row"><span>长期有效</span><strong>${Number(date.permanentRemaining) || 0} 次</strong></div>
     </section>

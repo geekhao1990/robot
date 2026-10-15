@@ -84,6 +84,7 @@ Page({
     tradeDate: '',
     compactTradeDate: '',
     remaining: 0,
+    ordinaryTrialRemaining: 0,
     expiringRemaining: 0,
     permanentRemaining: 0,
     quotaExpiryText: '',
@@ -341,7 +342,7 @@ Page({
     const source = queryMode === 'intraday' ? 'collector' : 'web';
     const hasQueryEntitlement = queryMode === 'gold'
       ? this.data.goldActive && this.data.goldDarkFundAvailable
-      : (Number(this.data.remaining) > 0 || (queryMode === 'close' && this.data.closeMonthlyActive));
+      : (Number(this.data.remaining) - (queryMode === 'intraday' ? Number(this.data.ordinaryTrialRemaining || 0) : 0) > 0 || (queryMode === 'close' && this.data.closeMonthlyActive));
     if (!/^\d{6}$/.test(stockCode)) return wx.showModal({ title: '无法查询', content: '请输入股票代码、中文名称或拼音首字母，并选择匹配股票', showCancel: false });
     if (/^(4|8|92)/.test(stockCode)) return wx.showToast({ title: '系统繁忙', icon: 'none' });
     if (this.data.stockLookupLoading) return wx.showToast({ title: '正在确认股票信息', icon: 'none' });
@@ -552,6 +553,7 @@ Page({
   quotaData(result) {
     return {
       remaining: Number(result && result.remaining) || 0,
+      ordinaryTrialRemaining: Number(result && result.ordinaryTrialRemaining) || 0,
       expiringRemaining: Number(result && result.expiringRemaining) || 0,
       permanentRemaining: Number(result && result.permanentRemaining) || 0,
       quotaExpiryText: formatExpiryDate(result && result.quotaExpiresAt),

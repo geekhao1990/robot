@@ -17,6 +17,7 @@ function setup(options = {}) {
     notes: [], paymentOrders: [], darkFundOrders: [],
   };
   const db = { get: () => data, save: () => {}, flush: async () => {} };
+  if (!options.newUser) data.users.forEach(user => { user.darkFundTrialChecked = true; });
   const collector = {
     callbackAuthorized: (headers) => headers['x-stock-callback-token'] === 'callback-secret',
     dispatchStockAnalysis: async (order) => {
@@ -43,6 +44,7 @@ function setup(options = {}) {
     '../db': db,
     '../auth': { userIdFor: (token) => token === 'Bearer u2' ? 'u2' : (token === 'Bearer u1' ? 'u1' : ''), isAdmin: (token) => token === 'admin' },
     '../membership': require('../src/membership'), '../util': require('../src/util'),
+    '../dark-fund-trial': require('../src/dark-fund-trial'),
     '../trading-date': require('../src/trading-date'), '../dark-fund-orders': require('../src/dark-fund-orders'),
     '../dark-fund-close': {
       fetchCloseDarkFund: fetchCloseStub,
@@ -88,6 +90,42 @@ function successCallback(order) {
     },
   };
 }
+
+test('unused users receive one ordinary-only trial; repeat visits and concurrent queries cannot duplicate it', async () => {
+  const { normalizeCloseDarkFund, SAMPLE_CLOSE_PAYLOAD } = require('../src/dark-fund-close');
+  const { data, call } = setup({ newUser: true, closeResult: normalizeCloseDarkFund(SAMPLE_CLOSE_PAYLOAD, '600105') });
+  data.users[0].darkFundRemaining = 0;
+  for (let i=0;i<2;i++) {
+    const quota = await call('GET','/api/dark-funds/trade-date');
+    assert.equal(quota.remaining,1);
+    assert.equal(quota.ordinaryTrialRemaining,1);
+  }
+  await assert.rejects(call('POST','/api/dark-funds/orders/intraday',{stockCode:'600105',request_id:'trial_intraday_01'}),{status:403});
+  const results = await Promise.allSettled([1,2].map(i=>call('POST','/api/dark-funds/orders/close',{stockCode:'600105',request_id:`trial_concurrent_${i}`})));
+  assert.equal(results.filter(r=>r.status==='fulfilled').length,1);
+  assert.equal(data.darkFundOrders.length,1);
+  assert.equal(data.darkFundOrders[0].quotaSource,'ordinary_trial');
+  assert.equal((await call('GET','/api/dark-funds/trade-date')).remaining,0);
+  const duplicate = await call('POST','/api/dark-funds/orders/close',{stockCode:'600105',request_id:data.darkFundOrders[0].clientRequestId});
+  assert.equal(duplicate.duplicate,true);
+  assert.equal(data.users[0].darkFundTrialRemaining,0);
+});
+
+test('history excludes old users and failed upstream leaves the trial available', async () => {
+  const old = setup({newUser:true});
+  old.data.darkFundOrders.push({id:'old',userId:'u1',status:'READY'});
+  assert.equal((await old.call('GET','/api/dark-funds/trade-date')).ordinaryTrialRemaining,0);
+  const fresh = setup({newUser:true});
+  fresh.data.users[0].darkFundRemaining=0;
+  await assert.rejects(fresh.call('POST','/api/dark-funds/orders/close',{stockCode:'600105',request_id:'trial_failed_0001'}),{status:503});
+  assert.equal((await fresh.call('GET','/api/dark-funds/trade-date')).ordinaryTrialRemaining,1);
+  const {refundDarkFundQuota}=require('../src/membership');
+  fresh.data.users[0].darkFundTrialRemaining=0;
+  refundDarkFundQuota(fresh.data.users[0],'ordinary_trial');
+  refundDarkFundQuota(fresh.data.users[0],'ordinary_trial');
+  assert.equal(fresh.data.users[0].darkFundTrialRemaining,1);
+  assert.equal(fresh.data.users[0].darkFundManualRemaining,0);
+});
 
 test('latest trading date skips the 2026 Mid-Autumn holiday and weekend', () => {
   assert.equal(latestTradingDate(Date.parse('2026-09-26T04:00:00Z')), '2026-09-24');
@@ -153,6 +191,7 @@ test('online membership payment routes are removed', () => {
       '../db': { get: () => data },
       '../auth': {},
       '../membership': require('../src/membership'),
+      '../dark-fund-trial': require('../src/dark-fund-trial'),
       '../trading-date': require('../src/trading-date'),
       '../dark-fund-orders': require('../src/dark-fund-orders'),
       '../dark-fund-close': require('../src/dark-fund-close'),

@@ -110,6 +110,10 @@ function consumeDarkFundQuota(user, now = Date.now()) {
 
 function refundDarkFundQuota(user, source, now = Date.now()) {
   if (!user || !source) return refreshDarkFundQuota(user, now);
+  if (source === 'ordinary_trial') {
+    user.darkFundTrialRemaining = 1;
+    return refreshDarkFundQuota(user, now);
+  }
   refreshDarkFundQuota(user, now);
   if (source === 'service' && serviceActiveAt(user, now)) {
     user.darkFundServiceRemaining = Math.min(SERVICE_MONTHLY_QUOTA, quotaNumber(user.darkFundServiceRemaining) + 1);
