@@ -9,8 +9,11 @@ test('fund reading guide and gold update notice are visible in their intended se
   assert.match(dark,/bindtap="switchTab">资金流向/);
   assert.match(dark,/怎么读这份资金流向/);
   assert.match(dark,/G \/ S 信号每日收盘后更新/);
-  assert(gold.indexOf('history-reading-note')>gold.indexOf('手动刷新'));
-  assert(gold.indexOf('history-reading-note')<gold.indexOf('history-head history-grid'));
+  assert(gold.indexOf('history-update-note')>gold.indexOf('点金历史'));
+  assert(gold.indexOf('history-update-note')<gold.indexOf('手动刷新'));
+  assert(gold.indexOf('history-reading-note')>gold.indexOf('history-head history-grid'));
+  assert(gold.indexOf('history-reading-note')<gold.indexOf('class="gold-ad-slot"'));
+  assert.match(gold, /history-reading-note">Tips：/);
 });
 test('daily free button is member-only and shares a row equally with ordinary query',()=>{
   const base=path.join(__dirname,'../../miniprogram/pages/dark-funds/dark-funds');
