@@ -185,7 +185,7 @@ Page({
       this._rankingAdRequested=true;
       api.getAppSettings().then(settings=>{
         if(this._queryPageUnloaded || this.data.tab!=='ranking')return;
-        const id=settings.darkFundsCloseInterstitialAdUnitId || config.darkFundsCloseInterstitialAdUnitId;
+        const id=settings.darkFundsRankingInterstitialAdUnitId || config.darkFundsRankingInterstitialAdUnitId;
         this._rankingAd=showQueryAd(wx,String(id || ''),'interstitial');
         this._rankingAd.promise.catch(()=>{});
       }).catch(()=>{});

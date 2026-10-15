@@ -63,7 +63,7 @@ test('Chinese candidates require selection and stale responses cannot overwrite 
 });
 test('ranking refresh loads data without repeatedly opening interstitial',async()=>{
   let ads=0;
-  const {page:p}=page({getAppSettings:async()=>({darkFundsCloseInterstitialAdUnitId:'adunit-test'}),
+  const {page:p}=page({getAppSettings:async()=>({darkFundsRankingInterstitialAdUnitId:'adunit-test'}),
     getDarkFundRanking:async()=>({empty:true}),showQueryAd:()=>{ads++;return {promise:Promise.resolve(true),cancel(){}};}});
   p.data.tab='ranking';
   await p.loadRanking();await p.loadRanking();assert.equal(ads,1);

@@ -1547,9 +1547,14 @@ function renderSettings() {
           <div class="hint">历史订单分页控件下方的 Banner 广告位。</div>
         </div>
         <div class="field">
-          <label>暗盘普通查询插屏广告位 ID</label>
+          <label>暗盘详情及查询插屏广告位 ID</label>
           <input id="settingDarkFundsCloseInterstitialAdUnitId" value="${esc(settings.darkFundsCloseInterstitialAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
-          <div class="hint">进入普通查询结果页时尝试展示；广告拉取失败不影响查看。</div>
+          <div class="hint">用于资金流向详情及查询流程，避免连续重复弹出；不再用于今日暗盘榜。广告拉取失败不影响查看。</div>
+        </div>
+        <div class="field">
+          <label>今日暗盘榜插屏广告位 ID</label>
+          <input id="settingDarkFundsRankingInterstitialAdUnitId" value="${esc(settings.darkFundsRankingInterstitialAdUnitId || '')}" placeholder="adunit-xxxxxxxxxxxxxxxx" />
+          <div class="hint">进入今日暗盘榜时使用，独立于暗盘详情。留空不展示，不回退使用详情广告位。</div>
         </div>
         <div class="field">
           <label>暗盘普通查询结果页 Banner 广告位 ID</label>
@@ -1733,6 +1738,7 @@ function saveSettings() {
     darkFundsQueryAdUnitId: document.getElementById('settingDarkFundsQueryAdUnitId').value.trim(),
     darkFundsHistoryAdUnitId: document.getElementById('settingDarkFundsHistoryAdUnitId').value.trim(),
     darkFundsCloseInterstitialAdUnitId: document.getElementById('settingDarkFundsCloseInterstitialAdUnitId').value.trim(),
+    darkFundsRankingInterstitialAdUnitId: document.getElementById('settingDarkFundsRankingInterstitialAdUnitId').value.trim(),
     darkFundsCloseBannerAdUnitId: document.getElementById('settingDarkFundsCloseBannerAdUnitId').value.trim(),
     profileAdUnitId: document.getElementById('settingProfileAdUnitId').value.trim(),
     profileBottomAdUnitId: document.getElementById('settingProfileBottomAdUnitId').value.trim(),

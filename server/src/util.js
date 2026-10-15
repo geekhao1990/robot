@@ -85,6 +85,7 @@ function pubSettings(data) {
     darkFundsQueryAdUnitId: publicAdUnitId(raw.darkFundsQueryAdUnitId),
     darkFundsHistoryAdUnitId: publicAdUnitId(raw.darkFundsHistoryAdUnitId),
     darkFundsCloseInterstitialAdUnitId: publicAdUnitId(raw.darkFundsCloseInterstitialAdUnitId),
+    darkFundsRankingInterstitialAdUnitId: publicAdUnitId(raw.darkFundsRankingInterstitialAdUnitId),
     darkFundsCloseBannerAdUnitId: publicAdUnitId(raw.darkFundsCloseBannerAdUnitId),
     profileAdUnitId: publicAdUnitId(raw.profileAdUnitId),
     profileBottomAdUnitId: publicAdUnitId(raw.profileBottomAdUnitId),
