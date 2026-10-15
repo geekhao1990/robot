@@ -744,9 +744,19 @@ module.exports = function register(router, HttpError) {
     if (action === 'open' || action === 'set') {
       if (action === 'open' && active) throw new HttpError(409, '该用户已开通金手指');
       if (action === 'set' && !active) throw new HttpError(409, '该用户未开通金手指');
-      const days = ctx.body.days === undefined ? 360 : Number(ctx.body.days);
-      if (!Number.isInteger(days) || days < 1 || days > 3650) throw new HttpError(400, '金手指有效天数须为1至3650的整数');
-      user.goldExpire = Date.now() + days * 24 * 3600 * 1000;
+      let expireAt;
+      if (ctx.body.expireDate !== undefined) {
+        const date = String(ctx.body.expireDate).trim();
+        expireAt = /^\d{4}-\d{2}-\d{2}$/.test(date) ? Date.parse(`${date}T23:59:59.999+08:00`) : NaN;
+        const normalized = Number.isFinite(expireAt) ? new Date(expireAt + 8 * 3600 * 1000).toISOString().slice(0, 10) : '';
+        if (normalized !== date || !Number.isFinite(expireAt)) throw new HttpError(400, '请选择正确的金手指到期日期');
+        if (expireAt <= Date.now() || expireAt > Date.now() + 3651 * 86400000) throw new HttpError(400, '到期日期须在当前时间之后、十年以内');
+      } else {
+        const days = ctx.body.days === undefined ? 360 : Number(ctx.body.days);
+        if (!Number.isInteger(days) || days < 1 || days > 3650) throw new HttpError(400, '金手指有效天数须为1至3650的整数');
+        expireAt = Date.now() + days * 86400000;
+      }
+      user.goldExpire = expireAt;
       if (action === 'open') {
         addManualDarkFundQuota(user, 5);
         user.goldQuotaGiftMigrated = true;

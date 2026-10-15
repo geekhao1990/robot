@@ -772,6 +772,15 @@ function saveUserPhone(id, input) {
     .finally(() => { input.disabled = false; });
 }
 
+function goldPresetDate(days) {
+  return new Date(Date.now() + (Number(days) * 24 + 8) * 3600000).toISOString().slice(0, 10);
+}
+function selectGoldDuration(days) {
+  document.getElementById('goldExpireDate').value = goldPresetDate(days);
+}
+function clearGoldDurationPreset() {
+  document.querySelectorAll('input[name="goldDuration"]').forEach((input) => { input.checked = false; });
+}
 function setGold(id, action) {
   if (action === 'cancel') {
     if (!confirm('确定取消该用户的金手指卡吗？')) return;
@@ -780,13 +789,13 @@ function setGold(id, action) {
       .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
   }
   openModal(action === 'set' ? '调整金手指有效期' : '开通金手指卡', `
-    <div class="field"><label>有效天数</label><input id="goldDays" type="number" min="1" max="3650" step="1" value="360" /></div>
-    <div class="toolbar"><button class="btn-sm" onclick="document.getElementById('goldDays').value=30">一个月（30天）</button><button class="btn-sm" onclick="document.getElementById('goldDays').value=360">一年（360天）</button></div>
-    <div class="hint">可自定义1至3650天，从保存时开始计算。调整有效期将覆盖原到期时间，不会重复赠送暗盘次数。</div>
+    <div class="toolbar" style="display:flex;gap:16px;flex-wrap:wrap">${[[30,'一个月'],[90,'三个月'],[180,'半年'],[360,'1年']].map(([days,label]) => `<label><input type="radio" name="goldDuration" value="${days}" ${days === 360 ? 'checked' : ''} onchange="selectGoldDuration(${days})" /> ${label}</label>`).join('')}</div>
+    <div class="field"><label>金手指有效至</label><input id="goldExpireDate" type="date" min="${goldPresetDate(0)}" max="${goldPresetDate(3650)}" value="${goldPresetDate(360)}" onchange="clearGoldDurationPreset()" /></div>
+    <div class="hint">快捷期限为30 / 90 / 180 / 360天，也可通过日期组件自选到期日。所选日期北京时间23:59:59到期。调整有效期将覆盖原到期时间，不会重复赠送暗盘次数。</div>
   `, () => {
-    const days = Number(document.getElementById('goldDays').value);
-    if (!Number.isInteger(days) || days < 1 || days > 3650) return showAdminToast('请输入1至3650的整数天数', 'error');
-    api('/api/admin/users/' + id + '/gold', { method: 'PUT', body: JSON.stringify({ action, days }) })
+    const expireDate = document.getElementById('goldExpireDate').value;
+    if (!expireDate) return showAdminToast('请选择到期日期', 'error');
+    api('/api/admin/users/' + id + '/gold', { method: 'PUT', body: JSON.stringify({ action, expireDate }) })
       .then(() => { closeModal(); showAdminToast('金手指有效期已保存'); renderUsers(); })
       .catch((error) => showAdminToast(error.message || '操作失败', 'error'));
   });

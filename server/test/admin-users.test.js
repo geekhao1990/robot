@@ -59,6 +59,19 @@ test('admin gold entitlement enforces open and cancel states', async () => {
   await assert.rejects(call('PUT', '/api/admin/users/u1/gold', { action: 'cancel' }), { status: 409 });
 });
 
+test('gold accepts date-picker expiry at Beijing end of day and rejects invalid dates', async () => {
+  const { data, call } = setup();
+  for (const expireDate of ['', '2027-02-30', '2000-01-01', 'invalid']) {
+    await assert.rejects(call('PUT', '/api/admin/users/u1/gold', { action: 'open', expireDate }), { status: 400 });
+    assert.equal(data.users[0].goldExpire, 0);
+  }
+  const expireDate = new Date(Date.now() + 90 * 86400000).toISOString().slice(0,10);
+  await call('PUT', '/api/admin/users/u1/gold', { action: 'open', expireDate });
+  assert.equal(data.users[0].goldExpire, Date.parse(expireDate + 'T23:59:59.999+08:00'));
+  await call('PUT', '/api/admin/users/u1/gold', { action: 'set', expireDate });
+  assert.equal(data.users[0].darkFundManualRemaining, 5);
+});
+
 test('admin can open one month and adjust custom duration without duplicate gifts', async () => {
   const { data, call } = setup();
   await assert.rejects(call('PUT', '/api/admin/users/u1/gold', { action: 'open', days: 0 }), { status: 400 });
