@@ -102,7 +102,7 @@
           <view wx:for="{{group.orders}}" wx:for-item="order" wx:key="id" class="order-card" data-id="{{order.id}}" bindtap="openOrder">
             <view class="order-main">
               <view class="order-stock"><text wx:if="{{order.stockDisplayName}}" class="order-name">{{order.stockDisplayName}}</text><text class="order-code">{{order.marketStockCode}}</text></view>
-              <view class="order-meta"><view class="order-type">{{order.queryTypeText}}</view><view class="order-query-time">查询时间：{{order.queryTimeText}}</view></view>
+              <view class="order-meta"><view class="order-query-time">查询时间：{{order.queryTimeText}}</view></view>
             </view>
             <view class="order-side {{order.ready ? 'ready' : 'pending'}} {{order.failed ? 'failed' : ''}}"><text>{{order.statusText}}</text><text wx:if="{{order.ready}}" class="arrow">›</text></view>
           </view>

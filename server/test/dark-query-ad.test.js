@@ -5,6 +5,12 @@ const vm=require('node:vm');
 const {isTradingTime}=require('../src/trading-date');
 const {showQueryAd}=require('../../miniprogram/utils/dark-query-ad');
 const {tradingTimeForAd}=require('../../miniprogram/utils/dark-query-ad');
+
+test('order list no longer renders query methods for old or new orders',()=>{
+  const markup=fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds/dark-funds.wxml'),'utf8');
+  assert.doesNotMatch(markup,/order\.queryTypeText|class="order-type"/);
+  assert.match(markup,/查询时间：\{\{order.queryTimeText\}\}/);
+});
 test('旧接口无时段字段仍兼容交易日期',()=>{
   const at=time=>Date.parse(`2026-10-12T${time}:00+08:00`);
   assert.equal(tradingTimeForAd({tradeDate:'2026-10-12'},at('10:00')),true);
@@ -37,15 +43,15 @@ test('ad completion permits query; early close and navigation cancel it; errors 
   }
   assert.equal(await showQueryAd({},'').promise,true);
 });
-test('close/gold use interstitial in session and rewarded off session',async()=>{
+test('only gold uses rewarded off session; ordinary and decision use interstitial',async()=>{
   for(const mode of ['close','gold','intraday'])for(const trading of [true,false]){
     let page,orders=0,ads=0;let complete;
     const api={getDarkFundTradeDate:async()=>({isTradingTime:trading}),getAppSettings:async()=>({darkFundsCloseInterstitialAdUnitId:'adunit-interstitial',rewardedAdEnabled:true,rewardedVideoAdUnitId:'adunit-normal',goldRewardedVideoAdUnitId:'adunit-gold'})};
-    vm.runInNewContext(fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds/dark-funds.js'),'utf8'),{Page:p=>page=p,require:id=>id.endsWith('/api')?api:id.endsWith('/dark-query-ad')?{tradingTimeForAd:require('../../miniprogram/utils/dark-query-ad').tradingTimeForAd,showQueryAd:(wx,id,type)=>{ads++;assert.equal(type,trading?'interstitial':'rewarded');assert.equal(id,trading?'adunit-interstitial':mode==='gold'?'adunit-gold':'adunit-normal');return {promise:new Promise(r=>complete=r)};}}:{},wx:{showToast:()=>{},showModal:()=>{}},console,setTimeout,clearTimeout,setInterval,clearInterval});
+    vm.runInNewContext(fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds/dark-funds.js'),'utf8'),{Page:p=>page=p,require:id=>id.endsWith('/api')?api:id.endsWith('/dark-query-ad')?{tradingTimeForAd:require('../../miniprogram/utils/dark-query-ad').tradingTimeForAd,showQueryAd:(wx,id,type)=>{ads++;assert.equal(type,mode==='gold'&&!trading?'rewarded':'interstitial');assert.equal(id,mode==='gold'&&!trading?'adunit-gold':'adunit-interstitial');return {promise:new Promise(r=>complete=r)};}}:{},wx:{showToast:()=>{},showModal:()=>{}},console,setTimeout,clearTimeout,setInterval,clearInterval});
     page.data={querying:false};page.query=()=>{orders++;};
     const pending=page.queryWithRewardedAd('600105',mode,'web');
     await new Promise(r=>setImmediate(r));
-    if(mode!=='intraday'){assert.equal(orders,0);await page.queryWithRewardedAd('600105',mode,'web');assert.equal(ads,1);complete(true);}
-    await pending;assert.equal(orders,1);assert.equal(ads,mode!=='intraday'?1:0);
+    assert.equal(orders,0);await page.queryWithRewardedAd('600105',mode,'web');assert.equal(ads,1);complete(true);
+    await pending;assert.equal(orders,1);assert.equal(ads,1);
   }
 });

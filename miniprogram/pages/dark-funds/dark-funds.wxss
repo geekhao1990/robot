@@ -119,7 +119,6 @@
 .order-poster-icon { width: 23rpx; height: 23rpx; background: center / 100% 100% no-repeat url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZDkyNDM2IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PHBhdGggZD0iTTQgMTJ2N2ExIDEgMCAwIDAgMSAxaDE0YTEgMSAwIDAgMCAxLTF2LTciLz48cGF0aCBkPSJNMTIgM3YxMiIvPjxwYXRoIGQ9Ik03LjUgNy41TDEyIDNsNC41IDQuNSIvPjwvc3ZnPg=="); }
 .order-meta { display: flex; align-items: center; gap: 10rpx; min-width: 0; margin-top: 8rpx; }
 .order-query-time { overflow: hidden; color: #999; font-size: 20rpx; text-overflow: ellipsis; white-space: nowrap; }
-.order-type { display: inline-flex; flex: none; padding: 4rpx 10rpx; color: #777; font-size: 18rpx; background: #f1f1f1; border-radius: 999rpx; }
 .order-side { display: flex; align-items: center; gap: 20rpx; color: #555; font-size: 25rpx; }
 .order-side.pending { color: #b07a12; }
 .order-side.ready { color: #ff2442; font-weight: 700; }

@@ -378,19 +378,17 @@ Page({
   },
   async queryWithRewardedAd(stockCode, queryMode, source) {
     if (this._queryAdPending || this.data.querying || this._queryPageUnloaded) return;
-    if (queryMode === 'intraday') return this.query(stockCode, queryMode, source);
     this._queryAdPending = true;
     try {
       const [trade, settings] = await Promise.all([api.getDarkFundTradeDate(), api.getAppSettings()]);
       if (this._queryPageUnloaded) return;
       const trading = tradingTimeForAd(trade);
-      if (trading === true || (trading === false && settings.rewardedAdEnabled !== false)) {
-        const id = trading
-          ? (settings.darkFundsCloseInterstitialAdUnitId || config.darkFundsCloseInterstitialAdUnitId)
-          : queryMode === 'gold'
+      const useRewarded = queryMode === 'gold' && trading === false;
+      if ((!useRewarded && (queryMode !== 'gold' || trading === true)) || (useRewarded && settings.rewardedAdEnabled !== false)) {
+        const id = useRewarded
           ? (settings.goldRewardedVideoAdUnitId || config.goldRewardedVideoAdUnitId || settings.rewardedVideoAdUnitId)
-          : (settings.rewardedVideoAdUnitId || config.rewardedVideoAdUnitId);
-        this._queryAd = showQueryAd(wx, String(id || ''), trading ? 'interstitial' : 'rewarded');
+          : (settings.darkFundsCloseInterstitialAdUnitId || config.darkFundsCloseInterstitialAdUnitId);
+        this._queryAd = showQueryAd(wx, String(id || ''), useRewarded ? 'rewarded' : 'interstitial');
         const allowed = await this._queryAd.promise;
         this._queryAd = null;
         if (this._queryPageUnloaded) return;
@@ -442,7 +440,6 @@ Page({
             failed,
             stockDisplayName: item.stockDisplayName || displayStockName(item.stockName, item.stockInitials),
             marketStockCode: marketStockCode(item.stockCode),
-            queryTypeText: item.quotaSource === 'gold_daily' ? '金手指查暗盘' : (item.queryMode === 'close' ? '普通查询' : '决策查询'),
             queryTimeText: formatQueryTime(item.createdAt),
             statusText: ready ? '点击查看' : (failed ? darkFundFailure({ message: item.error }, item.queryMode).short : '处理中'),
           };
