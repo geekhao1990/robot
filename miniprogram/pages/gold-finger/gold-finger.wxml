@@ -30,7 +30,7 @@
           <view class="history-title">点金历史</view>
           <view class="history-update-note">非实时更新，每半小时更新一次。</view>
           <view class="history-actions">
-            <button class="history-refresh" size="mini" bindtap="refreshGoldFinger" disabled="{{refreshing}}">{{refreshing ? '刷新中' : '刷新'}}</button>
+            <view class="history-refresh {{refreshing ? 'disabled' : ''}}" bindtap="refreshGoldFinger" role="button" aria-disabled="{{refreshing}}">{{refreshing ? '刷新中…' : '刷新'}}</view>
           </view>
         </view>
         <view class="history-head history-grid">
@@ -56,9 +56,6 @@
       </view>
 
       <view class="history-reading-note">Tips：阴阳谱接近20时，关注反转机会/风险，不代表必然反转。</view>
-      <view wx:if="{{goldFingerAdUnitId && !adLoadFailed}}" class="gold-ad-slot">
-        <ad unit-id="{{goldFingerAdUnitId}}" binderror="onAdError" />
-      </view>
 
       <view class="disclaimer">数据来自互联网，仅供参考不构成投资建议</view>
     </block>

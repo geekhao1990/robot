@@ -25,10 +25,6 @@ Page({
     hasMoreHistory: false,
     historyPage: 1,
     historyTotalPages: 1,
-    goldFingerAdUnitId: /^adunit-/i.test(String(config.goldFingerAdUnitId || ''))
-      ? String(config.goldFingerAdUnitId)
-      : '',
-    adLoadFailed: false,
     refreshSlotKey: '',
     nextRefreshAt: 0,
   },
@@ -51,10 +47,8 @@ Page({
         });
         return;
       }
-      const id = String((settings && settings.goldFingerAdUnitId) || config.goldFingerAdUnitId || '');
       const interstitialId = String((settings && settings.goldFingerInterstitialAdUnitId) || config.goldFingerInterstitialAdUnitId || '');
       const rewardedId = String((settings && settings.goldRewardedVideoAdUnitId) || config.goldRewardedVideoAdUnitId || '');
-      this.setData({ goldFingerAdUnitId: /^adunit-/i.test(id) ? id : '', adLoadFailed: false });
       if (/^adunit-/i.test(interstitialId)) this.createGoldInterstitialAd(interstitialId);
       if (/^adunit-/i.test(rewardedId)) this.createGoldRewardedAd(rewardedId);
       this.showGoldRewardedAd().then((allowed) => {
@@ -290,10 +284,6 @@ Page({
   goBannerNote(e) {
     const id = e.currentTarget.dataset.id;
     if (id) wx.navigateTo({ url: `/pages/detail/detail?id=${encodeURIComponent(id)}` });
-  },
-
-  onAdError() {
-    this.setData({ adLoadFailed: true });
   },
 
   onUnload() {
