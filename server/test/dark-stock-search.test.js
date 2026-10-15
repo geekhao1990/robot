@@ -16,7 +16,10 @@ test('fund reading guide and gold update notice are visible in their intended se
   assert.match(gold, /history-reading-note">Tips：/);
   assert.doesNotMatch(gold, /以设定更新时间为准/);
   assert.match(gold, /history-update-note">非实时更新，每半小时更新一次。<\/view>/);
-  assert.match(gold, /<button class="history-refresh" bindtap="refreshGoldFinger"[^>]*>\{\{refreshing \? '刷新中' : '刷新'\}\}<\/button>/);
+  assert.match(gold, /<button class="history-refresh" size="mini" bindtap="refreshGoldFinger"[^>]*>\{\{refreshing \? '刷新中' : '刷新'\}\}<\/button>/);
+  const goldCss=fs.readFileSync(path.join(__dirname,'../../miniprogram/pages/gold-finger/gold-finger.wxss'),'utf8');
+  assert.match(goldCss, /button\.history-refresh\[size="mini"\][^}]+width: auto; min-width: 0;[^}]+padding: 0 8rpx/);
+  assert.match(goldCss, /\.history-reading-note[^}]+text-align: center/);
   assert.match(gold, /history-position-col">建议仓位/);
 });
 

@@ -49,8 +49,8 @@
 .history-title-row { display: flex; align-items: center; justify-content: space-between; }
 .history-title { flex-shrink: 0; padding-left: 22rpx; color: #242424; font-size: 36rpx; font-weight: 850; border-left: 9rpx solid #ff2442; }
 .history-update-note { flex: 1; min-width: 0; margin: 0 12rpx; color: #8a7864; font-size: 20rpx; line-height: 1.5; white-space: nowrap; }
-.history-actions { display: flex; align-items: center; gap: 12rpx; }
-.history-refresh { display: flex; align-items: center; justify-content: center; width: 96rpx; height: 60rpx; margin: 0; padding: 0 10rpx; color: #fff; background: #ff2442; font-size: 24rpx; line-height: 1; border-radius: 999rpx; box-sizing: border-box; }
+.history-actions { display: flex; flex: 0 0 auto; align-items: center; }
+button.history-refresh[size="mini"] { display: inline-flex; flex: none; align-items: center; justify-content: center; width: auto; min-width: 0; height: 48rpx; margin: 0; padding: 0 8rpx; color: #fff; background: #ff2442; font-size: 24rpx; line-height: 1; white-space: nowrap; border-radius: 8rpx; box-sizing: border-box; }
 .history-refresh::after { border: none; }
 .history-refresh[disabled] { color: #fff; background: #ff9aaa; }
 .history-grid { display: flex; align-items: center; width: 100%; }
@@ -80,4 +80,4 @@
 .banner-image { display: block; width: 100%; height: 100%; }
 .gold-ad-slot { width: 100%; margin: 28rpx 0 8rpx; overflow: hidden; border-radius: 12rpx; }
 .disclaimer { padding: 24rpx 0 50rpx; color: #aaa095; font-size: 20rpx; text-align: center; }
-.history-reading-note { margin: 24rpx 0 0; color: #8a7864; font-size: 23rpx; line-height: 1.7; }
+.history-reading-note { margin: 24rpx 0 0; color: #8a7864; font-size: 23rpx; line-height: 1.7; text-align: center; }

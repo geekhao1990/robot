@@ -30,7 +30,7 @@
           <view class="history-title">点金历史</view>
           <view class="history-update-note">非实时更新，每半小时更新一次。</view>
           <view class="history-actions">
-            <button class="history-refresh" bindtap="refreshGoldFinger" disabled="{{refreshing}}">{{refreshing ? '刷新中' : '刷新'}}</button>
+            <button class="history-refresh" size="mini" bindtap="refreshGoldFinger" disabled="{{refreshing}}">{{refreshing ? '刷新中' : '刷新'}}</button>
           </view>
         </view>
         <view class="history-head history-grid">
