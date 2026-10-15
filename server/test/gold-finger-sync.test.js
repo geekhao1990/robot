@@ -2,19 +2,19 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { dueSlot, parseSchedule, refreshPolicy, normalizeSourceList, applySourceRecords } = require('../src/gold-finger-sync');
 
-test('scheduler selects the latest due Beijing slot', () => {
-  const at = (iso) => Date.parse(iso);
-  assert.equal(dueSlot(at('2026-09-18T01:59:00Z')), undefined);
-  assert.equal(dueSlot(at('2026-09-18T02:00:00Z')), 600);
-  assert.equal(dueSlot(at('2026-09-18T03:29:00Z')), 600);
-  assert.equal(dueSlot(at('2026-09-18T03:30:00Z')), 690);
-  assert.equal(dueSlot(at('2026-09-18T05:29:00Z')), 690);
-  assert.equal(dueSlot(at('2026-09-18T05:30:00Z')), 810);
-  assert.equal(dueSlot(at('2026-09-18T06:29:00Z')), 810);
-  assert.equal(dueSlot(at('2026-09-18T06:30:00Z')), 870);
-  assert.equal(dueSlot(at('2026-09-18T07:29:00Z')), 870);
-  assert.equal(dueSlot(at('2026-09-18T07:30:00Z')), 930);
-  assert.equal(dueSlot(at('2026-09-18T08:01:00Z')), 930);
+test('scheduler uses all eight requested Beijing trading-day slots', () => {
+  const saved=process.env.GOLD_FINGER_SYNC_SCHEDULE;
+  delete process.env.GOLD_FINGER_SYNC_SCHEDULE;
+  try {
+    const slots=['10:00','10:30','11:00','12:00','13:30','14:00','14:30','15:10'];
+    assert.equal(dueSlot(Date.parse('2026-10-15T09:59:00+08:00')),undefined);
+    slots.forEach((time,i)=>{
+      const [h,m]=time.split(':').map(Number),at=Date.parse('2026-10-15T'+time+':00+08:00');
+      assert.equal(dueSlot(at),h*60+m);
+      if(i)assert.equal(dueSlot(at-1),Number(slots[i-1].slice(0,2))*60+Number(slots[i-1].slice(3)));
+    });
+    assert.equal(refreshPolicy(Date.parse('2026-10-15T10:00:00+08:00')).scheduleVersion,slots.join(','));
+  } finally { if(saved===undefined)delete process.env.GOLD_FINGER_SYNC_SCHEDULE;else process.env.GOLD_FINGER_SYNC_SCHEDULE=saved; }
 });
 
 test('client refresh policy follows the server supplied schedule instead of fixed mini-program times', () => {

@@ -6,7 +6,7 @@ const path=require('node:path');
 test('daily free button is member-only and shares a row equally with ordinary query',()=>{
   const base=path.join(__dirname,'../../miniprogram/pages/dark-funds/dark-funds');
   const wxml=fs.readFileSync(base+'.wxml','utf8'),css=fs.readFileSync(base+'.wxss','utf8');
-  assert.match(wxml,/<button wx:if="\{\{goldActive\}\}"[^>]+bindtap="prepareGoldQuery"[^>]+><text class="query-button-title">每日1次免费机会/);
+  assert.match(wxml,/<button wx:if="\{\{goldActive\}\}"[^>]+bindtap="prepareGoldQuery"[^>]+><text class="query-button-title">会员查询/);
   assert.match(css,/\.query-actions\.has-gold \.query-button-close,\s*\.query-actions\.has-gold \.query-button-gold \{ flex: 1 1 calc\(50% - 9rpx\)/);
   assert.match(wxml,/dateLoading \|\| querying \|\| !goldDarkFundAvailable/);
 });

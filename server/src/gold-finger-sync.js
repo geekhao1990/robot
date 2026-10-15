@@ -5,10 +5,13 @@ const { pushNotification } = require('./notifications');
 
 const DEFAULT_SCHEDULE_MINUTES = [
   10 * 60,
-  11 * 60 + 30,
+  10 * 60 + 30,
+  11 * 60,
+  12 * 60,
   13 * 60 + 30,
+  14 * 60,
   14 * 60 + 30,
-  15 * 60 + 30,
+  15 * 60 + 10,
 ];
 const DEFAULT_REFRESH_GRACE_MINUTES = 2;
 const CHECK_INTERVAL_MS = 30 * 1000;
