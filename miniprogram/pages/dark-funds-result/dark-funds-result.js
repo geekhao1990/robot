@@ -2,7 +2,7 @@ const api = require('../../utils/api');
 const config = require('../../utils/config');
 const store = require('../../utils/store');
 const { darkFundError } = require('../../utils/dark-fund-error');
-const { rollingHistory, historyChart, historySummary, updatedMinute, historyFor } = require('../../utils/dark-fund-history');
+const { rollingHistory, snapshotLabel, historyChart, historySummary, historyFor } = require('../../utils/dark-fund-history');
 const { exactAmount, posterMetrics } = require('../../utils/dark-fund-poster');
 
 const YELLOW = '#ffe50a';
@@ -162,8 +162,7 @@ Page({
   applyResult(result) {
     const days = result.days.slice().sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
     result.days = days;
-    result.updatedMinute = updatedMinute(result.updatedAt);
-    result.headerVersion = '查询快照';
+    result.dataTimeLabel = snapshotLabel(result).replace('快照时间未知', '时间未知');
     const latest = days[days.length - 1];
     const unit = chooseUnit([latest.main, latest.listed, latest.grey]);
     const main = Number(latest.main) || 0;
