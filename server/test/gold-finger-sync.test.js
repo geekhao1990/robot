@@ -38,7 +38,7 @@ test('source percentages round yang and derive yin while dashes inherit finger',
   assert.equal(data.goldFingerRecords[1].yin, 32);
 });
 
-test('later sync only fills missing history and updates source last item', () => {
+test('later sync only fills missing history and updates newest date', () => {
   const data = { goldFingerRecords: [
     { id: 'old', date: '2026-09-17', finger: 'silver', yang: 10, yin: 90, trend: 'down', position: 10 },
     { id: 'latest', date: '2026-09-18', finger: 'gold', yang: 20, yin: 80, trend: 'up', position: 20 },
@@ -52,6 +52,61 @@ test('later sync only fills missing history and updates source last item', () =>
   assert.equal(data.goldFingerRecords[1].finger, 'silver');
   assert.equal(data.goldFingerRecords[1].yang, 67);
   assert.equal(data.goldFingerRecords[1].position, 80);
+});
+
+const newRecord = { id: 'sys-2026-10-19', date: '2026-10-19', yang: 13, finger: 'silver', position: '30%', trend: '下跌' };
+
+test('new source derives yin and parses percentage without changing internal schema', () => {
+  const data = {};
+  applySourceRecords(data, [newRecord], 123);
+  assert.deepEqual(data.goldFingerRecords[0], {
+    id: 'gf_20261019', date: '2026-10-19', yang: 13, yin: 87,
+    finger: 'silver', position: 30, trend: 'down', updatedAt: 123,
+  });
+});
+
+test('descending source updates newest date and preserves existing historical corrections', () => {
+  const data = { goldFingerRecords: [
+    { ...newRecord, yang: 9 },
+    { ...newRecord, date: '2026-10-16', yang: 55 },
+  ] };
+  const result = applySourceRecords(data, [newRecord, { ...newRecord, date: '2026-10-16' }]);
+  assert.equal(result.latestDate, '2026-10-19');
+  assert.equal(result.updated, 1);
+  assert.equal(result.skipped, 1);
+  assert.equal(data.goldFingerRecords[0].yang, 13);
+  assert.equal(data.goldFingerRecords[1].yang, 55);
+});
+
+test('missing or invalid percentages are not silently treated as zero', () => {
+  for (const position of [null, '', 'abc%', '101%', true]) {
+    assert.throws(() => normalizeSourceList([{ ...newRecord, position }]), /无效/);
+  }
+  assert.throws(() => normalizeSourceList([{ ...newRecord, yang: null }]), /无效/);
+});
+
+test('fetch uses new endpoint with existing login and accepts both response shapes', async () => {
+  const { fetchSourceData } = require('../src/gold-finger-sync');
+  const originalFetch = global.fetch;
+  try {
+    for (const baseUrl of ['http://example.test', 'http://example.test/api/yyp/yang-records']) {
+      for (const payload of [[newRecord], { list: [newRecord] }]) {
+        const calls = [];
+        global.fetch = async (url, options) => {
+          calls.push({ url, options });
+          if (calls.length === 1) return new Response(null, { status: 302, headers: { 'set-cookie': 'session=test; HttpOnly' } });
+          return new Response(JSON.stringify(payload));
+        };
+        assert.deepEqual(await fetchSourceData({ baseUrl, username: 'test', password: 'test' }), [newRecord]);
+        assert.equal(calls[0].url, 'http://example.test/login');
+        assert.equal(calls[1].url, 'http://example.test/api/yyp/yang-records');
+        assert.equal(calls[1].options.headers.Cookie, 'session=test');
+        assert.equal(calls[1].options.redirect, 'manual');
+      }
+    }
+    global.fetch = async () => new Response('Forbidden', { status: 403 });
+    await assert.rejects(fetchSourceData({ baseUrl: 'http://example.test', username: 'test', password: 'test' }), /登录失败（HTTP 403）/);
+  } finally { global.fetch = originalFetch; }
 });
 
 test('normalization rejects inconsistent fund percentages', () => {

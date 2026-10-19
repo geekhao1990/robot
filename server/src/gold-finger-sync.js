@@ -97,7 +97,8 @@ function assertDate(value, index) {
 }
 
 function percent(value, label, index) {
-  const number = Number(value);
+  const text = typeof value === 'string' ? value.trim().replace(/%$/, '').trim() : value;
+  const number = (typeof text === 'number' || typeof text === 'string') && text !== '' ? Number(text) : NaN;
   if (!Number.isFinite(number) || number < 0 || number > 100) throw new Error(`源数据第${index + 1}条${label}无效`);
   return Math.round(number);
 }
@@ -126,12 +127,12 @@ function normalizeSourceList(items) {
     const date = assertDate(item.date, sourceIndex);
     if (dates.has(date)) throw new Error(`源数据日期${date}重复`);
     dates.add(date);
+    const yang = percent(item.yang, '阳谱', sourceIndex);
     const rawYang = Number(item.yang);
-    const rawYin = Number(item.yin);
-    if (!Number.isFinite(rawYang) || !Number.isFinite(rawYin) || Math.abs(rawYang + rawYin - 100) > 0.2) {
+    const rawYin = item.yin === undefined ? 100 - rawYang : Number(item.yin);
+    if (!Number.isFinite(rawYang) || !Number.isFinite(rawYin) || item.yin === null || item.yin === '' || rawYin < 0 || rawYin > 100 || Math.abs(rawYang + rawYin - 100) > 0.2) {
       throw new Error(`源数据第${sourceIndex + 1}条阳谱和阴谱不等于100`);
     }
-    const yang = percent(rawYang, '阳谱', sourceIndex);
     return {
       sourceIndex,
       date,
@@ -149,7 +150,7 @@ function applySourceRecords(data, sourceItems, timestamp = Date.now()) {
   data.goldFingerRecords = Array.isArray(data.goldFingerRecords) ? data.goldFingerRecords : [];
   const recordsByDate = new Map(data.goldFingerRecords.map((item) => [item.date, item]));
   const ordered = imported.slice().sort((a, b) => a.date.localeCompare(b.date));
-  const latestSourceIndex = imported.length - 1;
+  const latestDate = ordered.at(-1).date;
   let created = 0;
   let updated = 0;
   let skipped = 0;
@@ -161,8 +162,8 @@ function applySourceRecords(data, sourceItems, timestamp = Date.now()) {
 
   ordered.forEach((item) => {
     const existing = recordsByDate.get(item.date);
-    // 自动同步只补缺失历史；源数组最后一项允许在盘中反复更新。
-    if (existing && item.sourceIndex !== latestSourceIndex) {
+    // 保留已有历史，只补缺失日期；按日期识别最新记录，兼容正序和倒序。
+    if (existing && item.date !== latestDate) {
       skipped += 1;
       return;
     }
@@ -188,7 +189,7 @@ function applySourceRecords(data, sourceItems, timestamp = Date.now()) {
     recordsByDate.set(item.date, record);
   });
   data.goldFingerImportInitialized = true;
-  return { created, updated, skipped, latestDate: imported[latestSourceIndex].date, total: data.goldFingerRecords.length };
+  return { created, updated, skipped, latestDate, total: data.goldFingerRecords.length };
 }
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
@@ -203,21 +204,26 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
 
 async function fetchSourceData(settings = config()) {
   if (!settings.baseUrl || !settings.username || !settings.password) throw new Error('金手指自动同步配置不完整');
-  const login = await fetchWithTimeout(`${settings.baseUrl}/login`, {
+  const source = new URL(settings.baseUrl);
+  if (!['http:', 'https:'].includes(source.protocol) || source.username || source.password) throw new Error('金手指源接口地址无效');
+  const dataUrl = new URL('/api/yyp/yang-records', source.origin).href;
+  const login = await fetchWithTimeout(new URL('/login', source.origin).href, {
     method: 'POST',
     redirect: 'manual',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ username: settings.username, password: settings.password }).toString(),
   });
   if (![302, 303].includes(login.status)) throw new Error(`金手指源站登录失败（HTTP ${login.status}）`);
-  const cookieHeader = login.headers.get('set-cookie') || '';
-  const cookie = cookieHeader.split(';')[0];
+  const cookies = login.headers.getSetCookie ? login.headers.getSetCookie() : [login.headers.get('set-cookie') || ''];
+  const cookie = cookies.map((value) => value.split(';')[0]).filter(Boolean).join('; ');
   if (!cookie) throw new Error('金手指源站未返回登录会话');
-  const response = await fetchWithTimeout(`${settings.baseUrl}/api/getAllData`, { headers: { Cookie: cookie, Accept: 'application/json' } });
+  const response = await fetchWithTimeout(dataUrl, { redirect: 'manual', headers: { Cookie: cookie, Accept: 'application/json' } });
   if (!response.ok) throw new Error(`金手指源接口请求失败（HTTP ${response.status}）`);
-  const payload = await response.json();
-  if (!payload || !Array.isArray(payload.list)) throw new Error('金手指源接口返回格式不正确');
-  return payload.list;
+  let payload;
+  try { payload = await response.json(); } catch (_) { throw new Error('金手指源接口未返回JSON，请检查登录会话'); }
+  const items = Array.isArray(payload) ? payload : payload?.list;
+  if (!Array.isArray(items)) throw new Error('金手指源接口返回格式不正确');
+  return items;
 }
 
 function syncState(data, today) {
@@ -240,7 +246,7 @@ async function executeSync({ slot = 'manual', requireToday = true, now = Date.no
   await db.save();
   try {
     const items = await fetchSourceData();
-    const latestDate = String(items.at(-1)?.date || '');
+    const latestDate = normalizeSourceList(items).map((item) => item.date).sort().at(-1);
     if (requireToday && latestDate !== today) throw new Error(`源接口最新日期为${latestDate || '空'}，尚未产生${today}数据`);
     const result = applySourceRecords(data, items, Date.now());
     if (result.created > 0 || result.updated > 0) {
