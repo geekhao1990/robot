@@ -6,18 +6,18 @@ const DRAGON_CSS=`
 `;
 // Lay out directly in the export aspect ratio, not a tall narrow table scaled down.
 const DRAGON_PORTRAIT_CSS=`
-.dragon-poster{width:1080px;height:1920px;padding:22px 20px 16px;background:#fff;display:flex;flex-direction:column;--stock-size:30px;--row-pad:8px}
-.dragon-head{padding:0 0 16px;border:0;text-align:center;flex:none}
+.dragon-poster{width:1080px;height:1080px;padding:16px 20px 12px;background:#fff;display:flex;flex-direction:column;--stock-size:30px;--row-pad:2px}
+.dragon-head{padding:0 0 10px;border:0;text-align:center;flex:none}
 .dragon-kicker,.dragon-labels{display:none}
-.dragon-head h1{font-size:68px;line-height:1.2;letter-spacing:-2px;font-weight:900;color:#111820}
+.dragon-head h1{font-size:60px;line-height:1.15;letter-spacing:-2px;font-weight:900;color:#111820}
 .dragon-date{color:inherit;margin-right:8px}
 .dragon-legend{justify-content:center;margin-top:10px;gap:22px;font-size:17px}
 .dragon-table{margin:0;border:0;border-radius:0;flex:1;display:flex;flex-direction:column;overflow:visible;background:#fff}
 .dragon-row{flex:1 0 auto;border:0;align-items:center}
 .dragon-row:nth-child(odd){background:#f3f7f6}
 .dragon-seat{flex:0 0 164px;border:0;padding:var(--row-pad) 6px;font-size:calc(var(--stock-size) - 2px);font-weight:800;line-height:1.2;color:#121820}
-.dragon-entries{padding:var(--row-pad) 6px;column-gap:18px;row-gap:3px;align-items:baseline}
-.dragon-entry{margin:0;font-size:calc(var(--stock-size) * .83);font-weight:800;line-height:1.25}
+.dragon-entries{padding:var(--row-pad) 6px;column-gap:14px;row-gap:1px;align-items:baseline}
+.dragon-entry{margin:0;font-size:calc(var(--stock-size) * .83);font-weight:800;line-height:1.15}
 .dragon-entry.buy{color:#bd2736}.dragon-entry.sell{color:#168044}
 .dragon-period{font-size:inherit;font-weight:inherit;margin-left:0}
 .dragon-amount{font-size:inherit;margin-left:7px;letter-spacing:-.5px}
@@ -31,10 +31,10 @@ function fitDragonPoster(poster){
   // Reduce spacing before type; never crop data or add wide side borders.
   for(let size=30;size>=18;size--){
     poster.style.setProperty('--stock-size',size+'px');
-    poster.style.setProperty('--row-pad',Math.max(2,size-24)+'px');
-    if(poster.scrollHeight<=1920)return;
+    poster.style.setProperty('--row-pad',Math.max(1,Math.min(2,size-24))+'px');
+    if(poster.scrollHeight<=1080)return;
   }
-  throw new Error('榜单内容过多，单张9:16图片无法清晰容纳，请拆分榜单后生成');
+  throw new Error('榜单内容过多，单张1:1正方形图片无法清晰容纳，请拆分榜单后生成');
 }
 function dragonTemplate(data, watermark = '指标仓库'){
   const e=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -46,21 +46,21 @@ function dragonTemplate(data, watermark = '指标仓库'){
 async function drawDragon(data, watermark = '指标仓库'){
   if(typeof html2canvas!=='function')throw new Error('绘图组件未加载，请刷新后台');
   const frame=document.createElement('iframe');frame.setAttribute('aria-hidden','true');
-  frame.style.cssText='position:fixed;left:-10000px;top:0;width:1080px;height:1920px;border:0;pointer-events:none';
+  frame.style.cssText='position:fixed;left:-10000px;top:0;width:1080px;height:1080px;border:0;pointer-events:none';
   document.body.appendChild(frame);
   try{
     const doc=frame.contentDocument;doc.open();doc.write(`<!doctype html><html><head><meta charset="utf-8"><style>${DRAGON_CSS}${DRAGON_PORTRAIT_CSS}</style></head><body>${dragonTemplate(data, watermark)}</body></html>`);doc.close();await doc.fonts.ready;
     const poster=doc.querySelector('.dragon-poster');fitDragonPoster(poster);
-    const original=await html2canvas(poster,{scale:2,width:1080,height:1920,windowWidth:1080,windowHeight:1920,scrollX:0,scrollY:0,backgroundColor:'#fff',logging:false});
+    const original=await html2canvas(poster,{scale:2,width:1080,height:1080,windowWidth:1080,windowHeight:1080,scrollX:0,scrollY:0,backgroundColor:'#fff',logging:false});
     return dragonPortraitCanvas(original);
   }finally{frame.remove();}
 }
 // Export-only sizing; recognition, template and review workflow are unchanged.
 function dragonPortraitCanvas(original){
-  const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1920;
-  const ctx=canvas.getContext('2d');ctx.fillStyle='#fcfaf5';ctx.fillRect(0,0,1080,1920);
-  const scale=Math.min(1080/original.width,1920/original.height);
+  const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1080;
+  const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,1080,1080);
+  const scale=Math.min(1080/original.width,1080/original.height);
   const width=original.width*scale,height=original.height*scale;
-  ctx.drawImage(original,(1080-width)/2,(1920-height)/2,width,height);
+  ctx.drawImage(original,(1080-width)/2,(1080-height)/2,width,height);
   return canvas;
 }
