@@ -3,7 +3,7 @@ const db = require('../db');
 const auth = require('../auth');
 const { pubSettings, goldAccess } = require('../util');
 const { TYPE_LABELS, normalizeType, typeLabel, typeForCategory } = require('../content-types');
-const { refreshDarkFundQuota, setManualDarkFundQuota, addManualDarkFundQuota } = require('../membership');
+const { refreshDarkFundQuota, setManualDarkFundQuota, addManualDarkFundQuota, activateCloseDarkFund, closeDarkFundActiveAt } = require('../membership');
 const { normalizeResourceLinks } = require('../resource-links');
 const crypto = require('crypto');
 const goldFingerSync = require('../gold-finger-sync');
@@ -842,6 +842,25 @@ module.exports = function register(router, HttpError) {
       throw new HttpError(400, 'action 须为 open/cancel');
     }
     db.save();
+    return user;
+  });
+
+  router.put('/api/admin/users/:id/dark-funds/monthly', async (ctx) => {
+    requireAuth(ctx);
+    const user = db.get().users.find((u) => u.id === ctx.params.id);
+    if (!user) throw new HttpError(404, '用户不存在');
+    const action = (ctx.body || {}).action;
+    const active = closeDarkFundActiveAt(user);
+    if (action === 'open' || action === 'renew') {
+      if (action === 'open' && active) throw new HttpError(409, '已开通普通查询包月，请选择续期');
+      if (action === 'renew' && !active) throw new HttpError(409, '普通查询包月未生效，请选择开通');
+      activateCloseDarkFund(user);
+    } else if (action === 'cancel') {
+      user.darkFundCloseExpire = 0;
+    } else {
+      throw new HttpError(400, 'action 须为 open/renew/cancel');
+    }
+    await db.save();
     return user;
   });
 

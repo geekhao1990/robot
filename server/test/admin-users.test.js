@@ -45,6 +45,28 @@ function setup() {
   return { data, call };
 }
 
+test('ordinary monthly admin grant renew cancel preserves quotas and other entitlements', async () => {
+  const { data, call } = setup();
+  const url = '/api/admin/users/u1/dark-funds/monthly';
+  Object.assign(data.users[0], { darkFundManualRemaining: 8, goldExpire: 123, serviceExpire: 456 });
+  await assert.rejects(call('PUT', url, { action: 'open' }, ''), { status: 401 });
+  await assert.rejects(call('PUT', url, { action: 'invalid' }), { status: 400 });
+  const before = Date.now();
+  await call('PUT', url, { action: 'open' });
+  const expires = data.users[0].darkFundCloseExpire;
+  assert(expires >= before + 30 * 86400000 && expires <= Date.now() + 30 * 86400000);
+  assert.equal(data.users[0].darkFundEnabled, true);
+  await assert.rejects(call('PUT', url, { action: 'open' }), { status: 409 });
+  await call('PUT', url, { action: 'renew' });
+  assert.equal(data.users[0].darkFundCloseExpire, expires + 30 * 86400000);
+  await call('PUT', url, { action: 'cancel' });
+  assert.equal(data.users[0].darkFundCloseExpire, 0);
+  assert.equal(data.users[0].darkFundManualRemaining, 8);
+  assert.equal(data.users[0].goldExpire, 123);
+  assert.equal(data.users[0].serviceExpire, 456);
+  assert.equal(data.users[0].decisionPioneerEnabled, undefined);
+});
+
 test('admin gold entitlement enforces open and cancel states', async () => {
   const { data, call } = setup();
   await assert.rejects(call('PUT', '/api/admin/users/u1/gold', { action: 'open' }, ''), { status: 401 });
