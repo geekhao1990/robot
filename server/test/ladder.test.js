@@ -125,6 +125,8 @@ test('square ladder shrinks dense rows and refuses to crop overflowing content',
   const css=vm.runInNewContext('LADDER_SQUARE_CSS',ctx);
   assert.match(css,/100% \/ 9/);assert.match(css,/#B43640/);assert.match(css,/#5F9B79/);
   assert.match(css,/margin:24px 10px 10px/);
+  assert.match(css,/padding:18px 28px 12px/);
+  assert.match(css,/justify-content:center;text-align:center/);
   assert.match(css,/\.tier\{flex:1 0 auto\}/);
   assert.match(css,/align-content:space-around/);
 });
