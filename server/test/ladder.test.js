@@ -124,6 +124,9 @@ test('square ladder shrinks dense rows and refuses to crop overflowing content',
   assert.throws(()=>ctx.fitLadderPoster({style:{setProperty(){}},scrollHeight:1200}),/拆分榜单/);
   const css=vm.runInNewContext('LADDER_SQUARE_CSS',ctx);
   assert.match(css,/100% \/ 9/);assert.match(css,/#B43640/);assert.match(css,/#5F9B79/);
+  assert.match(css,/margin:24px 10px 10px/);
+  assert.match(css,/\.tier\{flex:1 0 auto\}/);
+  assert.match(css,/align-content:space-around/);
 });
 test('market header uses template styling regardless of row count or order without changing JSON',()=>{
   const ctx=layoutContext();
