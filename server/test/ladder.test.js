@@ -93,16 +93,16 @@ test('compact names stay in first board, are escaped and counted',()=>{
   const normal=context.ladderTemplate({...sample,groups:[{height:'首板',stocks:[{name:'股票',time:'09:30',sector:'电池'}]}]});
   assert.doesNotMatch(normal,/class="compact"/);
 });
-test('Canvas renders unchanged HTML at 2x, exports 9:16 and cleans up on success or failure',async()=>{
+test('Canvas renders square layout at 2x and cleans up on success or failure',async()=>{
   for(const failure of [false,true]){
     let removed=false,written='',options;
-    const poster={getBoundingClientRect:()=>({height:1400})};
+    const poster={scrollHeight:1080,style:{setProperty(){}}};
     const frame={setAttribute(){},style:{},remove(){removed=true;},contentDocument:{open(){},write(s){written=s;},close(){},fonts:{ready:Promise.resolve()},querySelector:()=>poster}};
     const canvas={getContext:()=>({fillRect(){},drawImage(){}})};
     const context=layoutContext({document:{createElement:tag=>tag==='canvas'?canvas:frame,body:{appendChild(){}}},html2canvas:async(el,opts)=>{assert.equal(el,poster);options=opts;if(failure)throw Error('render failure');return {width:1396,height:2800};}});
     if(failure)await assert.rejects(context.drawLadder(sample),/render failure/);
-    else {const result=await context.drawLadder(sample);assert.equal(result.width,1080);assert.equal(result.height,1920);}
-    assert(removed);assert.equal(options.scale,2);assert.equal(options.height,1400);assert.match(written,/新华传媒/);
+    else {const result=await context.drawLadder(sample);assert.equal(result.width,1080);assert.equal(result.height,1080);}
+    assert(removed);assert.equal(options.scale,2);assert.equal(options.height,1080);assert.equal(options.width,1080);assert.match(written,/新华传媒/);
   }
 });
 test('ladder export preserves all pixels with proportional fitting for tall and wide originals',()=>{
@@ -113,9 +113,17 @@ test('ladder export preserves all pixels with proportional fitting for tall and 
     const [source,x,y,w,h]=draw;
     assert.equal(source,original);assert.equal(draw.length,5);
     assert(Math.abs(w/h-original.width/original.height)<1e-9);
-    assert(x>=0&&y>=0&&x+w<=1080.00001&&y+h<=1920.00001);
-    assert.equal(canvas.width,1080);assert.equal(canvas.height,1920);
+    assert(x>=0&&y>=0&&x+w<=1080.00001&&y+h<=1080.00001);
+    assert.equal(canvas.width,1080);assert.equal(canvas.height,1080);
   }
+});
+test('square ladder shrinks dense rows and refuses to crop overflowing content',()=>{
+  const ctx=layoutContext();let size;
+  ctx.fitLadderPoster({style:{setProperty(k,v){if(k==='--stock-size')size=parseInt(v);}},get scrollHeight(){return size>19?1150:1080;}});
+  assert.equal(size,19);
+  assert.throws(()=>ctx.fitLadderPoster({style:{setProperty(){}},scrollHeight:1200}),/拆分榜单/);
+  const css=vm.runInNewContext('LADDER_SQUARE_CSS',ctx);
+  assert.match(css,/100% \/ 9/);assert.match(css,/#B43640/);assert.match(css,/#5F9B79/);
 });
 test('market header uses template styling regardless of row count or order without changing JSON',()=>{
   const ctx=layoutContext();

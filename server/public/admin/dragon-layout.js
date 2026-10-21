@@ -6,10 +6,11 @@ const DRAGON_CSS=`
 `;
 // Lay out directly in the export aspect ratio, not a tall narrow table scaled down.
 const DRAGON_PORTRAIT_CSS=`
+body{font-family:"Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei","PingFang SC",sans-serif}
 .dragon-poster{width:1080px;height:1080px;padding:16px 20px 12px;background:#fff;display:flex;flex-direction:column;--stock-size:30px;--row-pad:2px}
 .dragon-head{padding:0 0 10px;border:0;text-align:center;flex:none}
 .dragon-kicker,.dragon-labels{display:none}
-.dragon-head h1{font-size:60px;line-height:1.15;letter-spacing:-2px;font-weight:900;color:#111820}
+.dragon-head h1{font-size:60px;line-height:1.15;letter-spacing:-1px;font-weight:800;color:#202B38}
 .dragon-date{color:inherit;margin-right:8px}
 .dragon-legend{justify-content:center;margin-top:10px;gap:22px;font-size:17px}
 .dragon-table{margin:0;border:0;border-radius:0;flex:1;display:flex;flex-direction:column;overflow:visible;background:#fff}
@@ -17,8 +18,8 @@ const DRAGON_PORTRAIT_CSS=`
 .dragon-row:nth-child(odd){background:#f3f7f6}
 .dragon-seat{flex:0 0 164px;border:0;padding:var(--row-pad) 6px;font-size:calc(var(--stock-size) - 2px);font-weight:800;line-height:1.2;color:#121820}
 .dragon-entries{padding:var(--row-pad) 6px;column-gap:14px;row-gap:1px;align-items:baseline}
-.dragon-entry{margin:0;font-size:calc(var(--stock-size) * .83);font-weight:800;line-height:1.15}
-.dragon-entry.buy{color:#bd2736}.dragon-entry.sell{color:#168044}
+.dragon-entry{margin:0;font-size:calc(var(--stock-size) * .83);font-weight:600;line-height:1.15}
+.dragon-entry.buy{color:#C43D4B}.dragon-entry.sell{color:#23856D}
 .dragon-period{font-size:inherit;font-weight:inherit;margin-left:0}
 .dragon-amount{font-size:inherit;margin-left:7px;letter-spacing:-.5px}
 .dragon-note{display:inline;font-size:calc(var(--stock-size) * .54);font-weight:700;color:inherit;margin-left:6px;line-height:inherit}
