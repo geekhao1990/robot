@@ -40,6 +40,13 @@ function renderAiMedia() {
   }).catch(error=>{status.textContent=error.message||'榜单状态读取失败';});
 }
 function renderLadder(kind = 'ladder') {
+  if (typeof MEDIA_REVIEW_CSS !== 'string' || typeof renderMediaReview !== 'function'
+    || typeof resetMediaWording !== 'function' || typeof MEDIA_WORDING_POLICIES === 'undefined') {
+    document.getElementById('content').innerHTML = `<h2>绘图组件未加载完整</h2>
+      <p style="margin:16px 0">数据核对组件加载失败，可能是网络中断或旧缓存。请刷新后台后重试；若仍失败，请确认 media-review.js 与页面一起部署。</p>
+      <button class="btn-primary" onclick="location.reload()">刷新后台</button>`;
+    return;
+  }
   resetMediaWording();
   mediaReviewOnlyIssues=false;
   mediaKind=kind;
