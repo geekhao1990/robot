@@ -57,12 +57,13 @@ test('period suffix is separated and last-row directions survive missing amounts
   assert.match(html,/dragon-entry sell"><span>慧辰股份/);
   assert.doesNotMatch(html,/class="dragon-net /);
   const css=fs.readFileSync(path.join(__dirname,'../public/admin/dragon-layout.js'),'utf8');
-  assert.match(css,/\.dragon-seat\{flex:0 0 155px;[^}]*font-size:calc\(var\(--stock-size\) \* \.75\)/);
-  assert.match(css,/\.dragon-net\{[^}]*font-size:calc\(var\(--stock-size\) \* \.75 - 1px\)/);
+  assert.match(css,/\.dragon-seat\{flex:0 0 280px;[^}]*font-size:calc\(var\(--stock-size\) - 2px\)/);
+  assert.match(css,/flex-direction:row;justify-content:flex-start;text-align:left;gap:6px;white-space:nowrap/);
+  assert.match(css,/\.dragon-net\{[^}]*font-size:calc\(var\(--stock-size\) \* \.42\)/);
   assert.match(css,/padding:16px 17px 12px/);
-  assert.match(css,/\.dragon-entry\{margin:0;font-size:var\(--stock-size\)/);
-  assert.match(css,/font-size:calc\(var\(--stock-size\) \* \.6\)/);
-  assert.match(css,/\.dragon-row\{flex:0 0 auto/);
+  assert.match(css,/\.dragon-entry\{margin:0;font-size:calc\(var\(--stock-size\) \* \.83\)/);
+  assert.match(css,/font-size:calc\(var\(--stock-size\) \* \.54\)/);
+  assert.match(css,/\.dragon-row\{flex:1 0 auto/);
   assert.match(css,/\.dragon-net\{[^}]*font-family:"Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei"[^}]*font-weight:700/);
 });
 test('seat rows sort by signed primary totals without moving stocks or mutating JSON',()=>{
