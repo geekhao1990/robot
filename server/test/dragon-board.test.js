@@ -39,6 +39,23 @@ test('dragon routes require administrator and explicit JSON confirmation',async(
   await assert.rejects(routes['/api/admin/ladder/dragon/recognize']({headers:{},body:{}}),{status:401});
 });
 function context(extra={}){vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/dragon-layout.js'),'utf8'),extra);return extra;}
+test('seat rows sort by signed primary totals without moving stocks or mutating JSON',()=>{
+  const ctx=context();
+  const stock=(amount,direction='buy')=>({name:'股票',amount,direction,note:'昨入999亿 净888万'});
+  const groups=[{name:'流出大',stocks:[stock('-2e','sell')]},{name:'缺失',stocks:[stock(null)]},{name:'流入小',stocks:[stock('1.07e'),stock('700w','sell')]},{name:'流入大',stocks:[stock('2亿')]},{name:'流出小',stocks:[stock('-1万','sell')]}];
+  const before=JSON.stringify(groups);
+  const ranked=ctx.dragonRankedGroups(groups);
+  assert.equal(ranked.map(x=>x.group.name).join(','),'流入大,流入小,流出小,流出大,缺失');
+  assert.equal(ranked[1].total,100000000);
+  assert.equal(ranked[1].group,groups[2]);assert.equal(JSON.stringify(groups),before);
+  assert.equal(ctx.dragonNetLabel(100000000),'净流入 +1亿');
+  assert.equal(ctx.dragonNetLabel(-10000),'净流入 -1万');
+  for(const amount of [null,'','不明','1.2','1e+8','-2万'])assert.equal(ctx.dragonStockAmount(stock(amount)),null);
+  const html=ctx.dragonTemplate({date:'10-21',groups});
+  assert.equal((html.match(/class="dragon-net /g)||[]).length,4);
+  assert.doesNotMatch(html,/金额未提供|图示合计/);
+  assert.match(html,/<span>流入小<\/span><small class="dragon-net buy">净流入 \+1亿/);
+});
 test('dragon template escapes content and preserves labels without inventing missing numbers',()=>{
   const ctx=context();const html=ctx.dragonTemplate(sample);
   assert.match(html,/10月9日/);assert.match(html,/1.09e/);assert.match(html,/三日/);assert.match(html,/昨入228万/);

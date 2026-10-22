@@ -16,7 +16,8 @@ body{font-family:"Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei","Ping
 .dragon-table{margin:0;border:0;border-radius:0;flex:1;display:flex;flex-direction:column;overflow:visible;background:#fff}
 .dragon-row{flex:1 0 auto;border:0;align-items:center}
 .dragon-row:nth-child(odd){background:#f3f7f6}
-.dragon-seat{flex:0 0 164px;border:0;padding:var(--row-pad) 6px;font-size:calc(var(--stock-size) - 2px);font-weight:800;line-height:1.2;color:#121820}
+.dragon-seat{flex:0 0 180px;border:0;padding:var(--row-pad) 6px;font-size:calc(var(--stock-size) - 2px);font-weight:800;line-height:1.2;color:#121820;flex-direction:column}
+.dragon-net{display:block;font-size:calc(var(--stock-size) * .5);font-weight:600;line-height:1.3;margin-top:2px;white-space:nowrap;color:#737b81}.dragon-net.buy{color:#C43D4B}.dragon-net.sell{color:#23856D}
 .dragon-entries{padding:var(--row-pad) 6px;column-gap:14px;row-gap:1px;align-items:baseline}
 .dragon-entry{margin:0;font-size:calc(var(--stock-size) * .83);font-weight:600;line-height:1.15}
 .dragon-entry.buy{color:#C43D4B}.dragon-entry.sell{color:#23856D}
@@ -37,11 +38,35 @@ function fitDragonPoster(poster){
   }
   throw new Error('榜单内容过多，单张1:1正方形图片无法清晰容纳，请拆分榜单后生成');
 }
+// Sum primary amounts only: historical and net annotations remain unmodified.
+// Incomplete or ambiguous rows must not be presented as complete totals.
+function dragonStockAmount(stock){
+  if(!stock || !['buy','sell'].includes(stock.direction))return null;
+  const text=String(stock.amount??'').trim().replace(/[−－]/g,'-').replace(/＋/g,'+');
+  const match=text.match(/^([+-]?)(\d+(?:\.\d+)?)\s*(亿|万|元|e|w)$/i);
+  if(!match || (match[1]==='-'&&stock.direction==='buy') || (match[1]==='+'&&stock.direction==='sell'))return null;
+  const unit=match[3].toLowerCase();
+  const value=Math.round(Number(match[2])*(unit==='亿'||unit==='e'?1e8:unit==='万'||unit==='w'?1e4:1));
+  if(!Number.isSafeInteger(value))return null;
+  return stock.direction==='sell'?-value:value;
+}
+function dragonRankedGroups(groups){
+  return groups.map((group,index)=>{
+    const amounts=group.stocks.map(dragonStockAmount);
+    const total=amounts.length&&amounts.every(value=>value!==null)?amounts.reduce((sum,value)=>sum+value,0):null;
+    return {group,index,total:Number.isSafeInteger(total)?total:null};
+  }).sort((a,b)=>a.total===null?(b.total===null?a.index-b.index:1):b.total===null?-1:b.total-a.total||a.index-b.index);
+}
+function dragonNetLabel(total){
+  const magnitude=Math.abs(total),divisor=magnitude>=1e8?1e8:1e4;
+  const number=Number((magnitude/divisor).toFixed(2));
+  return `净流入 ${total>0?'+':total<0?'-':''}${number}${divisor===1e8?'亿':'万'}`;
+}
 function dragonTemplate(data, watermark = '指标仓库'){
   const e=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const parts=String(data.date).split('-');
   const date=`${Number(parts.at(-2))}月${Number(parts.at(-1))}日`;
-  const groups=data.groups.map(group=>`<div class="dragon-row"><div class="dragon-seat">${e(group.name)}</div><div class="dragon-entries">${group.stocks.map(s=>`<div class="dragon-entry ${['buy','sell'].includes(s.direction)?s.direction:'unknown'}"><span>${e(s.name)}</span>${s.period?`<span class="dragon-period">(${e(s.period)})</span>`:''}${s.amount!=null?`<span class="dragon-amount">${e(s.amount)}</span>`:''}${s.note?`<span class="dragon-note">${e(s.note)}</span>`:''}</div>`).join('')}</div></div>`).join('');
+  const groups=dragonRankedGroups(data.groups).map(({group,total})=>`<div class="dragon-row"><div class="dragon-seat"><span>${e(group.name)}</span>${total!==null?`<small class="dragon-net ${total>0?'buy':total<0?'sell':''}">${e(dragonNetLabel(total))}</small>`:''}</div><div class="dragon-entries">${group.stocks.map(s=>`<div class="dragon-entry ${['buy','sell'].includes(s.direction)?s.direction:'unknown'}"><span>${e(s.name)}</span>${s.period?`<span class="dragon-period">(${e(s.period)})</span>`:''}${s.amount!=null?`<span class="dragon-amount">${e(s.amount)}</span>`:''}${s.note?`<span class="dragon-note">${e(s.note)}</span>`:''}</div>`).join('')}</div></div>`).join('');
   return `<main class="dragon-poster"><header class="dragon-head"><div class="dragon-kicker">资金动向 · 席位观察</div><h1><span class="dragon-date">${date}</span>游资龙虎榜</h1></header><section class="dragon-table"><div class="dragon-labels"><b>游资 / 席位</b><span>股票 · 金额 · 备注</span></div>${groups}</section><footer class="dragon-footer"><span class="dragon-disclaimer">数据仅供参考，请勿作为投资依据。</span><span class="dragon-signature">由【指标仓库】整理</span></footer><div class="dragon-watermarks">${watermark?`<span style="font-size:${Math.min(110,760/Math.max(1,Array.from(watermark).length))}px">${e(watermark)}</span>`:''}</div></main>`;
 }
 async function drawDragon(data, watermark = '指标仓库'){
