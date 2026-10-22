@@ -21,6 +21,9 @@ test('dragon extraction sends the image with its own prompt, without rendering o
       assert.equal(body.thinking.type,'disabled');assert.equal(body.max_tokens,32768);
       assert.match(body.messages[0].content,/游资龙虎榜/);
       assert.match(body.messages[0].content,/不得填0/);
+      assert.match(body.messages[0].content,/尤其最后一行/);
+      assert.match(body.messages[0].content,/红色=buy/);
+      assert.match(body.messages[0].content,/绿色=sell/);
       assert.equal(body.messages[1].content[1].image_url.url,'data:image/png;base64,YQ==');
       return {ok:true,json:async()=>({choices:[{finish_reason:'stop',message:{content:JSON.stringify(sample)}}]})};
     });
@@ -39,6 +42,23 @@ test('dragon routes require administrator and explicit JSON confirmation',async(
   await assert.rejects(routes['/api/admin/ladder/dragon/recognize']({headers:{},body:{}}),{status:401});
 });
 function context(extra={}){vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../public/admin/dragon-layout.js'),'utf8'),extra);return extra;}
+test('period suffix is separated and last-row directions survive missing amounts',()=>{
+  const data={date:'10-21',groups:[{name:'拉萨天团',stocks:[
+    {name:'同为股份（三日）',period:null,amount:null,direction:'buy'},
+    {name:'慧辰股份',period:null,amount:null,direction:'sell'},
+    {name:'股票(3日)',period:'三日',amount:null,direction:'sell'},
+  ]}]};
+  dragon.validate(data);
+  assert.equal(data.groups[0].stocks[0].name,'同为股份');
+  assert.equal(data.groups[0].stocks[0].period,'三日');
+  assert.equal(data.groups[0].stocks[2].name,'股票');
+  const html=context().dragonTemplate(data);
+  assert.match(html,/dragon-entry buy"><span>同为股份<\/span><span class="dragon-period">\(三日\)/);
+  assert.match(html,/dragon-entry sell"><span>慧辰股份/);
+  assert.doesNotMatch(html,/class="dragon-net /);
+  const css=fs.readFileSync(path.join(__dirname,'../public/admin/dragon-layout.js'),'utf8');
+  assert.match(css,/var\(--stock-size\) \* \.5 \+ 2px/);
+});
 test('seat rows sort by signed primary totals without moving stocks or mutating JSON',()=>{
   const ctx=context();
   const stock=(amount,direction='buy')=>({name:'股票',amount,direction,note:'昨入999亿 净888万'});
