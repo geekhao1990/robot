@@ -59,7 +59,7 @@ test('period suffix is separated and last-row directions survive missing amounts
   const css=fs.readFileSync(path.join(__dirname,'../public/admin/dragon-layout.js'),'utf8');
   assert.match(css,/\.dragon-seat\{flex:0 0 280px;[^}]*font-size:calc\(var\(--stock-size\) - 2px\)/);
   assert.match(css,/flex-direction:row;justify-content:flex-start;text-align:left;gap:6px;white-space:nowrap/);
-  assert.match(css,/\.dragon-net\{[^}]*font-size:calc\(var\(--stock-size\) \* \.42\)/);
+  assert.match(css,/\.dragon-net\{[^}]*font-size:calc\(var\(--stock-size\) \* \.6\)/);
   assert.match(css,/padding:16px 17px 12px/);
   assert.match(css,/\.dragon-entry\{margin:0;font-size:calc\(var\(--stock-size\) \* \.83\)/);
   assert.match(css,/font-size:calc\(var\(--stock-size\) \* \.54\)/);
