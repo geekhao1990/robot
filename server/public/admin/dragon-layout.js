@@ -17,7 +17,7 @@ body{font-family:"Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei","Ping
 .dragon-row{flex:1 0 auto;border:0;align-items:center}
 .dragon-row:nth-child(odd){background:#f3f7f6}
 .dragon-seat{flex:0 0 180px;border:0;padding:var(--row-pad) 6px;font-size:calc(var(--stock-size) - 2px);font-weight:800;line-height:1.2;color:#121820;flex-direction:column}
-.dragon-net{display:block;font-size:calc(var(--stock-size) * .5 + 2px);font-family:"PingFang SC","Microsoft YaHei",Arial,sans-serif;font-variant-numeric:tabular-nums;font-weight:500;line-height:1.3;margin-top:2px;white-space:nowrap;color:#737b81}.dragon-net.buy{color:#C43D4B}.dragon-net.sell{color:#23856D}
+.dragon-net{display:block;font-size:calc(var(--stock-size) * .5 + 2px);font-family:"Microsoft YaHei","微软雅黑","PingFang SC",Arial,sans-serif;font-variant-numeric:tabular-nums;font-weight:700;line-height:1.3;margin-top:2px;white-space:nowrap;color:#737b81}.dragon-net.buy{color:#C43D4B}.dragon-net.sell{color:#23856D}
 .dragon-entries{padding:var(--row-pad) 6px;column-gap:14px;row-gap:1px;align-items:baseline}
 .dragon-entry{margin:0;font-size:calc(var(--stock-size) * .83);font-weight:600;line-height:1.15}
 .dragon-entry.buy{color:#C43D4B}.dragon-entry.sell{color:#23856D}
