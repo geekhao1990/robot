@@ -58,7 +58,7 @@ test('period suffix is separated and last-row directions survive missing amounts
   assert.doesNotMatch(html,/class="dragon-net /);
   const css=fs.readFileSync(path.join(__dirname,'../public/admin/dragon-layout.js'),'utf8');
   assert.match(css,/var\(--stock-size\) \* \.5 \+ 2px/);
-  assert.match(css,/\.dragon-net\{[^}]*font-family:"Microsoft YaHei","微软雅黑"[^}]*font-weight:700/);
+  assert.match(css,/\.dragon-net\{[^}]*font-family:"Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei"[^}]*font-weight:700/);
 });
 test('seat rows sort by signed primary totals without moving stocks or mutating JSON',()=>{
   const ctx=context();
