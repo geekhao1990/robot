@@ -13,18 +13,18 @@ body{font-family:"Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei","Ping
 .dragon-head h1{font-size:60px;line-height:1.15;letter-spacing:-1px;font-weight:800;color:#202B38}
 .dragon-date{color:inherit;margin-right:8px}
 .dragon-legend{justify-content:center;margin-top:10px;gap:22px;font-size:17px}
-.dragon-table{margin:0;border:0;border-radius:0;flex:1;display:flex;flex-direction:column;overflow:visible;background:#fff}
-.dragon-row{flex:1 0 auto;border:0;align-items:center}
+.dragon-table{margin:0;border:0;border-radius:0;flex:0 0 auto;display:flex;flex-direction:column;overflow:visible;background:#fff}
+.dragon-row{flex:0 0 auto;border:0;align-items:center}
 .dragon-row:nth-child(odd){background:#f3f7f6}
-.dragon-seat{flex:0 0 180px;border:0;padding:var(--row-pad) 6px;font-size:var(--stock-size);font-weight:800;line-height:1.1;color:#121820;flex-direction:column}
-.dragon-net{display:block;font-size:calc(var(--stock-size) - 1px);font-family:"Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei","PingFang SC",sans-serif;font-variant-numeric:tabular-nums;font-weight:700;line-height:1.1;margin-top:0;white-space:nowrap;color:#737b81}.dragon-net.buy{color:#C43D4B}.dragon-net.sell{color:#23856D}
-.dragon-entries{padding:var(--row-pad) 6px;column-gap:14px;row-gap:1px;align-items:baseline}
-.dragon-entry{margin:0;font-size:calc(var(--stock-size) * .83 + 2px);font-weight:600;line-height:1.15}
+.dragon-seat{flex:0 0 155px;border:0;padding:var(--row-pad) 6px;font-size:calc(var(--stock-size) * .75);font-weight:800;line-height:1.1;color:#121820;flex-direction:column}
+.dragon-net{display:block;font-size:calc(var(--stock-size) * .75 - 1px);font-family:"Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei","PingFang SC",sans-serif;font-variant-numeric:tabular-nums;font-weight:700;line-height:1.1;margin-top:0;white-space:nowrap;color:#737b81}.dragon-net.buy{color:#C43D4B}.dragon-net.sell{color:#23856D}
+.dragon-entries{padding:var(--row-pad) 6px;column-gap:10px;row-gap:1px;align-items:baseline}
+.dragon-entry{margin:0;font-size:var(--stock-size);font-weight:600;line-height:1.15}
 .dragon-entry.buy{color:#C43D4B}.dragon-entry.sell{color:#23856D}
 .dragon-period{font-size:inherit;font-weight:inherit;margin-left:0}
 .dragon-amount{font-size:inherit;margin-left:7px;letter-spacing:-.5px}
-.dragon-note{display:inline;font-size:calc(var(--stock-size) * .54 + 2px);font-weight:700;color:inherit;margin-left:6px;line-height:inherit}
-.dragon-footer{flex:none;margin-top:12px;font-size:15px;line-height:1.4;color:#606660;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:12px}
+.dragon-note{display:inline;font-size:calc(var(--stock-size) * .6);font-weight:700;color:inherit;margin-left:6px;line-height:inherit}
+.dragon-footer{flex:none;margin-top:auto;padding-top:12px;font-size:15px;line-height:1.4;color:#606660;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:12px}
 .dragon-footer .dragon-disclaimer{grid-column:2}.dragon-signature{grid-column:3;justify-self:end;font-size:14px;white-space:nowrap}
 .dragon-watermarks{display:flex;align-items:center;justify-content:center}
 .dragon-watermarks span{position:static;font-size:110px;font-weight:800;color:rgba(100,110,110,.09);transform:rotate(-25deg)}
