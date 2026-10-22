@@ -111,6 +111,10 @@ test('dragon fits dense content without changing data and rejects overflow inste
   const ctx=context();let size;
   const poster={style:{setProperty(key,value){if(key==='--stock-size')size=parseInt(value);}},get scrollHeight(){return size>26?1200:1080;}};
   ctx.fitDragonPoster(poster);assert.equal(size,26);
+  for(const fitAt of [17,16,14]){
+    const dense={style:poster.style,get scrollHeight(){return size>fitAt?1200:1080;}};
+    ctx.fitDragonPoster(dense);assert.equal(size,fitAt);
+  }
   assert.throws(()=>ctx.fitDragonPoster({style:{setProperty(){}},scrollHeight:2100}),/拆分榜单/);
 });
 test('dragon output only adds background padding, without cropping or stretching',()=>{

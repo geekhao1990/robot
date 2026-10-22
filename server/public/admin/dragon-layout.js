@@ -31,7 +31,7 @@ body{font-family:"Source Han Sans SC","Noto Sans CJK SC","Microsoft YaHei","Ping
 `;
 function fitDragonPoster(poster){
   // Reduce spacing before type; never crop data or add wide side borders.
-  for(let size=30;size>=18;size--){
+  for(let size=30;size>=14;size--){
     poster.style.setProperty('--stock-size',size+'px');
     poster.style.setProperty('--row-pad',Math.max(0,Math.min(2,size-24))+'px');
     if(poster.scrollHeight<=1080)return;
