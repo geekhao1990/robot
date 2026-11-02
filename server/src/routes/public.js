@@ -7,6 +7,7 @@ const { resourceList } = require('../resource-links');
 const { canViewNote, findViewableNote, isDarkFundNote } = require('../note-access');
 const goldFingerSync = require('../gold-finger-sync');
 const liveTableSync = require('../live-table-sync');
+const { isLiveCourse, today } = require('../live-course');
 const analytics = require('../analytics');
 
 module.exports = function register(router, HttpError) {
@@ -68,7 +69,15 @@ module.exports = function register(router, HttpError) {
     let reader = optionalReader(ctx, d);
     const showGold = goldEntryEnabled(d, ctx);
     let list = d.notes.filter((note) => !isDarkFundNote(note) && canViewNote(d, note, reader) && (note.type !== 'gold' || showGold));
-    if (tab === 'following') {
+    const live = list.filter(isLiveCourse);
+    const liveFilters = [{key:'all',label:'全部',count:live.length},{key:'today',label:'今日课程',count:live.filter(n=>n.liveDate===today()).length}];
+    for(const name of new Set([...(d.liveTableAnchors || []),...live.flatMap(n=>n.liveAnchors || [])])) {
+      liveFilters.push({key:name,label:name,count:live.filter(n=>(n.liveAnchors || []).includes(name)).length});
+    }
+    if (tab === 'live') {
+      list=live.filter(n=>!ctx.query.filter || ctx.query.filter==='all' || (ctx.query.filter==='today' ? n.liveDate===today() : (n.liveAnchors || []).includes(ctx.query.filter)))
+        .sort((a,b)=>(Number(b.time)||0)-(Number(a.time)||0));
+    } else if (tab === 'following') {
       reader = requireReader(ctx);
       const state = (d.userState && d.userState[reader.id]) || {};
       const follows = state.follows || {};
@@ -90,7 +99,7 @@ module.exports = function register(router, HttpError) {
     const p = Number(page) || 1;
     const s = Number(size) || 10;
     const start = (p - 1) * s;
-    return { list: list.slice(start, start + s).map(pubNote), hasMore: start + s < list.length, total: list.length };
+    return { list: list.slice(start, start + s).map(pubNote), hasMore: start + s < list.length, total: list.length, ...(tab==='live'?{filters:liveFilters}:{}) };
   });
 
   router.get('/api/categories', () => db.get().categories);
@@ -181,9 +190,9 @@ module.exports = function register(router, HttpError) {
     const note = data.notes.find((n) => n.id === ctx.params.id && canViewNote(data, n, reader));
     if (!note) throw new HttpError(404, 'not found');
     if (note.type === 'gold') throw new HttpError(400, '金手指内容请进入会员专属页面查看');
-    if (note.resourceKind === 'live-course') {
+    if (isLiveCourse(note)) {
       const url = liveTableSync.playback(data, note);
-      if (!url) throw new HttpError(404, '课程播放地址暂不可用');
+      if (!url) return { kind:'live-course', available:false, message:'直播未开始' };
       return { kind: 'live-course', url };
     }
     if (note.type === 'course' && note.free !== true && !goldAccess(reader)) {

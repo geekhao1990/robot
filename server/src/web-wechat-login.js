@@ -55,7 +55,7 @@ async function wechatJson(url) {
 }
 
 function createUser(unionid, profile) {
-  return {
+  const user = {
     id: 'wx_' + crypto.createHash('sha256').update(`union:${unionid}`).digest('hex').slice(0, 16),
     wxUnionId: unionid,
     wxWebOpenId: profile.openid || '',
@@ -68,6 +68,8 @@ function createUser(unionid, profile) {
     darkFundManualRemaining: 0, darkFundServiceRemaining: 0, darkFundServiceMonth: '',
     createdAt: Date.now(), tags: ['new', 'web-wechat'],
   };
+  require('./new-user-gold').grantNewUserGold(user);
+  return user;
 }
 
 async function complete(query) {

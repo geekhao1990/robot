@@ -46,6 +46,9 @@
     </view>
 
     <view class="content">
+      <view wx:if="{{tab === 'live'}}" class="live-filters">
+        <view wx:for="{{liveFilters}}" wx:key="key" class="live-filter {{liveFilter === item.key ? 'selected' : ''}}" data-filter="{{item.key}}" bindtap="onLiveFilter">{{item.label}}（{{item.count}}）</view>
+      </view>
       <view class="placeholder" hidden="{{!(loading && !left.length && !right.length)}}">加载中...</view>
 
       <view class="placeholder" hidden="{{loading || left.length || right.length}}">{{emptyText}}</view>

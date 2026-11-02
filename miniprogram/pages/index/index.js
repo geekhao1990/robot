@@ -11,8 +11,11 @@ Page({
     navTabs: [
       { key: 'following', label: '关注' },
       { key: 'discover', label: '发现' },
+      { key: 'live', label: '直播课' },
     ],
     tab: 'discover',
+    liveFilter: 'all',
+    liveFilters: [],
     left: [],
     right: [],
     leftH: 0,
@@ -111,12 +114,15 @@ Page({
     this.setData({ loading: true });
     const page = reset ? 1 : this.data.page;
 
-    api.getFeed({ tab: this.data.tab, page, size: 8 }).then((res) => {
+    const tab=this.data.tab, filter=this.data.liveFilter;
+    api.getFeed({ tab, page, size: 8, filter }).then((res) => {
+      if(tab!==this.data.tab || filter!==this.data.liveFilter) { this.setData({loading:false}); return this.loadFeed(true); }
       this.distribute(res.list, reset);
       this.setData({
         page: page + 1,
         hasMore: res.hasMore,
         loading: false,
+        liveFilters: res.filters || [],
         emptyText: this.data.tab === 'following' ? '还没有关注内容' : '这里还没有内容～',
       });
       this.finishRefresh();
@@ -146,6 +152,12 @@ Page({
 
   goSearch() {
     wx.navigateTo({ url: '/pages/search/search' });
+  },
+  onLiveFilter(e) {
+    const liveFilter=e.currentTarget.dataset.filter;
+    if(liveFilter===this.data.liveFilter)return;
+    this.setData({liveFilter,page:1,hasMore:true,left:[],right:[],feedScrollTop:0});
+    this.loadFeed(true);
   },
 
   goDetail(e) {

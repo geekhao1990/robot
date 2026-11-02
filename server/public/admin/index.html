@@ -514,6 +514,12 @@ function editNote(id) {
       <div class="field"><label>夸克网盘地址（选填）</label><input id="f_quark" value="${esc(quarkLink)}" placeholder="夸克网盘链接及提取码" /></div>
       <div class="hint">均为选填；前台始终显示「点击领取」，领取弹窗只展示已填写的网盘。</div>
     </div>
+    <div id="liveResourceField">
+      <div class="field"><label>直播课播放链接（选填）</label><input id="f_live_url" value="${esc(n.liveUrl || '')}" placeholder="未填写时提示直播未开始；自动课程由接口同步" /></div>
+      <div class="field"><label>开课时间</label><input id="f_live_time" value="${esc(n.liveStartTime || '')}" placeholder="2026-11-02 09:00" /></div>
+      <div class="field"><label>讲师（顿号分隔）</label><input id="f_live_anchors" value="${esc((n.liveAnchors || []).join('、'))}" /></div>
+      <div class="hint">显示“播放课程”，复制链接到浏览器观看，不使用网盘地址。</div>
+    </div>
     <div class="field" id="goldHint"><div class="hint">金手指笔记的主图和「查看金手指」均进入金手指页面，无需填写网盘地址。</div></div>
     <div class="field" id="adHint"><div class="hint">广告笔记作为Banner跳转页面，无需填写网盘地址。</div></div>
     <div class="field"><label>风险提示（狗头保命）</label><select id="f_risk_disclaimer">
@@ -530,7 +536,7 @@ function editNote(id) {
     const baiduUrl = document.getElementById('f_baidu').value.trim();
     const quarkUrl = document.getElementById('f_quark').value.trim();
     const category = document.getElementById('f_category').value;
-    const type = category === '金手指' ? 'gold' : (category === '课程' ? 'course' : (category === '广告' ? 'ad' : 'material'));
+    const type = category === '直播课' ? 'live' : (category === '金手指' ? 'gold' : (category === '课程' ? 'course' : (category === '广告' ? 'ad' : 'material')));
     const body = {
       title: document.getElementById('f_title').value,
       content: document.getElementById('f_content').value,
@@ -539,6 +545,9 @@ function editNote(id) {
       category,
       baiduUrl,
       quarkUrl,
+      liveUrl: document.getElementById('f_live_url').value.trim(),
+      liveStartTime: document.getElementById('f_live_time').value.trim(),
+      liveAnchors: document.getElementById('f_live_anchors').value.split('、').map(s=>s.trim()).filter(Boolean),
       riskDisclaimerEnabled: document.getElementById('f_risk_disclaimer').value === 'true',
       images: _modalImages,
     };
@@ -558,7 +567,9 @@ function syncResourceField() {
   if (!type || !resource || !goldHint || !adHint) return;
   const isGold = type.value === '金手指';
   const isAd = type.value === '广告';
-  resource.style.display = isGold || isAd || _editingLiveCourse ? 'none' : 'block';
+  const isLive = type.value === '直播课' || _editingLiveCourse;
+  resource.style.display = isGold || isAd || isLive ? 'none' : 'block';
+  document.getElementById('liveResourceField').style.display = isLive ? 'block' : 'none';
   goldHint.style.display = isGold ? 'block' : 'none';
   adHint.style.display = isAd ? 'block' : 'none';
 }

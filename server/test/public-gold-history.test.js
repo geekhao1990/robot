@@ -71,6 +71,7 @@ function setup() {
     },
     '../analytics': { record: () => {} },
     '../live-table-sync': require('../src/live-table-sync'),
+    '../live-course': require('../src/live-course'),
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/public.js'), 'utf8'), {
     module: mod,

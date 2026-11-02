@@ -1,6 +1,7 @@
 // server/src/routes/app.js —— 小程序端鉴权 + 写操作接口
 // 交互状态（赞/藏/关注）、发布笔记均回传后端，后端为数据源。
 const db = require('../db');
+const { grantNewUserGold } = require('../new-user-gold');
 const { pubUser, pubNote } = require('../util');
 const auth = require('../auth');
 const crypto = require('crypto');
@@ -308,6 +309,7 @@ module.exports = function register(router, HttpError) {
         createdAt: Date.now(),
         tags: ['new'],
       };
+      grantNewUserGold(user);
       d.users.push(user);
       created = true;
     } else {

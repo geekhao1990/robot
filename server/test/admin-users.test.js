@@ -14,6 +14,7 @@ function setup() {
   const db = { get: () => data, save: () => {} };
   const mod = { exports: {} };
   const dependencyMap = {
+    '../live-table-sync': require('../src/live-table-sync'),
     '../db': db,
     '../auth': { isAdmin: (token) => token === 'admin', issueAdmin: () => 'admin' },
     '../util': require('../src/util'),

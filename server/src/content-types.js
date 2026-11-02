@@ -1,7 +1,8 @@
-const CONTENT_TYPES = Object.freeze(['material', 'course', 'gold', 'ad']);
+const CONTENT_TYPES = Object.freeze(['material', 'course', 'live', 'gold', 'ad']);
 const TYPE_LABELS = Object.freeze({
   material: '资料',
   course: '课程',
+  live: '直播课',
   gold: '金手指',
   ad: '广告',
 });

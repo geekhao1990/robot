@@ -285,7 +285,10 @@ Page({
       return wx.navigateTo({ url: '/pages/dark-funds/dark-funds' });
     }
     if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
-    if (this.data.note && this.data.note.resourceKind === 'live-course') return this.handleGetResource(this.data.note.free === true);
+    if (this.data.note && this.data.note.resourceKind === 'live-course') {
+      if (this.data.note.livePlaybackAvailable === false) return wx.showModal({title:'直播未开始',content:'请稍后再来观看',showCancel:false});
+      return this.handleGetResource(this.data.note.free === true);
+    }
     if (this.data.note && this.data.note.type === 'course' && this.data.note.free !== true) {
       return this.handlePaidCourseResource();
     }
@@ -488,6 +491,7 @@ Page({
   showResource() {
     return api.getResource(this.data.note.id).then((result) => {
       if (result.kind === 'live-course') {
+        if (!result.url) return wx.showModal({title:'直播未开始',content:'请稍后再来观看',showCancel:false});
         return wx.showModal({
           title: '播放课程',
           content: '请复制播放链接，在手机浏览器中粘贴打开观看。',

@@ -84,11 +84,11 @@ function allNotes() {
 }
 
 // 首页 feed：discover 发现 | following 关注
-function getFeed({ tab = 'discover', page = 1, size = 10 } = {}) {
+function getFeed({ tab = 'discover', page = 1, size = 10, filter = 'all' } = {}) {
   if (remote()) {
     // 发现流允许游客访问；关注流才需要登录态。
-    return request('GET', '/api/feed', { data: { tab, page, size }, auth: true })
-      .then((r) => ({ list: (r.list || []).map(decorate), hasMore: r.hasMore, total: r.total }));
+    return request('GET', '/api/feed', { data: { tab, page, size, filter }, auth: true })
+      .then((r) => ({ list: (r.list || []).map(decorate), hasMore: r.hasMore, total: r.total, filters:r.filters || [] }));
   }
   return mockFeed({ tab, page, size });
 }

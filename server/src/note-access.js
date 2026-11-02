@@ -1,3 +1,4 @@
+const { available } = require('./live-course');
 function isDarkFundNote(note) {
   if (!note) return false;
   if (String(note.id || '').startsWith('dark_')) return true;
@@ -17,6 +18,7 @@ function darkFundOwnerId(data, note) {
 
 function canViewNote(data, note, reader) {
   if (!note || note.visible === false) return false;
+  if (!available(note)) return false;
   if (!isDarkFundNote(note)) return true;
   const ownerUserId = darkFundOwnerId(data, note);
   return Boolean(reader && ownerUserId && String(reader.id) === ownerUserId);

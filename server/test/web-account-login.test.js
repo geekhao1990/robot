@@ -27,7 +27,7 @@ function setup() {
   };
   vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../src/routes/app.js'), 'utf8'), {
     module: mod,
-    require: (id) => dependencies[id] || require(id),
+    require: (id) => id==='../new-user-gold' ? require('../src/new-user-gold') : dependencies[id] || require(id),
     process,
     Buffer,
   });

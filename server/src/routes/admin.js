@@ -494,6 +494,7 @@ module.exports = function register(router, HttpError) {
     if (!author) throw new HttpError(400, '请选择有效的官方作者账号');
     const resolved = resolveCategory(d, b.category, b.type);
     const type = resolved.type;
+    if (type==='live' && b.liveUrl && !/^https:\/\/live\.myhexin\.com\/player\/\?/.test(String(b.liveUrl))) throw new HttpError(400,'请填写正确的课程播放链接');
     const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
     const links = normalizeResourceLinks(b, type, !hasProviderFields);
@@ -504,6 +505,7 @@ module.exports = function register(router, HttpError) {
       category: resolved.category,
       type,
       ...links,
+      ...(type==='live'?{resourceKind:'live-course',liveUrl:String(b.liveUrl || ''),liveDate:String(b.liveStartTime || '').slice(0,10),liveStartTime:String(b.liveStartTime || ''),liveAnchors:Array.isArray(b.liveAnchors)?b.liveAnchors:[]} : {}),
       title: b.title || '未命名',
       content: b.content || '',
       images: b.images || [],
@@ -514,7 +516,7 @@ module.exports = function register(router, HttpError) {
       collects: Number.isFinite(Number(b.collects)) ? Math.max(0, Math.round(Number(b.collects))) : crypto.randomInt(5, 101),
       riskDisclaimerEnabled: b.riskDisclaimerEnabled !== false,
       visible: b.visible !== false,
-      free: b.free === true,
+      free: type === 'live' ? b.free !== false : b.free === true,
       video: false,
       time: Date.now(),
     };
@@ -555,8 +557,13 @@ module.exports = function register(router, HttpError) {
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
     Object.assign(note, normalizeResourceLinks(note, note.type, !hasProviderFields));
     if (note.resourceKind === 'live-course') {
-      note.type = 'course'; note.category = '课程';
+      note.type = 'live'; note.category = '直播课';
       note.baiduUrl = ''; note.quarkUrl = ''; note.courseUrl = '';
+    }
+    if (note.type === 'live') {
+      note.resourceKind='live-course'; note.liveDate=String(note.liveStartTime || '').slice(0,10);
+      note.liveUrl=String(note.liveUrl || '').trim();
+      if(note.liveUrl && !/^https:\/\/live\.myhexin\.com\/player\/\?/.test(note.liveUrl)) throw new HttpError(400,'请填写正确的课程播放链接');
     }
     delete note.comments;
     delete note.commentList;

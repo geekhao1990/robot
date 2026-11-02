@@ -203,7 +203,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
   }
 }
 
-async function fetchAuthenticatedJson(endpoint, settings = config()) {
+async function fetchAuthenticatedResponse(endpoint, settings = config()) {
   if (!settings.baseUrl || !settings.username || !settings.password) throw new Error('金手指自动同步配置不完整');
   const source = new URL(settings.baseUrl);
   if (!['http:', 'https:'].includes(source.protocol) || source.username || source.password) throw new Error('金手指源接口地址无效');
@@ -220,6 +220,10 @@ async function fetchAuthenticatedJson(endpoint, settings = config()) {
   if (!cookie) throw new Error('金手指源站未返回登录会话');
   const response = await fetchWithTimeout(dataUrl, { redirect: 'manual', headers: { Cookie: cookie, Accept: 'application/json' } });
   if (!response.ok) throw new Error(`金手指源接口请求失败（HTTP ${response.status}）`);
+  return response;
+}
+async function fetchAuthenticatedJson(endpoint, settings = config()) {
+  const response = await fetchAuthenticatedResponse(endpoint, settings);
   let payload;
   try { payload = await response.json(); } catch (_) { throw new Error('金手指源接口未返回JSON，请检查登录会话'); }
   return payload;
@@ -357,6 +361,7 @@ function stop() {
 }
 
 module.exports = {
+  fetchAuthenticatedResponse,
   fetchAuthenticatedJson,
   SCHEDULE_MINUTES: DEFAULT_SCHEDULE_MINUTES,
   parseSchedule,
