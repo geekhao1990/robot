@@ -8,6 +8,7 @@ const { createRouter, HttpError } = require('./router');
 const { handleUpload } = require('./upload');
 const audit = require('./audit');
 const goldFingerSync = require('./gold-finger-sync');
+const liveTableSync = require('./live-table-sync');
 const darkFundRankingSync = require('./dark-fund-ranking-sync');
 const webWechatLogin = require('./web-wechat-login');
 const { reviewModeApplies } = require('./util');
@@ -158,6 +159,7 @@ db.load()
     server.listen(PORT, HOST, () => {
       console.log(`API & 管理后台运行中： http://${HOST}:${PORT}/admin`);
       goldFingerSync.start();
+      liveTableSync.start();
       darkFundRankingSync.start();
     });
   })
@@ -168,6 +170,7 @@ db.load()
 
 async function shutdown() {
   goldFingerSync.stop();
+  liveTableSync.stop();
   darkFundRankingSync.stop();
   server.close(async () => {
     try { await db.close(); } finally { process.exit(0); }

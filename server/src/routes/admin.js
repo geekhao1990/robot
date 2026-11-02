@@ -7,6 +7,7 @@ const { refreshDarkFundQuota, setManualDarkFundQuota, addManualDarkFundQuota, ac
 const { normalizeResourceLinks } = require('../resource-links');
 const crypto = require('crypto');
 const goldFingerSync = require('../gold-finger-sync');
+const liveTableSync = require('../live-table-sync');
 const { notifyFollowersOfNote, pushNotification } = require('../notifications');
 const { URL } = require('url');
 const { latestRanking, publicRanking } = require('../dark-fund-ranking');
@@ -478,6 +479,8 @@ module.exports = function register(router, HttpError) {
   });
 
   // ---------- 笔记 ----------
+  router.get('/api/admin/livetable/status', ctx => { requireAuth(ctx); return liveTableSync.getStatus(); });
+  router.post('/api/admin/livetable/sync', ctx => { requireAuth(ctx); return liveTableSync.syncNow(); });
   router.get('/api/admin/notes', (ctx) => { requireAuth(ctx); return db.get().notes; });
 
   router.post('/api/admin/notes', (ctx) => {
@@ -551,6 +554,10 @@ module.exports = function register(router, HttpError) {
     const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
     Object.assign(note, normalizeResourceLinks(note, note.type, !hasProviderFields));
+    if (note.resourceKind === 'live-course') {
+      note.type = 'course'; note.category = '课程';
+      note.baiduUrl = ''; note.quarkUrl = ''; note.courseUrl = '';
+    }
     delete note.comments;
     delete note.commentList;
     if (d.settings && d.settings.featuredNoteId === note.id && note.type !== 'gold') {

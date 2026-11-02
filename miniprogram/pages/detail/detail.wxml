@@ -13,7 +13,7 @@
   </view>
 
   <scroll-view class="body" scroll-y style="padding-top: {{headerHeight}}px;">
-    <view wx:if="{{!isDarkFundNote}}" class="swiper-wrap">
+    <view wx:if="{{!isDarkFundNote && note.images.length}}" class="swiper-wrap">
       <swiper class="swiper" style="height: {{swiperHeight}}rpx;" bindchange="onSwiperChange" circular="{{false}}">
         <swiper-item wx:for="{{note.images}}" wx:key="*this">
           <view class="swiper-stage">

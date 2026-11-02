@@ -461,6 +461,7 @@ function drawNotes() {
         <button class="btn-primary" onclick="doNoteSearch()">搜索</button>
       </div>
       <button class="btn-primary" onclick="editNote()">+ 新增笔记</button>
+      <button class="btn-primary" onclick="syncLiveCourses(this)">同步直播课程</button>
     </div>
     <table><thead><tr><th>序号</th><th>封面</th><th>标题</th><th>作者</th><th>分类</th><th>是否显示</th><th>是否免费</th><th>互动数据</th><th>操作</th></tr></thead>
     <tbody>${rows}</tbody></table>
@@ -483,8 +484,16 @@ function toggleNoteFlag(id, field, checked) {
 }
 
 let _modalImages = [];
+let _editingLiveCourse = false;
+function syncLiveCourses(button) {
+  button.disabled = true;
+  api('/api/admin/livetable/sync', { method: 'POST', body: '{}' })
+    .then(result => { showAdminToast(`课程同步完成：新增${result.created}，更新${result.updated}，跳过${result.skipped}`); renderNotes(); })
+    .catch(error => { showAdminToast(error.message || '课程同步失败', 'error'); button.disabled = false; });
+}
 function editNote(id) {
   const n = id ? _notes.find((x) => x.id === id) : {};
+  _editingLiveCourse = n.resourceKind === 'live-course';
   const legacyLink = n.courseUrl || '';
   const baiduLink = n.baiduUrl || (legacyLink && !/quark\.cn/i.test(legacyLink) ? legacyLink : '');
   const quarkLink = n.quarkUrl || (legacyLink && /quark\.cn/i.test(legacyLink) ? legacyLink : '');
@@ -549,7 +558,7 @@ function syncResourceField() {
   if (!type || !resource || !goldHint || !adHint) return;
   const isGold = type.value === '金手指';
   const isAd = type.value === '广告';
-  resource.style.display = isGold || isAd ? 'none' : 'block';
+  resource.style.display = isGold || isAd || _editingLiveCourse ? 'none' : 'block';
   goldHint.style.display = isGold ? 'block' : 'none';
   adHint.style.display = isAd ? 'block' : 'none';
 }

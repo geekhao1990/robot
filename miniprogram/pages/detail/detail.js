@@ -182,7 +182,7 @@ Page({
         isDarkFundNote: darkFundNote,
         canShareNote,
         darkParagraphs: darkFundNote ? darkArticleParagraphs(note, content) : [],
-        resourceLabel: darkFundNote ? '查询暗盘' : (note.type === 'gold' ? '查看金手指' : '点击领取'),
+        resourceLabel: note.resourceKind === 'live-course' ? '播放课程' : (darkFundNote ? '查询暗盘' : (note.type === 'gold' ? '查看金手指' : '点击领取')),
         articleAdLoadFailed: false,
         isOwnNote,
         followed: !isOwnNote && store.isFollowed(authorId),
@@ -285,6 +285,7 @@ Page({
       return wx.navigateTo({ url: '/pages/dark-funds/dark-funds' });
     }
     if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
+    if (this.data.note && this.data.note.resourceKind === 'live-course') return this.handleGetResource(this.data.note.free === true);
     if (this.data.note && this.data.note.type === 'course' && this.data.note.free !== true) {
       return this.handlePaidCourseResource();
     }
@@ -486,6 +487,14 @@ Page({
   },
   showResource() {
     return api.getResource(this.data.note.id).then((result) => {
+      if (result.kind === 'live-course') {
+        return wx.showModal({
+          title: '播放课程',
+          content: '请复制播放链接，在手机浏览器中粘贴打开观看。',
+          confirmText: '复制链接',
+          success: res => { if (res.confirm) wx.setClipboardData({ data: result.url }); },
+        });
+      }
       let resources = Array.isArray(result.resources) ? result.resources : [];
       if (!resources.length && result.url) {
         const provider = /quark\.cn/i.test(result.url) ? 'quark' : 'baidu';

@@ -52,11 +52,11 @@ function pubUser(user) {
 // 小程序内容接口不直接暴露网盘地址
 function pubNote(note) {
   if (!note) return note;
-  const { courseUrl, baiduUrl, quarkUrl, ...safe } = note;
+  const { courseUrl, baiduUrl, quarkUrl, room_id, roomId, link, play, ...safe } = note;
   return {
     ...safe,
     riskDisclaimerEnabled: note.riskDisclaimerEnabled !== false,
-    hasResource: resourceList(note).length > 0,
+    hasResource: note.resourceKind === 'live-course' || resourceList(note).length > 0,
   };
 }
 

@@ -203,11 +203,11 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
   }
 }
 
-async function fetchSourceData(settings = config()) {
+async function fetchAuthenticatedJson(endpoint, settings = config()) {
   if (!settings.baseUrl || !settings.username || !settings.password) throw new Error('金手指自动同步配置不完整');
   const source = new URL(settings.baseUrl);
   if (!['http:', 'https:'].includes(source.protocol) || source.username || source.password) throw new Error('金手指源接口地址无效');
-  const dataUrl = new URL('/api/gold/data', source.origin).href;
+  const dataUrl = new URL(endpoint, source.origin).href;
   const login = await fetchWithTimeout(new URL('/login', source.origin).href, {
     method: 'POST',
     redirect: 'manual',
@@ -222,6 +222,11 @@ async function fetchSourceData(settings = config()) {
   if (!response.ok) throw new Error(`金手指源接口请求失败（HTTP ${response.status}）`);
   let payload;
   try { payload = await response.json(); } catch (_) { throw new Error('金手指源接口未返回JSON，请检查登录会话'); }
+  return payload;
+}
+
+async function fetchSourceData(settings = config()) {
+  const payload = await fetchAuthenticatedJson('/api/gold/data', settings);
   const items = Array.isArray(payload) ? payload : Array.isArray(payload?.list) ? payload.list : chartRecords(payload);
   if (!Array.isArray(items)) throw new Error('金手指源接口返回格式不正确');
   return items;
@@ -352,6 +357,7 @@ function stop() {
 }
 
 module.exports = {
+  fetchAuthenticatedJson,
   SCHEDULE_MINUTES: DEFAULT_SCHEDULE_MINUTES,
   parseSchedule,
   scheduleMinutes,
