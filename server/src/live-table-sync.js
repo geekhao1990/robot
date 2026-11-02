@@ -20,7 +20,13 @@ function parseItems(payload) {
     seen.add(room);
     const link = new URL(item.link);
     if (link.protocol !== 'https:' || link.hostname !== 'live.myhexin.com' || link.pathname !== '/player/' || link.username || link.password || link.searchParams.get('i') !== room) throw new Error('直播播放地址无效');
-    const title = String(item.title || '').trim();
+    let title = String(item.title || '').trim();
+    if (!title) {
+      const date = String(item.start_time || '').match(/^\d{4}-(\d{2})-(\d{2})/);
+      const anchors = Array.isArray(item.anchors) ? item.anchors.filter(a => typeof a === 'string').map(a => a.trim()).filter(Boolean) : [];
+      if (!date || !anchors.length) throw new Error('空标题课程缺少日期或讲师');
+      title = `${Number(date[1])}月${Number(date[2])}日${anchors.join('、')}课程`;
+    }
     if (title.length > 300) throw new Error('直播课程标题过长');
     return { room, link: link.href, title, startTime: String(item.start_time || ''), hasReplay: item.has_replay === 1, future: item.is_future === 1 };
   });

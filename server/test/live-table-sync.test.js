@@ -21,8 +21,8 @@ test('live source supports wrapped/array response and rejects wrong destinations
   for(const link of ['http://live.myhexin.com/player/?i=256949','https://evil.test/?i=256949','https://live.myhexin.com/player/?i=9']) assert.throws(()=>parseItems([{...item,link}]));
   assert.throws(()=>parseItems([item,item]));
 });
-test('idempotent sync preserves admin free/visibility, skips empty titles and respects deletion', () => {
-  const d=data();const rows=parseItems([item,{...item,room_id:1,link:'https://live.myhexin.com/player/?i=1',title:''}]);
+test('idempotent sync preserves admin free/visibility and respects deletion', () => {
+  const d=data();const rows=parseItems([item]);
   assert.equal(applyItems(d,rows).created,1);const note=d.notes[0];
   assert.equal(note.content,'点击下方按钮播放视频');assert.equal(note.free,false);
   note.free=true;note.visible=false;applyItems(d,rows);
@@ -31,6 +31,15 @@ test('idempotent sync preserves admin free/visibility, skips empty titles and re
   const safe=pubNote(note);assert.equal(safe.hasResource,true);
   assert(!JSON.stringify(safe).includes('256949'));assert(!JSON.stringify(safe).includes('myhexin'));
   d.notes=[];assert.equal(applyItems(d,rows).created,0);
+});
+test('empty title uses start date and anchors; later title replaces same note', () => {
+  const d=data();
+  const rows=parseItems([{...item,title:'',anchors:['张庆国']}]);
+  assert.equal(rows[0].title,'11月2日张庆国课程');
+  applyItems(d,rows);const id=d.notes[0].id;
+  assert.equal(parseItems([{...item,title:'',anchors:['杨光松','张群']}])[0].title,'11月2日杨光松、张群课程');
+  applyItems(d,parseItems([item]));
+  assert.equal(d.notes.length,1);assert.equal(d.notes[0].id,id);assert.equal(d.notes[0].title,item.title);
 });
 test('mini-program live course free branch skips ads; nonfree uses rewarded branch', () => {
   let page;vm.runInNewContext(fs.readFileSync(require.resolve('../../miniprogram/pages/detail/detail.js'),'utf8'),{
