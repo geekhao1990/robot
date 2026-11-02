@@ -79,6 +79,8 @@ Page({
     inviteCode: '',
     resourceModalVisible: false,
     resourceOptions: [],
+    replayQrVisible: false,
+    replayQrImage: '/images/enterprise-wechat.jpg',
     resourceClaiming: false,
     pageRenderLoading: true,
   },
@@ -156,7 +158,9 @@ Page({
         this.finishPageRenderLoading();
         return toast('笔记不存在');
       }
-      const content = String(note.content || '').replace(/\s+$/, '');
+      let content = String(note.content || '').replace(/\s+$/, '');
+      const replayHint = '（直播链接失效后，点击播放回放获取）';
+      if (note.resourceKind === 'live-course' && content.indexOf(replayHint) < 0) content += `${content ? '\n' : ''}${replayHint}`;
       const darkFundNote = isDarkFundNote(note);
       // 骨架层只等待首屏图片；后续图片继续后台加载，避免多图笔记等待过久。
       const firstImageIndex = (note.images || []).findIndex(Boolean);
@@ -182,7 +186,7 @@ Page({
         isDarkFundNote: darkFundNote,
         canShareNote,
         darkParagraphs: darkFundNote ? darkArticleParagraphs(note, content) : [],
-        resourceLabel: note.resourceKind === 'live-course' ? '播放课程' : (darkFundNote ? '查询暗盘' : (note.type === 'gold' ? '查看金手指' : '点击领取')),
+        resourceLabel: note.resourceKind === 'live-course' ? '观看直播' : (darkFundNote ? '查询暗盘' : (note.type === 'gold' ? '查看金手指' : '点击领取')),
         articleAdLoadFailed: false,
         isOwnNote,
         followed: !isOwnNote && store.isFollowed(authorId),
@@ -493,8 +497,8 @@ Page({
       if (result.kind === 'live-course') {
         if (!result.url) return wx.showModal({title:'直播未开始',content:'请稍后再来观看',showCancel:false});
         return wx.showModal({
-          title: '播放课程',
-          content: '请复制播放链接，在手机浏览器中粘贴打开观看。',
+          title: '观看直播',
+          content: '由于微信政策，复制链接到浏览器观看直播。',
           confirmText: '复制链接',
           success: res => { if (res.confirm) wx.setClipboardData({ data: result.url }); },
         });
@@ -522,6 +526,9 @@ Page({
   closeResourceModal() {
     this.setData({ resourceModalVisible: false });
   },
+  openReplayQr() { this.setData({replayQrVisible:true}); },
+  closeReplayQr() { this.setData({replayQrVisible:false}); },
+  previewReplayQr() { wx.previewImage({urls:[this.data.replayQrImage],current:this.data.replayQrImage}); },
   noop() {},
   onArticleAdError() {
     this.setData({ articleAdLoadFailed: true });

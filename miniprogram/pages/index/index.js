@@ -16,6 +16,7 @@ Page({
     tab: 'discover',
     liveFilter: 'all',
     liveFilters: [],
+    liveFiltersExpanded: true,
     left: [],
     right: [],
     leftH: 0,
@@ -158,6 +159,9 @@ Page({
     if(liveFilter===this.data.liveFilter)return;
     this.setData({liveFilter,page:1,hasMore:true,left:[],right:[],feedScrollTop:0});
     this.loadFeed(true);
+  },
+  toggleLiveFilters() {
+    this.setData({liveFiltersExpanded:!this.data.liveFiltersExpanded});
   },
 
   goDetail(e) {

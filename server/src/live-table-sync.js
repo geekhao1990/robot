@@ -55,7 +55,7 @@ function applyItems(data, items, now = Date.now()) {
     if (!note) {
       note = { id: 'live_' + crypto.randomUUID(), authorId: author.id,
         author: { id: author.id, name: author.name, avatar: author.avatar },
-        type: 'live', category: '直播课', content: '点击下方按钮播放视频',
+        type: 'live', category: '直播课', content: '点击下方按钮观看直播\n（直播链接失效后，点击播放回放获取）',
         images: [], cover: '', coverRatio: 1, tags: ['课程'], likes: 0, collects: 0,
         riskDisclaimerEnabled: false, visible: true, free: true, video: false,
         resourceKind: 'live-course', courseUrl: '', baiduUrl: '', quarkUrl: '', time: now };
@@ -64,7 +64,7 @@ function applyItems(data, items, now = Date.now()) {
     note.title = item.title;
     Object.assign(note, { type:'live', category:'直播课', resourceKind:'live-course',
       authorId:author.id, author:{id:author.id,name:author.name,avatar:author.avatar},
-      content:'点击下方按钮播放视频', baiduUrl:'',quarkUrl:'',courseUrl:'',
+      content:'点击下方按钮观看直播\n（直播链接失效后，点击播放回放获取）', baiduUrl:'',quarkUrl:'',courseUrl:'',
       liveDate:item.startTime.slice(0,10),liveStartTime:item.startTime, liveAnchors:item.anchors,livePlaybackAvailable:!!item.link,
       time:Date.parse(item.startTime.replace(' ','T')+':00+08:00') });
     if (!note.liveDefaultsV2) { note.free=true; note.liveDefaultsV2=true; }

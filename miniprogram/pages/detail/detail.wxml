@@ -45,6 +45,7 @@
         <view class="course-btn {{resourceClaiming ? 'disabled' : ''}}" bindtap="onGetResource">
           {{resourceClaiming ? '加载中…' : resourceLabel}}
         </view>
+        <view wx:if="{{note.resourceKind === 'live-course'}}" class="course-btn replay-btn" bindtap="openReplayQr">播放回放</view>
         <view class="action" bindtap="onLike">
           <view class="ic heart {{note.liked ? 'active' : ''}}"></view><text class="num">{{likeText}}</text>
         </view>
@@ -65,6 +66,15 @@
 <view wx:else class="placeholder"></view>
 
 <persistent-tab-bar />
+<view wx:if="{{replayQrVisible}}" class="resource-mask" catchtap="closeReplayQr">
+  <view class="resource-panel replay-panel" catchtap="noop">
+    <view class="resource-title">播放回放</view>
+    <view class="resource-subtitle">添加企业微信获取</view>
+    <image class="replay-qr" src="{{replayQrImage}}" mode="widthFix" show-menu-by-longpress bindtap="previewReplayQr" />
+    <view class="resource-subtitle">点击查看大图，长按识别或保存</view>
+    <view class="resource-close" bindtap="closeReplayQr">关闭</view>
+  </view>
+</view>
 
 <view wx:if="{{pageRenderLoading}}" class="render-loading-mask">
   <view class="skeleton-nav" style="padding-top: {{statusBarHeight}}px; height: {{navBarHeight}}px;">

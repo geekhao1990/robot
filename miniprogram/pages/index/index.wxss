@@ -3,8 +3,12 @@
   background: #f5f5f5;
   overflow: hidden;
 }
-.live-filters { display:flex; flex-wrap:wrap; gap:14rpx; padding:20rpx 12rpx; }
-.live-filter { padding:12rpx 22rpx; border-radius:30rpx; background:#fff; color:#666; font-size:25rpx; border:1rpx solid #e3e3e3; }
+.live-filter-bar { padding:20rpx 12rpx; }
+.live-filters { display:flex; flex-wrap:wrap; gap:14rpx; }
+.live-filter { padding:12rpx 22rpx; border-radius:30rpx; background:#fff; color:#666; font-size:25rpx; line-height:32rpx; white-space:nowrap; border:1rpx solid #e3e3e3; }
+.live-filter-toggle { flex:none; padding:12rpx 8rpx; line-height:34rpx; color:#777; font-size:25rpx; white-space:nowrap; }
+.live-filter-bar.collapsed { display:flex; gap:14rpx; align-items:flex-start; }
+.collapsed .live-filters { flex:1; min-width:0; height:58rpx; overflow:hidden; }
 .live-filter.selected { color:#ff2442; border-color:#ff2442; background:#fff1f4; font-weight:600; }
 
 /* 头部 */

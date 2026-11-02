@@ -25,7 +25,7 @@ test('live source supports wrapped/array response and rejects wrong destinations
 test('idempotent sync preserves admin free/visibility and respects deletion', () => {
   const d=data();const rows=parseItems([item]);
   assert.equal(applyItems(d,rows).created,1);const note=d.notes[0];
-  assert.equal(note.content,'点击下方按钮播放视频');assert.equal(note.free,true);
+  assert.equal(note.content,'点击下方按钮观看直播\n（直播链接失效后，点击播放回放获取）');assert.equal(note.free,true);
   note.free=false;note.visible=false;applyItems(d,rows);
   assert.equal(d.notes.length,1);assert.equal(note.free,false);assert.equal(note.visible,false);
   assert.equal(playback(d,note),item.link);

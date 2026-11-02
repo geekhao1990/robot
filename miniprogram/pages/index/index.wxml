@@ -46,8 +46,12 @@
     </view>
 
     <view class="content">
-      <view wx:if="{{tab === 'live'}}" class="live-filters">
-        <view wx:for="{{liveFilters}}" wx:key="key" class="live-filter {{liveFilter === item.key ? 'selected' : ''}}" data-filter="{{item.key}}" bindtap="onLiveFilter">{{item.label}}（{{item.count}}）</view>
+      <view wx:if="{{tab === 'live'}}" class="live-filter-bar {{liveFiltersExpanded ? '' : 'collapsed'}}">
+        <view class="live-filters">
+          <view wx:for="{{liveFilters}}" wx:key="key" class="live-filter {{liveFilter === item.key ? 'selected' : ''}}" data-filter="{{item.key}}" bindtap="onLiveFilter">{{item.label}}（{{item.count}}）</view>
+          <view wx:if="{{liveFiltersExpanded}}" class="live-filter-toggle" bindtap="toggleLiveFilters">收起 ∧</view>
+        </view>
+        <view wx:if="{{!liveFiltersExpanded}}" class="live-filter-toggle" bindtap="toggleLiveFilters">展开 ∨</view>
       </view>
       <view class="placeholder" hidden="{{!(loading && !left.length && !right.length)}}">加载中...</view>
 

@@ -398,6 +398,9 @@
   background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGE4YThhIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PHBhdGggZD0iTTQgMTJ2N2ExIDEgMCAwIDAgMSAxaDE0YTEgMSAwIDAgMCAxLTF2LTciLz48cGF0aCBkPSJNMTIgM3YxMiIvPjxwYXRoIGQ9Ik03LjUgNy41TDEyIDNsNC41IDQuNSIvPjwvc3ZnPg==");
 }
 
+.replay-btn { background:#fff3f5; color:#ff2442; border:1rpx solid #ff2442; margin-left:12rpx; }
+.replay-qr { display:block; width:70vw; max-width:540rpx; margin:20rpx auto; }
+.replay-panel { text-align:center; max-height:85vh; overflow-y:auto; }
 /* 网盘领取 */
 .resource-mask {
   position: fixed;
