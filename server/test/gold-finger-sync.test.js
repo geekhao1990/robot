@@ -99,7 +99,7 @@ test('fetch uses new endpoint with existing login and accepts both response shap
         };
         assert.deepEqual(await fetchSourceData({ baseUrl, username: 'test', password: 'test' }), [newRecord]);
         assert.equal(calls[0].url, 'http://example.test/login');
-        assert.equal(calls[1].url, 'http://example.test/api/yyp/yang-records');
+        assert.equal(calls[1].url, 'http://example.test/api/gold/data');
         assert.equal(calls[1].options.headers.Cookie, 'session=test');
         assert.equal(calls[1].options.redirect, 'manual');
       }
