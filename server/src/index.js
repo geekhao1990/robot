@@ -10,6 +10,7 @@ const audit = require('./audit');
 const goldFingerSync = require('./gold-finger-sync');
 const liveTableSync = require('./live-table-sync');
 const darkFundRankingSync = require('./dark-fund-ranking-sync');
+const middayRanking = require('./dark-fund-midday-ranking');
 const webWechatLogin = require('./web-wechat-login');
 const { reviewModeApplies } = require('./util');
 
@@ -161,6 +162,7 @@ db.load()
       goldFingerSync.start();
       liveTableSync.start();
       darkFundRankingSync.start();
+      middayRanking.start();
     });
   })
   .catch((error) => {
@@ -172,6 +174,7 @@ async function shutdown() {
   goldFingerSync.stop();
   liveTableSync.stop();
   darkFundRankingSync.stop();
+  middayRanking.stop();
   server.close(async () => {
     try { await db.close(); } finally { process.exit(0); }
   });

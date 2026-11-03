@@ -144,6 +144,17 @@ module.exports = { useRemote: true, previewAuthRemote: true, wechatAuthRemote: t
 
 ## 直播课程同步
 
+## 午间暗盘自媒体榜
+
+交易日北京时间11:40启动，从同花顺热榜候选股票查询普通暗盘数据，生成流入、流出各前十。
+午间榜独立保存在 `darkFundMiddayRankings`，不覆盖收盘榜和用户查询缓存，且只有管理员接口可以读取。
+AI自媒体页面提供“导出午间流入/流出图片”，图片标注截至11:30；保存原图及大字封面共4张。
+任务在13:00前取数，校验上游日期、股票代码、盘中标记及午休时间，拒绝盘前、下午、收盘和缺失时间的数据；失败每5分钟重试，13:00后不补抓下午数据。
+生成需要逐股排队，11:40为任务开始时间。可用数不足十只时按实际数量导出并显示失败数。
+部署需更新 src/index.js、src/routes/admin.js、新模块 src/dark-fund-midday-ranking.js，以及 public/admin 下 index.html、ladder.js、ranking-poster.js；重启 robot-api。
+
+## 直播课程同步配置
+
 服务端每天北京时间08:30至21:00（包含首尾）每半小时读取源站 `/livetable/data`，共26个时段，包含周末，支持数组或 `{items:[]}` 响应。
 复用金手指源站账号配置；启用金手指同步时默认同时启用课程同步，
 也可单独设置 `LIVETABLE_SYNC_ENABLED=true/false`，并通过

@@ -1646,11 +1646,26 @@ function generateDarkFundRanking() {
     });
 }
 
-async function generateRankingPosters(button) {
+function refreshMiddayRankingStatus() {
+  api('/api/admin/dark-fund-midday-ranking').then(data=>{
+    const el=document.getElementById('middayRankingStatus');if(!el)return;
+    const s=data.sync || {},r=data.ranking;
+    el.textContent=s.running ? '午间榜生成中，稍后刷新查看' : (r ? `午间榜：${r.tradeDate}，截至11:30，成功${r.successCount}/${r.candidateCount}，失败${(r.failed||[]).length}` : (s.state?.error || '交易日11:40自动生成午间榜；仅供自媒体导出'));
+    if(s.running)setTimeout(refreshMiddayRankingStatus,3000);
+  }).catch(error=>showAdminToast(error.message,'error'));
+}
+function generateMiddayRanking(button) {
+  button.disabled=true;
+  api('/api/admin/dark-fund-midday-ranking/generate',{method:'POST',body:'{}'})
+    .then(()=>{showAdminToast('午间榜已开始生成');refreshMiddayRankingStatus();})
+    .catch(error=>showAdminToast(error.message,'error')).finally(()=>{button.disabled=false;});
+}
+async function generateRankingPosters(button, session = 'close') {
   button.disabled = true;
   try {
-    const data = await api('/api/admin/dark-fund-ranking');
+    const data = await api(session === 'midday' ? '/api/admin/dark-fund-midday-ranking' : '/api/admin/dark-fund-ranking');
     if (data.sync && data.sync.running) throw new Error('榜单正在更新，请完成后再生成分享图');
+    if(session==='midday' && !data.ranking)throw new Error('当前尚无午间榜，请等待11:40自动生成');
     if (document.fonts) await document.fonts.ready;
     const watermark=prompt('请确认本次4张图片的水印，可修改；留空则不显示水印。','指标仓库');
     if(watermark===null)return;

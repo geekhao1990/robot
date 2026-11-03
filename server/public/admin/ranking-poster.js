@@ -34,8 +34,9 @@ function drawRankingCover(original, tradeDate, side) {
 function buildRankingPosters(ranking, watermark = '指标仓库') {
   // Both sides use the same saved ranking snapshot. Originals remain untouched.
   const originals=['inflow','outflow'].map(side=>({side,canvas:drawRankingPoster(ranking,side,watermark)}));
-  return [...originals.map(({side,canvas})=>({canvas,name:`${ranking.tradeDate}-暗盘${side==='inflow'?'流入':'流出'}榜.png`})),
-    ...originals.map(({side,canvas})=>({canvas:drawRankingCover(canvas,ranking.tradeDate,side),name:`${ranking.tradeDate}-暗盘${side==='inflow'?'流入':'流出'}榜-大字封面.png`}))];
+  const prefix=ranking.session==='midday'?'午间-截至1130-':'';
+  return [...originals.map(({side,canvas})=>({canvas,name:`${ranking.tradeDate}-${prefix}暗盘${side==='inflow'?'流入':'流出'}榜.png`})),
+    ...originals.map(({side,canvas})=>({canvas:drawRankingCover(canvas,ranking.tradeDate,side),name:`${ranking.tradeDate}-${prefix}暗盘${side==='inflow'?'流入':'流出'}榜-大字封面.png`}))];
 }
 function drawRankingPoster(ranking, side, watermark = '指标仓库') {
   if (!['inflow', 'outflow'].includes(side)) throw new Error('榜单类型无效');
@@ -70,6 +71,7 @@ function drawRankingPoster(ranking, side, watermark = '指标仓库') {
   if (!date) throw new Error('榜单交易日期无效');
   text(`${Number(date[1])}月${Number(date[2])}日同花顺热股暗盘榜`, 48, 90, 42, ink, 'left', true);
   text(`暗盘${side === 'inflow' ? '流入' : '流出'}前${rows.length === 10 ? '十' : rows.length}名`, 48, 157, 36, side === 'inflow' ? red : green, 'left', true);
+  if(ranking.session==='midday')text('截至11:30午间收盘',1030,157,25,'#737b81','right');
   box(36, 192, 1008, 65, '#f3f5f8');
   [['股票名称', 110, 'left'], ['涨跌幅', 560, 'right'], ['暗盘资金', 790, 'right'], ['明盘资金', 1015, 'right']].forEach(([label,x,align]) => text(label,x,235,26,'#737b87',align));
   let y = 266;

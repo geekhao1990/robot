@@ -17,6 +17,11 @@ function renderAiMedia() {
     </section>
     <section style="flex:1;min-width:280px;padding:24px;border:1px solid #eee;border-radius:12px;background:#fff">
       <h3>暗盘榜分享图与文案</h3>
+      <p id="middayRankingStatus" class="hint">午间榜状态读取中…</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
+        <button class="btn-primary" onclick="generateRankingPosters(this,'midday')">导出午间流入/流出图片</button>
+        <button class="btn-primary" onclick="generateMiddayRanking(this)">补跑午间榜</button>
+      </div>
       <p id="aiMediaRankingStatus" class="hint" style="margin:12px 0">读取榜单状态中…</p>
       <p style="margin:12px 0 20px;color:#666">使用已生成的收盘榜单，不重复查询、不扣次数。</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -35,6 +40,7 @@ function renderAiMedia() {
     </section>
   </div>`;
   const status = document.getElementById('aiMediaRankingStatus');
+  refreshMiddayRankingStatus();
   api('/api/admin/dark-fund-ranking').then(data=>{
     status.textContent=data.sync && data.sync.running ? '榜单正在更新，请完成后生成内容' : data.ranking ? `当前榜单：${data.ranking.tradeDate}` : '暂无榜单，请先在功能设置中生成暗盘榜';
   }).catch(error=>{status.textContent=error.message||'榜单状态读取失败';});

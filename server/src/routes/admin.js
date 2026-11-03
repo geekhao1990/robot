@@ -12,6 +12,7 @@ const { notifyFollowersOfNote, pushNotification } = require('../notifications');
 const { URL } = require('url');
 const { latestRanking, publicRanking } = require('../dark-fund-ranking');
 const darkFundRankingSync = require('../dark-fund-ranking-sync');
+const middayRanking = require('../dark-fund-midday-ranking');
 const { buildMonitoringStats } = require('../monitoring-stats');
 const { setPassword, generateTemporaryPassword } = require('../user-password');
 const { paymentOrderView } = require('../payment-orders');
@@ -479,6 +480,8 @@ module.exports = function register(router, HttpError) {
   });
 
   // ---------- 笔记 ----------
+  router.get('/api/admin/dark-fund-midday-ranking',ctx=>{requireAuth(ctx);return {ranking:middayRanking.latest(),sync:middayRanking.getStatus()};});
+  router.post('/api/admin/dark-fund-midday-ranking/generate',ctx=>{requireAuth(ctx);return middayRanking.manualSync();});
   router.get('/api/admin/livetable/status', ctx => { requireAuth(ctx); return liveTableSync.getStatus(); });
   router.post('/api/admin/livetable/sync', ctx => { requireAuth(ctx); return liveTableSync.syncNow(); });
   router.get('/api/admin/notes', (ctx) => { requireAuth(ctx); return db.get().notes; });

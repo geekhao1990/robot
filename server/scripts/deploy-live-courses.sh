@@ -7,6 +7,7 @@ FILES=(
   src/gold-finger-source.js src/gold-finger-sync.js src/content-types.js
   src/note-access.js src/resource-links.js src/util.js src/web-wechat-login.js
   src/routes/admin.js src/routes/public.js src/routes/app.js src/index.js
+  src/dark-fund-midday-ranking.js public/admin/ladder.js public/admin/ranking-poster.js
   public/admin/index.html
 )
 test -d "$APP/src" || { echo "服务目录不存在：$APP/src"; exit 1; }
