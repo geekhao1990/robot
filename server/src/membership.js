@@ -19,12 +19,42 @@ function closeDarkFundActiveAt(user, now = Date.now()) {
   return !!(user && Number(user.darkFundCloseExpire) > now);
 }
 
-function activateCloseDarkFund(user, now = Date.now()) {
+function activateCloseDarkFund(user, now = Date.now(), days = 30) {
   if (!user) throw new Error('用户不存在');
+  if (![7, 30].includes(days)) throw new Error('普通查询有效期无效');
   const base = closeDarkFundActiveAt(user, now) ? Number(user.darkFundCloseExpire) : now;
-  user.darkFundCloseExpire = base + SERVICE_QUOTA_PERIOD_MS;
+  const periods = (Array.isArray(user.darkFundClosePeriods) ? user.darkFundClosePeriods : [])
+    .filter(period => Number(period.until) > now && Number(period.until) <= base)
+    .map(period => ({ until: Number(period.until), dailyLimit: period.dailyLimit === 0 ? 0 : 49 }));
+  if (base > now && (!periods.length || periods[periods.length - 1].until < base)) {
+    periods.push({ until: base, dailyLimit: user.darkFundCloseDailyLimit === 0 ? 0 : 49 });
+  }
+  periods.push({ until: base + days * DAY_MS, dailyLimit: days === 30 ? 49 : 0 });
+  user.darkFundClosePeriods = periods;
+  user.darkFundCloseDailyLimit = periods[0].dailyLimit;
+  user.darkFundCloseExpire = base + days * DAY_MS;
   user.darkFundEnabled = true;
   return user;
+}
+
+function closeDarkFundDay(now = Date.now()) {
+  return new Date(now + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+function closeDarkFundDailyLimit(user, now = Date.now()) {
+  const period = (user && Array.isArray(user.darkFundClosePeriods) ? user.darkFundClosePeriods : [])
+    .find(item => Number(item.until) > now);
+  return (period ? period.dailyLimit : user && user.darkFundCloseDailyLimit) === 0 ? 0 : 49;
+}
+
+function assertCloseDarkFundDailyLimit(user, orders, now = Date.now()) {
+  const day = closeDarkFundDay(now);
+  if (closeDarkFundDailyLimit(user, now) === 0 || user.darkFundCloseUnlockedDate === day) return;
+  const used = (orders || []).filter(order => order.userId === user.id
+    && order.quotaSource === 'close_month' && !order.quotaRefundedAt
+    && !['FAILED', 'DISPATCH_FAILED', 'CANCELLED'].includes(order.status)
+    && closeDarkFundDay(Number(order.createdAt) || 0) === day).length;
+  if (used >= 49) throw Object.assign(new Error('查询过于频繁，请稍后再试'), { status: 429 });
 }
 
 function refreshDarkFundQuota(user, now = Date.now()) {
@@ -140,6 +170,9 @@ function activateService(user, planId, now = Date.now()) {
 }
 
 module.exports = {
+  closeDarkFundDay,
+  closeDarkFundDailyLimit,
+  assertCloseDarkFundDailyLimit,
   SERVICE_MONTHLY_QUOTA,
   SERVICE_QUOTA_PERIOD_MS,
   SERVICE_PLANS,

@@ -3,7 +3,7 @@
     <view class="tab {{tab === 'query' ? 'active' : ''}}" data-tab="query" bindtap="switchTab">资金流向</view>
     <view class="tab {{tab === 'ranking' ? 'active' : ''}}" data-tab="ranking" bindtap="switchTab">今日暗盘榜</view>
     <view class="tab {{tab === 'history' ? 'active' : ''}}" data-tab="history" bindtap="switchTab">
-      <text>订单列表</text><text wx:if="{{historyBadge}}" class="history-badge">{{historyBadge}}</text>
+      <text>工单列表</text><text wx:if="{{historyBadge}}" class="history-badge">{{historyBadge}}</text>
     </view>
   </view>
 
@@ -62,7 +62,7 @@
       </view>
       <view class="query-benefits-row">
         <view class="quota-summary">
-          <view wx:if="{{closeMonthlyActive}}" class="remaining-tip">普通查询包月：<text>无限查询</text><text wx:if="{{closeMonthlyExpiryText}}" class="quota-expiry">（有效至 {{closeMonthlyExpiryText}}）</text></view>
+          <view wx:if="{{closeMonthlyActive}}" class="remaining-tip">普通查询套餐：<text>已开通</text><text wx:if="{{closeMonthlyExpiryText}}" class="quota-expiry">（有效至 {{closeMonthlyExpiryText}}）</text></view>
           <view class="remaining-tip">剩余次数：<text>{{remaining}}</text></view>
           <view class="quota-details">
             <view wx:if="{{ordinaryTrialRemaining}}"><text>新用户赠送（仅普通查询）</text><text>{{ordinaryTrialRemaining}} 次</text></view>
@@ -73,7 +73,7 @@
         <view class="recharge-actions">
           <view class="recharge-button" bindtap="openTopupModal">
             <view class="recharge-icon">充</view>
-            <view class="recharge-copy"><view class="recharge-title">充值暗盘次数</view><view class="recharge-description"><text>包月30元 · 300次99元</text><text>次数长期有效</text></view></view>
+            <view class="recharge-copy"><view class="recharge-title">充值暗盘套餐</view><view class="recharge-description"><text>10次1元 · 7天14元</text><text>包月29.9元 · 含30天金手指</text></view></view>
           </view>
         </view>
       </view>
@@ -93,12 +93,11 @@
   </view>
 
   <view wx:if="{{tab === 'history'}}" class="history-page">
-    <view class="history-toolbar"><view>查询记录</view><view class="history-refresh {{historyLoading ? 'disabled' : ''}}" bindtap="refreshOrders">{{historyLoading ? '刷新中…' : '手动刷新'}}</view></view>
     <view wx:if="{{historyLoading}}" class="empty">正在加载...</view>
-    <view wx:elif="{{!orders.length}}" class="empty">暂无订单</view>
+    <view wx:elif="{{!orders.length}}" class="empty">暂无工单</view>
     <view wx:else class="order-groups">
       <view wx:for="{{orderGroups}}" wx:for-item="group" wx:key="label" class="order-group">
-        <view class="order-date-heading">{{group.label}}<text>{{group.orders.length}}个订单</text></view>
+        <view class="order-date-heading">{{group.label}}<text>{{group.orders.length}}个工单</text></view>
         <view class="order-list">
           <view wx:for="{{group.orders}}" wx:for-item="order" wx:key="id" class="order-card" data-id="{{order.id}}" bindtap="openOrder">
             <view class="order-main">
@@ -120,8 +119,8 @@
 <view wx:if="{{topupVisible}}" class="topup-mask" bindtap="closeTopupModal">
   <view class="topup-sheet" catchtap="noop">
     <view class="topup-handle"></view>
-    <view class="topup-title">充值暗盘次数</view>
-    <view class="topup-subtitle">次数套餐长期有效，可用于决策和普通查询；包月限普通查询，30天不限次</view>
+    <view class="topup-title">充值暗盘套餐</view>
+    <view class="topup-subtitle">次数长期有效，可用于决策和普通查询；7天及包月套餐用于普通查询，包月含30天金手指。有效期内续购顺延。</view>
     <view class="topup-skus">
       <view wx:for="{{topupSkus}}" wx:key="sku" class="topup-sku {{selectedTopupSku === item.sku ? 'selected' : ''}}" data-sku="{{item.sku}}" bindtap="selectTopupSku">
         <view><text class="topup-times">{{item.label || (item.times + '次')}}</text><text class="topup-unit">{{item.unitPrice}}</text></view>

@@ -40,7 +40,7 @@
     </view>
     <view class="card fund-card">
       <view class="fund-heading-row">
-      <view class="section-heading"><text>暗盘资金</text></view>
+      <view class="section-heading"><text>同花顺暗盘</text></view>
       <view class="segment-control fund-period-tabs">
         <view class="segment {{fundView === 'main' ? 'active' : ''}}" data-view="main" bindtap="switchFundView">1日</view>
         <view class="segment {{fundView === 'trend3' ? 'active' : ''}}" data-view="trend3" bindtap="switchFundView">3日</view>
@@ -70,7 +70,8 @@
           <view class="one-day-zero main"></view><view class="one-day-zero retail"></view>
           <view wx:for="{{dayBars}}" wx:key="label" class="one-day-column">
             <view class="one-day-bar {{item.positive ? 'positive' : 'negative'}}" style="left:{{item.center}}%;height:{{item.height}}%"></view>
-            <text class="one-day-value {{item.positive ? 'positive' : 'negative'}}" style="left:{{item.center}}%;{{item.positive ? 'bottom' : 'top'}}:{{item.labelOffset}}%">{{item.text}}</text>
+            <text wx:if="{{item.positive}}" class="one-day-value positive" style="left:{{item.center}}%;bottom:{{item.labelOffset}}%">{{item.text}}</text>
+            <text wx:if="{{!item.positive}}" class="one-day-value negative" style="left:{{item.center}}%;top:{{item.labelOffset}}%">{{item.text}}</text>
             <text class="one-day-name" style="left:{{item.center}}%">{{item.label}}</text>
           </view>
         </view>

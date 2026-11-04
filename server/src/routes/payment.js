@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const db = require('../db');
 const auth = require('../auth');
-const { refreshDarkFundQuota, consumeDarkFundQuota, refundDarkFundQuota, closeDarkFundActiveAt } = require('../membership');
+const { refreshDarkFundQuota, consumeDarkFundQuota, refundDarkFundQuota, closeDarkFundActiveAt, assertCloseDarkFundDailyLimit, closeDarkFundDailyLimit } = require('../membership');
 const { latestTradingDate, compactDate, isTradingTime } = require('../trading-date');
 const {
   attachDarkFundImages,
@@ -132,6 +132,7 @@ function orderQuotaResponse(order, quota, duplicate = false, user = null) {
     permanentRemaining: quota.manual,
     quotaExpiresAt: quota.serviceExpireAt,
     closeMonthlyActive: closeDarkFundActiveAt(user),
+    closeDailyLimit: closeDarkFundDailyLimit(user),
     closeMonthlyExpireAt: closeDarkFundActiveAt(user) ? Number(user.darkFundCloseExpire) : 0,
     decisionPioneerEnabled: user && user.decisionPioneerEnabled === true,
     ...goldDailyState(user),
@@ -164,6 +165,7 @@ module.exports = function register(router, HttpError) {
       permanentRemaining: quota.manual,
       quotaExpiresAt: quota.serviceExpireAt,
       closeMonthlyActive: closeDarkFundActiveAt(user),
+      closeDailyLimit: closeDarkFundDailyLimit(user),
       closeMonthlyExpireAt: closeDarkFundActiveAt(user) ? Number(user.darkFundCloseExpire) : 0,
       decisionPioneerEnabled: user.decisionPioneerEnabled === true,
       darkFundEnabled: user.darkFundEnabled === true,
@@ -226,6 +228,7 @@ module.exports = function register(router, HttpError) {
     try {
       const available = refreshDarkFundQuota(user);
       const useCloseMonthly = queryMode === 'close' && !useGoldDaily && closeDarkFundActiveAt(user);
+      if (useCloseMonthly) assertCloseDarkFundDailyLimit(user, d.darkFundOrders);
       const canUseTrial = queryMode === 'close' && !useGoldDaily && !useCloseMonthly;
       if (!useGoldDaily && !useCloseMonthly && available.total <= 0 && !(canUseTrial && trialRemaining(user))) throw new HttpError(403, '暗盘资金查询次数已用完');
     let closeResult = null;
@@ -258,6 +261,15 @@ module.exports = function register(router, HttpError) {
       throw new HttpError(502, '盘后数据未生成，已阻止连接 Windows 采集器');
     }
     if (queryMode === 'intraday') intradayResult = cachedIntradayResult(d, stockCode);
+    // 上游请求期间可能有并发请求完成，落单前再次验证，且不重复计入同一请求。
+    if (useCloseMonthly) {
+      const duplicate = d.darkFundOrders.find(item => item.userId === user.id && item.clientRequestId === requestId);
+      if (duplicate) {
+        if (duplicate.stockCode !== stockCode || duplicate.queryMode !== queryMode || duplicate.querySource !== querySource) throw new HttpError(409, '查询请求标识已用于其他查询');
+        return orderQuotaResponse(duplicate, refreshDarkFundQuota(user), true, user);
+      }
+      assertCloseDarkFundDailyLimit(user, d.darkFundOrders);
+    }
     const consumed = useGoldDaily
       ? { ...available, source: 'gold_daily' }
       : (useCloseMonthly ? { ...available, source: 'close_month' }

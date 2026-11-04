@@ -1,7 +1,7 @@
 @import "../../styles/dark-flow-fonts.wxss";
 @import "../../styles/gold-finger-table.wxss";
 
-.page { min-height: 100vh; padding: 24rpx 24rpx 70rpx; color: #222; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; background: #f5f6f8; box-sizing: border-box; }
+.page { min-height: 100vh; padding: 24rpx 0 70rpx; color: #333; font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; background: #fff; box-sizing: border-box; }
 .error { display: flex; align-items: center; justify-content: center; min-height: 70vh; color: #999; font-size: 26rpx; }
 .result-skeleton { min-height: 100vh; }
 .skeleton-card { margin-bottom: 24rpx; padding: 30rpx; overflow: hidden; background: #fff; border-radius: 26rpx; box-sizing: border-box; }
@@ -22,8 +22,8 @@
 .skeleton-row { display: flex; gap: 14rpx; padding: 20rpx 0; }
 .skeleton-row view { flex: 1; height: 28rpx; }
 @keyframes skeleton-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
-.card { margin-bottom: 24rpx; padding: 30rpx; background: #fff; border-radius: 26rpx; box-shadow: 0 8rpx 30rpx rgba(0,0,0,.04); }
-.hero { display: flex; flex-direction: column; align-items: stretch; padding: 20rpx 24rpx; margin-bottom: 16rpx; }
+.card { margin-bottom: 24rpx; padding: 30rpx 0; background: #fff; border-radius: 0; box-shadow: none; }
+.hero { display: flex; flex-direction: column; align-items: stretch; padding: 20rpx 0; margin-bottom: 16rpx; }
 .hero-main-row { display: flex; align-items: baseline; justify-content: space-between; gap: 18rpx; width: 100%; }
 .hero-stock { min-width: 0; white-space: nowrap; }
 .stock-name { font-size: 38rpx; font-weight: 800; }
@@ -47,7 +47,7 @@
 .fund-period-tabs .segment { min-height: 44rpx; padding: 0 10rpx; font-size: 22rpx; font-weight: 500; border-radius: 8rpx; }
 .fund-period-tabs .segment.active { color: #fff; background: #f33f3a; box-shadow: none; font-weight: 600; }
 /* Scoped to 1-day: do not change the 3/5-day charts or history sheets. */
-.one-day-flow { margin: 0 -16rpx; padding: 0 16rpx 16rpx; border: 1px solid #d5d5d5; box-sizing: border-box; color: #333; font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; }
+.one-day-flow { margin: 0; padding: 0 16rpx 16rpx; border: 1px solid #d5d5d5; box-sizing: border-box; color: #333; font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; }
 .one-day-menu { display: flex; align-items: center; justify-content: space-between; height: 84rpx; margin: 0 -16rpx 44rpx; padding: 0 16rpx; border-bottom: 1rpx solid #d5d5d5; pointer-events: none; }
 .one-day-menu-item { position: relative; display: flex; align-items: center; height: 100%; padding-bottom: 6rpx; color: #666; font-size: 28rpx; font-weight: 400; white-space: nowrap; }
 .one-day-menu-item.selected { color: #252525; font-size: 30rpx; font-weight: 700; }
@@ -65,7 +65,7 @@
 .one-day-hk-arrow { width: 16rpx; height: 16rpx; margin-right: 6rpx; border-top: 2rpx solid #ccc; border-right: 2rpx solid #ccc; transform: rotate(45deg); }
 .one-day-summary { display: flex; height: 120rpx; border-radius: 8rpx; background: #f6f6f6; }
 .one-day-summary-item { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; color: #777; font-family: "DarkFlowLabels", sans-serif; font-size: 24rpx; font-weight: 700; letter-spacing: -.4rpx; line-height: 1.25; }
-.one-day-total { font-family: "Bahnschrift", "DarkFlowDigits", sans-serif; font-size: 28rpx; font-weight: 400; font-synthesis: none; letter-spacing: -.6rpx; font-variant-numeric: tabular-nums; }
+.one-day-total { font-family: "Bahnschrift", "DarkFlowDigits", sans-serif; font-size: 28rpx; font-weight: 700; font-synthesis: weight; letter-spacing: -.6rpx; font-variant-numeric: tabular-nums; }
 .one-day-chart { position: relative; height: 0; padding-top: 42%; margin-top: 0; margin-bottom: 20rpx; }
 .one-day-zero { position: absolute; top: 47%; width: 47.56%; height: 1rpx; background: #d5d5d5; }
 .one-day-zero.main { left: 1.22%; }
@@ -86,8 +86,8 @@
 .summary-grid { display: flex; min-height: 180rpx; padding: 30rpx 16rpx; background: #f6f6f6; border-radius: 12rpx; box-sizing: border-box; }
 .summary-item { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 14rpx; color: #777; font-size: 28rpx; font-weight: 400; }
 .summary-value { font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; font-size: 29rpx; font-weight: 700; line-height: 1; transform: scaleX(.86); }
-.up { color: #ff3b30!important; }
-.down { color: #00a84f!important; }
+.up { color: #df4a43!important; }
+.down { color: #19a564!important; }
 .flow-chart { position: relative; width: 100%; height: 330rpx; margin-top: 22rpx; margin-bottom: 30px; padding: 0 12rpx; font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; box-sizing: border-box; }
 .zero-line { position: absolute; top: 50%; right: 0; left: 0; height: 1rpx; background: #d4d4d4; }
 .flow-columns { position: relative; z-index: 1; display: flex; height: 100%; }
@@ -98,15 +98,14 @@
 .bar-down { background: #00b85a; border-radius: 0 0 5rpx 5rpx; }
 .flow-value { min-width: 128rpx; padding: 12rpx 0; font-size: 27rpx; font-weight: 700; line-height: 1; text-align: center; white-space: nowrap; transform: scaleX(.86); }
 .flow-name { position: absolute; bottom: -30px; color: #666; font-size: 28rpx; font-weight: 400; white-space: nowrap; }
-.trend-summary { display: flex; flex-direction: column; align-items: center; gap: 8rpx; margin: 14rpx 0 4rpx; padding: 22rpx 16rpx; color: #777; font-size: 23rpx; background: #f7f7f7; border-radius: 22rpx; }
-.trend-value { font-size: 31rpx; font-weight: 750; }
+.trend-summary { display: flex; flex-direction: column; align-items: center; gap: 8rpx; margin: 14rpx 0 4rpx; padding: 22rpx 0; color: #777; font-family: "DarkFlowLabels", "PingFang SC", "Microsoft YaHei", sans-serif; font-size: 24rpx; font-weight: 700; letter-spacing: -.4rpx; background: #f6f6f6; border-radius: 0; }
+.trend-value { font-family: "Bahnschrift", "DarkFlowDigits", "PingFang SC", "Microsoft YaHei", sans-serif; font-size: 28rpx; font-weight: 700; font-synthesis: weight; letter-spacing: -.6rpx; font-variant-numeric: tabular-nums; }
 .trend-chart-wrap { position: relative; width: 100%; height: 500rpx; margin-top: 8rpx; }
 .trend-canvas { width: 100%; height: 500rpx; }
 .trend-empty { display: flex; align-items: center; justify-content: center; min-height: 360rpx; color: #aaa; font-size: 24rpx; }
-.detail-title { display: flex; align-items: center; gap: 16rpx; margin-bottom: 20rpx; font-size: 34rpx; font-weight: 800; }
-.detail-title::before { flex: 0 0 8rpx; width: 8rpx; height: 44rpx; content: ''; background: #ff3b30; border-radius: 999rpx; }
+.detail-title { display: flex; align-items: center; gap: 16rpx; margin-bottom: 20rpx; color: #333; font-size: 32rpx; font-weight: 800; }
 .detail-card { padding-right: 0; padding-left: 0; overflow: hidden; }
-.detail-card > .detail-title, .detail-card > .segment-control { margin-right: 30rpx; margin-left: 30rpx; }
+.detail-card > .detail-title, .detail-card > .segment-control { margin-right: 0; margin-left: 0; }
 .table { width: 100%; border: 2rpx solid #dfe3e8; border-radius: 14rpx; box-sizing: border-box; }
 .tr { display: flex; min-height: 78rpx; border-top: 1rpx solid #e6e8eb; }
 .tr:first-child { border-top: 0; }
@@ -206,3 +205,27 @@
 .history-date-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 14rpx; margin: 8rpx 8rpx 24rpx; color: #20252b; }
 .history-date-title { font-family: "Songti SC", "STSong", "SimSun", serif; font-size: 36rpx; font-weight: 700; line-height: 1.4; }
 .history-date-heading .history-signal-label { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 20rpx; line-height: 1.3; padding: 3rpx 12rpx; }
+
+/* The 1-day flow is the typography and colour reference for this page. */
+.section-heading, .detail-title { color: #333; font-size: 32rpx; font-weight: 800; }
+.query-complete { color: #19a564; }
+.query-heading .stock-code, .header-meta, .history-summary, .history-legend, .history-date, .history-hint, .history-metric, .segment { color: #777; }
+.gold-preview-entry { color: #5998c7; background: #fff; border-color: #d5d5d5; }
+.gold-preview-entry-hover { background: #f6f6f6; }
+.history-selected, .detail-date-link { color: #666; }
+.history-selected-amount, .tr:not(.th) text, .summary-value, .flow-value, .history-metric text, .stock-code, .header-meta, .detail-date-link { font-family: "Bahnschrift", "DarkFlowDigits", "PingFang SC", "Microsoft YaHei", sans-serif; font-weight: 700; font-synthesis: weight; letter-spacing: -.6rpx; font-variant-numeric: tabular-nums; transform: none; }
+.history-selected-amount { font-size: 28rpx; }
+.tr.th, .tr.th text { color: #777!important; background: #f6f6f6; }
+.table { border-color: #d5d5d5; border-radius: 0; }
+.history-column.selected, .signal-none { background: #f6f6f6; }
+.history-bar.positive, .bar-up { background: #ff3833; }
+.history-bar.negative, .bar-down { background: #00b65b; }
+.signal-g { color: #df4a43; background: #fff; border-color: #df4a43; }
+.signal-s { color: #19a564; background: #fff; border-color: #19a564; }
+.signal-g.signal-change { color: #fff; background: #df4a43; border-color: #df4a43; }
+.signal-s.signal-change { color: #fff; background: #19a564; border-color: #19a564; }
+.history-navigation view { color: #666; border-color: #d5d5d5; }
+.history-actions button { background: #ff3833; }
+.history-date-title { font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; }
+.history-date-heading .history-signal-label { font-family: inherit; }
+.gold-preview-sheet { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }

@@ -1,4 +1,34 @@
 const test = require('node:test');
+test('week and month renewals preserve each purchased period limit without bypass or lost benefits', () => {
+  const { activateCloseDarkFund, closeDarkFundDailyLimit } = require('../src/membership');
+  const assert = require('node:assert/strict');
+  const now = Date.parse('2026-11-04T10:00:00+08:00'), day = 86400000;
+  for (const durations of [[7,30],[30,7]]) {
+    const user = {};
+    activateCloseDarkFund(user, now, durations[0]);
+    activateCloseDarkFund(user, now, durations[1]);
+    assert.equal(user.darkFundCloseExpire, now + 37 * day);
+    assert.equal(closeDarkFundDailyLimit(user, now), durations[0] === 7 ? 0 : 49);
+    assert.equal(closeDarkFundDailyLimit(user, now + durations[0] * day), durations[1] === 7 ? 0 : 49);
+  }
+});
+test('monthly limit resets at Beijing midnight and ignores failures and other users', () => {
+  const { assertCloseDarkFundDailyLimit, closeDarkFundDay } = require('../src/membership');
+  const assert = require('node:assert/strict');
+  const now = Date.parse('2026-11-04T23:59:59+08:00');
+  const user = { id: 'u1' };
+  const orders = Array.from({ length: 49 }, () => ({ userId: 'u1', createdAt: now, quotaSource: 'close_month', status: 'READY' }));
+  assert.throws(() => assertCloseDarkFundDailyLimit(user, orders, now), { status: 429 });
+  assert.doesNotThrow(() => assertCloseDarkFundDailyLimit(user, orders, now + 1000));
+  user.darkFundCloseUnlockedDate = closeDarkFundDay(now - 86400000);
+  assert.throws(() => assertCloseDarkFundDailyLimit(user, orders, now), { status: 429 });
+  user.darkFundCloseUnlockedDate = closeDarkFundDay(now);
+  assert.doesNotThrow(() => assertCloseDarkFundDailyLimit(user, orders, now));
+  delete user.darkFundCloseUnlockedDate;
+  orders[0].status = 'FAILED';
+  orders.push({ userId: 'u2', createdAt: now, quotaSource: 'close_month', status: 'READY' });
+  assert.doesNotThrow(() => assertCloseDarkFundDailyLimit(user, orders, now));
+});
 const assert = require('node:assert/strict');
 const {
   activateService,

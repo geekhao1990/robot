@@ -6,7 +6,6 @@ const { typeLabel } = require('../content-types');
 const { resourceList } = require('../resource-links');
 const { canViewNote, findViewableNote, isDarkFundNote } = require('../note-access');
 const goldFingerSync = require('../gold-finger-sync');
-const liveTableSync = require('../live-table-sync');
 const { isLiveCourse, today } = require('../live-course');
 const analytics = require('../analytics');
 
@@ -209,12 +208,7 @@ module.exports = function register(router, HttpError) {
     const note = data.notes.find((n) => n.id === ctx.params.id && canViewNote(data, n, reader));
     if (!note) throw new HttpError(404, 'not found');
     if (note.type === 'gold') throw new HttpError(400, '金手指内容请进入会员专属页面查看');
-    if (isLiveCourse(note)) {
-      const url = liveTableSync.playback(data, note);
-      if (!url) return { kind:'live-course', available:false, message:'直播未开始' };
-      return { kind: 'live-course', url };
-    }
-    if (note.type === 'course' && note.free !== true && !goldAccess(reader)) {
+    if (!isLiveCourse(note) && note.type === 'course' && note.free !== true && !goldAccess(reader)) {
       throw new HttpError(403, '该课程资料仅限有效期内的金手指会员领取');
     }
     const resources = resourceList(note);

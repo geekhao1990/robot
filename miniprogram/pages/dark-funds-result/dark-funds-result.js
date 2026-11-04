@@ -8,8 +8,8 @@ const { showRewardedPreview } = require('../../utils/rewarded-preview');
 const { decorateGoldRecord } = require('../../utils/gold-finger-record');
 
 const YELLOW = '#ffe50a';
-const TREND_AREA_RED = '#ff0000';
-const TREND_AREA_GREEN = '#00ff00';
+const TREND_AREA_RED = '#ff3833';
+const TREND_AREA_GREEN = '#00b65b';
 
 function chooseUnit(values) {
   return values.some((value) => Math.abs(Number(value) || 0) >= 100000000)
@@ -378,7 +378,7 @@ Page({
       const yAt = (value) => padding.top + (max - value) / (max - min) * plotHeight;
       const zeroY = yAt(0);
       context.clearRect(0, 0, width, height);
-      context.font = '10px sans-serif';
+      context.font = '10px "Bahnschrift", "DarkFlowDigits", "PingFang SC", sans-serif';
       context.textBaseline = 'middle';
       for (let step = 0; step <= 4; step += 1) {
         const value = max - (max - min) * step / 4;
@@ -390,7 +390,7 @@ Page({
         context.moveTo(padding.left, y);
         context.lineTo(width - padding.right, y);
         context.stroke();
-        context.fillStyle = '#8a9098';
+        context.fillStyle = '#777';
         context.textAlign = 'right';
         context.fillText(formatByUnit(value, unit, true), padding.left - 6, y);
       }

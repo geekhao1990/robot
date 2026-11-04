@@ -79,8 +79,6 @@ Page({
     inviteCode: '',
     resourceModalVisible: false,
     resourceOptions: [],
-    replayQrVisible: false,
-    replayQrImage: '/images/enterprise-wechat.jpg',
     resourceClaiming: false,
     pageRenderLoading: true,
   },
@@ -159,8 +157,6 @@ Page({
         return toast('笔记不存在');
       }
       let content = String(note.content || '').replace(/\s+$/, '');
-      const replayHint = '（直播链接失效后，点击播放回放获取）';
-      if (note.resourceKind === 'live-course' && content.indexOf(replayHint) < 0) content += `${content ? '\n' : ''}${replayHint}`;
       const darkFundNote = isDarkFundNote(note);
       // 骨架层只等待首屏图片；后续图片继续后台加载，避免多图笔记等待过久。
       const firstImageIndex = (note.images || []).findIndex(Boolean);
@@ -186,7 +182,7 @@ Page({
         isDarkFundNote: darkFundNote,
         canShareNote,
         darkParagraphs: darkFundNote ? darkArticleParagraphs(note, content) : [],
-        resourceLabel: note.resourceKind === 'live-course' ? '观看直播' : (darkFundNote ? '查询暗盘' : (note.type === 'gold' ? '查看金手指' : '点击领取')),
+        resourceLabel: darkFundNote ? '查询暗盘' : (note.type === 'gold' ? '查看金手指' : '点击领取'),
         articleAdLoadFailed: false,
         isOwnNote,
         followed: !isOwnNote && store.isFollowed(authorId),
@@ -289,8 +285,8 @@ Page({
       return wx.navigateTo({ url: '/pages/dark-funds/dark-funds' });
     }
     if (this.data.note && this.data.note.type === 'gold') return this.openGoldFeature();
-    if (this.data.note && this.data.note.resourceKind === 'live-course') {
-      if (this.data.note.livePlaybackAvailable === false) return wx.showModal({title:'直播未开始',content:'请稍后再来观看',showCancel:false});
+    if (this.data.note && this.data.note.isLiveCourse) {
+      if (!this.data.note.hasResource) return wx.showModal({title:'课程回放尚未就绪',content:'回放上传并回填网盘链接后即可领取，请稍后再来查看。',showCancel:false});
       return this.handleGetResource(this.data.note.free === true);
     }
     if (this.data.note && this.data.note.type === 'course' && this.data.note.free !== true) {
@@ -494,15 +490,6 @@ Page({
   },
   showResource() {
     return api.getResource(this.data.note.id).then((result) => {
-      if (result.kind === 'live-course') {
-        if (!result.url) return wx.showModal({title:'直播未开始',content:'请稍后再来观看',showCancel:false});
-        return wx.showModal({
-          title: '观看直播',
-          content: '由于微信政策，复制链接到浏览器观看直播。',
-          confirmText: '复制链接',
-          success: res => { if (res.confirm) wx.setClipboardData({ data: result.url }); },
-        });
-      }
       let resources = Array.isArray(result.resources) ? result.resources : [];
       if (!resources.length && result.url) {
         const provider = /quark\.cn/i.test(result.url) ? 'quark' : 'baidu';
@@ -518,7 +505,9 @@ Page({
         url: item.url,
       }));
       if (!resources.length) return toast('管理员尚未配置获取地址');
-      this.setData({ resourceOptions: resources, resourceModalVisible: true });
+      this.setData({ resourceOptions: resources });
+      if (resources.length === 1) return this.presentResource(resources[0]);
+      wx.showActionSheet({ itemList: resources.map(item => item.name), success: result => this.presentResource(resources[result.tapIndex]) });
     }).catch((err) => {
       toast('获取地址失败，请联系客服');
     });
@@ -526,9 +515,6 @@ Page({
   closeResourceModal() {
     this.setData({ resourceModalVisible: false });
   },
-  openReplayQr() { this.setData({replayQrVisible:true}); },
-  closeReplayQr() { this.setData({replayQrVisible:false}); },
-  previewReplayQr() { wx.previewImage({urls:[this.data.replayQrImage],current:this.data.replayQrImage}); },
   noop() {},
   onArticleAdError() {
     this.setData({ articleAdLoadFailed: true });
@@ -536,11 +522,23 @@ Page({
   copyResourceLink(e) {
     const resource = this.data.resourceOptions[Number(e.currentTarget.dataset.index)];
     if (!resource || !resource.url) return;
+    this.presentResource(resource);
+  },
+  presentResource(resource) {
+    if (!resource || !resource.url) return;
+    wx.showModal({
+      title: `${resource.name}领取`,
+      content: `点击“复制链接”后，请打开${resource.name} App，粘贴链接领取并保存到自己的网盘。\n\n${resource.url}`,
+      confirmText: '复制链接', cancelText: '取消', confirmColor: resource.provider === 'quark' ? '#2864ff' : '#1677ff',
+      success: result => { if (result.confirm) this.copyResource(resource); },
+    });
+  },
+  copyResource(resource) {
     wx.setClipboardData({
       data: resource.url,
       success: () => {
         this.closeResourceModal();
-        wx.showToast({ title: `已复制，请打开${resource.name}`, icon: 'none', duration: 2200 });
+        wx.showModal({ title: '链接已复制', content: `1. 打开${resource.name} App。\n2. 根据识别提示打开链接；未识别时，请在浏览器地址栏粘贴链接打开。\n3. 保存到自己的网盘后观看。\n\n如未安装，请先到应用商店下载${resource.name}。`, showCancel: false, confirmText: '我知道了', confirmColor: '#2864ff' });
       },
       fail: () => toast('复制失败，请重试'),
     });

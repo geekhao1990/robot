@@ -1,9 +1,12 @@
 const PRODUCTS = Object.freeze({
   dark_fund_once: Object.freeze({
-    id: 'dark_fund_once', amount: 99, quota: 1, prefix: 'DFP', description: '暗盘单次查询', goodsName: '暗盘单次查询', orderName: '暗盘单次查询',
+    id: 'dark_fund_once', amount: 20, quota: 1, prefix: 'DFP', description: '暗盘单次查询', goodsName: '暗盘单次查询', orderName: '暗盘单次查询',
   }),
   dark_fund_10: Object.freeze({
-    id: 'dark_fund_10', amount: 600, quota: 10, prefix: 'DF10', description: '充值暗盘次数（10次）', goodsName: '暗盘查询次数充值10次', orderName: '暗盘查询次数 · 10次',
+    id: 'dark_fund_10', amount: 100, quota: 10, prefix: 'DF10', description: '充值暗盘次数（10次）', goodsName: '暗盘查询次数充值10次', orderName: '暗盘查询次数 · 10次',
+  }),
+  dark_fund_week: Object.freeze({
+    id: 'dark_fund_week', amount: 1400, days: 7, prefix: 'DFW', description: '普通查询7天不限次', goodsName: '普通查询7天', orderName: '普通查询 · 7天',
   }),
   dark_fund_100: Object.freeze({
     id: 'dark_fund_100', amount: 5000, quota: 100, prefix: 'DF100', description: '充值暗盘次数（100次）', goodsName: '暗盘查询次数充值100次', orderName: '暗盘查询次数 · 100次',
@@ -16,7 +19,7 @@ const PRODUCTS = Object.freeze({
     id: 'dark_fund_300', amount: 9900, quota: 300, prefix: 'DF300', description: '充值暗盘次数（300次）', goodsName: '暗盘查询次数充值300次', orderName: '暗盘查询次数 · 300次',
   }),
   dark_fund_month: Object.freeze({
-    id: 'dark_fund_month', amount: 3000, prefix: 'DFM', description: '普通查询包月（30天）', goodsName: '普通查询包月30天', orderName: '普通查询包月 · 30天',
+    id: 'dark_fund_month', amount: 2990, days: 30, goldDays: 30, prefix: 'DFM', description: '普通查询包月含30天金手指', goodsName: '普通查询包月及金手指30天', orderName: '普通查询包月 · 30天',
   }),
   dark_fund_1000: Object.freeze({
     id: 'dark_fund_1000', amount: 24000, quota: 1000, prefix: 'DF1000', description: '充值暗盘次数（1000次）', goodsName: '暗盘查询次数充值1000次', orderName: '暗盘查询次数 · 1000次',

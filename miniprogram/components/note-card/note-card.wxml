@@ -8,7 +8,8 @@
     <view wx:if="{{deletable}}" class="card-del" catchtap="onDelete">×</view>
   </view>
   <view class="info">
-    <view class="title ellipsis-2">{{cardTitle}}</view>
+    <view class="title {{note.isLiveCourse ? 'live-title' : 'ellipsis-2'}}">{{cardTitle}}</view>
+    <view wx:if="{{note.liveTags.length}}" class="course-status-row"><text wx:for="{{note.liveTags}}" wx:key="key" class="course-status {{item.key}}">{{item.label}}</text></view>
     <view class="bottom">
       <image class="avatar" src="{{authorAvatar}}" mode="aspectFill" binderror="onAvatarError" />
       <view class="name ellipsis">{{authorName}}</view>

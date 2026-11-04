@@ -1,0 +1,7 @@
+.course-status-row { display: flex; flex-wrap: wrap; gap: 10rpx; margin: 12rpx 0 20rpx; }
+.course-status { display: inline-block; padding: 6rpx 14rpx; border-radius: 8rpx; color: #fff; background: #617185; font-size: 23rpx; font-weight: 600; line-height: 1.5; }
+.course-status.preview { background: #2864e8; }
+.course-status.recording { background: #df3b38; }
+.course-status.replay { background: #138658; }
+.course-status.processing { color: #865000; background: #ffedb9; }
+.course-status.waiting, .course-status.ended { color: #4c5d73; background: #e9eef5; }

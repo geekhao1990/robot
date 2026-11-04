@@ -28,6 +28,7 @@
     </view>
     <view class="article {{isDarkFundNote ? 'dark-article' : ''}}">
       <view class="title">{{note.title}}</view>
+      <view wx:if="{{note.liveTags.length}}" class="course-status-row"><text wx:for="{{note.liveTags}}" wx:key="key" class="course-status {{item.key}}">{{item.label}}</text></view>
       <block wx:if="{{isDarkFundNote}}">
         <view wx:if="{{darkParagraphs[0]}}" class="dark-paragraph">{{darkParagraphs[0]}}</view>
         <image wx:if="{{note.images[0]}}" class="dark-article-image" src="{{note.images[0]}}" mode="widthFix" bindload="onPageImageLoad" binderror="onPageImageError" bindtap="onNoteImageTap" data-index="0" data-url="{{note.images[0]}}" />
@@ -45,7 +46,6 @@
         <view class="course-btn {{resourceClaiming ? 'disabled' : ''}}" bindtap="onGetResource">
           {{resourceClaiming ? '加载中…' : resourceLabel}}
         </view>
-        <view wx:if="{{note.resourceKind === 'live-course'}}" class="course-btn replay-btn" bindtap="openReplayQr">播放回放</view>
         <view class="action" bindtap="onLike">
           <view class="ic heart {{note.liked ? 'active' : ''}}"></view><text class="num">{{likeText}}</text>
         </view>
@@ -66,15 +66,6 @@
 <view wx:else class="placeholder"></view>
 
 <persistent-tab-bar />
-<view wx:if="{{replayQrVisible}}" class="resource-mask" catchtap="closeReplayQr">
-  <view class="resource-panel replay-panel" catchtap="noop">
-    <view class="resource-title">播放回放</view>
-    <view class="resource-subtitle">添加企业微信获取</view>
-    <image class="replay-qr" src="{{replayQrImage}}" mode="widthFix" show-menu-by-longpress bindtap="previewReplayQr" />
-    <view class="resource-subtitle">点击查看大图，长按识别或保存</view>
-    <view class="resource-close" bindtap="closeReplayQr">关闭</view>
-  </view>
-</view>
 
 <view wx:if="{{pageRenderLoading}}" class="render-loading-mask">
   <view class="skeleton-nav" style="padding-top: {{statusBarHeight}}px; height: {{navBarHeight}}px;">
@@ -92,22 +83,5 @@
     <view class="skeleton-line skeleton-shimmer"></view>
     <view class="skeleton-line short skeleton-shimmer"></view>
     <view class="skeleton-meta skeleton-shimmer"></view>
-  </view>
-</view>
-
-<view wx:if="{{resourceModalVisible}}" class="resource-mask" catchtap="closeResourceModal">
-  <view class="resource-panel" catchtap="noop">
-    <view class="resource-title">选择领取方式</view>
-    <view class="resource-subtitle">链接复制后，打开对应网盘即可领取</view>
-    <view class="resource-list">
-      <view wx:for="{{resourceOptions}}" wx:key="provider" class="resource-item {{item.provider}}">
-        <view class="resource-brand">
-          <view class="resource-logo">{{item.provider === 'quark' ? '夸' : '度'}}</view>
-          <text>{{item.name}}</text>
-        </view>
-        <button class="resource-copy" data-index="{{index}}" bindtap="copyResourceLink">复制链接</button>
-      </view>
-    </view>
-    <view class="resource-close" bindtap="closeResourceModal">关闭</view>
   </view>
 </view>

@@ -3,7 +3,7 @@ const db = require('../db');
 const auth = require('../auth');
 const { pubSettings, goldAccess } = require('../util');
 const { TYPE_LABELS, normalizeType, typeLabel, typeForCategory } = require('../content-types');
-const { refreshDarkFundQuota, setManualDarkFundQuota, addManualDarkFundQuota, activateCloseDarkFund, closeDarkFundActiveAt } = require('../membership');
+const { refreshDarkFundQuota, setManualDarkFundQuota, addManualDarkFundQuota, activateCloseDarkFund, closeDarkFundActiveAt, closeDarkFundDay } = require('../membership');
 const { normalizeResourceLinks } = require('../resource-links');
 const crypto = require('crypto');
 const goldFingerSync = require('../gold-finger-sync');
@@ -497,7 +497,6 @@ module.exports = function register(router, HttpError) {
     if (!author) throw new HttpError(400, '请选择有效的官方作者账号');
     const resolved = resolveCategory(d, b.category, b.type);
     const type = resolved.type;
-    if (type==='live' && b.liveUrl && !/^https:\/\/live\.myhexin\.com\/player\/\?/.test(String(b.liveUrl))) throw new HttpError(400,'请填写正确的课程播放链接');
     const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
     const links = normalizeResourceLinks(b, type, !hasProviderFields);
@@ -508,7 +507,7 @@ module.exports = function register(router, HttpError) {
       category: resolved.category,
       type,
       ...links,
-      ...(type==='live'?{resourceKind:'live-course',liveUrl:String(b.liveUrl || ''),liveDate:String(b.liveStartTime || '').slice(0,10),liveStartTime:String(b.liveStartTime || ''),liveAnchors:Array.isArray(b.liveAnchors)?b.liveAnchors:[]} : {}),
+      ...(type==='live'?{liveSourceStatus:0,liveSourceFuture:true,liveDate:String(b.liveStartTime || '').slice(0,10),liveStartTime:String(b.liveStartTime || ''),liveAnchors:Array.isArray(b.liveAnchors)?b.liveAnchors:[]} : {}),
       title: b.title || '未命名',
       content: b.content || '',
       images: b.images || [],
@@ -559,15 +558,13 @@ module.exports = function register(router, HttpError) {
     const hasProviderFields = Object.prototype.hasOwnProperty.call(b, 'baiduUrl')
       || Object.prototype.hasOwnProperty.call(b, 'quarkUrl');
     Object.assign(note, normalizeResourceLinks(note, note.type, !hasProviderFields));
-    if (note.resourceKind === 'live-course') {
-      note.type = 'live'; note.category = '直播课';
-      note.baiduUrl = ''; note.quarkUrl = ''; note.courseUrl = '';
-    }
     if (note.type === 'live') {
-      note.resourceKind='live-course'; note.liveDate=String(note.liveStartTime || '').slice(0,10);
-      note.liveUrl=String(note.liveUrl || '').trim();
-      if(note.liveUrl && !/^https:\/\/live\.myhexin\.com\/player\/\?/.test(note.liveUrl)) throw new HttpError(400,'请填写正确的课程播放链接');
+      note.liveDate=String(note.liveStartTime || '').slice(0,10);
+      note.title=require('../live-course').courseTitle(note.title,note.liveStartTime);
+      note.content=require('../live-course').courseContent(note.content);
     }
+    delete note.resourceKind;
+    delete note.liveUrl;
     delete note.comments;
     delete note.commentList;
     if (d.settings && d.settings.featuredNoteId === note.id && note.type !== 'gold') {
@@ -872,10 +869,14 @@ module.exports = function register(router, HttpError) {
       if (action === 'open' && active) throw new HttpError(409, '已开通普通查询包月，请选择续期');
       if (action === 'renew' && !active) throw new HttpError(409, '普通查询包月未生效，请选择开通');
       activateCloseDarkFund(user);
+    } else if (action === 'unlock') {
+      if (!active) throw new HttpError(409, '普通查询套餐未生效');
+      user.darkFundCloseUnlockedDate = closeDarkFundDay();
+      user.darkFundCloseUnlockedAt = Date.now();
     } else if (action === 'cancel') {
       user.darkFundCloseExpire = 0;
     } else {
-      throw new HttpError(400, 'action 须为 open/renew/cancel');
+      throw new HttpError(400, 'action 须为 open/renew/unlock/cancel');
     }
     await db.save();
     return user;

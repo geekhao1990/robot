@@ -52,12 +52,13 @@ function pubUser(user) {
 // 小程序内容接口不直接暴露网盘地址
 function pubNote(note) {
   if (!note) return note;
-  const { courseUrl, baiduUrl, quarkUrl, room_id, roomId, link, play, liveUrl, ...safe } = note;
+  const { courseUrl, baiduUrl, quarkUrl, room_id, roomId, link, play, liveUrl, resourceKind, ...safe } = note;
+  const live = require('./live-course');
   return {
     ...safe,
-    ...(require('./live-course').isLiveCourse(note) ? {resourceKind:'live-course'} : {}),
+    ...(live.isLiveCourse(note) ? { ...live.courseState(note), title: live.courseTitle(note.title, note.liveStartTime), content: live.courseContent(note.content) } : (resourceKind ? { resourceKind } : {})),
     riskDisclaimerEnabled: note.riskDisclaimerEnabled !== false,
-    hasResource: require('./live-course').isLiveCourse(note) || resourceList(note).length > 0,
+    hasResource: resourceList(note).length > 0,
   };
 }
 

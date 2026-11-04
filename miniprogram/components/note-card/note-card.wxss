@@ -1,3 +1,4 @@
+@import "../../styles/course-status.wxss";
 .card {
   position: relative;
   background: #fff;

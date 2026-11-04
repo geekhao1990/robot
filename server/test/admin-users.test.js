@@ -16,6 +16,7 @@ function setup() {
   const dependencyMap = {
     '../dark-fund-midday-ranking': require('../src/dark-fund-midday-ranking'),
     '../live-table-sync': require('../src/live-table-sync'),
+    '../live-course': require('../src/live-course'),
     '../db': db,
     '../auth': { isAdmin: (token) => token === 'admin', issueAdmin: () => 'admin' },
     '../util': require('../src/util'),
@@ -67,6 +68,34 @@ test('ordinary monthly admin grant renew cancel preserves quotas and other entit
   assert.equal(data.users[0].goldExpire, 123);
   assert.equal(data.users[0].serviceExpire, 456);
   assert.equal(data.users[0].decisionPioneerEnabled, undefined);
+});
+
+test('only admin can unlock an active monthly plan for today without changing other entitlements', async () => {
+  const { data, call } = setup();
+  const url = '/api/admin/users/u1/dark-funds/monthly';
+  await assert.rejects(call('PUT', url, { action: 'unlock' }, ''), { status: 401 });
+  await assert.rejects(call('PUT', url, { action: 'unlock' }), { status: 409 });
+  await call('PUT', url, { action: 'open' });
+  const expiry = data.users[0].darkFundCloseExpire;
+  await call('PUT', url, { action: 'unlock' });
+  assert.equal(data.users[0].darkFundCloseUnlockedDate, require('../src/membership').closeDarkFundDay());
+  assert.equal(data.users[0].darkFundCloseExpire, expiry);
+  assert.equal(data.users[0].goldExpire, 0);
+});
+
+test('admin can fill a live course with normal cloud resources and later sync preserves them', async () => {
+  const { data, call } = setup();
+  data.users[0].official = true;
+  data.users[0].name = 'THS复盘课';
+  data.categories.push('直播课');
+  const note = await call('POST', '/api/admin/notes', {
+    authorId: 'u1', type: 'live', category: '直播课', title: '测试课程', liveStartTime: '2026-11-04 09:00',
+    quarkUrl: 'https://pan.quark.cn/s/test', content: '',
+  });
+  assert.equal(note.quarkUrl, 'https://pan.quark.cn/s/test');
+  const updated = await call('PUT', `/api/admin/notes/${note.id}`, { quarkUrl: 'https://pan.quark.cn/s/new' });
+  assert.equal(updated.quarkUrl, 'https://pan.quark.cn/s/new');
+  assert.equal(require('../src/util').pubNote(updated).liveTags[0].label, '可回放');
 });
 
 test('admin gold entitlement enforces open and cancel states', async () => {

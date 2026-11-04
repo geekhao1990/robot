@@ -3,9 +3,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const { parseItems, parseAnchors, applyItems, playback, dueSlot } = require('../src/live-table-sync');
-const {available}=require('../src/live-course');
+const {available,courseTitle,courseContent}=require('../src/live-course');
 const { pubNote } = require('../src/util');
-const item = { room_id:256949, title:'课程标题', link:'https://live.myhexin.com/player/?a=live&i=256949',start_time:'2026-11-02 08:50',has_replay:1,is_future:0 };
+const item = { room_id:256949, title:'课程标题', play:'/livetable/play?room=256949',start_time:'2026-11-02 08:50',status:3,has_replay:1,is_future:0 };
 const data = () => ({ users:[{id:'u',name:'THS复盘课',official:true}],notes:[] });
 test('every day Beijing 08:30 to 21:00 has exactly 26 half-hour slots', () => {
   const time=s=>Date.parse('2026-11-07T'+s+'+08:00'); // Saturday also runs.
@@ -19,38 +19,62 @@ test('every day Beijing 08:30 to 21:00 has exactly 26 half-hour slots', () => {
 });
 test('live source supports wrapped/array response and rejects wrong destinations', () => {
   assert.deepEqual(parseItems([item]),parseItems({items:[item]}));
-  for(const link of ['http://live.myhexin.com/player/?i=256949','https://evil.test/?i=256949','https://live.myhexin.com/player/?i=9']) assert.throws(()=>parseItems([{...item,link}]));
+  for(const play of ['http://evil.test/play','/livetable/play?room=9']) assert.throws(()=>parseItems([{...item,play}]));
   assert.throws(()=>parseItems([item,item]));
 });
 test('idempotent sync preserves admin free/visibility and respects deletion', () => {
   const d=data();const rows=parseItems([item]);
   assert.equal(applyItems(d,rows).created,1);const note=d.notes[0];
-  assert.equal(note.content,'点击下方按钮观看直播\n（直播链接失效后，点击播放回放获取）');assert.equal(note.free,true);
+  assert.equal(note.content,'');assert.equal(note.free,true);
   note.free=false;note.visible=false;applyItems(d,rows);
   assert.equal(d.notes.length,1);assert.equal(note.free,false);assert.equal(note.visible,false);
-  assert.equal(playback(d,note),item.link);
-  const safe=pubNote(note);assert.equal(safe.hasResource,true);
+  assert.equal(playback(d,note),item.play);
+  const safe=pubNote(note);assert.equal(safe.hasResource,false);
   assert(!JSON.stringify(safe).includes('256949'));assert(!JSON.stringify(safe).includes('myhexin'));
   d.notes=[];assert.equal(applyItems(d,rows).created,0);
 });
 test('empty title uses start date and anchors; later title replaces same note', () => {
   const d=data();
   const rows=parseItems([{...item,title:'',anchors:['张庆国']}]);
-  assert.equal(rows[0].title,'11月2日张庆国课程');
+  assert.equal(rows[0].title,'11月2日张庆国课程 08:50');
   applyItems(d,rows);const id=d.notes[0].id;
-  assert.equal(parseItems([{...item,title:'',anchors:['杨光松','张群']}])[0].title,'11月2日杨光松、张群课程');
+  assert.equal(parseItems([{...item,title:'',anchors:['杨光松','张群']}])[0].title,'11月2日杨光松、张群课程 08:50');
   applyItems(d,parseItems([item]));
-  assert.equal(d.notes.length,1);assert.equal(d.notes[0].id,id);assert.equal(d.notes[0].title,item.title);
+  assert.equal(d.notes.length,1);assert.equal(d.notes[0].id,id);assert.equal(d.notes[0].title,courseTitle(item.title,item.start_time));
 });
 test('mini-program live course free branch skips ads; nonfree uses rewarded branch', () => {
   let page;vm.runInNewContext(fs.readFileSync(require.resolve('../../miniprogram/pages/detail/detail.js'),'utf8'),{
     require:p=>p.endsWith('/store')?{isLogin:()=>true}:p.endsWith('/util')?{}:{}, Page:p=>page=p
   });
   for(const free of [false,true]) {
-    let skip;page.onGetResource.call({data:{note:{type:'course',resourceKind:'live-course',free}},handleGetResource:v=>skip=v});
+    let skip;page.onGetResource.call({data:{note:{type:'live',isLiveCourse:true,hasResource:true,free}},handleGetResource:v=>skip=v});
     assert.equal(skip,free);
   }
 });
+test('Quark uses a native confirmation and copies the complete link with instructions', async () => {
+  let page, copied, modal;
+  const url = 'https://pan.quark.cn/s/example 提取码：1234';
+  const source = fs.readFileSync(require.resolve('../../miniprogram/pages/detail/detail.js'),'utf8');
+  vm.runInNewContext(source, {
+    require:p=>p.endsWith('/api')?{getResource:async()=>({resources:[{provider:'quark',name:'夸克网盘',url}]})}:{},
+    Page:p=>page=p,
+    wx:{setClipboardData:options=>{copied=options.data;options.success();},showModal:options=>{modal=options;}}
+  });
+  page.data.note={id:'live-note'};
+  page.setData=patch=>Object.assign(page.data,patch);
+  await page.showResource();
+  assert.equal(copied,undefined);
+  assert.equal(modal.confirmText,'复制链接');
+  assert(modal.content.includes(url));
+  modal.success({confirm:false});assert.equal(copied,undefined);
+  modal.success({confirm:true});
+  assert.equal(copied,url);
+  assert.match(modal.content,/打开夸克网盘 App/);
+  const markup=fs.readFileSync(require.resolve('../../miniprogram/pages/detail/detail.wxml'),'utf8');
+  assert.match(markup,/course-status-row/);
+  assert.doesNotMatch(markup,/>观看直播<|>播放回放</);
+});
+
 test('playback resource requires login and does not impose ordinary paid course membership', async () => {
   const d=data(); applyItems(d,parseItems([item])); let handler;
   const realRequire=require('node:module').createRequire(require.resolve('../src/routes/public'));
@@ -62,17 +86,18 @@ test('playback resource requires login and does not impose ordinary paid course 
   const ctx={headers:{},params:{id:d.notes[0].id}};
   assert.throws(()=>handler(ctx),e=>e.status===401);
   ctx.headers.authorization='test';
-  assert.deepEqual(JSON.parse(JSON.stringify(handler(ctx))),{kind:'live-course',url:item.link});
-  const room=Object.values(d.liveTableRooms)[0];room.link='';
-  assert.equal(handler(ctx).message,'直播未开始');
+  assert.throws(()=>handler(ctx),e=>e.status===404);
+  d.notes[0].quarkUrl='https://pan.quark.cn/s/example';
+  assert.equal(handler(ctx).resources[0].provider,'quark');
+  assert.equal(handler(ctx).url,d.notes[0].quarkUrl);
 });
 test('synced poster, author, chronological order and first-upgrade defaults repair old notes',()=>{
   const d=data(), rows=parseItems([item]);rows[0].cover='https://example.test/uploads/test.png';rows[0].coverRatio=.75;
   applyItems(d,rows);const n=d.notes[0];
   assert.equal(n.author.name,'THS复盘课');assert.equal(n.cover,rows[0].cover);assert.equal(n.images[0],n.cover);
   assert.equal(n.time,Date.parse('2026-11-02T08:50:00+08:00'));assert.equal(n.type,'live');
-  n.liveDefaultsV2=false;n.free=false;n.baiduUrl='wrong';applyItems(d,rows);
-  assert.equal(n.free,true);assert.equal(n.baiduUrl,'');
+  n.liveDefaultsV2=false;n.free=false;n.quarkUrl='https://pan.quark.cn/s/example';applyItems(d,rows);
+  assert.equal(n.free,true);assert.equal(n.quarkUrl,'https://pan.quark.cn/s/example');
   assert.equal(available({...n,liveDate:'2026-11-03'},Date.parse('2026-11-02T23:59:59+08:00')),false);
   assert.equal(available({...n,liveDate:'2026-11-03'},Date.parse('2026-11-03T00:00:00+08:00')),true);
   assert.deepEqual(parseAnchors('<span data-anchor="张庆国"></span><span data-anchor="杨光松"></span>'),['张庆国','杨光松']);
@@ -82,8 +107,8 @@ test('live feed excludes tomorrow, filters teachers/today and sorts by course ti
   const future=new Date(Date.now()+28800000+86400000).toISOString().slice(0,10);
   applyItems(d,parseItems([
     {...item,start_time:date+' 09:00',anchors:['张庆国']},
-    {...item,room_id:2,link:'',start_time:date+' 19:00',anchors:['杨光松']},
-    {...item,room_id:3,link:'',start_time:future+' 09:00',anchors:['张庆国']}
+    {...item,room_id:2,play:'/livetable/play?room=2',start_time:date+' 19:00',anchors:['杨光松']},
+    {...item,room_id:3,play:'/livetable/play?room=3',start_time:future+' 09:00',anchors:['张庆国']}
   ]));
   const realRequire=require('node:module').createRequire(require.resolve('../src/routes/public'));
   const mod={exports:{}},routes=new Map();d.settings={};d.liveTableAnchors=['张庆国','杨光松','胡中浩'];
@@ -94,4 +119,24 @@ test('live feed excludes tomorrow, filters teachers/today and sorts by course ti
   assert.equal(call('all').list[0].liveStartTime,date+' 19:00');
   assert.equal(call('all').filters.find(f=>f.key==='胡中浩').count,0);
   assert.throws(()=>routes.get('/api/notes/:id')({params:{id:d.notes.find(n=>n.liveDate===future).id},headers:{}}));
+});
+
+test('upstream status gates replay processing, only filled cloud links mark the note replayable', () => {
+  const d=data();
+  for (const [status,has_replay,is_future,label,eligible] of [[0,0,1,'预告',false],[1,1,0,'录制中',false],[3,0,0,'等待回放',false],[3,1,0,'回放整理中',true]]) {
+    applyItems(d,parseItems([{...item,status,has_replay,is_future}]));
+    assert.equal(d.liveTableRooms[item.room_id].replayEligible,eligible);
+    assert.equal(Boolean(playback(d,d.notes[0])),eligible);
+    assert(pubNote(d.notes[0]).liveTags.some(tag=>tag.label===label));
+    assert.equal(pubNote(d.notes[0]).hasResource,false);
+  }
+  d.notes[0].quarkUrl='https://pan.quark.cn/s/example';
+  applyItems(d,parseItems([item]));
+  const note=pubNote(d.notes[0]);
+  assert.equal(note.liveTags[0].label,'可回放');
+  assert.equal(note.hasResource,true);
+  assert(!JSON.stringify(note).includes('pan.quark.cn'));
+  assert.equal(courseTitle('课程 2026-11-04 15:08','2026-11-04 15:10'),'课程 2026-11-04 15:08');
+  assert.equal(courseTitle('课程 11月4日 15：08','2026-11-04 15:10'),'课程 11月4日 15：08');
+  assert.equal(courseContent('点击下方按钮观看直播\n（直播链接失效后，点击播放回放获取）'),'');
 });

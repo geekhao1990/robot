@@ -4,7 +4,7 @@ const path = require('path');
 const db = require('./db');
 const { fetchAuthenticatedJson, fetchAuthenticatedResponse } = require('./gold-finger-sync');
 const { UPLOAD_DIR, detectedImageType, imageDimensions, normalizeImageBytes } = require('./upload');
-const { isLiveCourse } = require('./live-course');
+const { isLiveCourse, courseTitle, courseContent } = require('./live-course');
 let timer, running = false;
 function config() {
   return {
@@ -22,8 +22,8 @@ function parseItems(payload) {
     const room = String(item.room_id || '');
     if (!/^\d{1,16}$/.test(room) || seen.has(room)) throw new Error('直播课表房间标识无效或重复');
     seen.add(room);
-    const link = item.link ? new URL(item.link) : null;
-    if (link && (link.protocol !== 'https:' || link.hostname !== 'live.myhexin.com' || link.pathname !== '/player/' || link.username || link.password || link.searchParams.get('i') !== room)) throw new Error('直播播放地址无效');
+    const play = String(item.play || '');
+    if (play && play !== `/livetable/play?room=${room}`) throw new Error('课程回放页面地址无效');
     const startTime = String(item.start_time || '').replace('：', ':');
     if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(startTime) || !Number.isFinite(Date.parse(startTime.replace(' ','T')+':00+08:00'))) throw new Error('课程开课时间无效');
     const anchors = Array.isArray(item.anchors) ? item.anchors.filter(a=>typeof a==='string').map(a=>a.trim()).filter(Boolean) : [];
@@ -37,7 +37,10 @@ function parseItems(payload) {
       title = `${Number(date[1])}月${Number(date[2])}日${anchors.join('、')}课程`;
     }
     if (title.length > 300) throw new Error('直播课程标题过长');
-    return { room, link: link?.href || '', title, startTime, anchors, poster, hasReplay: item.has_replay === 1, future: item.is_future === 1 };
+    const status = item.status == null ? null : Number(item.status);
+    const hasReplay = item.has_replay === 1 || item.has_replay === true;
+    const future = item.is_future === 1 || item.is_future === true;
+    return { room, play, title: courseTitle(title, startTime), startTime, anchors, poster, status, hasReplay, future, replayEligible: status === 3 && hasReplay && !future };
   });
 }
 function applyItems(data, items, now = Date.now()) {
@@ -55,28 +58,34 @@ function applyItems(data, items, now = Date.now()) {
     if (!note) {
       note = { id: 'live_' + crypto.randomUUID(), authorId: author.id,
         author: { id: author.id, name: author.name, avatar: author.avatar },
-        type: 'live', category: '直播课', content: '点击下方按钮观看直播\n（直播链接失效后，点击播放回放获取）',
+        type: 'live', category: '直播课', content: '',
         images: [], cover: '', coverRatio: 1, tags: ['课程'], likes: 0, collects: 0,
         riskDisclaimerEnabled: false, visible: true, free: true, video: false,
-        resourceKind: 'live-course', courseUrl: '', baiduUrl: '', quarkUrl: '', time: now };
+        courseUrl: '', baiduUrl: '', quarkUrl: '', time: now };
       data.notes.unshift(note); created++;
-    } else if (note.title !== item.title || old.link !== item.link) { updated++; }
+    } else if (note.title !== item.title || old.status !== item.status || old.hasReplay !== item.hasReplay || old.future !== item.future) { updated++; }
     note.title = item.title;
-    Object.assign(note, { type:'live', category:'直播课', resourceKind:'live-course',
+    Object.assign(note, { type:'live', category:'直播课',
       authorId:author.id, author:{id:author.id,name:author.name,avatar:author.avatar},
-      content:'点击下方按钮观看直播\n（直播链接失效后，点击播放回放获取）', baiduUrl:'',quarkUrl:'',courseUrl:'',
-      liveDate:item.startTime.slice(0,10),liveStartTime:item.startTime, liveAnchors:item.anchors,livePlaybackAvailable:!!item.link,
+      content:courseContent(note.content),
+      liveDate:item.startTime.slice(0,10),liveStartTime:item.startTime, liveAnchors:item.anchors,
+      liveSourceStatus:item.status, liveSourceHasReplay:item.hasReplay, liveSourceFuture:item.future,
       time:Date.parse(item.startTime.replace(' ','T')+':00+08:00') });
+    delete note.resourceKind;
+    delete note.liveUrl;
+    delete note.livePlaybackAvailable;
     if (!note.liveDefaultsV2) { note.free=true; note.liveDefaultsV2=true; }
     if (item.cover) { note.cover=item.cover; note.images=[item.cover]; note.coverRatio=item.coverRatio; }
     data.liveTableRooms[item.room] = { ...old, ...item, noteId: note.id };
+    delete data.liveTableRooms[item.room].link;
   }
   data.notes.sort((a,b)=>(Number(b.time)||0)-(Number(a.time)||0));
   return { created, updated, skipped, total: items.length };
 }
 function playback(data, note) {
   if (!isLiveCourse(note)) return null;
-  return Object.values(data.liveTableRooms || {}).find(r => r.noteId === note.id)?.link || note.liveUrl || null;
+  const room = Object.values(data.liveTableRooms || {}).find(r => r.noteId === note.id);
+  return room?.replayEligible ? room.play || null : null;
 }
 function parseAnchors(html) {
   return [...new Set([...String(html).matchAll(/data-anchor="([^"<>]{1,40})"/g)].map(m=>m[1].trim()).filter(Boolean))];

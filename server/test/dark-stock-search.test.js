@@ -24,13 +24,18 @@ test('fund reading guide and gold update notice are visible in their intended se
   assert.match(table, /history-position-col">建议仓位/);
 });
 
-test('monthly package precedes 300 uses and has the best-value badge',()=>{
+test('three packages are horizontal with week in the middle and monthly best-value badge',()=>{
   const base=path.join(__dirname,'../../miniprogram/pages/dark-funds/dark-funds');
   const source=fs.readFileSync(base+'.js','utf8');
   const markup=fs.readFileSync(base+'.wxml','utf8');
-  assert(source.indexOf("sku: 'dark_fund_month'")<source.indexOf("sku: 'dark_fund_300'"));
-  assert.match(source,/sku: 'dark_fund_month'[^\n]+price: '30元'[^\n]+badge: '最划算'/);
+  assert(source.indexOf("sku: 'dark_fund_10'")<source.indexOf("sku: 'dark_fund_week'"));
+  assert(source.indexOf("sku: 'dark_fund_week'")<source.indexOf("sku: 'dark_fund_month'"));
+  assert.doesNotMatch(source,/sku: 'dark_fund_(100|300)'/);
+  assert.match(source,/sku: 'dark_fund_week'[^\n]+price: '14元'/);
+  assert.match(source,/sku: 'dark_fund_month'[^\n]+price: '29.9元'[^\n]+含30天金手指[^\n]+badge: '最划算'/);
+  assert.match(fs.readFileSync(base+'.wxss','utf8'),/\.topup-skus[^}]+flex-wrap: nowrap/);
   assert.match(markup,/wx:if="\{\{item.badge\}\}" class="topup-best"/);
+  assert.doesNotMatch(markup + source, /每日49次|每日限49次/);
 });
 test('daily free button is member-only and shares a row equally with ordinary query',()=>{
   const base=path.join(__dirname,'../../miniprogram/pages/dark-funds/dark-funds');

@@ -89,6 +89,7 @@ Page({
     permanentRemaining: 0,
     quotaExpiryText: '',
     closeMonthlyActive: false,
+    closeDailyLimit: 49,
     closeMonthlyExpiryText: '',
     goldActive: false,
     goldExpiryText: '',
@@ -127,10 +128,9 @@ Page({
     topupVisible: false,
     selectedTopupSku: 'dark_fund_10',
     topupSkus: [
-      { sku: 'dark_fund_10', times: 10, price: '6元', unitPrice: '0.60元/次' },
-      { sku: 'dark_fund_100', times: 100, price: '50元', unitPrice: '0.50元/次' },
-      { sku: 'dark_fund_month', label: '包月', price: '30元', unitPrice: '普通查询 · 30天不限次', badge: '最划算' },
-      { sku: 'dark_fund_300', times: 300, price: '99元', unitPrice: '0.33元/次' },
+      { sku: 'dark_fund_10', times: 10, price: '1元', unitPrice: '0.10元/次' },
+      { sku: 'dark_fund_week', label: '7天', price: '14元', unitPrice: '普通查询不限次', days: 7 },
+      { sku: 'dark_fund_month', label: '包月（30天）', price: '29.9元', unitPrice: '普通查询\n含30天金手指', days: 30, badge: '最划算' },
     ],
   },
   onLoad(options) {
@@ -415,7 +415,7 @@ Page({
         if (order.ready && order.resultType === 'close_snapshot') {
           return wx.navigateTo({ url: `/pages/dark-funds-result/dark-funds-result?id=${encodeURIComponent(order.orderId)}${skipResultAd ? '&skipAd=1' : ''}` });
         }
-        wx.showModal({ title: order.ready ? '查询完成' : '已提交', content: order.ready ? '盘后数据已生成，请在订单列表查看' : '工单处理中，请到订单列表手动刷新状态', showCancel: false });
+        wx.showModal({ title: order.ready ? '查询完成' : '已提交', content: order.ready ? '资金数据已生成，请在工单列表查看' : '工单处理中，请到工单列表查看状态', showCancel: false });
       })
       .catch((error) => {
         wx.hideLoading();
@@ -439,10 +439,10 @@ Page({
             ...item,
             ready,
             failed,
-            stockDisplayName: item.stockDisplayName || displayStockName(item.stockName, item.stockInitials),
+            stockDisplayName: item.stockName || item.stockDisplayName || '',
             marketStockCode: marketStockCode(item.stockCode),
             queryTimeText: formatQueryTime(item.createdAt),
-            statusText: ready ? '点击查看' : (failed ? darkFundFailure({ message: item.error }, item.queryMode).short : '处理中'),
+            statusText: ready ? '查看资金快照' : (failed ? darkFundFailure({ message: item.error }, item.queryMode).short : '处理中'),
           };
         });
         const unread = Array.isArray(result)
@@ -558,6 +558,7 @@ Page({
       permanentRemaining: Number(result && result.permanentRemaining) || 0,
       quotaExpiryText: formatExpiryDate(result && result.quotaExpiresAt),
       closeMonthlyActive: result && result.closeMonthlyActive === true,
+      closeDailyLimit: result && result.closeDailyLimit === 0 ? 0 : 49,
       closeMonthlyExpiryText: formatExpiryDate(result && result.closeMonthlyExpireAt),
       goldActive: result && result.goldActive === true,
       goldExpiryText: formatExpiryDate(result && result.goldExpireAt),
@@ -571,7 +572,7 @@ Page({
     if (!store.isLogin()) return wx.navigateTo({ url: '/pages/login/login' });
     this.setData({ purchasing: true });
     let orderId = '';
-    confirmPurchase('暗盘单次查询', '¥0.99')
+    confirmPurchase('暗盘单次查询', '¥0.20', '充值次数或包月更划算：10次1元，7天14元，包月29.9元（含30天金手指）。')
       .then((confirmed) => {
         if (!confirmed) return null;
         wx.showLoading({ title: '创建订单', mask: true });
@@ -652,7 +653,7 @@ Page({
         }
         if (result.user) store.setUser(result.user);
         this.setData({ topupVisible: false, ...this.quotaData(result) });
-        return this.loadTradeDate().then(() => wx.showToast({ title: product.sku === 'dark_fund_month' ? '包月已开通' : `已到账${result.creditedQuota || product.times}次`, icon: 'success' }));
+        return this.loadTradeDate().then(() => wx.showToast({ title: product.days ? `${product.days}天套餐已开通` : `已到账${result.creditedQuota || product.times}次`, icon: 'success' }));
       })
       .catch((error) => {
         wx.hideLoading();

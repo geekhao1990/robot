@@ -457,6 +457,26 @@ test('暗盘包月只免除盘后查询扣次，盘中查询仍扣减次数', as
   assert.equal(data.users[0].darkFundRemaining, 0);
 });
 
+test('monthly 49th request succeeds, concurrent 50th fails, retries remain idempotent, admin unlock works', async () => {
+  const closeResult = require('../src/dark-fund-close').normalizeCloseDarkFund(require('../src/dark-fund-close').SAMPLE_CLOSE_PAYLOAD, '600105');
+  const { data, call } = setup({ closeResult });
+  data.users[0].darkFundCloseExpire = Date.now() + 30 * 86400000;
+  data.darkFundOrders = Array.from({ length: 48 }, (_, i) => ({ id: 'seed' + i, userId: 'u1', quotaSource: 'close_month', createdAt: Date.now(), status: 'READY' }));
+  const body = i => ({ stockCode: '600105', request_id: 'monthly_limit_test_' + i, source: 'web' });
+  const results = await Promise.allSettled([call('POST', '/api/dark-funds/orders/close', body(49)), call('POST', '/api/dark-funds/orders/close', body(50))]);
+  assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);
+  const rejected = results.find(r => r.status === 'rejected');
+  assert.equal(rejected.reason.status, 429);
+  assert.equal(rejected.reason.message, '查询过于频繁，请稍后再试');
+  const successful = data.darkFundOrders[48];
+  const duplicate = await call('POST', '/api/dark-funds/orders/close', { ...body(49), request_id: successful.clientRequestId });
+  assert.equal(duplicate.duplicate, true);
+  assert.equal(data.darkFundOrders.length, 49);
+  data.users[0].darkFundCloseUnlockedDate = require('../src/membership').closeDarkFundDay();
+  await call('POST', '/api/dark-funds/orders/close', body(51));
+  assert.equal(data.darkFundOrders.length, 50);
+});
+
 test('盘后接口未配置时不创建工单也不扣次数', async () => {
   const { data, call } = setup();
   await assert.rejects(call('POST', '/api/dark-funds/orders', {
