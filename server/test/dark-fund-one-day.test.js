@@ -28,7 +28,7 @@ test('1日复刻图：左侧明暗盘共用刻度，散户居右，金额与原�
   assert.deepEqual(Array.from(page.data.summary, item => item.text), ['-8462.3', '8462.3']);
   const [listed, grey, retail] = page.data.dayBars;
   assert.deepEqual(Array.from(page.data.dayBars, item => item.text), ['-7407.6', '-1054.7', '8462.3']);
-  assert.deepEqual(Array.from(page.data.dayBars, item => item.center), [15.25, 34.75, 75]);
+  assert.deepEqual(Array.from(page.data.dayBars, item => item.center), [12.5, 37.5, 75]);
   assert.equal(listed.height, 26.4);
   assert.equal(retail.height, 26.4);
   assert.ok(Math.abs(grey.height / listed.height - 1054.7 / 7407.6) < 1e-10);
@@ -115,8 +115,40 @@ test('一日菜单和港资链接仅展示，资金固定选中；金额缩小�
     const rule = styles.match(new RegExp(`\\.${selector} \\{([^}]+)\\}`))[1];
     assert.match(rule, new RegExp(`font-size: ${size}rpx`));
     assert.match(rule, /font-weight: 400/);
+    assert.match(rule, /font-family: "Bahnschrift", "DarkFlowDigits"/);
   }
   for (const selector of ['one-day-menu', 'one-day-hk-link']) {
     assert.match(styles.match(new RegExp(`\\.${selector} \\{([^}]+)\\}`))[1], /pointer-events: none/);
+  }
+});
+
+test('汇总名称加粗，标题加粗、港资无下划线；底部标签独立留出间距', () => {
+  const styles = fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds-result/dark-funds-result.wxss'), 'utf8');
+  const rule = name => styles.match(new RegExp(`\\.${name} \\{([^}]+)\\}`))[1];
+  assert.match(rule('one-day-summary-item'), /font-family: "DarkFlowLabels"/);
+  assert.match(rule('one-day-summary-item'), /font-weight: 700/);
+  assert.match(rule('one-day-title'), /font-weight: 700/);
+  assert.match(rule('one-day-hk-link text'), /text-decoration: none/);
+  assert.match(rule('one-day-name'), /bottom: -18rpx/);
+  assert.match(rule('one-day-chart'), /margin-bottom: 18rpx/);
+  const markup = fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds-result/dark-funds-result.wxml'), 'utf8');
+  assert.match(markup, /one-day-info-glyph/);
+  assert.match(markup, /one-day-info-dot/);
+  assert.match(markup, /one-day-info-stem/);
+  assert.doesNotMatch(markup, /<text>i<\/text>/);
+});
+
+test('中文黑体和备用数字字体随包内置，WOFF文件完整且附许可', () => {
+  const stylesheet = fs.readFileSync(require.resolve('../../miniprogram/styles/dark-flow-fonts.wxss'), 'utf8');
+  const faces = [...stylesheet.matchAll(/font-family: "([^"]+)"; font-style: normal; font-weight: (\d+); src: url\("data:font\/woff;base64,([^"]+)"\)/g)];
+  assert.deepEqual(faces.map(match => [match[1], match[2]]), [['DarkFlowDigits', '400'], ['DarkFlowLabels', '400'], ['DarkFlowLabels', '700']]);
+  for (const match of faces) {
+    const buffer = Buffer.from(match[3], 'base64');
+    assert.equal(buffer.subarray(0, 4).toString(), 'wOFF');
+    assert.equal(buffer.readUInt32BE(8), buffer.length);
+  }
+  assert.ok(stylesheet.length < 25000);
+  for (const license of ['D-DIN-OFL.txt', 'NotoSansSC-OFL.txt']) {
+    assert.match(fs.readFileSync(path.join(__dirname, '../../miniprogram/styles/font-licenses', license), 'utf8'), /SIL OPEN FONT LICENSE/);
   }
 });

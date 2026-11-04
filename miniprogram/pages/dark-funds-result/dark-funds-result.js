@@ -67,7 +67,7 @@ function withBars(items) {
 // Only the 1-day chart uses this geometry; historical sheets keep withBars.
 function withDayBars(items) {
   const mainMaximum = Math.max(...items.slice(0, 2).map((item) => Math.abs(item.value)), 1);
-  const centers = [15.25, 34.75, 75];
+  const centers = [12.5, 37.5, 75];
   return items.map((item, index) => {
     const maximum = index < 2 ? mainMaximum : Math.max(Math.abs(item.value), 1);
     const height = item.value === 0 ? 0 : Math.max(0.4, Math.abs(item.value) / maximum * 26.4);

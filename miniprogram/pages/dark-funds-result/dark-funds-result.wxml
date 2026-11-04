@@ -50,7 +50,7 @@
           <view class="one-day-title-mark"></view>
           <text>主力流向({{unitLabel}})</text>
           <view class="one-day-title-arrow" aria-hidden="true"></view>
-          <view class="one-day-info" role="button" aria-label="主力流向说明" bindtap="showDayFlowInfo"><text>i</text></view>
+          <view class="one-day-info" role="button" aria-label="主力流向说明" bindtap="showDayFlowInfo"><view class="one-day-info-glyph" aria-hidden="true"><view class="one-day-info-dot"></view><view class="one-day-info-stem"></view></view></view>
           <view class="one-day-hk-link" aria-disabled="true"><text>查看港资动向</text><view class="one-day-hk-arrow"></view></view>
         </view>
         <view class="one-day-summary">
