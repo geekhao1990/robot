@@ -133,7 +133,7 @@ test('柱边金额采用固定CSS属性名，负数在柱底、正数在柱顶�
 test('页面去除外层卡片和左右padding，3/5日净流入沿用1日数字字体并加粗', () => {
   const styles = fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds-result/dark-funds-result.wxss'), 'utf8');
   const rule = name => styles.match(new RegExp(`\\.${name} \\{([^}]+)\\}`))[1];
-  assert.match(rule('page'), /padding: 24rpx 0 70rpx/);
+  assert.match(rule('page'), /padding: 24rpx 5px 70rpx/);
   assert.match(rule('card'), /padding: 30rpx 0/);
   assert.match(rule('card'), /border-radius: 0; box-shadow: none/);
   assert.match(rule('trend-value'), /font-family: "Bahnschrift", "DarkFlowDigits"/);

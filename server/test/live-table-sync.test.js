@@ -121,6 +121,16 @@ test('live feed excludes tomorrow, filters teachers/today and sorts by course ti
   assert.throws(()=>routes.get('/api/notes/:id')({params:{id:d.notes.find(n=>n.liveDate===future).id},headers:{}}));
 });
 
+test('list cards and detail both render course status directly below the title', () => {
+  for (const name of ['../../miniprogram/components/note-card/note-card', '../../miniprogram/pages/detail/detail']) {
+    const markup = fs.readFileSync(require.resolve(name + '.wxml'), 'utf8');
+    const styles = fs.readFileSync(require.resolve(name + '.wxss'), 'utf8');
+    assert.match(markup, /class="title[^>]*>[^<]+<\/view>\s*<view wx:if="\{\{note.liveTags.length\}\}" class="course-status-row"/);
+    assert.match(markup, /wx:for="\{\{note.liveTags\}\}"/);
+    assert.match(styles, /@import "\.\.\/\.\.\/styles\/course-status.wxss"/);
+  }
+});
+
 test('upstream status gates replay processing, only filled cloud links mark the note replayable', () => {
   const d=data();
   for (const [status,has_replay,is_future,label,eligible] of [[0,0,1,'预告',false],[1,1,0,'录制中',false],[3,0,0,'等待回放',false],[3,1,0,'回放整理中',true]]) {
