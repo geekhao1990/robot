@@ -63,6 +63,19 @@ function withBars(items) {
   }));
 }
 
+// The reference has two separate panels: the main-fund pair and retail flow.
+// Only the 1-day chart uses this geometry; historical sheets keep withBars.
+function withDayBars(items) {
+  const mainMaximum = Math.max(...items.slice(0, 2).map((item) => Math.abs(item.value)), 1);
+  const centers = [15.25, 34.75, 75];
+  return items.map((item, index) => {
+    const maximum = index < 2 ? mainMaximum : Math.max(Math.abs(item.value), 1);
+    const height = item.value === 0 ? 0 : Math.max(0.4, Math.abs(item.value) / maximum * 26.4);
+    const positive = item.value >= 0;
+    return { ...item, positive, height, center: centers[index], labelOffset: (positive ? 53 : 47) + height };
+  });
+}
+
 function marketStockCode(code) {
   const value = String(code || '').replace(/^(sh|sz)/i, '');
   return `${/^[569]/.test(value) ? 'sh' : 'sz'}${value}`;
@@ -171,7 +184,7 @@ Page({
       { label: '主力净流入', value: main },
       { label: '散户流入', value: -main },
     ].map((item) => ({ ...item, text: formatByUnit(item.value, unit), positive: item.value >= 0 }));
-    const dayBars = withBars([
+    const dayBars = withDayBars([
       { label: '主力明盘', value: Number(latest.listed) || 0, text: formatRoundedUnit(balancedLatest.listedValue, unit) },
       { label: '主力暗盘', value: Number(latest.grey) || 0, text: formatRoundedUnit(balancedLatest.greyValue, unit) },
       { label: '散户流入', value: -main, text: formatByUnit(-main, unit) },
@@ -210,6 +223,14 @@ Page({
         this.autoPosterWithQr = false;
         wx.nextTick(() => this.generateSharePoster({ currentTarget: { dataset: {} } }));
       }
+    });
+  },
+  showDayFlowInfo() {
+    wx.showModal({
+      title: '主力流向',
+      content: '主力净流入＝主力明盘＋主力暗盘，散户流入与主力净流入方向相反。红色表示流入，绿色表示流出。左侧两柱共用刻度，右侧散户柱单独缩放，跨区请以标注金额比较。金额单位见标题。',
+      showCancel: false,
+      confirmText: '知道了',
     });
   },
   switchFundView(event) {

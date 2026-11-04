@@ -37,26 +37,25 @@
         <view class="segment {{fundView === 'trend3' ? 'active' : ''}}" data-view="trend3" bindtap="switchFundView">3日暗盘</view>
         <view class="segment {{fundView === 'trend5' ? 'active' : ''}}" data-view="trend5" bindtap="switchFundView">5日暗盘</view>
       </view>
-      <block wx:if="{{fundView === 'main'}}">
-        <view class="chart-inline-title">
-          <view class="chart-title-mark"></view>
+      <view wx:if="{{fundView === 'main'}}" class="one-day-flow">
+        <view class="one-day-title">
+          <view class="one-day-title-mark"></view>
           <text>主力流向({{unitLabel}})</text>
-          <view class="chart-title-arrow"></view>
+          <view class="one-day-title-arrow" aria-hidden="true"></view>
+          <view class="one-day-info" role="button" aria-label="主力流向说明" bindtap="showDayFlowInfo"><text>i</text></view>
         </view>
-        <view class="summary-grid">
-          <view wx:for="{{summary}}" wx:key="label" class="summary-item"><text>{{item.label}}</text><text class="summary-value {{item.positive ? 'up' : 'down'}}">{{item.text}}</text></view>
+        <view class="one-day-summary">
+          <view wx:for="{{summary}}" wx:key="label" class="one-day-summary-item"><text>{{item.label}}</text><text class="one-day-total {{item.positive ? 'positive' : 'negative'}}">{{item.text}}</text></view>
         </view>
-        <view class="flow-chart">
-          <view class="zero-line"></view>
-          <view class="flow-columns">
-            <view wx:for="{{dayBars}}" wx:key="label" class="flow-column">
-              <view wx:if="{{item.positive}}" class="flow-stack positive" style="bottom:50%"><text class="flow-value up">{{item.text}}</text><view class="flow-bar bar-up" style="height:{{item.height}}rpx"></view></view>
-              <view wx:else class="flow-stack negative" style="top:50%"><view class="flow-bar bar-down" style="height:{{item.height}}rpx"></view><text class="flow-value down">{{item.text}}</text></view>
-              <text class="flow-name">{{item.label}}</text>
-            </view>
+        <view class="one-day-chart">
+          <view class="one-day-zero main"></view><view class="one-day-zero retail"></view>
+          <view wx:for="{{dayBars}}" wx:key="label" class="one-day-column">
+            <view class="one-day-bar {{item.positive ? 'positive' : 'negative'}}" style="left:{{item.center}}%;height:{{item.height}}%"></view>
+            <text class="one-day-value {{item.positive ? 'positive' : 'negative'}}" style="left:{{item.center}}%;{{item.positive ? 'bottom' : 'top'}}:{{item.labelOffset}}%">{{item.text}}</text>
+            <text class="one-day-name" style="left:{{item.center}}%">{{item.label}}</text>
           </view>
         </view>
-      </block>
+      </view>
       <block wx:else>
         <view class="trend-summary"><text>{{trendMetricLabel}}</text><text class="trend-value {{trendMetricPositive ? 'up' : 'down'}}">{{trendMetricText}}</text></view>
         <view wx:if="{{trendHasData}}" class="trend-chart-wrap">

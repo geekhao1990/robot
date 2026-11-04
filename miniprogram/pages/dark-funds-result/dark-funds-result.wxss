@@ -38,6 +38,30 @@
 .segment-control { display: flex; gap: 6rpx; margin-bottom: 22rpx; padding: 7rpx; background: #f2f3f5; border: 2rpx solid #dfe3e8; border-radius: 16rpx; }
 .segment { display: flex; flex: 1; align-items: center; justify-content: center; min-height: 70rpx; color: #64748b; font-size: 26rpx; font-weight: 700; border-radius: 12rpx; }
 .segment.active { color: #111; background: #fff; box-shadow: 0 2rpx 10rpx rgba(0,0,0,.10); }
+/* Scoped to 1-day: do not change the 3/5-day charts or history sheets. */
+.one-day-flow { padding-top: 14rpx; color: #333; font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; }
+.one-day-title { display: flex; align-items: center; min-height: 40rpx; margin-bottom: 34rpx; font-size: 30rpx; font-weight: 400; line-height: 1.3; }
+.one-day-title-mark { flex: none; width: 4rpx; height: 26rpx; margin-right: 17rpx; background: #d9343e; }
+.one-day-title-arrow { flex: none; width: 0; height: 0; margin-left: 16rpx; border-top: 9rpx solid #666; border-right: 8rpx solid transparent; border-left: 8rpx solid transparent; }
+.one-day-info { display: flex; flex: none; align-items: center; justify-content: center; width: 44rpx; height: 44rpx; margin-left: 20rpx; color: #999; }
+.one-day-info text { width: 22rpx; height: 22rpx; border: 2rpx solid #999; border-radius: 50%; font-family: Arial, sans-serif; font-size: 19rpx; font-weight: 700; line-height: 22rpx; text-align: center; }
+.one-day-summary { display: flex; height: 120rpx; border-radius: 8rpx; background: #f6f6f6; }
+.one-day-summary-item { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; color: #777; font-size: 26rpx; font-weight: 400; line-height: 1.25; }
+.one-day-total { font-size: 28rpx; font-weight: 600; font-variant-numeric: tabular-nums; }
+.one-day-chart { position: relative; height: 0; padding-top: 42%; margin-top: 0; }
+.one-day-zero { position: absolute; top: 47%; width: 47.56%; height: 1rpx; background: #d5d5d5; }
+.one-day-zero.main { left: 1.22%; }
+.one-day-zero.retail { right: 1.22%; }
+.one-day-column { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+.one-day-bar { position: absolute; width: 4.88%; transform: translateX(-50%); }
+.one-day-bar.positive { bottom: 53%; border-radius: 4rpx 4rpx 0 0; background: #ff3833; }
+.one-day-bar.negative { top: 47%; border-radius: 0 0 4rpx 4rpx; background: #00b65b; }
+.one-day-value { position: absolute; font-size: 22rpx; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; transform: translateX(-50%); }
+.one-day-value.positive { margin-bottom: 4rpx; }
+.one-day-value.negative { margin-top: 7rpx; }
+.one-day-total.positive, .one-day-value.positive { color: #df4a43; }
+.one-day-total.negative, .one-day-value.negative { color: #19a564; }
+.one-day-name { position: absolute; bottom: 0; color: #666; font-size: 26rpx; font-weight: 400; line-height: 1.3; white-space: nowrap; transform: translateX(-50%); }
 .chart-inline-title { display: flex; align-items: center; min-height: 58rpx; margin: 4rpx 0 34rpx; color: #222; font-size: 34rpx; font-weight: 800; line-height: 1; }
 .chart-title-mark { width: 7rpx; height: 42rpx; margin-right: 18rpx; background: #ff3b30; }
 .chart-title-arrow { width: 0; height: 0; margin-left: 20rpx; border-top: 15rpx solid #666; border-right: 13rpx solid transparent; border-left: 13rpx solid transparent; }
