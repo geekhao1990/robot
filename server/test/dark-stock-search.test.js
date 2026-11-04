@@ -11,7 +11,7 @@ test('fund reading guide and gold update notice are visible in their intended se
   assert.match(dark,/G \/ S 信号<text class="fund-update-tag">每日收盘后更新<\/text>/);
   assert(gold.indexOf('history-update-note')>gold.indexOf('点金历史'));
   assert(gold.indexOf('history-update-note')<gold.indexOf('bindtap="refreshGoldFinger"'));
-  assert(gold.indexOf('history-reading-note')>gold.indexOf('history-head history-grid'));
+  assert(gold.indexOf('history-reading-note')>gold.indexOf('<template is="gold-finger-table"'));
   assert.doesNotMatch(gold, /<ad\b|gold-ad-slot/);
   assert.match(gold, /history-reading-note">Tips：/);
   assert.doesNotMatch(gold, /以设定更新时间为准/);
@@ -20,7 +20,8 @@ test('fund reading guide and gold update notice are visible in their intended se
   const goldCss=fs.readFileSync(path.join(__dirname,'../../miniprogram/pages/gold-finger/gold-finger.wxss'),'utf8');
   assert.match(goldCss, /\.history-refresh[^}]+min-width: 176rpx; height: 64rpx; padding: 0 26rpx/);
   assert.match(goldCss, /\.history-reading-note[^}]+text-align: center/);
-  assert.match(gold, /history-position-col">建议仓位/);
+  const table=fs.readFileSync(path.join(__dirname,'../../miniprogram/templates/gold-finger-table.wxml'),'utf8');
+  assert.match(table, /history-position-col">建议仓位/);
 });
 
 test('monthly package precedes 300 uses and has the best-value badge',()=>{

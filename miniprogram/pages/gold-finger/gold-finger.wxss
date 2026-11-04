@@ -1,3 +1,4 @@
+@import "../../styles/gold-finger-table.wxss";
 .page { min-height: 100vh; color: #241b13; background: #f6f3ee; }
 .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 10; background: rgba(255,255,255,.96); border-bottom: 1rpx solid rgba(96,68,32,.08); box-sizing: content-box; }
 .nav-inner { position: relative; display: flex; align-items: center; justify-content: center; padding: 0 28rpx; }
@@ -52,23 +53,6 @@
 .history-actions { display: flex; flex: 0 0 auto; align-items: center; }
 .history-refresh { display: flex; align-items: center; justify-content: center; min-width: 176rpx; height: 64rpx; padding: 0 26rpx; color: #fff; font-size: 25rpx; font-weight: 600; background: #ff2442; border-radius: 999rpx; box-shadow: 0 8rpx 18rpx rgba(255,36,66,.2); box-sizing: border-box; }
 .history-refresh.disabled { opacity: .58; pointer-events: none; }
-.history-grid { display: flex; align-items: center; width: 100%; }
-.history-grid text,.history-finger-cell,.history-trend { flex: .72 1 0; min-width: 0; text-align: center; }
-.history-grid .history-date-col,.history-grid .history-date { flex: 1.55 1 0; text-align: center; }
-.history-grid .history-finger-col,.history-grid .history-finger-cell { flex: .68 1 0; }
-.history-grid .history-trend-col,.history-grid .history-trend { flex: 1.05 1 0; }
-.history-grid .history-position-col,.history-grid .history-position { flex: .95 1 0; white-space: nowrap; }
-.history-head { margin-top: 28rpx; padding: 24rpx 0; color: #999; font-size: 20rpx; border-top: 1rpx solid #f0f0f0; border-bottom: 1rpx solid #ededed; }
-.history-row { min-height: 104rpx; color: #222; font-size: 23rpx; border-bottom: 1rpx solid #ededed; }
-.history-date { font-size: 22rpx; font-variant-numeric: tabular-nums; }
-.history-yang,.history-yin { color: #222; font-weight: 650; }
-.history-yang.strong { color: #e53935; }
-.history-yin.strong { color: #11a52b; }
-.history-finger-cell { display: flex; align-items: center; justify-content: center; }
-.history-finger { display: block; width: 42rpx; height: 52rpx; }
-.history-trend { display: flex; align-items: center; justify-content: center; }
-.history-trend-icon { display: block; width: 46rpx; height: 46rpx; }
-.history-position { color: #222; font-weight: 650; }
 .history-more { display: flex; align-items: center; justify-content: center; min-height: 104rpx; color: #999; font-size: 28rpx; }
 .history-more view { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 92rpx; }
 .history-more .history-pagination { justify-content: space-between; min-height: 104rpx; }

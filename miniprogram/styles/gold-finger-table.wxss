@@ -1,0 +1,18 @@
+/* Shared by the member detail page and the ad-supported latest-record popup. */
+.gold-history-table .history-grid { display: flex; align-items: center; width: 100%; }
+.gold-history-table .history-grid text,.gold-history-table .history-finger-cell,.gold-history-table .history-trend { flex: .72 1 0; min-width: 0; text-align: center; }
+.gold-history-table .history-grid .history-date-col,.gold-history-table .history-grid .history-date { flex: 1.55 1 0; text-align: center; }
+.gold-history-table .history-grid .history-finger-col,.gold-history-table .history-grid .history-finger-cell { flex: .68 1 0; }
+.gold-history-table .history-grid .history-trend-col,.gold-history-table .history-grid .history-trend { flex: 1.05 1 0; }
+.gold-history-table .history-grid .history-position-col,.gold-history-table .history-grid .history-position { flex: .95 1 0; white-space: nowrap; }
+.gold-history-table .history-head { margin-top: 28rpx; padding: 24rpx 0; color: #999; font-size: 20rpx; border-top: 1rpx solid #f0f0f0; border-bottom: 1rpx solid #ededed; }
+.gold-history-table .history-row { min-height: 104rpx; color: #222; font-size: 23rpx; border-bottom: 1rpx solid #ededed; }
+.gold-history-table .history-date { margin: 0; color: #222; font-size: 22rpx; font-variant-numeric: tabular-nums; }
+.gold-history-table .history-yang,.gold-history-table .history-yin { color: #222; font-weight: 650; }
+.gold-history-table .history-yang.strong { color: #e53935; }
+.gold-history-table .history-yin.strong { color: #11a52b; }
+.gold-history-table .history-finger-cell { display: flex; align-items: center; justify-content: center; }
+.gold-history-table .history-finger { display: block; width: 42rpx; height: 52rpx; }
+.gold-history-table .history-trend { display: flex; align-items: center; justify-content: center; }
+.gold-history-table .history-trend-icon { display: block; width: 46rpx; height: 46rpx; }
+.gold-history-table .history-position { color: #222; font-weight: 650; }

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { rollingHistory, snapshotLabel } = require('../../miniprogram/utils/dark-fund-history');
+const { rollingHistory, snapshotLabel, snapshotDataTime } = require('../../miniprogram/utils/dark-fund-history');
 const { normalizeCloseDarkFund, SAMPLE_CLOSE_PAYLOAD } = require('../src/dark-fund-close');
 const { historyChart } = require('../../miniprogram/utils/dark-fund-history');
 const {historySummary,updatedMinute}=require('../../miniprogram/utils/dark-fund-history');
@@ -53,6 +53,17 @@ test('快照版本分钟不混淆更新时间', () => {
   assert.equal(snapshotLabel({kind:'intraday',versionKey:'2026-10-12T11:30:59'}),'盘中 11:30');
   assert.equal(snapshotLabel({kind:'intraday'}),'盘中（快照时间未知）');
   assert.equal(snapshotLabel({kind:'close'}),'收盘');
+});
+test('抬头只显示一次实际数据日期时间，优先版本分钟，不拿当前时间代替', () => {
+  const base = { tradeDate: '2026-11-04', kind: 'intraday' };
+  assert.equal(snapshotDataTime({ ...base, versionKey: '2026-11-04T1011', updatedAt: '2026-11-04T10:25:20+08:00' }), '2026-11-04 10:11');
+  assert.equal(snapshotDataTime({ ...base, versionLabel: '盘中 10：11' }), '2026-11-04 10:11');
+  for (const updatedAt of ['2026-11-04T02:11:20Z', '2026-11-04T10:11:20+08:00', '2026-11-04 10:11:20']) {
+    assert.equal(snapshotDataTime({ ...base, updatedAt }), '2026-11-04 10:11');
+  }
+  assert.equal(snapshotDataTime({ ...base, updatedAt: '2026-11-05T10:11:20+08:00' }), '2026-11-04 时间未知');
+  assert.equal(snapshotDataTime({ ...base, kind: 'close' }), '2026-11-04 收盘');
+  assert.equal(snapshotDataTime({ days: [{ tradeDate: '2026-11-04' }], versionKey: '2026-11-04T1011' }), '2026-11-04 10:11');
 });
 test('新增历史不改变旧版七日字段和快照类型', () => {
   const days = [...SAMPLE_CLOSE_PAYLOAD.days, {...SAMPLE_CLOSE_PAYLOAD.days[0],trade_date:'2026-09-18'}];

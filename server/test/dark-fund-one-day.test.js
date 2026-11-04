@@ -99,7 +99,7 @@ test('说明解释左右分区刻度；新样式只挂在一日分支', () => {
   assert.match(markup, /one-day-zero retail/);
 });
 
-test('一日菜单和港资链接仅展示，资金固定选中；金额缩小且不加粗', () => {
+test('一日菜单和港资链接仅展示，资金固定选中；金额紧凑且不加粗', () => {
   const markup = fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds-result/dark-funds-result.wxml'), 'utf8');
   const menu = markup.slice(markup.indexOf('<view class="one-day-menu"'), markup.indexOf('<view class="one-day-title"'));
   for (const label of ['看点', '资讯', '盘口', '资金', '社区', '简况(F10)']) assert.ok(menu.includes(label));
@@ -111,15 +111,30 @@ test('一日菜单和港资链接仅展示，资金固定选中；金额缩小�
   assert.match(link, /aria-disabled="true"/);
   assert.doesNotMatch(link, /bind|catch|navigator|url=/);
   const styles = fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds-result/dark-funds-result.wxss'), 'utf8');
-  for (const [selector, size] of [['one-day-total', 26], ['one-day-value', 20]]) {
+  for (const [selector, size] of [['one-day-total', 28], ['one-day-value', 22]]) {
     const rule = styles.match(new RegExp(`\\.${selector} \\{([^}]+)\\}`))[1];
     assert.match(rule, new RegExp(`font-size: ${size}rpx`));
     assert.match(rule, /font-weight: 400/);
     assert.match(rule, /font-family: "Bahnschrift", "DarkFlowDigits"/);
+    assert.match(rule, /letter-spacing: -\.6rpx/);
   }
   for (const selector of ['one-day-menu', 'one-day-hk-link']) {
     assert.match(styles.match(new RegExp(`\\.${selector} \\{([^}]+)\\}`))[1], /pointer-events: none/);
   }
+});
+
+test('紧凑头部保留数据时间，分享入口替换为金手指预览；周期选中红底白字', () => {
+  const markup = fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds-result/dark-funds-result.wxml'), 'utf8');
+  assert.match(markup, /数据时间 \{\{result.displayDataTime\}\}/);
+  assert.doesNotMatch(markup, /查询快照|生成分享图|bindtap="generateSharePoster"|数据日期 \{\{result.tradeDate/);
+  assert.match(markup, /bindtap="openGoldPreview"/);
+  assert.match(markup, /查看今日金手指阴阳谱/);
+  assert.match(markup, /fund-heading-row[\s\S]*暗盘资金[\s\S]*fund-period-tabs/);
+  for (const day of [1, 3, 5]) assert.match(markup, new RegExp(`bindtap="switchFundView">${day}日`));
+  const styles = fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds-result/dark-funds-result.wxss'), 'utf8');
+  const active = styles.match(/\.fund-period-tabs \.segment\.active \{([^}]+)\}/)[1];
+  assert.match(active, /color: #fff/);
+  assert.match(active, /background: #f33f3a/);
 });
 
 test('汇总名称加粗，标题加粗、港资无下划线；底部标签独立留出间距', () => {
@@ -127,10 +142,13 @@ test('汇总名称加粗，标题加粗、港资无下划线；底部标签独�
   const rule = name => styles.match(new RegExp(`\\.${name} \\{([^}]+)\\}`))[1];
   assert.match(rule('one-day-summary-item'), /font-family: "DarkFlowLabels"/);
   assert.match(rule('one-day-summary-item'), /font-weight: 700/);
+  assert.match(rule('one-day-summary-item'), /letter-spacing: -\.4rpx/);
+  assert.match(rule('one-day-summary-item'), /font-size: 24rpx/);
   assert.match(rule('one-day-title'), /font-weight: 700/);
   assert.match(rule('one-day-hk-link text'), /text-decoration: none/);
-  assert.match(rule('one-day-name'), /bottom: -18rpx/);
-  assert.match(rule('one-day-chart'), /margin-bottom: 18rpx/);
+  assert.match(rule('one-day-name'), /bottom: -20rpx/);
+  assert.match(rule('one-day-chart'), /margin-bottom: 20rpx/);
+  assert.match(rule('one-day-flow'), /border: 1px solid #d5d5d5/);
   const markup = fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds-result/dark-funds-result.wxml'), 'utf8');
   assert.match(markup, /one-day-info-glyph/);
   assert.match(markup, /one-day-info-dot/);

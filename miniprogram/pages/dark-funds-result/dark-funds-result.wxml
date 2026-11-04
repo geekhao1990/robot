@@ -1,3 +1,4 @@
+<import src="../../templates/gold-finger-table.wxml" />
 <view class="page">
   <view wx:if="{{loading}}" class="result-skeleton">
     <view class="skeleton-card skeleton-hero"><view class="skeleton-line wide"></view><view class="skeleton-line short"></view></view>
@@ -16,26 +17,35 @@
   <view wx:elif="{{error}}" class="error">{{error}}</view>
   <block wx:else>
     <view class="card hero">
-      <view class="query-complete">● 查询完成</view>
       <view class="query-heading">
       <view class="query-heading-info">
         <view class="hero-stock"><text class="stock-name">{{result.stockName}}</text><text class="stock-code">{{result.displayCode}}</text></view>
       </view>
+      <view class="query-complete">● 查询完成</view>
       </view>
-      <view class="header-meta"><view>数据时间 {{result.tradeDate}} · {{result.dataTimeLabel}}</view></view>
-      <view wx:if="{{isOfficial}}" class="hero-action-row">
-        <view wx:if="{{isOfficial}}" class="hero-poster-button hero-poster-button-secondary {{posterGenerating ? 'disabled' : ''}}" hover-class="hero-poster-button-hover" data-no-qr="true" bindtap="generateSharePoster">
-          <view class="hero-share-icon hero-share-icon-red"></view>
-          <text>{{posterGenerating ? '生成中' : '生成分享图'}}</text>
-        </view>
+      <view class="hero-meta-row">
+      <view class="header-meta">数据时间 {{result.displayDataTime}}</view>
+      <view class="gold-preview-entry {{goldPreviewLoading ? 'disabled' : ''}}" role="button" aria-disabled="{{goldPreviewLoading}}" bindtap="openGoldPreview" hover-class="gold-preview-entry-hover">{{goldPreviewLoading ? '正在加载…' : '查看今日金手指阴阳谱'}}</view>
+      </view>
+    </view>
+    <view wx:if="{{goldPreviewModal}}" class="gold-preview-mask" bindtap="closeGoldPreview" catchtouchmove="stopHistoryTap">
+      <view class="gold-preview-sheet" catchtap="stopHistoryTap">
+        <view class="gold-preview-title-row"><view class="gold-preview-title">点金历史</view><view class="gold-preview-update">非实时更新，每半小时更新一次。</view></view>
+        <template is="gold-finger-table" data="{{records: goldPreviewRecords}}" />
+        <view wx:if="{{!goldPreviewIsToday}}" class="gold-preview-date">今日数据尚未更新，当前显示最近一期。</view>
+        <view class="gold-preview-tips">Tips：阴阳谱接近20时，关注反转机会/风险，不代表必然反转。</view>
+        <view class="gold-preview-disclaimer">数据来自互联网，仅供参考不构成投资建议</view>
+        <button class="gold-preview-close" bindtap="closeGoldPreview">关闭</button>
       </view>
     </view>
     <view class="card fund-card">
+      <view class="fund-heading-row">
       <view class="section-heading"><text>暗盘资金</text></view>
-      <view class="segment-control">
-        <view class="segment {{fundView === 'main' ? 'active' : ''}}" data-view="main" bindtap="switchFundView">1日暗盘</view>
-        <view class="segment {{fundView === 'trend3' ? 'active' : ''}}" data-view="trend3" bindtap="switchFundView">3日暗盘</view>
-        <view class="segment {{fundView === 'trend5' ? 'active' : ''}}" data-view="trend5" bindtap="switchFundView">5日暗盘</view>
+      <view class="segment-control fund-period-tabs">
+        <view class="segment {{fundView === 'main' ? 'active' : ''}}" data-view="main" bindtap="switchFundView">1日</view>
+        <view class="segment {{fundView === 'trend3' ? 'active' : ''}}" data-view="trend3" bindtap="switchFundView">3日</view>
+        <view class="segment {{fundView === 'trend5' ? 'active' : ''}}" data-view="trend5" bindtap="switchFundView">5日</view>
+      </view>
       </view>
       <view wx:if="{{fundView === 'main'}}" class="one-day-flow">
         <view class="one-day-menu" aria-disabled="true">

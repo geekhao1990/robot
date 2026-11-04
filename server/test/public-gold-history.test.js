@@ -109,6 +109,31 @@ test('gold finger history returns fixed pages of 10 records', async () => {
   await assert.rejects(call('/api/gold-finger/history', { page: '1' }, 'Bearer u2'), { status: 403 });
 });
 
+test('广告预览不校验会员，只返回最新一期；原详情和历史权限不改变', async () => {
+  const { call, data } = setup();
+  data.goldFingerRecords.push({ date: '2999-11-04', yang: 88, finger: 'gold' });
+  for (const token of ['Bearer u1', 'Bearer u2', 'Bearer u3', 'Bearer u4']) {
+    const result = await call('/api/gold-finger/preview', {}, token);
+    assert.equal(result.record.date, '2026-10-01');
+    assert.equal(result.record.yang + result.record.yin, 100);
+    assert.deepEqual(Object.keys(result).sort(), ['isToday', 'record']);
+    assert.deepEqual(Object.keys(result.record).sort(), ['date', 'finger', 'position', 'trend', 'yang', 'yin']);
+    assert.equal(result.isToday, false);
+  }
+  await assert.rejects(call('/api/gold-finger/preview', {}, ''), { status: 401 });
+  await assert.rejects(call('/api/gold-finger/latest', {}, 'Bearer u2'), { status: 403 });
+  await assert.rejects(call('/api/gold-finger/history', {}, 'Bearer u2'), { status: 403 });
+  assert.equal(data.users[1].goldExpire, 0);
+  data.settings.goldFingerEntryEnabled = false;
+  await assert.rejects(call('/api/gold-finger/preview'), { status: 403 });
+  data.settings.goldFingerEntryEnabled = true;
+  data.settings.reviewModeEnabled = true;
+  await assert.rejects(call('/api/gold-finger/preview'), { status: 403 });
+  data.settings.reviewModeEnabled = false;
+  data.goldFingerRecords = [];
+  assert.equal((await call('/api/gold-finger/preview')).record, null);
+});
+
 test('gold notes and entry stay visible while feature access remains entitlement protected', async () => {
   const { call, data } = setup();
   const anonymousSettings = await call('/api/settings', {}, '');

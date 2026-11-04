@@ -141,6 +141,10 @@ function getGoldFinger() {
   return request('GET', '/api/gold-finger/latest', { auth: true });
 }
 
+function getGoldFingerPreview() {
+  return request('GET', '/api/gold-finger/preview', { auth: true });
+}
+
 function getGoldFingerHistory(page = 1) {
   return request('GET', '/api/gold-finger/history', { auth: true, data: { page } });
 }
@@ -517,6 +521,7 @@ module.exports = {
   getNoteById,
   getResource,
   getGoldFinger,
+  getGoldFingerPreview,
   getGoldFingerHistory,
   getCategories,
   getHotSearch,

@@ -136,6 +136,25 @@ module.exports = function register(router, HttpError) {
     return pubNote(n);
   });
 
+  // 暗盘页广告预览：登录即可查看最新一期，不授予会员或历史记录权限。
+  // 广告完成由小程序 SDK 回调控制；此只读接口不声称验证了广告观看凭证。
+  router.get('/api/gold-finger/preview', (ctx) => {
+    const reader = requireReader(ctx);
+    const data = db.get();
+    if (reviewModeApplies(ctx, data) || !goldEntryEnabled(data, ctx)) throw new HttpError(403, '功能暂未开放');
+    const currentDate = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
+    const latest = sortedGoldRecords(data).find(item => /^\d{4}-\d{2}-\d{2}$/.test(item.date) && item.date <= currentDate);
+    analytics.record(data, { type: 'gold_view', userId: reader.id, source: 'dark_funds_preview' });
+    db.save();
+    return {
+      record: latest ? {
+        date: latest.date, yang: latest.yang, yin: latest.yin,
+        finger: latest.finger, position: latest.position, trend: latest.trend,
+      } : null,
+      isToday: !!latest && latest.date === currentDate,
+    };
+  });
+
   // 独立金手指功能：仅有效期内的金手指会员可查看。
   router.get('/api/gold-finger/latest', (ctx) => {
     const data = requireGoldAccess(ctx);

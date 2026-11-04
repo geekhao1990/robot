@@ -71,4 +71,18 @@ function updatedMinute(value) {
   const time = Date.parse(value);
   return Number.isFinite(time) ? new Date(time + 8*3600000).toISOString().slice(0,16).replace('T',' ') : '—';
 }
-module.exports = { historyFor, rollingHistory, snapshotLabel, historyChart, historySummary, updatedMinute };
+function snapshotDataTime(result) {
+  const date = String(result.tradeDate || historyFor(result).slice(-1)[0]?.tradeDate || '').slice(0, 10);
+  const version = String(result.versionKey || '').match(/T(\d{2}):?(\d{2})/);
+  const label = String(result.versionLabel || '').match(/(\d{2})[:：](\d{2})/);
+  const time = version || label;
+  if (time && Number(time[1]) < 24 && Number(time[2]) < 60) return `${date} ${time[1]}:${time[2]}`;
+  const rawUpdated = String(result.updatedAt || '').trim();
+  // Upstream timestamps without a zone are Beijing wall-clock time, not the device's zone.
+  const updated = updatedMinute(/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?$/.test(rawUpdated)
+    ? `${rawUpdated.replace(' ', 'T')}+08:00` : rawUpdated);
+  if (updated !== '—' && updated.slice(0, 10) === date) return updated;
+  if (result.kind === 'close' || result.versionLabel === '收盘') return `${date} 收盘`.trim();
+  return `${date} 时间未知`.trim();
+}
+module.exports = { historyFor, rollingHistory, snapshotLabel, snapshotDataTime, historyChart, historySummary, updatedMinute };

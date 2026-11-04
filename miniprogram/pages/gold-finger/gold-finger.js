@@ -1,10 +1,7 @@
 const api = require('../../utils/api');
 const config = require('../../utils/config');
 
-const GOLD_FINGER_ICON = 'https://app.nankaitechschool.com/uploads/up_1787930384458_5f0008fd90bf8d07.png';
-const SILVER_FINGER_ICON = 'https://app.nankaitechschool.com/uploads/up_1787930384616_32050eca372a0969.png';
-const TREND_UP_ICON = '/images/trend-up.png';
-const TREND_DOWN_ICON = '/images/trend-down.png';
+const { decorateGoldRecord } = require('../../utils/gold-finger-record');
 const store = require('../../utils/store');
 const REFRESH_WINDOW_MS = 5 * 60 * 1000;
 const REFRESH_LIMIT = 2;
@@ -242,17 +239,7 @@ Page({
   },
 
   decorateRecord(record) {
-    const yang = Math.max(0, Math.min(100, Number(record.yang) || 0));
-    const yin = 100 - yang;
-    return {
-      ...record,
-      yang,
-      yin,
-      fingerIcon: record.finger === 'silver' ? SILVER_FINGER_ICON : GOLD_FINGER_ICON,
-      trendIcon: record.trend === 'down' ? TREND_DOWN_ICON : TREND_UP_ICON,
-      yangClass: yang > 50 ? 'strong' : '',
-      yinClass: yin > 50 ? 'strong' : '',
-    };
+    return decorateGoldRecord(record);
   },
 
   loadMoreHistory() {

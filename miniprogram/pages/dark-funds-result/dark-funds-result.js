@@ -2,8 +2,10 @@ const api = require('../../utils/api');
 const config = require('../../utils/config');
 const store = require('../../utils/store');
 const { darkFundError } = require('../../utils/dark-fund-error');
-const { rollingHistory, snapshotLabel, historyChart, historySummary, historyFor } = require('../../utils/dark-fund-history');
+const { rollingHistory, snapshotLabel, snapshotDataTime, historyChart, historySummary, historyFor } = require('../../utils/dark-fund-history');
 const { exactAmount, posterMetrics } = require('../../utils/dark-fund-poster');
+const { showRewardedPreview } = require('../../utils/rewarded-preview');
+const { decorateGoldRecord } = require('../../utils/gold-finger-record');
 
 const YELLOW = '#ffe50a';
 const TREND_AREA_RED = '#ff0000';
@@ -101,6 +103,10 @@ Page({
     historyBars: [],
     historySelected: null,
     historyModal: false,
+    goldPreviewLoading: false,
+    goldPreviewModal: false,
+    goldPreviewRecords: [],
+    goldPreviewIsToday: false,
     historyScroll: 0,
     historyEarlierVisible: false,
     historyTodayVisible: false,
@@ -144,7 +150,7 @@ Page({
     api.getDarkFundOrder(this.orderId)
       .then((order) => {
         const result = order && order.snapshot && order.snapshot.result;
-        if (!result || result.type !== 'close_snapshot' || !Array.isArray(result.days) || !result.days.length) throw new Error('查询快照不存在');
+        if (!result || result.type !== 'close_snapshot' || !Array.isArray(result.days) || !result.days.length) throw new Error('查询结果不存在');
         this.applyResult(result);
       })
       .catch((error) => this.setData({ loading: false, error: darkFundError(error, '加载失败，接口未返回错误详情') }));
@@ -169,13 +175,58 @@ Page({
   },
   onUnload() {
     this._unloaded = true;
+    if (this.goldPreviewAd) this.goldPreviewAd.cancel();
+    this.goldPreviewAd = null;
     if (this.closeInterstitialAd && typeof this.closeInterstitialAd.destroy === 'function') this.closeInterstitialAd.destroy();
     this.closeInterstitialAd = null;
+  },
+  async openGoldPreview() {
+    if (this._unloaded || this.data.goldPreviewLoading || this.data.goldPreviewModal) return;
+    this.setData({ goldPreviewLoading: true });
+    try {
+      const settings = await api.getAppSettings();
+      if (this._unloaded) return;
+      if (settings.reviewModeEnabled === true || settings.goldFingerEntryEnabled === false) {
+        wx.showToast({ title: '金手指入口暂未开放', icon: 'none' });
+        return;
+      }
+      // No goldAccess/member check: this entrance grants an ad-supported preview only.
+      const adUnitId = typeof settings.goldRewardedVideoAdUnitId === 'string'
+        ? settings.goldRewardedVideoAdUnitId : config.goldRewardedVideoAdUnitId;
+      this.goldPreviewAd = showRewardedPreview(wx, adUnitId);
+      const status = await this.goldPreviewAd.promise;
+      this.goldPreviewAd = null;
+      if (this._unloaded || status === 'cancelled') return;
+      if (status !== 'completed') {
+        wx.showToast({ title: status === 'skipped' ? '完整观看广告后可查看' : '广告暂不可用，请稍后重试', icon: 'none' });
+        return;
+      }
+      const payload = await api.getGoldFingerPreview();
+      if (this._unloaded) return;
+      const record = payload && payload.record;
+      if (!record) {
+        wx.showToast({ title: '金手指数据正在更新', icon: 'none' });
+        return;
+      }
+      this.setData({
+        goldPreviewModal: true,
+        goldPreviewIsToday: payload.isToday === true,
+        goldPreviewRecords: [decorateGoldRecord(record)],
+      });
+    } catch (error) {
+      if (!this._unloaded) wx.showToast({ title: error && error.statusCode === 401 ? '请先登录后查看' : '金手指加载失败，请稍后重试', icon: 'none' });
+    } finally {
+      if (!this._unloaded) this.setData({ goldPreviewLoading: false });
+    }
+  },
+  closeGoldPreview() {
+    this.setData({ goldPreviewModal: false });
   },
   applyResult(result) {
     const days = result.days.slice().sort((a, b) => a.tradeDate.localeCompare(b.tradeDate));
     result.days = days;
     result.dataTimeLabel = snapshotLabel(result).replace('快照时间未知', '时间未知');
+    result.displayDataTime = snapshotDataTime(result);
     const latest = days[days.length - 1];
     const unit = chooseUnit([latest.main, latest.listed, latest.grey]);
     const main = Number(latest.main) || 0;
@@ -551,7 +602,7 @@ Page({
     roundRect(34, 205, 682, 840, 26); context.fillStyle = 'rgba(5,12,18,.90)'; context.fill(); context.strokeStyle = 'rgba(255,55,62,.55)'; context.lineWidth = 2; context.stroke();
     fillText(metrics.stockName, 62, 266, 46, '#fff', '800');
     fillText(metrics.stockCode, 690, 270, 22, '#b8c2cf', '400', 'right');
-    fillText(`${metrics.tradeDate} 资金流向快照`, 63, 312, 21, '#aab7c6');
+    fillText(`${metrics.tradeDate} 资金流向`, 63, 312, 21, '#aab7c6');
     roundRect(52, 350, 418, 246, 20); context.fillStyle = 'rgba(0,64,54,.28)'; context.fill(); context.strokeStyle = 'rgba(0,228,168,.34)'; context.stroke();
     fillText('1日暗盘', 78, 397, 33, '#fff', '700');
     fillText(metrics.day1Text, 78, 476, 70, valueColor(metrics.day1), '800');
