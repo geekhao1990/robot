@@ -38,11 +38,20 @@
         <view class="segment {{fundView === 'trend5' ? 'active' : ''}}" data-view="trend5" bindtap="switchFundView">5日暗盘</view>
       </view>
       <view wx:if="{{fundView === 'main'}}" class="one-day-flow">
+        <view class="one-day-menu" aria-disabled="true">
+          <view class="one-day-menu-item">看点</view>
+          <view class="one-day-menu-item">资讯</view>
+          <view class="one-day-menu-item">盘口</view>
+          <view class="one-day-menu-item selected" aria-current="true">资金<view class="one-day-menu-indicator"></view></view>
+          <view class="one-day-menu-item">社区</view>
+          <view class="one-day-menu-item">简况(F10)</view>
+        </view>
         <view class="one-day-title">
           <view class="one-day-title-mark"></view>
           <text>主力流向({{unitLabel}})</text>
           <view class="one-day-title-arrow" aria-hidden="true"></view>
           <view class="one-day-info" role="button" aria-label="主力流向说明" bindtap="showDayFlowInfo"><text>i</text></view>
+          <view class="one-day-hk-link" aria-disabled="true"><text>查看港资动向</text><view class="one-day-hk-arrow"></view></view>
         </view>
         <view class="one-day-summary">
           <view wx:for="{{summary}}" wx:key="label" class="one-day-summary-item"><text>{{item.label}}</text><text class="one-day-total {{item.positive ? 'positive' : 'negative'}}">{{item.text}}</text></view>

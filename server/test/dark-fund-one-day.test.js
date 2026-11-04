@@ -98,3 +98,25 @@ test('说明解释左右分区刻度；新样式只挂在一日分支', () => {
   assert.match(markup, /one-day-zero main/);
   assert.match(markup, /one-day-zero retail/);
 });
+
+test('一日菜单和港资链接仅展示，资金固定选中；金额缩小且不加粗', () => {
+  const markup = fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds-result/dark-funds-result.wxml'), 'utf8');
+  const menu = markup.slice(markup.indexOf('<view class="one-day-menu"'), markup.indexOf('<view class="one-day-title"'));
+  for (const label of ['看点', '资讯', '盘口', '资金', '社区', '简况(F10)']) assert.ok(menu.includes(label));
+  assert.equal((menu.match(/one-day-menu-item selected/g) || []).length, 1);
+  assert.match(menu, /one-day-menu-item selected" aria-current="true">资金/);
+  assert.doesNotMatch(menu, /bind|catch|navigator|url=/);
+  const link = markup.match(/<view class="one-day-hk-link"[^]*?<\/view><\/view>/)[0];
+  assert.match(link, /查看港资动向/);
+  assert.match(link, /aria-disabled="true"/);
+  assert.doesNotMatch(link, /bind|catch|navigator|url=/);
+  const styles = fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds-result/dark-funds-result.wxss'), 'utf8');
+  for (const [selector, size] of [['one-day-total', 26], ['one-day-value', 20]]) {
+    const rule = styles.match(new RegExp(`\\.${selector} \\{([^}]+)\\}`))[1];
+    assert.match(rule, new RegExp(`font-size: ${size}rpx`));
+    assert.match(rule, /font-weight: 400/);
+  }
+  for (const selector of ['one-day-menu', 'one-day-hk-link']) {
+    assert.match(styles.match(new RegExp(`\\.${selector} \\{([^}]+)\\}`))[1], /pointer-events: none/);
+  }
+});
