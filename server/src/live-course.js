@@ -21,16 +21,20 @@ function courseContent(content) {
     .replace(/[（(][^（）()\n]*直播链接失效后[^（）()\n]*[）)]/g, '')
     .trim();
 }
-function courseState(note) {
+function courseState(note, now = Date.now()) {
   if (!isLiveCourse(note)) return {};
-  const ready = require('./resource-links').resourceList(note).length > 0;
+  const ready = require('./resource-links').resourceList(note).some(resource => resource.provider === 'quark');
   const status = note.liveSourceStatus == null ? null : Number(note.liveSourceStatus);
-  let tags;
-  if (ready) tags = [{ key: 'replay', label: '可回放' }];
-  else if (status === 1) tags = [{ key: 'recording', label: '录制中' }];
-  else if (status === 3) tags = [{ key: 'ended', label: '已结束' }, { key: 'processing', label: note.liveSourceHasReplay ? '回放整理中' : '等待回放' }];
-  else if (status === 0 || note.liveSourceFuture) tags = [{ key: 'preview', label: '预告' }, { key: 'waiting', label: '未开播' }];
-  else tags = [{ key: 'waiting', label: '状态待更新' }];
-  return { isLiveCourse: true, liveTags: tags, livePlaybackAvailable: ready };
+  // Legacy notes may not have upstream flags. Use the scheduled Beijing time,
+  // not the last synchronization time or the availability of the replay page.
+  const scheduled = String(note.liveStartTime || note.title || '').match(/(\d{4}-\d{2}-\d{2})[ T](\d{1,2})[:：](\d{2})(?:[:：](\d{2}))?/);
+  const startsAt = scheduled
+    ? Date.parse(`${scheduled[1]}T${scheduled[2].padStart(2, '0')}:${scheduled[3]}:${scheduled[4] || '00'}+08:00`)
+    : NaN;
+  const started = status === 1 || status === 3 || (Number.isFinite(startsAt) && startsAt <= now);
+  const tag = ready ? { key: 'replay', label: '可回放' }
+    : started ? { key: 'recording', label: '录制中' }
+    : { key: 'preview', label: '预告' };
+  return { isLiveCourse: true, liveTags: [tag], livePlaybackAvailable: ready };
 }
 module.exports = { isLiveCourse, today, available, courseTitle, courseContent, courseState };

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const { parseItems, parseAnchors, applyItems, playback, dueSlot } = require('../src/live-table-sync');
-const {available,courseTitle,courseContent}=require('../src/live-course');
+const {available,courseTitle,courseContent,courseState}=require('../src/live-course');
 const { pubNote } = require('../src/util');
 const item = { room_id:256949, title:'课程标题', play:'/livetable/play?room=256949',start_time:'2026-11-02 08:50',status:3,has_replay:1,is_future:0 };
 const data = () => ({ users:[{id:'u',name:'THS复盘课',official:true}],notes:[] });
@@ -131,13 +131,14 @@ test('list cards and detail both render course status directly below the title',
   }
 });
 
-test('upstream status gates replay processing, only filled cloud links mark the note replayable', () => {
+test('upstream status gates replay processing independently of the three display tags', () => {
   const d=data();
-  for (const [status,has_replay,is_future,label,eligible] of [[0,0,1,'预告',false],[1,1,0,'录制中',false],[3,0,0,'等待回放',false],[3,1,0,'回放整理中',true]]) {
+  const beforeStart = Date.parse('2026-11-02T08:49:59+08:00');
+  for (const [status,has_replay,is_future,label,eligible] of [[0,0,1,'预告',false],[1,1,0,'录制中',false],[3,0,0,'录制中',false],[3,1,0,'录制中',true]]) {
     applyItems(d,parseItems([{...item,status,has_replay,is_future}]));
     assert.equal(d.liveTableRooms[item.room_id].replayEligible,eligible);
     assert.equal(Boolean(playback(d,d.notes[0])),eligible);
-    assert(pubNote(d.notes[0]).liveTags.some(tag=>tag.label===label));
+    assert.deepEqual(courseState(d.notes[0], beforeStart).liveTags.map(tag=>tag.label), [label]);
     assert.equal(pubNote(d.notes[0]).hasResource,false);
   }
   d.notes[0].quarkUrl='https://pan.quark.cn/s/example';
@@ -149,4 +150,27 @@ test('upstream status gates replay processing, only filled cloud links mark the 
   assert.equal(courseTitle('课程 2026-11-04 15:08','2026-11-04 15:10'),'课程 2026-11-04 15:08');
   assert.equal(courseTitle('课程 11月4日 15：08','2026-11-04 15:10'),'课程 11月4日 15：08');
   assert.equal(courseContent('点击下方按钮观看直播\n（直播链接失效后，点击播放回放获取）'),'');
+});
+
+test('course display uses start time and Quark backfill, including legacy notes without source status', () => {
+  const start = Date.parse('2026-11-05T09:00:00+08:00');
+  const base = { type: 'live', liveStartTime: '2026-11-05 09:00' };
+  const check = (note, now, label, ready = false) => {
+    const state = courseState(note, now);
+    assert.deepEqual(state.liveTags.map(tag => tag.label), [label]);
+    assert.equal(state.livePlaybackAvailable, ready);
+  };
+  check(base, start - 1, '预告');
+  check(base, start, '录制中');
+  check(base, start + 86400000, '录制中');
+  check({ ...base, liveSourceStatus: 0, liveSourceFuture: true }, start, '录制中');
+  check({ ...base, liveSourceStatus: 3, liveSourceHasReplay: true }, start, '录制中');
+  check({ ...base, baiduUrl: 'https://pan.baidu.com/s/example' }, start, '录制中');
+  check({ ...base, courseUrl: 'https://live.myhexin.com/player/?a=live&i=123' }, start, '录制中');
+  check({ ...base, quarkUrl: '  ' }, start, '录制中');
+  check({ ...base, quarkUrl: 'https://pan.quark.cn/s/example' }, start, '可回放', true);
+  check({ ...base, courseUrl: 'https://pan.quark.cn/s/legacy' }, start, '可回放', true);
+  check({ type: 'live', title: '盘前要闻-2026-11-05 9：00' }, start, '录制中');
+  check({ type: 'live', title: '课程', time: start - 86400000 }, start, '预告');
+  assert.deepEqual(courseState({ type: 'note' }, start), {});
 });
