@@ -51,6 +51,8 @@ set -e
 test -s /tmp/live-replay-bundle.tar.gz
 STAGE=$(mktemp -d)
 tar -xzf /tmp/live-replay-bundle.tar.gz -C "$STAGE"
+sed -i 's/\r$//' "$STAGE/scripts/install-replay-bundle.sh"
+bash -n "$STAGE/scripts/install-replay-bundle.sh"
 bash "$STAGE/scripts/install-replay-bundle.sh"
 )
 ```

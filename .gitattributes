@@ -1,0 +1,2 @@
+# Shell installers must remain executable by Linux bash, including git archives.
+*.sh text eol=lf
