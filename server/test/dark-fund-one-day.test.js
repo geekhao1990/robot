@@ -167,7 +167,7 @@ test('汇总名称加粗，标题加粗、港资无下划线；底部标签独�
   assert.match(rule('one-day-hk-link text'), /text-decoration: none/);
   assert.match(rule('one-day-name'), /bottom: -20rpx/);
   assert.match(rule('one-day-chart'), /margin-bottom: 20rpx/);
-  assert.match(rule('one-day-flow'), /border: 1px solid #d5d5d5/);
+  assert.match(rule('one-day-flow'), /border: none/);
   const markup = fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds-result/dark-funds-result.wxml'), 'utf8');
   assert.match(markup, /one-day-info-glyph/);
   assert.match(markup, /one-day-info-dot/);

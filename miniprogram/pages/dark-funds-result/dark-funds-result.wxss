@@ -47,7 +47,7 @@
 .fund-period-tabs .segment { min-height: 44rpx; padding: 0 10rpx; font-size: 22rpx; font-weight: 500; border-radius: 8rpx; }
 .fund-period-tabs .segment.active { color: #fff; background: #f33f3a; box-shadow: none; font-weight: 600; }
 /* Scoped to 1-day: do not change the 3/5-day charts or history sheets. */
-.one-day-flow { margin: 0; padding: 0 16rpx 16rpx; border: 1px solid #d5d5d5; box-sizing: border-box; color: #333; font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; }
+.one-day-flow { margin: 0; padding: 0 16rpx 16rpx; border: none; box-sizing: border-box; color: #333; font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif; }
 .one-day-menu { display: flex; align-items: center; justify-content: space-between; height: 84rpx; margin: 0 -16rpx 44rpx; padding: 0 16rpx; border-bottom: 1rpx solid #d5d5d5; pointer-events: none; }
 .one-day-menu-item { position: relative; display: flex; align-items: center; height: 100%; padding-bottom: 6rpx; color: #666; font-size: 28rpx; font-weight: 400; white-space: nowrap; }
 .one-day-menu-item.selected { color: #252525; font-size: 30rpx; font-weight: 700; }
