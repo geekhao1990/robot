@@ -1,0 +1,2 @@
+# Also applies when deploying with `git archive HEAD:server`.
+*.sh text eol=lf
