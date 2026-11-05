@@ -47,7 +47,7 @@
         <view class="segment {{fundView === 'trend5' ? 'active' : ''}}" data-view="trend5" bindtap="switchFundView">5日</view>
       </view>
       </view>
-      <view wx:if="{{fundView === 'main'}}" class="one-day-flow">
+      <view wx:if="{{flowHasData}}" class="one-day-flow">
         <view class="one-day-menu" aria-disabled="true">
           <view class="one-day-menu-item">看点</view>
           <view class="one-day-menu-item">资讯</view>
@@ -76,13 +76,15 @@
           </view>
         </view>
       </view>
-      <block wx:else>
-        <view class="trend-summary"><text>{{trendMetricLabel}}</text><text class="trend-value {{trendMetricPositive ? 'up' : 'down'}}">{{trendMetricText}}</text></view>
-        <view wx:if="{{trendHasData}}" class="trend-chart-wrap">
-          <canvas type="2d" id="trendCanvas" class="trend-canvas"></canvas>
-        </view>
-        <view wx:else class="trend-empty">历史数据不足，暂时无法绘制该周期</view>
-      </block>
+      <view wx:else class="trend-empty">历史数据不足，暂时无法绘制该周期</view>
+    </view>
+    <view wx:for="{{trendPanels}}" wx:key="size" class="card period-trend-card">
+      <view class="detail-title">{{item.size}}日暗盘趋势</view>
+      <view class="trend-summary"><text>{{item.size}}日暗盘净流入</text><text class="trend-value {{item.positive ? 'up' : 'down'}}">{{item.text}}</text></view>
+      <view wx:if="{{item.hasData}}" class="trend-chart-wrap">
+        <canvas type="2d" id="{{item.id}}" class="trend-canvas"></canvas>
+      </view>
+      <view wx:else class="trend-empty">历史数据不足，暂时无法绘制该周期</view>
     </view>
     <view class="card history-card">
       <view class="detail-title">30日主力趋势与 GS 信号</view>

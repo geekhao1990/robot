@@ -200,7 +200,9 @@ function wdfChooseUnit(values) {
 }
 
 function wdfUnitValue(value, unit) {
-  const rounded = Math.round(wdfNumber(value) / unit.divisor * (10 ** unit.digits)) / (10 ** unit.digits);
+  const number = wdfNumber(value);
+  const scaled = Math.abs(number) / unit.divisor * (10 ** unit.digits);
+  const rounded = Math.sign(number) * Math.round(scaled + Number.EPSILON * scaled) / (10 ** unit.digits);
   return Object.is(rounded, -0) ? 0 : rounded;
 }
 
@@ -210,11 +212,9 @@ function wdfUnitText(value, unit, suffix = false) {
 
 function wdfBalanced(row, unit) {
   const main = wdfUnitValue(row.main, unit);
-  let listed = wdfUnitValue(row.listed, unit);
-  let grey = wdfUnitValue(row.grey, unit);
-  const residual = Number((main - listed - grey).toFixed(unit.digits));
-  if (Math.abs(listed) >= Math.abs(grey)) listed = Number((listed + residual).toFixed(unit.digits));
-  else grey = Number((grey + residual).toFixed(unit.digits));
+  // Each source field rounds independently; do not force displayed components to balance.
+  const listed = wdfUnitValue(row.listed, unit);
+  const grey = wdfUnitValue(row.grey, unit);
   return { main, listed, grey };
 }
 

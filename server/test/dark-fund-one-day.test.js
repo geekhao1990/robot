@@ -59,19 +59,73 @@ test('亿元自动换算仍一致，数值本身不重复添加单位', () => {
   assert.deepEqual(Array.from(page.data.dayBars, item => item.text), ['2.10', '1.20', '-3.30']);
 });
 
-test('3日和5日趋势数据、指标和绘图入口保持原样', () => {
+test('独立取舍不补差：-0.72、1.79、1.06保持各自原始值；散户取main相反数', () => {
+  const { page } = loadPage();
+  const source = result({ main: 106400000, listed: -72100000, grey: 178500000 });
+  page.applyResult(source);
+  assert.deepEqual(Array.from(page.data.dayBars, item => item.text), ['-0.72', '1.79', '-1.06']);
+  assert.deepEqual(Array.from(page.data.summary, item => item.text), ['1.06', '-1.06']);
+  assert.equal(page.data.rows[0].greyText, '1.79亿');
+  assert.equal(page.data.historySelected.flowBars[1].text, '1.79');
+  assert.equal(source.days[0].grey, 178500000);
+  // main remains authoritative even when source components do not sum exactly.
+  page.applyResult(result({ main: 106000000, listed: -72000000, grey: 179000000 }));
+  assert.equal(page.data.summary[0].value, 106000000);
+  assert.equal(page.data.dayBars[2].value, -106000000);
+});
+
+test('正负半值对称四舍五入，不显示负零', () => {
+  const { page } = loadPage();
+  page.applyResult(result({ main: -106500000, listed: 0, grey: -178500000 }));
+  assert.deepEqual(Array.from(page.data.summary, item => item.text), ['-1.07', '1.07']);
+  assert.equal(page.data.dayBars[1].text, '-1.79');
+  page.applyResult(result({ main: -1, listed: -1, grey: 0 }));
+  assert.deepEqual(Array.from(page.data.summary, item => item.text), ['0.0', '0.0']);
+});
+
+test('网页版同样取消补差，和小程序取舍一致', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../public/web/dark-funds.js'), 'utf8');
+  const context = { wdfNumber: value => Number(value) || 0 };
+  vm.runInNewContext(source.slice(source.indexOf('function wdfChooseUnit('), source.indexOf('function wdfRolling(')), context);
+  const unit = context.wdfChooseUnit([178500000]);
+  const amounts = context.wdfBalanced({ main: 106400000, listed: -72100000, grey: 178500000 }, unit);
+  assert.deepEqual(JSON.parse(JSON.stringify(amounts)), { main: 1.06, listed: -0.72, grey: 1.79 });
+  assert.equal(context.wdfUnitText(-106500000, unit), '-1.07');
+});
+
+test('周期合计先累加后取舍，合并去重历史交易日；不足天数不造零', () => {
+  const { page } = loadPage();
+  const row = { main: 1490, listed: 500, grey: 990 };
+  page.applyResult({ days: [{ tradeDate: '2026-11-04', ...row }], historyDays: [
+    { tradeDate: '2026-10-30', ...row }, { tradeDate: '2026-11-03', ...row },
+    { tradeDate: '2026-11-04', main: 999999, listed: 1, grey: 2 },
+  ] });
+  page.switchFundView({ currentTarget: { dataset: { view: 'trend3' } } });
+  assert.equal(page.data.summary[0].value, 4470);
+  assert.equal(page.data.summary[0].text, '0.4');
+  page.switchFundView({ currentTarget: { dataset: { view: 'trend5' } } });
+  assert.equal(page.data.flowHasData, false);
+  assert.equal(page.data.dayBars.length, 0);
+});
+
+test('3日和5日累计接口原值使用一日样式，原趋势分别在独立画布绘制', () => {
   const { page } = loadPage();
   const days = Array.from({ length: 7 }, (_, i) => ({ tradeDate: `2026-10-${24 + i}`, main: (i + 1) * 20000, listed: (i + 1) * 10000, grey: (i + 1) * 10000 }));
   page.applyResult({ ...result({}), days });
   const bars = JSON.stringify(page.data.dayBars);
   page.setData = (data, callback) => { Object.assign(page.data, data); if (callback) callback(); };
   const drawn = [];
-  page.drawTrend = series => drawn.push(series);
-  for (const [view, expected] of [['trend3', '18.0万'], ['trend5', '25.0万']]) {
+  page.drawTrend = (series, id) => drawn.push({ series, id });
+  page.drawTrends();
+  assert.deepEqual(drawn.map(item => item.id), ['trendCanvas3', 'trendCanvas5']);
+  assert.equal(drawn[0].series, page.trends.trend3);
+  for (const [view, expected, main] of [['trend3', '18.0', '36.0'], ['trend5', '25.0', '50.0']]) {
     page.switchFundView({ currentTarget: { dataset: { view } } });
-    assert.equal(page.data.trendMetricText, expected);
-    assert.equal(page.data.trendHasData, true);
-    assert.equal(drawn.at(-1), page.trends[view]);
+    assert.equal(page.data.dayBars[1].text, expected);
+    assert.equal(page.data.summary[0].text, main);
+    assert.equal(page.data.summary[1].value, -page.data.summary[0].value);
+    assert.equal(page.data.flowHasData, true);
+    assert.deepEqual(Array.from(page.data.dayBars, item => item.center), [12.5, 37.5, 75]);
   }
   page.switchFundView({ currentTarget: { dataset: { view: 'main' } } });
   assert.equal(JSON.stringify(page.data.dayBars), bars);
@@ -87,14 +141,16 @@ test('历史日弹窗不套用新的一日分区比例', () => {
   assert.equal(bars[0].text, '-7407.6');
 });
 
-test('说明解释左右分区刻度；新样式只挂在一日分支', () => {
+test('周期共用分区样式，两个趋势区在选项卡外且位于30日趋势前', () => {
   const { page, context } = loadPage();
   page.showDayFlowInfo();
   assert.match(context.modal.content, /左侧两柱共用刻度/);
   assert.equal(context.modal.showCancel, false);
   const markup = fs.readFileSync(require.resolve('../../miniprogram/pages/dark-funds-result/dark-funds-result.wxml'), 'utf8');
-  assert.match(markup, /wx:if="\{\{fundView === 'main'\}\}" class="one-day-flow"/);
-  assert.match(markup, /<block wx:else>\s*<view class="trend-summary">/);
+  assert.match(markup, /wx:if="\{\{flowHasData\}\}" class="one-day-flow"/);
+  assert.match(markup, /wx:for="\{\{trendPanels\}\}" wx:key="size" class="card period-trend-card"/);
+  assert.ok(markup.indexOf('period-trend-card') < markup.indexOf('card history-card'));
+  assert.match(markup, /id="\{\{item.id\}\}" class="trend-canvas"/);
   assert.match(markup, /one-day-zero main/);
   assert.match(markup, /one-day-zero retail/);
 });
@@ -114,7 +170,9 @@ test('一日菜单和港资链接仅展示，资金固定选中；汇总加粗�
   for (const [selector, size] of [['one-day-total', 28], ['one-day-value', 22]]) {
     const rule = styles.match(new RegExp(`\\.${selector} \\{([^}]+)\\}`))[1];
     assert.match(rule, new RegExp(`font-size: ${size}rpx`));
-    assert.match(rule, new RegExp(`font-weight: ${selector === 'one-day-total' ? 700 : 400}`));
+    assert.match(rule, new RegExp(`font-weight: ${selector === 'one-day-total' ? 500 : 400}`));
+    assert.match(rule, /font-synthesis: none/);
+    if (selector === 'one-day-total') assert.match(rule, /-webkit-text-stroke: \.15px currentColor/);
     assert.match(rule, /font-family: "Bahnschrift", "DarkFlowDigits"/);
     assert.match(rule, /letter-spacing: -\.6rpx/);
   }

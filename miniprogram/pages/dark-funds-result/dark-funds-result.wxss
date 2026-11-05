@@ -65,7 +65,7 @@
 .one-day-hk-arrow { width: 16rpx; height: 16rpx; margin-right: 6rpx; border-top: 2rpx solid #ccc; border-right: 2rpx solid #ccc; transform: rotate(45deg); }
 .one-day-summary { display: flex; height: 120rpx; border-radius: 8rpx; background: #f6f6f6; }
 .one-day-summary-item { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 8rpx; color: #777; font-family: "DarkFlowLabels", sans-serif; font-size: 24rpx; font-weight: 700; letter-spacing: -.4rpx; line-height: 1.25; }
-.one-day-total { font-family: "Bahnschrift", "DarkFlowDigits", sans-serif; font-size: 28rpx; font-weight: 700; font-synthesis: weight; letter-spacing: -.6rpx; font-variant-numeric: tabular-nums; }
+.one-day-total { font-family: "Bahnschrift", "DarkFlowDigits", sans-serif; font-size: 28rpx; font-weight: 500; font-synthesis: none; -webkit-text-stroke: .15px currentColor; letter-spacing: -.6rpx; font-variant-numeric: tabular-nums; }
 .one-day-chart { position: relative; height: 0; padding-top: 42%; margin-top: 0; margin-bottom: 20rpx; }
 .one-day-zero { position: absolute; top: 47%; width: 47.56%; height: 1rpx; background: #d5d5d5; }
 .one-day-zero.main { left: 1.22%; }

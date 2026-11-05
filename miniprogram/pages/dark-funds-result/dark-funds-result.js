@@ -18,13 +18,14 @@ function chooseUnit(values) {
 }
 
 function formatByUnit(value, unit, suffix = false) {
-  const number = (Number(value) || 0) / unit.divisor;
-  return `${number.toFixed(unit.digits)}${suffix ? unit.suffix : ''}`;
+  return formatRoundedUnit(roundedUnitValue(value, unit), unit, suffix);
 }
 
 function roundedUnitValue(value, unit) {
   const factor = 10 ** unit.digits;
-  const rounded = Math.round(((Number(value) || 0) / unit.divisor) * factor) / factor;
+  const number = Number(value) || 0;
+  const scaled = Math.abs(number) / unit.divisor * factor;
+  const rounded = Math.sign(number) * Math.round(scaled + Number.EPSILON * scaled) / factor;
   return Object.is(rounded, -0) ? 0 : rounded;
 }
 
@@ -32,13 +33,10 @@ function formatRoundedUnit(value, unit, suffix = false) {
   return `${value.toFixed(unit.digits)}${suffix ? unit.suffix : ''}`;
 }
 
-function balancedMainGroup(row, unit, suffix = false) {
+function independentMainGroup(row, unit, suffix = false) {
   const main = roundedUnitValue(row.main, unit);
-  let listed = roundedUnitValue(row.listed, unit);
-  let grey = roundedUnitValue(row.grey, unit);
-  const residual = Number((main - listed - grey).toFixed(unit.digits));
-  if (Math.abs(listed) >= Math.abs(grey)) listed = Number((listed + residual).toFixed(unit.digits));
-  else grey = Number((grey + residual).toFixed(unit.digits));
+  const listed = roundedUnitValue(row.listed, unit);
+  const grey = roundedUnitValue(row.grey, unit);
   return {
     mainValue: main,
     listedValue: listed,
@@ -66,7 +64,7 @@ function withBars(items) {
 }
 
 // The reference has two separate panels: the main-fund pair and retail flow.
-// Only the 1-day chart uses this geometry; historical sheets keep withBars.
+// All period tabs use this geometry; historical sheets keep withBars.
 function withDayBars(items) {
   const mainMaximum = Math.max(...items.slice(0, 2).map((item) => Math.abs(item.value)), 1);
   const centers = [12.5, 37.5, 75];
@@ -81,6 +79,25 @@ function withDayBars(items) {
 function marketStockCode(code) {
   const value = String(code || '').replace(/^(sh|sz)/i, '');
   return `${/^[569]/.test(value) ? 'sh' : 'sz'}${value}`;
+}
+
+function periodFlow(result, size) {
+  const end = result.days[result.days.length - 1].tradeDate;
+  const rows = historyFor(result).filter(row => row.tradeDate <= end).slice(-size);
+  const fields = ['main', 'listed', 'grey'];
+  if (rows.length !== size || rows.some(row => fields.some(key => row[key] == null || !Number.isFinite(Number(row[key]))))) {
+    return { flowHasData: false, unitLabel: '', summary: [], dayBars: [] };
+  }
+  // Sum source precision first. Never reconstruct main from the two components.
+  const totals = Object.fromEntries(fields.map(key => [key, rows.reduce((sum, row) => sum + Number(row[key]), 0)]));
+  const unit = chooseUnit(Object.values(totals));
+  return {
+    flowHasData: true, unitLabel: unit.label,
+    summary: [{ label: '主力净流入', value: totals.main }, { label: '散户流入', value: -totals.main }]
+      .map(item => ({ ...item, text: formatByUnit(item.value, unit), positive: item.value >= 0 })),
+    dayBars: withDayBars([{ label: '主力明盘', value: totals.listed }, { label: '主力暗盘', value: totals.grey }, { label: '散户流入', value: -totals.main }]
+      .map(item => ({ ...item, text: formatByUnit(item.value, unit) }))),
+  };
 }
 
 function hybridStockName(name, initials) {
@@ -99,6 +116,8 @@ Page({
     unitLabel: '',
     summary: [],
     dayBars: [],
+    flowHasData: false,
+    trendPanels: [],
     rows: [],
     historyBars: [],
     historySelected: null,
@@ -115,10 +134,6 @@ Page({
     detailTotal: 0,
     fundView: 'main',
     detailView: 'core',
-    trendMetricLabel: '',
-    trendMetricText: '',
-    trendMetricPositive: true,
-    trendHasData: false,
     posterGenerating: false,
     posterPath: '',
     isOfficial: false,
@@ -227,25 +242,13 @@ Page({
     result.days = days;
     result.dataTimeLabel = snapshotLabel(result).replace('快照时间未知', '时间未知');
     result.displayDataTime = snapshotDataTime(result);
-    const latest = days[days.length - 1];
-    const unit = chooseUnit([latest.main, latest.listed, latest.grey]);
-    const main = Number(latest.main) || 0;
-    const balancedLatest = balancedMainGroup(latest, unit);
-    const summary = [
-      { label: '主力净流入', value: main },
-      { label: '散户流入', value: -main },
-    ].map((item) => ({ ...item, text: formatByUnit(item.value, unit), positive: item.value >= 0 }));
-    const dayBars = withDayBars([
-      { label: '主力明盘', value: Number(latest.listed) || 0, text: formatRoundedUnit(balancedLatest.listedValue, unit) },
-      { label: '主力暗盘', value: Number(latest.grey) || 0, text: formatRoundedUnit(balancedLatest.greyValue, unit) },
-      { label: '散户流入', value: -main, text: formatByUnit(-main, unit) },
-    ]);
+    this.periodFlows = { main: periodFlow(result, 1), trend3: periodFlow(result, 3), trend5: periodFlow(result, 5) };
     const historyBars = historyChart(result).map(row => {
       const unit = chooseUnit([row.main, row.listed, row.grey]);
-      const balanced = balancedMainGroup(row, unit);
+      const amounts = independentMainGroup(row, unit);
       return { ...row, unitLabel: unit.label,
         flowSummary: [{label:'主力净流入',value:row.main},{label:'散户流入',value:-row.main}].map(item=>({...item,text:formatByUnit(item.value,unit),positive:item.value>=0})),
-        flowBars: withBars([{label:'主力明盘',value:row.listed,text:balanced.listedText},{label:'主力暗盘',value:row.grey,text:balanced.greyText},{label:'散户流入',value:-row.main,text:formatByUnit(-row.main,unit)}]),
+        flowBars: withBars([{label:'主力明盘',value:row.listed,text:amounts.listedText},{label:'主力暗盘',value:row.grey,text:amounts.greyText},{label:'散户流入',value:-row.main,text:formatByUnit(-row.main,unit)}]),
         tierMetrics: row.metrics.slice(3),
       };
     });
@@ -254,7 +257,7 @@ Page({
       return {
         ...row,
         displayDate: row.tradeDate.slice(5),
-        ...balancedMainGroup(row, mainUnit, true),
+        ...independentMainGroup(row, mainUnit, true),
         ...formatGroup(row, ['super_large', 'large', 'middle', 'small']),
       };
     });
@@ -264,9 +267,18 @@ Page({
     this.setData({ detailPage: 1, detailPages: Math.max(1, Math.ceil(detailRows.length / 7)), detailTotal: detailRows.length });
     result.displayCode = marketStockCode(result.stockCode);
     this.trends = { trend3: rollingHistory(result, 3), trend5: rollingHistory(result, 5) };
+    const trendPanels = [3, 5].map(size => {
+      const series = this.trends[`trend${size}`];
+      const latest = series[series.length - 1];
+      const hasData = !!latest && latest.value !== null;
+      const unit = chooseUnit([hasData ? latest.value : 0]);
+      return { size, id: `trendCanvas${size}`, unit, hasData, positive: !hasData || latest.value >= 0,
+        text: hasData ? formatByUnit(latest.value, unit, true) : '—' };
+    });
     this.setData({ historySummary: historySummary(result) });
-    this.setData({ historyBars, historySelected: historyBars[historyBars.length - 1], historyScroll: Math.max(0, historyBars.length * 36), historyModal: false, loading: false, result, unitLabel: unit.label, summary, dayBars, rows }, () => {
+    this.setData({ historyBars, historySelected: historyBars[historyBars.length - 1], historyScroll: Math.max(0, historyBars.length * 36), historyModal: false, loading: false, result, fundView: 'main', ...this.periodFlows.main, trendPanels, rows }, () => {
       wx.nextTick(() => this.measureHistory());
+      wx.nextTick(() => this.drawTrends());
       if (this.autoPosterWithoutQr) {
         this.autoPosterWithoutQr = false;
         wx.nextTick(() => this.generateSharePoster({ currentTarget: { dataset: { noQr: 'true' } } }));
@@ -279,7 +291,7 @@ Page({
   showDayFlowInfo() {
     wx.showModal({
       title: '主力流向',
-      content: '主力净流入＝主力明盘＋主力暗盘，散户流入与主力净流入方向相反。红色表示流入，绿色表示流出。左侧两柱共用刻度，右侧散户柱单独缩放，跨区请以标注金额比较。金额单位见标题。',
+      content: '主力净流入使用接口原值，散户流入取其相反数。各项独立四舍五入，显示金额相加可能有尾差。3日、5日按最近相应交易日的原始金额累计后取舍。红色表示流入，绿色表示流出。左侧两柱共用刻度，右侧散户柱单独缩放，跨区请以标注金额比较。金额单位见标题。',
       showCancel: false,
       confirmText: '知道了',
     });
@@ -287,21 +299,7 @@ Page({
   switchFundView(event) {
     const fundView = String(event.currentTarget.dataset.view || 'main');
     if (!['main', 'trend3', 'trend5'].includes(fundView) || fundView === this.data.fundView) return;
-    if (fundView === 'main') return this.setData({ fundView });
-    const size = Number(fundView.slice(5));
-    const series = this.trends && this.trends[fundView] || [];
-    const latest = series.slice().reverse().find((item) => item.value !== null);
-    const unit = chooseUnit([latest ? latest.value : 0]);
-    this.trendUnit = unit;
-    this.setData({
-      fundView,
-      trendMetricLabel: `${size}日暗盘净流入`,
-      trendMetricText: latest ? formatByUnit(latest.value, unit, true) : '—',
-      trendMetricPositive: !latest || latest.value >= 0,
-      trendHasData: !!latest,
-    }, () => {
-      if (latest) wx.nextTick(() => this.drawTrend(series));
-    });
+    this.setData({ fundView, ...this.periodFlows[fundView] });
   },
   switchDetailView(event) {
     this.setData({ detailView: event.currentTarget.dataset.view === 'orders' ? 'orders' : 'core' });
@@ -346,11 +344,15 @@ Page({
   stopHistoryTap() {},
   onResize() {
     this.measureHistory();
-    const series = this.trends && this.trends[this.data.fundView];
-    if (series && this.data.trendHasData) wx.nextTick(() => this.drawTrend(series));
+    wx.nextTick(() => this.drawTrends());
   },
-  drawTrend(series) {
-    wx.createSelectorQuery().in(this).select('#trendCanvas').fields({ node: true, size: true }).exec((result) => {
+  drawTrends() {
+    for (const panel of this.data.trendPanels) {
+      if (panel.hasData) this.drawTrend(this.trends[`trend${panel.size}`], panel.id, panel.unit);
+    }
+  },
+  drawTrend(series, canvasId, unit) {
+    wx.createSelectorQuery().in(this).select(`#${canvasId}`).fields({ node: true, size: true }).exec((result) => {
       const target = result && result[0];
       if (!target || !target.node || !target.width || !target.height) return;
       const canvas = target.node;
@@ -368,7 +370,6 @@ Page({
       const valid = series.map((item, index) => item.value === null ? null : ({ ...item, index })).filter(Boolean);
       if (!valid.length) return;
       const values = valid.map((item) => item.value);
-      const unit = this.trendUnit || chooseUnit([valid[valid.length - 1].value]);
       let min = Math.min(0, ...values);
       let max = Math.max(0, ...values);
       const span = Math.max(max - min, Math.abs(max), Math.abs(min), 1);
@@ -454,8 +455,8 @@ Page({
         canvas.height = height;
         const context = canvas.getContext('2d');
         const metrics = posterMetrics(this.data.result, {
-          unitLabel: this.data.unitLabel,
-          dayBars: this.data.dayBars,
+          unitLabel: this.periodFlows.main.unitLabel,
+          dayBars: this.periodFlows.main.dayBars,
         });
         Promise.all([
           this.loadPosterImage(canvas, ['/images/dark-share-bg-v2.jpg', '../../images/dark-share-bg-v2.jpg'], '分享图背景'),
