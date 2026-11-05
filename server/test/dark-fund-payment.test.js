@@ -68,7 +68,7 @@ test('monthly plan charges 29.9 yuan, extends both entitlements 30 days exactly 
   await call('GET', `/api/dark-funds/topup-orders/${order.orderId}`);
   assert.equal(data.users[0].darkFundCloseExpire, originalExpiry + 30 * 86400000);
   assert.equal(data.users[0].goldExpire, originalExpiry + 31 * 86400000);
-  assert.equal(data.users[0].darkFundCloseDailyLimit, 49);
+  assert.equal(data.users[0].darkFundCloseDailyLimit, 99);
   assert.equal(first.closeMonthlyActive, true);
   assert.equal(first.creditedQuota, 0);
   assert.equal(data.users[0].darkFundManualRemaining, 0);

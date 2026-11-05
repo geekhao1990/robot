@@ -1,5 +1,6 @@
 const DAY_MS = 24 * 3600 * 1000;
 const SERVICE_MONTHLY_QUOTA = 15;
+const CLOSE_MONTHLY_DAILY_LIMIT = 99;
 const SERVICE_QUOTA_PERIOD_MS = 30 * DAY_MS;
 
 const SERVICE_PLANS = Object.freeze({
@@ -25,11 +26,11 @@ function activateCloseDarkFund(user, now = Date.now(), days = 30) {
   const base = closeDarkFundActiveAt(user, now) ? Number(user.darkFundCloseExpire) : now;
   const periods = (Array.isArray(user.darkFundClosePeriods) ? user.darkFundClosePeriods : [])
     .filter(period => Number(period.until) > now && Number(period.until) <= base)
-    .map(period => ({ until: Number(period.until), dailyLimit: period.dailyLimit === 0 ? 0 : 49 }));
+    .map(period => ({ until: Number(period.until), dailyLimit: period.dailyLimit === 0 ? 0 : CLOSE_MONTHLY_DAILY_LIMIT }));
   if (base > now && (!periods.length || periods[periods.length - 1].until < base)) {
-    periods.push({ until: base, dailyLimit: user.darkFundCloseDailyLimit === 0 ? 0 : 49 });
+    periods.push({ until: base, dailyLimit: user.darkFundCloseDailyLimit === 0 ? 0 : CLOSE_MONTHLY_DAILY_LIMIT });
   }
-  periods.push({ until: base + days * DAY_MS, dailyLimit: days === 30 ? 49 : 0 });
+  periods.push({ until: base + days * DAY_MS, dailyLimit: days === 30 ? CLOSE_MONTHLY_DAILY_LIMIT : 0 });
   user.darkFundClosePeriods = periods;
   user.darkFundCloseDailyLimit = periods[0].dailyLimit;
   user.darkFundCloseExpire = base + days * DAY_MS;
@@ -44,7 +45,7 @@ function closeDarkFundDay(now = Date.now()) {
 function closeDarkFundDailyLimit(user, now = Date.now()) {
   const period = (user && Array.isArray(user.darkFundClosePeriods) ? user.darkFundClosePeriods : [])
     .find(item => Number(item.until) > now);
-  return (period ? period.dailyLimit : user && user.darkFundCloseDailyLimit) === 0 ? 0 : 49;
+  return (period ? period.dailyLimit : user && user.darkFundCloseDailyLimit) === 0 ? 0 : CLOSE_MONTHLY_DAILY_LIMIT;
 }
 
 function assertCloseDarkFundDailyLimit(user, orders, now = Date.now()) {
@@ -54,7 +55,7 @@ function assertCloseDarkFundDailyLimit(user, orders, now = Date.now()) {
     && order.quotaSource === 'close_month' && !order.quotaRefundedAt
     && !['FAILED', 'DISPATCH_FAILED', 'CANCELLED'].includes(order.status)
     && closeDarkFundDay(Number(order.createdAt) || 0) === day).length;
-  if (used >= 49) throw Object.assign(new Error('查询过于频繁，请稍后再试'), { status: 429 });
+  if (used >= CLOSE_MONTHLY_DAILY_LIMIT) throw Object.assign(new Error('查询过于频繁，请稍后再试'), { status: 429 });
 }
 
 function refreshDarkFundQuota(user, now = Date.now()) {

@@ -457,24 +457,24 @@ test('暗盘包月只免除盘后查询扣次，盘中查询仍扣减次数', as
   assert.equal(data.users[0].darkFundRemaining, 0);
 });
 
-test('monthly 49th request succeeds, concurrent 50th fails, retries remain idempotent, admin unlock works', async () => {
+test('monthly 99th request succeeds, concurrent 100th fails, retries remain idempotent, admin unlock works', async () => {
   const closeResult = require('../src/dark-fund-close').normalizeCloseDarkFund(require('../src/dark-fund-close').SAMPLE_CLOSE_PAYLOAD, '600105');
   const { data, call } = setup({ closeResult });
   data.users[0].darkFundCloseExpire = Date.now() + 30 * 86400000;
-  data.darkFundOrders = Array.from({ length: 48 }, (_, i) => ({ id: 'seed' + i, userId: 'u1', quotaSource: 'close_month', createdAt: Date.now(), status: 'READY' }));
+  data.darkFundOrders = Array.from({ length: 98 }, (_, i) => ({ id: 'seed' + i, userId: 'u1', quotaSource: 'close_month', createdAt: Date.now(), status: 'READY' }));
   const body = i => ({ stockCode: '600105', request_id: 'monthly_limit_test_' + i, source: 'web' });
-  const results = await Promise.allSettled([call('POST', '/api/dark-funds/orders/close', body(49)), call('POST', '/api/dark-funds/orders/close', body(50))]);
+  const results = await Promise.allSettled([call('POST', '/api/dark-funds/orders/close', body(99)), call('POST', '/api/dark-funds/orders/close', body(100))]);
   assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);
   const rejected = results.find(r => r.status === 'rejected');
   assert.equal(rejected.reason.status, 429);
   assert.equal(rejected.reason.message, '查询过于频繁，请稍后再试');
-  const successful = data.darkFundOrders[48];
-  const duplicate = await call('POST', '/api/dark-funds/orders/close', { ...body(49), request_id: successful.clientRequestId });
+  const successful = data.darkFundOrders[98];
+  const duplicate = await call('POST', '/api/dark-funds/orders/close', { ...body(99), request_id: successful.clientRequestId });
   assert.equal(duplicate.duplicate, true);
-  assert.equal(data.darkFundOrders.length, 49);
+  assert.equal(data.darkFundOrders.length, 99);
   data.users[0].darkFundCloseUnlockedDate = require('../src/membership').closeDarkFundDay();
-  await call('POST', '/api/dark-funds/orders/close', body(51));
-  assert.equal(data.darkFundOrders.length, 50);
+  await call('POST', '/api/dark-funds/orders/close', body(101));
+  assert.equal(data.darkFundOrders.length, 100);
 });
 
 test('盘后接口未配置时不创建工单也不扣次数', async () => {

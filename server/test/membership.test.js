@@ -1,4 +1,19 @@
 const test = require('node:test');
+test('existing monthly periods with stored 49 limit immediately use 99 without renewal', () => {
+  const { closeDarkFundDailyLimit, assertCloseDarkFundDailyLimit } = require('../src/membership');
+  const assert = require('node:assert/strict');
+  const now = Date.parse('2026-11-05T12:00:00+08:00');
+  for (const user of [
+    { id: 'u', darkFundCloseDailyLimit: 49 },
+    { id: 'u', darkFundClosePeriods: [{ until: now + 86400000, dailyLimit: 49 }] },
+  ]) {
+    assert.equal(closeDarkFundDailyLimit(user, now), 99);
+    const orders = Array.from({ length: 98 }, () => ({ userId: 'u', createdAt: now, quotaSource: 'close_month', status: 'READY' }));
+    assert.doesNotThrow(() => assertCloseDarkFundDailyLimit(user, orders, now));
+    orders.push(orders[0]);
+    assert.throws(() => assertCloseDarkFundDailyLimit(user, orders, now), { status: 429 });
+  }
+});
 test('week and month renewals preserve each purchased period limit without bypass or lost benefits', () => {
   const { activateCloseDarkFund, closeDarkFundDailyLimit } = require('../src/membership');
   const assert = require('node:assert/strict');
@@ -8,8 +23,8 @@ test('week and month renewals preserve each purchased period limit without bypas
     activateCloseDarkFund(user, now, durations[0]);
     activateCloseDarkFund(user, now, durations[1]);
     assert.equal(user.darkFundCloseExpire, now + 37 * day);
-    assert.equal(closeDarkFundDailyLimit(user, now), durations[0] === 7 ? 0 : 49);
-    assert.equal(closeDarkFundDailyLimit(user, now + durations[0] * day), durations[1] === 7 ? 0 : 49);
+    assert.equal(closeDarkFundDailyLimit(user, now), durations[0] === 7 ? 0 : 99);
+    assert.equal(closeDarkFundDailyLimit(user, now + durations[0] * day), durations[1] === 7 ? 0 : 99);
   }
 });
 test('monthly limit resets at Beijing midnight and ignores failures and other users', () => {
@@ -17,7 +32,7 @@ test('monthly limit resets at Beijing midnight and ignores failures and other us
   const assert = require('node:assert/strict');
   const now = Date.parse('2026-11-04T23:59:59+08:00');
   const user = { id: 'u1' };
-  const orders = Array.from({ length: 49 }, () => ({ userId: 'u1', createdAt: now, quotaSource: 'close_month', status: 'READY' }));
+  const orders = Array.from({ length: 99 }, () => ({ userId: 'u1', createdAt: now, quotaSource: 'close_month', status: 'READY' }));
   assert.throws(() => assertCloseDarkFundDailyLimit(user, orders, now), { status: 429 });
   assert.doesNotThrow(() => assertCloseDarkFundDailyLimit(user, orders, now + 1000));
   user.darkFundCloseUnlockedDate = closeDarkFundDay(now - 86400000);

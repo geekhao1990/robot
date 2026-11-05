@@ -35,7 +35,7 @@ test('three packages are horizontal with week in the middle and monthly best-val
   assert.match(source,/sku: 'dark_fund_month'[^\n]+price: '29.9元'[^\n]+含30天金手指[^\n]+badge: '最划算'/);
   assert.match(fs.readFileSync(base+'.wxss','utf8'),/\.topup-skus[^}]+flex-wrap: nowrap/);
   assert.match(markup,/wx:if="\{\{item.badge\}\}" class="topup-best"/);
-  assert.doesNotMatch(markup + source, /每日49次|每日限49次/);
+  assert.doesNotMatch(markup + source, /每日(?:49|99)次|每日限(?:49|99)次/);
 });
 test('daily free button is member-only and shares a row equally with ordinary query',()=>{
   const base=path.join(__dirname,'../../miniprogram/pages/dark-funds/dark-funds');
