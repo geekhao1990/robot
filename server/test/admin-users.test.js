@@ -16,6 +16,7 @@ function setup() {
   const dependencyMap = {
     '../dark-fund-midday-ranking': require('../src/dark-fund-midday-ranking'),
     '../live-table-sync': require('../src/live-table-sync'),
+    '../live-replay': require('../src/live-replay').createWorker({ store: db, adapters: { environment: async () => ({ ok: false, checks: [{ name: '夸克授权', ok: false, message: '未授权' }] }) } }),
     '../live-course': require('../src/live-course'),
     '../db': db,
     '../auth': { isAdmin: (token) => token === 'admin', issueAdmin: () => 'admin' },
@@ -47,6 +48,17 @@ function setup() {
   });
   return { data, call };
 }
+
+test('replay management endpoints require admin and cannot enable an unconfigured uploader', async () => {
+  const { call } = setup();
+  for (const [method, url] of [['GET','/api/admin/live-replay/status'], ['POST','/api/admin/live-replay/check'], ['POST','/api/admin/live-replay/config'], ['POST','/api/admin/live-replay/n1/retry']]) {
+    await assert.rejects(call(method, url, {}, ''), /未登录/);
+  }
+  assert.equal((await call('GET', '/api/admin/live-replay/status')).enabled, false);
+  assert.equal((await call('POST', '/api/admin/live-replay/check')).ok, false);
+  await assert.rejects(call('POST', '/api/admin/live-replay/config', { enabled: true }), /未授权/);
+  await assert.rejects(call('POST', '/api/admin/live-replay/config', { enabled: 'true' }), /请选择/);
+});
 
 test('ordinary monthly admin grant renew cancel preserves quotas and other entitlements', async () => {
   const { data, call } = setup();

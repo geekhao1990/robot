@@ -8,6 +8,7 @@ const { normalizeResourceLinks } = require('../resource-links');
 const crypto = require('crypto');
 const goldFingerSync = require('../gold-finger-sync');
 const liveTableSync = require('../live-table-sync');
+const liveReplay = require('../live-replay');
 const { notifyFollowersOfNote, pushNotification } = require('../notifications');
 const { URL } = require('url');
 const { latestRanking, publicRanking } = require('../dark-fund-ranking');
@@ -484,6 +485,19 @@ module.exports = function register(router, HttpError) {
   router.post('/api/admin/dark-fund-midday-ranking/generate',ctx=>{requireAuth(ctx);return middayRanking.manualSync();});
   router.get('/api/admin/livetable/status', ctx => { requireAuth(ctx); return liveTableSync.getStatus(); });
   router.post('/api/admin/livetable/sync', ctx => { requireAuth(ctx); return liveTableSync.syncNow(); });
+  router.get('/api/admin/live-replay/status', ctx => { requireAuth(ctx); return liveReplay.list(); });
+  router.post('/api/admin/live-replay/check', ctx => { requireAuth(ctx); return liveReplay.environment(); });
+  router.post('/api/admin/live-replay/config', async ctx => {
+    requireAuth(ctx);
+    if (typeof ctx.body?.enabled !== 'boolean') throw new HttpError(400, '请选择启用或暂停');
+    try { return await liveReplay.setEnabled(ctx.body.enabled); }
+    catch (e) { throw new HttpError(400, e.message); }
+  });
+  router.post('/api/admin/live-replay/:id/retry', async ctx => {
+    requireAuth(ctx);
+    try { return await liveReplay.retry(ctx.params.id); }
+    catch (e) { throw new HttpError(400, e.message); }
+  });
   router.get('/api/admin/notes', (ctx) => { requireAuth(ctx); return db.get().notes; });
 
   router.post('/api/admin/notes', (ctx) => {

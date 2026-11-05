@@ -317,6 +317,7 @@ TITLES.ladder = 'AI自媒体 / 连板天梯图生成';
 TITLES.dragon = 'AI自媒体 / 游资龙虎榜图生成';
 TITLES.articleRewrite = 'AI自媒体 / 复盘文章改写成图';
 function switchView(v) {
+  clearTimeout(_replayPollTimer);
   const activeView = ['ladder','dragon','articleRewrite','fundArticle'].includes(v) ? 'aiMedia' : v;
   document.querySelectorAll('.nav-item').forEach((n) => n.classList.toggle('active', n.dataset.view === activeView));
   document.getElementById('viewTitle').textContent = TITLES[v];
@@ -408,12 +409,14 @@ function pagerHtml(page, pages, total, fnName) {
   </div>`;
 }
 
+let _replayPollTimer, _replayStatus = { enabled: false, items: [] };
 function renderNotes() {
   Promise.all([api('/api/admin/notes'), api('/api/admin/users'), api('/api/admin/categories')])
     .then(([notes, users, categories]) => {
       _notes = notes; _users = users; _categories = categories;
       _notePage = 1;
       drawNotes();
+      refreshReplayStatus();
     });
 }
 
@@ -445,6 +448,7 @@ function drawNotes() {
       <td>${esc(n.title)}</td>
       <td>${esc(n.author && n.author.name)}</td>
       <td><span class="tag ${n.type === 'gold' ? 'gold' : (n.type === 'course' ? 'course' : (n.type === 'ad' ? 'ad' : ''))}">${esc(n.category || '资料')}</span></td>
+      <td data-replay-note="${esc(n.id)}">${replayCell(n)}</td>
       <td><div class="switch-cell"><label class="switch" title="是否显示"><input type="checkbox" ${n.visible !== false ? 'checked' : ''} onchange="toggleNoteFlag('${n.id}','visible',this.checked)" /><span class="switch-slider"></span></label><span>${n.visible !== false ? '显示' : '隐藏'}</span></div></td>
       <td><div class="switch-cell"><label class="switch" title="是否免费"><input type="checkbox" ${n.free === true ? 'checked' : ''} onchange="toggleNoteFlag('${n.id}','free',this.checked)" /><span class="switch-slider"></span></label><span>${n.free === true ? '免费' : '收费'}</span></div></td>
       <td>赞 ${n.likes} · 藏 ${n.collects}</td>
@@ -462,10 +466,67 @@ function drawNotes() {
       </div>
       <button class="btn-primary" onclick="editNote()">+ 新增笔记</button>
       <button class="btn-primary" onclick="syncLiveCourses(this)">同步直播课程</button>
+      <button class="btn-sm" onclick="checkReplayEnvironment(this)">检查回放接入</button>
+      <button class="btn-sm" id="replayAutoButton" onclick="toggleReplayAuto(this)">${_replayStatus.enabled ? '暂停自动回放处理' : '开启自动回放处理'}</button>
     </div>
-    <table><thead><tr><th>序号</th><th>封面</th><th>标题</th><th>作者</th><th>分类</th><th>是否显示</th><th>是否免费</th><th>互动数据</th><th>操作</th></tr></thead>
+    <div style="color:#64748b;margin:10px 0">用户端“录制中”不代表正在上传。下方“回放处理”显示服务器实际阶段；启用前请先检查接入，并选择一节课试运行。暂停只阻止后续自动任务，当前任务继续完成。</div>
+    <table><thead><tr><th>序号</th><th>封面</th><th>标题</th><th>作者</th><th>分类</th><th>回放处理</th><th>是否显示</th><th>是否免费</th><th>互动数据</th><th>操作</th></tr></thead>
     <tbody>${rows}</tbody></table>
     ${pagerHtml(_notePage, pages, total, 'gotoNotePage')}`;
+}
+
+function replayCell(note) {
+  if (note.type !== 'live' && note.category !== '直播课' && note.resourceKind !== 'live-course') return '—';
+  const item = _replayStatus.items.find(i => i.noteId === note.id);
+  if (!item) return '<span style="color:#64748b">正在读取处理状态</span>';
+  const color = item.state === 'complete' ? '#16845b' : ['failed','blocked'].includes(item.state) ? '#c13343' : '#2563eb';
+  return `<div style="min-width:160px;max-width:260px"><strong style="color:${color}">${esc(item.label)}${item.progress != null ? ' ' + Number(item.progress) + '%' : ''}</strong>
+    ${item.error ? `<div style="color:#c13343;font-size:12px;white-space:normal">${esc(item.error)}</div>` : ''}
+    ${item.notice ? `<div style="font-size:12px;white-space:normal">${esc(item.notice)}</div>` : ''}
+    ${item.updatedAt ? `<div style="font-size:12px;color:#64748b">更新：${new Date(item.updatedAt).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})}</div>` : ''}
+    ${item.nextAttemptAt ? `<div style="font-size:12px;color:#64748b">下次尝试：${new Date(item.nextAttemptAt).toLocaleTimeString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})}</div>` : ''}
+    ${item.canRetry ? `<button class="btn-sm" data-replay-retry="${esc(note.id)}" onclick="retryCourseReplay(this)">处理 / 重试</button>` : ''}</div>`;
+}
+async function refreshReplayStatus() {
+  clearTimeout(_replayPollTimer);
+  if (!document.getElementById('replayAutoButton')) return;
+  try {
+    _replayStatus = await api('/api/admin/live-replay/status');
+    const button = document.getElementById('replayAutoButton');
+    if (!button) return;
+    button.textContent = _replayStatus.enabled ? '暂停自动回放处理' : '开启自动回放处理';
+    document.querySelectorAll('[data-replay-note]').forEach(cell => {
+      const note = _notes.find(n => n.id === cell.dataset.replayNote);
+      if (note) cell.innerHTML = replayCell(note);
+    });
+  } catch (_) {
+    document.querySelectorAll('[data-replay-note]').forEach(cell => {
+      if (_notes.find(n => n.id === cell.dataset.replayNote && (n.type === 'live' || n.category === '直播课'))) cell.textContent = '状态读取失败，请确认服务端已部署';
+    });
+  }
+  if (document.getElementById('replayAutoButton')) _replayPollTimer = setTimeout(refreshReplayStatus, 5000);
+}
+async function checkReplayEnvironment(button) {
+  button.disabled = true;
+  try {
+    const result = await api('/api/admin/live-replay/check', { method: 'POST', body: '{}' });
+    alert(result.checks.map(c => `${c.ok ? '✓' : '✗'} ${c.name}：${c.message}`).join('\n') + '\n\n夸克未授权时，请在服务器使用运行 Node 服务的同一账号完成夸克授权。');
+  } catch (e) { showAdminToast(e.message, 'error'); }
+  finally { button.disabled = false; }
+}
+async function toggleReplayAuto(button) {
+  const enabled = !_replayStatus.enabled;
+  if (enabled && !confirm('开启后会自动下载、上传并分享符合条件的课程。请确认已获课程下载及分享授权，并已完成一节课的试运行。是否开启？')) return;
+  button.disabled = true;
+  try { await api('/api/admin/live-replay/config', { method: 'POST', body: JSON.stringify({ enabled }) }); await refreshReplayStatus(); }
+  catch (e) { showAdminToast(e.message, 'error'); }
+  finally { button.disabled = false; }
+}
+async function retryCourseReplay(button) {
+  if (!confirm('将下载此课程并上传夸克生成分享链接。确认具有下载和分享授权并开始处理？')) return;
+  button.disabled = true;
+  try { await api('/api/admin/live-replay/' + encodeURIComponent(button.dataset.replayRetry) + '/retry', { method: 'POST', body: '{}' }); await refreshReplayStatus(); }
+  catch (e) { showAdminToast(e.message, 'error'); button.disabled = false; }
 }
 
 function toggleNoteFlag(id, field, checked) {

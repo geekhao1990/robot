@@ -9,6 +9,7 @@ const { handleUpload } = require('./upload');
 const audit = require('./audit');
 const goldFingerSync = require('./gold-finger-sync');
 const liveTableSync = require('./live-table-sync');
+const liveReplay = require('./live-replay');
 const darkFundRankingSync = require('./dark-fund-ranking-sync');
 const middayRanking = require('./dark-fund-midday-ranking');
 const webWechatLogin = require('./web-wechat-login');
@@ -161,6 +162,7 @@ db.load()
       console.log(`API & 管理后台运行中： http://${HOST}:${PORT}/admin`);
       goldFingerSync.start();
       liveTableSync.start();
+      liveReplay.start();
       darkFundRankingSync.start();
       middayRanking.start();
     });
@@ -173,6 +175,7 @@ db.load()
 async function shutdown() {
   goldFingerSync.stop();
   liveTableSync.stop();
+  await liveReplay.stop();
   darkFundRankingSync.stop();
   middayRanking.stop();
   server.close(async () => {
